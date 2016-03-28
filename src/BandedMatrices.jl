@@ -17,11 +17,16 @@ export BandedMatrix, bandrange, bzeros,beye,brand,bones
 #   a_21 a_22 a_23
 #   a_31 a_32 a_33 a_34
 #        a_42 a_43 a_44  ]
-# ordering the data like
+# ordering the data like (rows first)
 #       [ *     *       a_31    a_42
 #         *      a_21   a_32    a_43
 #         a_11   a_22   a_33    A_44
 #         a_12   a_23   a_34    *       ]
+#  (columns first)
+#       [ *      a_12   a_23    a_34
+#         a_11   a_22   a_33    a_43
+#         a_21   a_32   a_43    *
+#         a_32   a_42   *       *       ]
 ###
 
 
