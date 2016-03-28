@@ -7,7 +7,7 @@ module BandedMatrices
 import Base: getindex,setindex!,*,.*,+,.+,-,.-,==,<,<=,>,
                 >=,./,/,.^,^,\,transpose
 
-export BandedMatrix
+export BandedMatrix, bandrange, bzeros,beye,brand,bones
 
 
 
@@ -64,7 +64,7 @@ Base.promote_rule{T,V}(::Type{BandedMatrix{T}},::Type{BandedMatrix{V}})=BandedMa
 
 
 
-for (op,bop) in ((:(Base.rand),:barand),(:(Base.zeros),:bazeros),(:(Base.ones),:baones))
+for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bones))
     @eval begin
         $bop{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer)=BandedMatrix($op(T,b+a+1,n),m,a,b)
         $bop{T}(::Type{T},n::Integer,a::Integer,b::Integer)=$bop(T,n,n,a,b)
@@ -84,16 +84,16 @@ end
 
 
 
-function baeye{T}(::Type{T},n::Integer,a...)
-    ret=bazeros(T,n,a...)
+function beye{T}(::Type{T},n::Integer,a...)
+    ret=bzeros(T,n,a...)
     for k=1:n
          ret[k,k]=one(T)
     end
     ret
 end
-baeye{T}(::Type{T},n::Integer)=baeye(T,n,0,0)
-baeye(n::Integer)=baeye(n,0,0)
-baeye(n::Integer,a...)=baeye(Float64,n,a...)
+beye{T}(::Type{T},n::Integer)=beye(T,n,0,0)
+beye(n::Integer)=beye(n,0,0)
+beye(n::Integer,a...)=beye(Float64,n,a...)
 
 
 
@@ -103,10 +103,23 @@ bandinds(A::BandedMatrix)=-A.l,A.u
 bandrange(A::BandedMatrix)=-A.l:A.u
 
 
-usgetindex(A::BandedMatrix,k::Integer,j::Integer)=A.data[j-k+A.l+1,k]
-usgetindex(A::BandedMatrix,k::Integer,jr::Range)=vec(A.data[jr-k+A.l+1,k])
-getindex(A::BandedMatrix,k::Integer,j::Integer)=(-A.l≤j-k≤A.u)?usgetindex(A,k,j):(j≤A.m?zero(eltype(A)):throw(BoundsError()))
-getindex(A::BandedMatrix,k::Integer,jr::Range)=-A.l≤jr[1]-k≤jr[end]-k≤A.u?usgetindex(A,k,jr):[A[k,j] for j=jr].'
+
+# returns a vector of each index in the banded part of a matrix
+# TODO: make a special iterator, to avoid allocating memory
+function eachbandedindex(B::BandedMatrix)
+    ret=Array(CartesianIndex{2},0)
+    for j=1:size(B,2),k=max(1,j-B.u):min(j+B.l,size(B,1))
+        push!(ret,CartesianIndex((k,j)))
+    end
+    ret
+end
+
+
+
+unsafe_getindex(A::BandedMatrix,k::Integer,j::Integer)=A.data[j-k+A.l+1,k]
+unsafe_getindex(A::BandedMatrix,k::Integer,jr::Range)=vec(A.data[jr-k+A.l+1,k])
+getindex(A::BandedMatrix,k::Integer,j::Integer)=(-A.l≤j-k≤A.u)?unsafe_getindex(A,k,j):(j≤A.m?zero(eltype(A)):throw(BoundsError()))
+getindex(A::BandedMatrix,k::Integer,jr::Range)=-A.l≤jr[1]-k≤jr[end]-k≤A.u?unsafe_getindex(A,k,jr):[A[k,j] for j=jr].'
 getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
 getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
 Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
@@ -141,8 +154,10 @@ Base.norm(B::BandedMatrix,opts...)=norm(full(B),opts...)
 #setindex!(A::BandedMatrix,v,kr::Range,j::Integer)=(A.l≤j-kr[end]≤j-kr[1]≤A.u&&kr[end]≤A.n)?ussetindex!(A,v,kr,j):throw(BoundsError())
 
 
-ibsetindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[j-k+A.l+1,k]=v)
-ibpluseq!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[j-k+A.l+1,k]+=v)
+unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[j-k+A.l+1,k]=v)
+
+"unsafe_pluseq!(A,v,k,j) is an unsafe versoin of A[k,j] += v"
+unsafe_pluseq!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[j-k+A.l+1,k]+=v)
 setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(A.data[j-k+A.l+1,k]=v)
 
 function setindex!(A::BandedMatrix,v,kr::Range,jr::Range)
@@ -184,12 +199,12 @@ function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     end
     n,m=size(A,1),size(A,2)
 
-    ret = bazeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for k=1:n,j=max(1,k-A.l):min(m,k+A.l)
-        ibpluseq!(ret,usgetindex(A,k,j),k,j)
+    ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
+    for k=1:n,j=max(1,k-A.l):min(m,k+A.u)
+        unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
     end
-    for k=1:n,j=max(1,k-B.l):min(m,k+B.l)
-        ibpluseq!(ret,usgetindex(B,k,j),k,j)
+    for k=1:n,j=max(1,k-B.l):min(m,k+B.u)
+        unsafe_pluseq!(ret,unsafe_getindex(B,k,j),k,j)
     end
 
     ret
@@ -201,12 +216,12 @@ function -{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     end
     n,m=size(A,1),size(A,2)
 
-    ret = bazeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for k=1:n,j=max(1,k-A.l):min(m,k+A.l)
-        ibpluseq!(ret,usgetindex(A,k,j),k,j)
+    ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
+    for k=1:n,j=max(1,k-A.l):min(m,k+A.u)
+        unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
     end
-    for k=1:n,j=max(1,k-B.l):min(m,k+B.l)
-        ibpluseq!(ret,-usgetindex(B,k,j),k,j)
+    for k=1:n,j=max(1,k-B.l):min(m,k+B.u)
+        unsafe_pluseq!(ret,-unsafe_getindex(B,k,j),k,j)
     end
 
     ret
@@ -219,7 +234,7 @@ function *{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    bamultiply!(bazeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
+    bmultiply!(bzeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
 end
 
 function *{T,V}(A::BandedMatrix{T},B::Matrix{V})
@@ -227,7 +242,7 @@ function *{T,V}(A::BandedMatrix{T},B::Matrix{V})
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    bamultiply!(zeros(promote_type(T,V),n,m),A,B)
+    bmultiply!(zeros(promote_type(T,V),n,m),A,B)
 end
 
 
@@ -236,13 +251,13 @@ function *{T,V}(A::BandedMatrix{T},b::Vector{V})
         throw(DimensionMismatch("*"))
     end
     n=size(A,1)
-    bamultiply!(zeros(promote_type(T,V),n),A,b)
+    bmultiply!(zeros(promote_type(T,V),n),A,b)
 end
 
 
 
 function Base.transpose(B::BandedMatrix)
-    Bt=bazeros(size(B,2),size(B,1),B.u,B.l)
+    Bt=bzeros(size(B,2),size(B,1),B.u,B.l)
     for k=1:size(B,1),j=max(1,k-B.l):min(size(B,2),k+B.u)
        Bt[j,k]=B[k,j]
     end
@@ -250,7 +265,7 @@ function Base.transpose(B::BandedMatrix)
 end
 
 function Base.ctranspose(B::BandedMatrix)
-    Bt=bazeros(size(B,2),size(B,1),B.u,B.l)
+    Bt=bzeros(size(B,2),size(B,1),B.u,B.l)
     for k=1:size(B,1),j=max(1,k-B.l):min(size(B,2),k+B.u)
        Bt[j,k]=conj(B[k,j])
     end
@@ -268,7 +283,7 @@ end
 
 ## Matrix*Vector Multiplicaiton
 
-function bamultiply!(c::Vector,A::BandedMatrix,b::Vector)
+function bmultiply!(c::Vector,A::BandedMatrix,b::Vector)
     for k=1:size(A,1)  # rows of c
         @simd for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A/rows of b
              @inbounds c[k]+=A.data[l-k+A.l+1,k]*b[l]
@@ -285,7 +300,7 @@ end
 
 
 
-function bamultiply!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
+function bmultiply!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
     n=size(A,1);m=size(B,2)
     @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
     for k=1:n  # rows of C
@@ -305,7 +320,7 @@ function bamultiply!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix,ri::Integer
     C
 end
 
-function bamultiply!(C::Matrix,A::BandedMatrix,B::Matrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
+function bmultiply!(C::Matrix,A::BandedMatrix,B::Matrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
     n=size(A,1);m=size(B,2)
     @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
     for k=1:n  # rows of C
@@ -347,6 +362,31 @@ function fliplrud(A::BandedMatrix)
     ret
 end
 
+
+
+## Show
+
+type PrintShow
+    str
+end
+Base.show(io::IO,N::PrintShow)=print(io,N.str)
+
+function Base.showarray(io::IO,B::BandedMatrix;
+                   header::Bool=true, limit::Bool=Base._limit_output,
+                   sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
+    header && print(io,summary(B))
+
+    if !isempty(B)
+        header && println(io,":")
+        M=Array(Any,size(B)...)
+        fill!(M,PrintShow(""))
+        for kj=eachbandedindex(B)
+            M[kj]=B[kj]
+        end
+
+        Base.showarray(io,M;header=false)
+    end
+end
 
 
 end #module
