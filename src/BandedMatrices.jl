@@ -262,7 +262,7 @@ end
 
 
 function Base.transpose(B::BandedMatrix)
-    Bt=bzeros(size(B,2),size(B,1),B.u,B.l)
+    Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
     for k=1:size(B,1),j=max(1,k-B.l):min(size(B,2),k+B.u)
        Bt[j,k]=B[k,j]
     end
@@ -270,7 +270,7 @@ function Base.transpose(B::BandedMatrix)
 end
 
 function Base.ctranspose(B::BandedMatrix)
-    Bt=bzeros(size(B,2),size(B,1),B.u,B.l)
+    Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
     for k=1:size(B,1),j=max(1,k-B.l):min(size(B,2),k+B.u)
        Bt[j,k]=conj(B[k,j])
     end
