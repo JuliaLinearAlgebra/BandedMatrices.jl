@@ -1,6 +1,9 @@
 # BandedMatrices.jl
 A Julia package for representing banded matrices
 
+[![Build Status](https://travis-ci.org/ApproxFun/BandedMatrices.jl.svg?branch=master)](https://travis-ci.org/ApproxFun/BandedMatrices.jl)
+
+
 
 This package supports representing banded matrices by only the entries on the
 bands.  Currently, only row-major ordering is supported: a banded matrix
