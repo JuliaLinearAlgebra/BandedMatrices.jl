@@ -28,3 +28,18 @@ w=rand(10)
 
 @test_approx_eq A*v full(A)*v
 @test_approx_eq A'*w full(A)'*w
+
+
+
+
+A=brand(10000,10000,2,3)
+B=brand(1000,1000,200,300)
+v=rand(10000)
+w=rand(1000)
+
+A*v
+@time A*v
+println("Time should be   0.000133 seconds (148 allocations: 88.183 KB)")
+@time B*w
+println("Time should be   0.000799 seconds (5 allocations: 8.047 KB)")
+

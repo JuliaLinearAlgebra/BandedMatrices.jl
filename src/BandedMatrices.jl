@@ -120,15 +120,16 @@ immutable BandedIterator
 end
 
 
-Base.start(B::BandedIterator)=CartesianIndex((1,1))
-Base.next(B::BandedIterator,state::CartesianIndex)=
+Base.start(B::BandedIterator)=(1,1)
+Base.next(B::BandedIterator,state)=
     state,ifelse(state[2]==min(state[1]+B.u,B.m),
-        CartesianIndex((state[1]+1,max(state[1]+1-B.l,1))),
-        CartesianIndex((state[1],state[2]+1)))
+                (state[1]+1,max(state[1]+1-B.l,1)),
+                (state[1],  state[2]+1)
+                 )
 
-Base.done(B::BandedIterator,state::CartesianIndex)=state[1]>B.n
+Base.done(B::BandedIterator,state)=state[1]>B.n
 
-Base.eltype(::Type{BandedIterator})=CartesianIndex{2}
+Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
 function Base.length(B::BandedIterator)
     if B.m > B.n
         p=max(0,B.u+B.n-B.m)
@@ -231,11 +232,11 @@ function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     n,m=size(A,1),size(A,2)
 
     ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for kj in eachbandedindex(A)
-        unsafe_pluseq!(ret,unsafe_getindex(A,kj),k,j)
+    for (k,j) in eachbandedindex(A)
+        unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
     end
-    for kj in eachbandedindex(B)
-        unsafe_pluseq!(ret,unsafe_getindex(B,kj),k,j)
+    for (k,j) in eachbandedindex(B)
+        unsafe_pluseq!(ret,unsafe_getindex(B,k,j),k,j)
     end
 
     ret
@@ -248,11 +249,11 @@ function -{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     n,m=size(A,1),size(A,2)
 
     ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for kj in eachbandedindex(A)
-        unsafe_pluseq!(ret,unsafe_getindex(A,kj),kj)
+    for (k,j) in eachbandedindex(A)
+        unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
     end
-    for kj in eachbandedindex(B)
-        unsafe_pluseq!(ret,-unsafe_getindex(B,kj),kj)
+    for (k,j) in eachbandedindex(B)
+        unsafe_pluseq!(ret,-unsafe_getindex(B,k,j),k,j)
     end
 
     ret
