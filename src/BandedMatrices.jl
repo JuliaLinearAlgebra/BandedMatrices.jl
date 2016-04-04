@@ -109,15 +109,42 @@ bandrange(A::BandedMatrix)=-A.l:A.u
 
 
 
+
+## Gives an iterator over the banded entries of a BandedMatrix
+
+immutable BandedIterator
+    n::Int
+    m::Int
+    l::Int
+    u::Int
+end
+
+
+Base.start(B::BandedIterator)=(1,1)
+Base.next(B::BandedIterator,state)=
+    state,ifelse(state[2]==min(state[1]+B.u,B.m),
+                (state[1]+1,max(state[1]+1-B.l,1)),
+                (state[1],  state[2]+1)
+                 )
+
+Base.done(B::BandedIterator,state)=state[1]>B.n
+
+Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
+function Base.length(B::BandedIterator)
+    if B.m > B.n
+        p=max(0,B.u+B.n-B.m)
+        B.n*(B.u+1)+
+            div(B.l*(2*B.n-B.l-1),2)-div(p*(1+p),2)
+    else
+        p=max(0,B.l+B.m-B.n)
+        B.m*(B.l+1)+
+            div(B.u*(2*B.m-B.u-1),2)-div(p*(1+p),2)
+    end
+end
+
 # returns a vector of each index in the banded part of a matrix
 # TODO: make a special iterator, to avoid allocating memory
-function eachbandedindex(B::BandedMatrix)
-    ret=Array(CartesianIndex{2},0)
-    for j=1:size(B,2),k=max(1,j-B.u):min(j+B.l,size(B,1))
-        push!(ret,CartesianIndex((k,j)))
-    end
-    ret
-end
+eachbandedindex(B::BandedMatrix)=BandedIterator(size(B,1),size(B,2),B.l,B.u)
 
 
 
@@ -205,10 +232,10 @@ function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     n,m=size(A,1),size(A,2)
 
     ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for k=1:n,j=max(1,k-A.l):min(m,k+A.u)
+    for (k,j) in eachbandedindex(A)
         unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
     end
-    for k=1:n,j=max(1,k-B.l):min(m,k+B.u)
+    for (k,j) in eachbandedindex(B)
         unsafe_pluseq!(ret,unsafe_getindex(B,k,j),k,j)
     end
 
@@ -222,10 +249,10 @@ function -{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     n,m=size(A,1),size(A,2)
 
     ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for k=1:n,j=max(1,k-A.l):min(m,k+A.u)
+    for (k,j) in eachbandedindex(A)
         unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
     end
-    for k=1:n,j=max(1,k-B.l):min(m,k+B.u)
+    for (k,j) in eachbandedindex(B)
         unsafe_pluseq!(ret,-unsafe_getindex(B,k,j),k,j)
     end
 
@@ -263,7 +290,7 @@ end
 
 function Base.transpose(B::BandedMatrix)
     Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
-    for k=1:size(B,1),j=max(1,k-B.l):min(size(B,2),k+B.u)
+    for (k,j) in eachbandedindex(B)
        Bt[j,k]=B[k,j]
     end
     Bt
@@ -271,7 +298,7 @@ end
 
 function Base.ctranspose(B::BandedMatrix)
     Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
-    for k=1:size(B,1),j=max(1,k-B.l):min(size(B,2),k+B.u)
+    for (k,j) in eachbandedindex(B)
        Bt[j,k]=conj(B[k,j])
     end
     Bt
@@ -348,7 +375,7 @@ function .*(A::BandedMatrix,B::BandedMatrix)
     l=min(A.l,B.l);u=min(A.u,B.u)
     ret=BandedMatrix(promote_type(eltype(A),eltype(B)),size(A,1),size(A,2),l,u)
 
-    for k=1:size(A,1),j=max(1,k-l):min(size(A,2),k+u)
+    for (k,j) in eachbandedindex(ret)
         @inbounds ret[k,j]=A[k,j]*B[k,j]
     end
     ret
@@ -361,7 +388,7 @@ function fliplrud(A::BandedMatrix)
     l=A.u+n-m
     u=A.l+m-n
     ret=BandedMatrix(eltype(A),n,m,l,u)
-    for k=1:n,j=max(1,k-l):min(m,k+u)
+    for (k,j) in eachbandedindex(ret)
         @inbounds ret[k,j]=A[n-k+1,m-j+1]
     end
     ret
@@ -385,7 +412,7 @@ function Base.showarray(io::IO,B::BandedMatrix;
         header && println(io,":")
         M=Array(Any,size(B)...)
         fill!(M,PrintShow(""))
-        for kj=eachbandedindex(B)
+        for kj in eachbandedindex(B)
             M[kj]=B[kj]
         end
 
