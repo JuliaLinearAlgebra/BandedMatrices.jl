@@ -4,6 +4,9 @@ using BandedMatrices, Base.Test
 
 A,B=brand(10,12,2,3),brand(10,12,3,4)
 
+
+@test_approx_eq full(sparse(A)) full(A)
+
 @test_approx_eq full(A') full(A)'
 @test_approx_eq full(A.') full(A).'
 @test_approx_eq full((A+im*A)') (full(A)+im*full(A))'
