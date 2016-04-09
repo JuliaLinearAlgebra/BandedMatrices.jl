@@ -43,3 +43,6 @@ println("Time should be   0.000133 seconds (148 allocations: 88.183 KB)")
 @time B*w
 println("Time should be   0.000799 seconds (5 allocations: 8.047 KB)")
 
+
+
+show(brand(10,10,3,3))

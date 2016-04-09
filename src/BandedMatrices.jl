@@ -412,8 +412,8 @@ function Base.showarray(io::IO,B::BandedMatrix;
         header && println(io,":")
         M=Array(Any,size(B)...)
         fill!(M,PrintShow(""))
-        for kj in eachbandedindex(B)
-            M[kj]=B[kj]
+        for (k,j) in eachbandedindex(B)
+            M[k,j]=B[k,j]
         end
 
         Base.showarray(io,M;header=false)
