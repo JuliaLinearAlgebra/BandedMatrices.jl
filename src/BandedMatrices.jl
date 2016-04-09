@@ -272,7 +272,11 @@ function *{T,V}(A::BandedMatrix{T},B::Matrix{V})
 end
 
 
-*{T,V}(A::BandedMatrix{T},b::Vector{V})=BLAS.gbmv('T',A.m,A.u,A.l,1.,A.data,b)
+*{T}(A::BandedMatrix{T},b::Vector{T})=BLAS.gbmv('T',A.m,A.u,A.l,one(T),A.data,b)
+function *{U,V}(A::BandedMatrix{U},b::Vector{V})
+    T=promote_type(U,V)
+    convert(BandedMatrix{T},A)*convert(Vector{T},b)
+end
 
 function Base.transpose(B::BandedMatrix)
     Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)

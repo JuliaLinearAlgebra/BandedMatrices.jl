@@ -30,6 +30,17 @@ w=rand(10)
 @test_approx_eq A'*w full(A)'*w
 
 
+A=brand(Float64,5,3,2,2)
+v=rand(Complex128,3)
+@test_approx_eq A*v full(A)*v
+
+A=brand(Complex128,5,3,2,2)
+v=rand(Complex128,3)
+@test_approx_eq A*v full(A)*v
+
+v=rand(Float64,3)
+@test_approx_eq A*v full(A)*v
+
 
 
 A=brand(10000,10000,2,3)
