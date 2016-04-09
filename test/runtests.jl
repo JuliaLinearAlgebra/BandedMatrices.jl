@@ -56,6 +56,14 @@ B=rand(1200,1200)
 @test_approx_eq A*B full(A)*B
 
 
+
+B=brand(10,10,0,4)
+@test_approx_eq B*[collect(1.0:10) collect(1.0:10)] full(B)*[collect(1.0:10) collect(1.0:10)]
+
+
+@which B*[collect(1.0:10) collect(1.0:10)]
+
+
 A=brand(10000,10000,2,3)
 B=brand(1000,1000,200,300)
 v=rand(10000)

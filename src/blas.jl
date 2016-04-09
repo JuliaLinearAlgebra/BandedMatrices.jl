@@ -32,20 +32,23 @@ end
 
 # this is matrix*matrix
 function gbmm!(alpha,A::BandedMatrix,B::Matrix,beta,C)
-
     st=max(1,stride(A.data,2))
     n=size(A.data,2)
     p=pointer(A.data)
 
+
     x=pointer(B)
     sx=sizeof(eltype(B))
-    m=size(B,2)
+    ν,m=size(B)
+
+    @assert size(C,1)==n
+    @assert size(C,2)==m
 
     y=pointer(C)
     sy=sizeof(eltype(C))
 
     for k=1:m
-        gbmv!('T',A.m,A.u,A.l,alpha,p,n,st,x+(k-1)*sx*m,beta,y+(k-1)*sy*n)
+        gbmv!('T',A.m,A.u,A.l,alpha,p,n,st,x+(k-1)*sx*ν,beta,y+(k-1)*sy*n)
     end
     C
 end
