@@ -43,6 +43,19 @@ v=rand(Float64,3)
 
 
 
+A=brand(1000,1000,200,300)
+B=rand(1000,1000)
+@test_approx_eq A*B full(A)*B
+
+A=brand(1200,1000,200,300)
+B=rand(1000,1000)
+@test_approx_eq A*B full(A)*B
+
+A=brand(1000,1200,200,300)
+B=rand(1200,1200)
+@test_approx_eq A*B full(A)*B
+
+
 A=brand(10000,10000,2,3)
 B=brand(1000,1000,200,300)
 v=rand(10000)
