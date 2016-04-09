@@ -37,12 +37,13 @@ B=brand(1000,1000,200,300)
 v=rand(10000)
 w=rand(1000)
 
+show(brand(10,10,3,3))
+show(brand(100,80,3,2))
+println()
+
 A*v
 @time A*v
-println("Time should be   0.000133 seconds (148 allocations: 88.183 KB)")
+println("Time should be   0.000082 seconds (150 allocations: 88.214 KB)")
 @time B*w
-println("Time should be   0.000799 seconds (5 allocations: 8.047 KB)")
+println("Time should be   0.000300 seconds (7 allocations: 8.078 KB)")
 
-
-
-show(brand(10,10,3,3))

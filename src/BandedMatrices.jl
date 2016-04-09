@@ -42,6 +42,9 @@ type BandedMatrix{T} <: AbstractSparseMatrix{T,Int}
 end
 
 
+include("blas.jl")
+
+
 BandedMatrix{T}(data::Matrix{T},m::Integer,a::Integer,b::Integer)=BandedMatrix{T}(data,m,a,b)
 
 BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer)=BandedMatrix{T}(Array(T,b+a+1,n),m,a,b)
@@ -127,7 +130,7 @@ Base.next(B::BandedIterator,state)=
                 (state[1],  state[2]+1)
                  )
 
-Base.done(B::BandedIterator,state)=state[1]>B.n
+Base.done(B::BandedIterator,state)=state[1]>B.n || state[1]>B.m+B.l
 
 Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
 function Base.length(B::BandedIterator)
@@ -274,19 +277,11 @@ function *{T,V}(A::BandedMatrix{T},B::Matrix{V})
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    bmultiply!(zeros(promote_type(T,V),n,m),A,B)
+    mm!(1.0,A,B,0.,Array(promote_type(T,V),n,m))
 end
 
 
-function *{T,V}(A::BandedMatrix{T},b::Vector{V})
-    if size(A,2)!=length(b)
-        throw(DimensionMismatch("*"))
-    end
-    n=size(A,1)
-    bmultiply!(zeros(promote_type(T,V),n),A,b)
-end
-
-
+*{T,V}(A::BandedMatrix{T},b::Vector{V})=BLAS.gbmv('T',A.m,A.u,A.l,1.,A.data,b)
 
 function Base.transpose(B::BandedMatrix)
     Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
