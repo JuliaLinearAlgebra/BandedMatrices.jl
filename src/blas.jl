@@ -31,7 +31,7 @@ end
 
 
 # this is matrix*matrix
-function gbmm!(alpha,A::BandedMatrix,B::Matrix,beta,C)
+function gbmm!(alpha,A::BandedMatrix{'R'},B::Matrix,beta,C)
     st=max(1,stride(A.data,2))
     n=size(A.data,2)
     p=pointer(A.data)
@@ -53,7 +53,7 @@ function gbmm!(alpha,A::BandedMatrix,B::Matrix,beta,C)
     C
 end
 
-function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
+function Base.BLAS.axpy!(a::Number,X::BandedMatrix{'R'},Y::BandedMatrix{'R'})
     @assert size(X)==size(Y)
     @assert X.l ≤ Y.l && X.u ≤ Y.u
     for (k,j) in eachbandedindex(X)
@@ -65,11 +65,11 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(Y::Matrix,A::BandedMatrix,B::Matrix)=gbmm!(1.0,A,B,0.,Y)
+Base.A_mul_B!(Y::Matrix,A::BandedMatrix{'R'},B::Matrix)=gbmm!(1.0,A,B,0.,Y)
 
 ## Matrix*Vector Multiplicaiton
 
-function Base.A_mul_B!(c::Vector,A::BandedMatrix,b::Vector)
+function Base.A_mul_B!(c::Vector,A::BandedMatrix{'R'},b::Vector)
     for k=1:size(A,1)  # rows of c
         @simd for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A/rows of b
              @inbounds c[k]+=A.data[l-k+A.l+1,k]*b[l]
@@ -87,7 +87,7 @@ end
 
 
 
-function bmultiply!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
+function bmultiply!(C::BandedMatrix{'R'},A::BandedMatrix{'R'},B::BandedMatrix{'R'},ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
     n=size(A,1);m=size(B,2)
     @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
     for k=1:n  # rows of C
@@ -107,7 +107,7 @@ function bmultiply!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix,ri::Integer=
     C
 end
 
-function bmultiply!(C::Matrix,A::BandedMatrix,B::Matrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
+function bmultiply!(C::Matrix,A::BandedMatrix{'R'},B::Matrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
     n=size(A,1);m=size(B,2)
     @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
     for k=1:n  # rows of C
@@ -123,4 +123,4 @@ function bmultiply!(C::Matrix,A::BandedMatrix,B::Matrix,ri::Integer=0,ci::Intege
 end
 
 
-Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix)=bmultiply!(C,A,B)
+Base.A_mul_B!(C::BandedMatrix{'R'},A::BandedMatrix{'R'},B::BandedMatrix{'R'})=bmultiply!(C,A,B)
