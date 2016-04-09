@@ -269,7 +269,7 @@ function *{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    bmultiply!(bzeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
+    A_mul_B!(bzeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
 end
 
 function *{T,V}(A::BandedMatrix{T},B::Matrix{V})
@@ -277,7 +277,7 @@ function *{T,V}(A::BandedMatrix{T},B::Matrix{V})
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    mm!(1.0,A,B,0.,Array(promote_type(T,V),n,m))
+    A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
 
@@ -308,59 +308,7 @@ function Base.diag{T}(A::BandedMatrix{T})
 end
 
 
-## Matrix*Vector Multiplicaiton
 
-function bmultiply!(c::Vector,A::BandedMatrix,b::Vector)
-    for k=1:size(A,1)  # rows of c
-        @simd for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A/rows of b
-             @inbounds c[k]+=A.data[l-k+A.l+1,k]*b[l]
-        end
-    end
-    c
-end
-
-
-
-
-## Matrix*Matrix Multiplication
-
-
-
-
-function bmultiply!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
-    n=size(A,1);m=size(B,2)
-    @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
-    for k=1:n  # rows of C
-        for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A
-            @inbounds Aj=A.data[l-k+A.l+1,k]
-
-
-            #  A[k,j] == A.data[j-k+A.l+1,k]
-            shB=-l+B.l+1
-            ks=rs*k+ri
-            shC=ci-ks+C.l+1
-            @simd for j=max(1,l-B.l):min(B.u+l,m) # columns of C/B
-                @inbounds C.data[cs*j+shC,ks]+=Aj*B.data[j+shB,l]
-            end
-        end
-    end
-    C
-end
-
-function bmultiply!(C::Matrix,A::BandedMatrix,B::Matrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
-    n=size(A,1);m=size(B,2)
-    @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
-    for k=1:n  # rows of C
-        for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A
-            @inbounds Aj=A.data[l-k+A.l+1,k]
-
-             @simd for j=1:m # columns of C/B
-                 @inbounds C[rs*k+ri,cs*j+ci]+=Aj*B[l,j]
-             end
-        end
-    end
-    C
-end
 
 ## Matrix.*Matrix
 
