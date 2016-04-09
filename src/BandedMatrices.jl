@@ -235,12 +235,8 @@ function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     n,m=size(A,1),size(A,2)
 
     ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for (k,j) in eachbandedindex(A)
-        unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
-    end
-    for (k,j) in eachbandedindex(B)
-        unsafe_pluseq!(ret,unsafe_getindex(B,k,j),k,j)
-    end
+    BLAS.axpy!(1.,A,ret)
+    BLAS.axpy!(1.,B,ret)
 
     ret
 end
@@ -252,16 +248,11 @@ function -{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     n,m=size(A,1),size(A,2)
 
     ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    for (k,j) in eachbandedindex(A)
-        unsafe_pluseq!(ret,unsafe_getindex(A,k,j),k,j)
-    end
-    for (k,j) in eachbandedindex(B)
-        unsafe_pluseq!(ret,-unsafe_getindex(B,k,j),k,j)
-    end
+    BLAS.axpy!(1.,A,ret)
+    BLAS.axpy!(-1.,B,ret)
 
     ret
 end
-
 
 
 function *{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})

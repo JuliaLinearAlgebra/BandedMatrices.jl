@@ -50,6 +50,17 @@ function gbmm!(alpha,A::BandedMatrix,B::Matrix,beta,C)
     C
 end
 
+function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
+    @assert size(X)==size(Y)
+    @assert X.l ≤ Y.l && X.u ≤ Y.u
+    for (k,j) in eachbandedindex(X)
+        unsafe_pluseq!(Y,a*unsafe_getindex(X,k,j),k,j)
+    end
+    Y
+end
+
+
+## A_mul_B! overrides
 
 Base.A_mul_B!(Y::Matrix,A::BandedMatrix,B::Matrix)=gbmm!(1.0,A,B,0.,Y)
 
