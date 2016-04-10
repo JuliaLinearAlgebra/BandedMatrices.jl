@@ -260,7 +260,7 @@ for OP in (:*,:.*,:+,:.+,:-,:.-)
     @eval begin
         $OP{cr}(B::BandedMatrix{cr,Bool},x::Bool) = BandedMatrix(Val{cr},$OP(B.data,x),B.m,B.l,B.u)
         $OP{cr}(x::Bool,B::BandedMatrix{cr,Bool}) = BandedMatrix(Val{cr},$OP(x,B.data),B.m,B.l,B.u)
-        $OP{cr}(B::BandedMatrix,x::Number) = BandedMatrix(Val{cr},$OP(B.data,x),B.m,B.l,B.u)
+        $OP{cr}(B::BandedMatrix{cr},x::Number) = BandedMatrix(Val{cr},$OP(B.data,x),B.m,B.l,B.u)
         $OP{cr}(x::Number,B::BandedMatrix{cr}) = BandedMatrix(Val{cr},$OP(x,B.data),B.m,B.l,B.u)
     end
 end
