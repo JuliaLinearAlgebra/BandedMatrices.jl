@@ -53,7 +53,29 @@ function gbmm!(alpha,A::BandedMatrix{'R'},B::Matrix,beta,C)
     C
 end
 
-function Base.BLAS.axpy!(a::Number,X::BandedMatrix{'R'},Y::BandedMatrix{'R'})
+function gbmm!(alpha,A::BandedMatrix{'C'},B::Matrix,beta,C)
+    st=max(1,stride(A.data,2))
+    n=size(A.data,2)
+    p=pointer(A.data)
+
+
+    x=pointer(B)
+    sx=sizeof(eltype(B))
+    ν,m=size(B)
+
+    @assert size(C,1)==n
+    @assert size(C,2)==m
+
+    y=pointer(C)
+    sy=sizeof(eltype(C))
+
+    for k=1:m
+        gbmv!('N',A.m,A.l,A.u,alpha,p,n,st,x+(k-1)*sx*ν,beta,y+(k-1)*sy*n)
+    end
+    C
+end
+
+function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
     @assert size(X)==size(Y)
     @assert X.l ≤ Y.l && X.u ≤ Y.u
     for (k,j) in eachbandedindex(X)
@@ -65,7 +87,7 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(Y::Matrix,A::BandedMatrix{'R'},B::Matrix)=gbmm!(1.0,A,B,0.,Y)
+Base.A_mul_B!(Y::Matrix,A::BandedMatrix,B::Matrix)=gbmm!(1.0,A,B,0.,Y)
 
 ## Matrix*Vector Multiplicaiton
 
@@ -79,6 +101,7 @@ function Base.A_mul_B!(c::Vector,A::BandedMatrix{'R'},b::Vector)
 end
 
 
+Base.A_mul_B!(c::Vector,A::BandedMatrix{'C'},b::Vector)=BLAS.gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
 
 
 
@@ -123,4 +146,4 @@ function bmultiply!(C::Matrix,A::BandedMatrix{'R'},B::Matrix,ri::Integer=0,ci::I
 end
 
 
-Base.A_mul_B!(C::BandedMatrix{'R'},A::BandedMatrix{'R'},B::BandedMatrix{'R'})=bmultiply!(C,A,B)
+Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix)=bmultiply!(C,A,B)
