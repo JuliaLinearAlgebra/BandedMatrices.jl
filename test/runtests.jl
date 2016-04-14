@@ -43,6 +43,14 @@ v=rand(Float64,3)
 
 
 
+ # Test for errors in collect
+A=brand(12,10,2,3)
+collect(BandedMatrices.eachbandedindex(A))
+for (k,j) in BandedMatrices.eachbandedindex(A)
+     A[k,j]
+end
+
+
 A=brand(1000,1000,200,300)
 B=rand(1000,1000)
 @test_approx_eq A*B full(A)*B

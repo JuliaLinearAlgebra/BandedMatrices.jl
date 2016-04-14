@@ -37,12 +37,12 @@ type BandedMatrix{T} <: AbstractSparseMatrix{T,Int}
 end
 
 
-include("blas.jl")
+#include("blas.jl")
 
 
 BandedMatrix(data::Matrix,m::Integer,a::Integer,b::Integer) = BandedMatrix{eltype(data)}(data,m,a,b)
 
-BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) = BandedMatrix{T}(Array(T,b+a+1,n),m,a,b)
+BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) = BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
 BandedMatrix{T}(::Type{T},n::Integer,a::Integer,b::Integer) = BandedMatrix(T,n,n,a,b)
 BandedMatrix{T}(::Type{T},n::Integer,::Colon,a::Integer,b::Integer) = BandedMatrix(T,n,n+b,a,b)
 
@@ -69,7 +69,7 @@ Base.promote_rule{T,V}(::Type{BandedMatrix{T}},::Type{BandedMatrix{V}})=BandedMa
 
 for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bones))
     @eval begin
-        $bop{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer)=BandedMatrix($op(T,b+a+1,n),m,a,b)
+        $bop{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer)=BandedMatrix($op(T,b+a+1,m),n,a,b)
         $bop{T}(::Type{T},n::Integer,a::Integer,b::Integer)=$bop(T,n,n,a,b)
         $bop{T}(::Type{T},n::Integer,::Colon,a::Integer,b::Integer)=$bop(T,n,n+b,a,b)
         $bop{T}(::Type{T},::Colon,m::Integer,a::Integer,b::Integer)=$bop(T,m+a,m,a,b)
@@ -124,7 +124,7 @@ Base.start(B::BandedIterator)=(1,1)
 
 
 Base.next(B::BandedIterator,state)=
-    state,ifelse(state[1]==min(state[2]+B.l,B.m),
+    state,ifelse(state[1]==min(state[2]+B.l,B.n),
                 (max(state[2]+1-B.u,1),state[2]+1),
                 (state[1]+1,  state[2])
                  )
