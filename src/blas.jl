@@ -31,44 +31,47 @@ end
 
 # this is matrix*matrix
 function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatrix{T})
-    @assert size(A,1)==size(C,1)
-    @assert size(A,2)==size(B,1)
-    @assert size(C,2)==size(B,2)
+    n,ν=size(A)
+    m=size(B,2)
+
+    @assert n==size(C,1)
+    @assert ν==size(B,1)
+    @assert m==size(C,2)
 
 
     a=pointer(A.data)
     b=pointer(B.data)
     c=pointer(C.data)
-    n,m=size(A)
     sta=max(1,stride(A.data,2))
     stb=max(1,stride(B.data,2))
     stc=max(1,stride(C.data,2))
     sz=sizeof(T)
+
+    #TODO: The following redoes columns in degenerate cases
+
     #Multiply columns where index of B starts from 1
-    for j=1:(B.u+1)
-        gbmv!('N',C.l+j, A.l, A.u, alpha, a, B.l+j, sta, b+sz*((j-1)*stb+B.u-j+1), beta, c+sz*((j-1)*stc+C.u-j+1))
+    for j=1:min(B.u+1,m)
+        gbmv!('N',min(C.l+j,n), A.l, A.u, alpha, a, B.l+j, sta, b+sz*((j-1)*stb+B.u-j+1), beta, c+sz*((j-1)*stc+C.u-j+1))
     end
     #Multiply columns where index of C starts from 1
-    for j=B.u+2:C.u+1
+    for j=B.u+2:min(C.u+1,m)
         p=j-B.u-1
-        gbmv!('N', C.l+j, A.l+p, A.u-p, alpha, a+sz*p*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*((j-1)*stc+C.u-j+1))
+        gbmv!('N', min(C.l+j,n), A.l+p, A.u-p, alpha, a+sz*p*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*((j-1)*stc+C.u-j+1))
     end
 
     # multiply columns where A, B and C are mid
-    for j=C.u+2:n-C.l
+    for j=C.u+2:min(n-C.l,m)
         gbmv!('N', C.l+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 
     # multiply columns where A and B are mid and C is bottom
-    for j=n-C.l+1:m-B.l
-        p=j-n+C.l
-        gbmv!('N', C.l+C.u+1-p, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+    for j=max(n-C.l+1,1):min(ν-B.l,m)
+        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 
-    # multiply columns where A,  B and C are bottom
-    for j=m-B.l+1:size(B,2)
-        p=j-n+C.l
-        gbmv!('N', C.l+C.u+1-p, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-m+B.l), sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+#     # multiply columns where A,  B and C are bottom
+    for j=max(ν-B.l+1,1):m
+        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 
     C
