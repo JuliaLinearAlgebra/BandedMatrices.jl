@@ -170,7 +170,7 @@ getindex(A::BandedMatrix,kr::Range,j::Integer)=-A.l≤j-kr[1]≤j-kr[end]≤A.u?
 
 getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
 getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
-#Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
+Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
 
 
 function Base.sparse(B::BandedMatrix)

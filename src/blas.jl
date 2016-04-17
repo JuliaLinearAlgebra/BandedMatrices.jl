@@ -65,12 +65,12 @@ function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatr
     end
 
     # multiply columns where A and B are mid and C is bottom
-    for j=max(n-C.l+1,1):min(ν-B.l,m)
+    for j=max(n-C.l+1,1):min(ν-B.l,n+C.u,m)
         gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 
-#     # multiply columns where A,  B and C are bottom
-    for j=max(ν-B.l+1,1):m
+    # multiply columns where A,  B and C are bottom
+    for j=max(ν-B.l+1,1):min(m,n+C.u)
         gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 

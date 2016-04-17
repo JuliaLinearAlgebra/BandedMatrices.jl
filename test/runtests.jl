@@ -87,10 +87,10 @@ println("Time should be   0.000082 seconds (150 allocations: 88.214 KB)")
 @time B*w
 println("Time should be   0.000300 seconds (7 allocations: 8.078 KB)")
 
-for n in (1,5,50), m in (1,5,50), l in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
-    println("Testing $n,$m,$l,$Al,$Au,$Bl,$Bu")
-    A=brand(n,m,Al,Au)
-    B=brand(m,l,Bl,Bu)
+for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
+    println("Testing $n,$ν,$m,$Al,$Au,$Bl,$Bu")
+    A=brand(n,ν,Al,Au)
+    B=brand(ν,m,Bl,Bu)
     @test_approx_eq full(A*B) full(A)*full(B)
 end
 
