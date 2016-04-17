@@ -29,31 +29,53 @@ for (fname, elty) in ((:dgbmv_,:Float64),
 end
 
 
-
 # this is matrix*matrix
-function gbmm!(alpha,A::BandedMatrix{'R'},B::Matrix,beta,C)
-    st=max(1,stride(A.data,2))
-    n=size(A.data,2)
-    p=pointer(A.data)
+function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatrix{T})
+    @assert size(A,1)==size(C,1)
+    @assert size(A,2)==size(B,1)
+    @assert size(C,2)==size(B,2)
 
 
-    x=pointer(B)
-    sx=sizeof(eltype(B))
-    ν,m=size(B)
-
-    @assert size(C,1)==n
-    @assert size(C,2)==m
-
-    y=pointer(C)
-    sy=sizeof(eltype(C))
-
-    for k=1:m
-        gbmv!('T',A.m,A.u,A.l,alpha,p,n,st,x+(k-1)*sx*ν,beta,y+(k-1)*sy*n)
+    a=pointer(A.data)
+    b=pointer(B.data)
+    c=pointer(C.data)
+    n,m=size(A)
+    sta=max(1,stride(A.data,2))
+    stb=max(1,stride(B.data,2))
+    stc=max(1,stride(C.data,2))
+    sz=sizeof(T)
+    #Multiply columns where index of B starts from 1
+    for j=1:(B.u+1)
+        gbmv!('N',C.l+j, A.l, A.u, alpha, a, B.l+j, sta, b+sz*((j-1)*stb+B.u-j+1), beta, c+sz*((j-1)*stc+C.u-j+1))
     end
+    #Multiply columns where index of C starts from 1
+    for j=B.u+2:C.u+1
+        p=j-B.u-1
+        gbmv!('N', C.l+j, A.l+p, A.u-p, alpha, a+sz*p*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*((j-1)*stc+C.u-j+1))
+    end
+
+    # multiply columns where A, B and C are mid
+    for j=C.u+2:n-C.l
+        gbmv!('N', C.l+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+    end
+
+    # multiply columns where A and B are mid and C is bottom
+    for j=n-C.l+1:m-B.l
+        p=j-n+C.l
+        gbmv!('N', C.l+C.u+1-p, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+    end
+
+    # multiply columns where A,  B and C are bottom
+    for j=m-B.l+1:size(B,2)
+        p=j-n+C.l
+        gbmv!('N', C.l+C.u+1-p, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-m+B.l), sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+    end
+
     C
 end
 
-function gbmm!(alpha,A::BandedMatrix{'C'},B::Matrix,beta,C)
+
+function gbmm!{T}(alpha,A::BandedMatrix{T},B::Matrix{T},beta,C::Matrix{T})
     st=max(1,stride(A.data,2))
     n=size(A.data,2)
     p=pointer(A.data)
@@ -66,11 +88,11 @@ function gbmm!(alpha,A::BandedMatrix{'C'},B::Matrix,beta,C)
     @assert size(C,1)==n
     @assert size(C,2)==m
 
-    y=pointer(C)
-    sy=sizeof(eltype(C))
+    c=pointer(C)
+    sc=sizeof(eltype(C))
 
     for k=1:m
-        gbmv!('N',A.m,A.l,A.u,alpha,p,n,st,x+(k-1)*sx*ν,beta,y+(k-1)*sy*n)
+        gbmv!('N',A.m,A.l,A.u,alpha,p,n,st,x+(k-1)*sx*ν,beta,c+(k-1)*sc*n)
     end
     C
 end
@@ -87,63 +109,17 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(Y::Matrix,A::BandedMatrix,B::Matrix)=gbmm!(1.0,A,B,0.,Y)
+Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix)=gbmm!(1.0,A,B,0.,C)
 
 ## Matrix*Vector Multiplicaiton
 
-function Base.A_mul_B!(c::Vector,A::BandedMatrix{'R'},b::Vector)
-    for k=1:size(A,1)  # rows of c
-        @simd for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A/rows of b
-             @inbounds c[k]+=A.data[l-k+A.l+1,k]*b[l]
-        end
-    end
-    c
-end
 
 
-Base.A_mul_B!(c::Vector,A::BandedMatrix{'C'},b::Vector)=BLAS.gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
+Base.A_mul_B!(c::Vector,A::BandedMatrix,b::Vector)=BLAS.gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
 
 
 
 ## Matrix*Matrix Multiplication
 
 
-
-
-function bmultiply!(C::BandedMatrix{'R'},A::BandedMatrix{'R'},B::BandedMatrix{'R'},ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
-    n=size(A,1);m=size(B,2)
-    @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
-    for k=1:n  # rows of C
-        for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A
-            @inbounds Aj=A.data[l-k+A.l+1,k]
-
-
-            #  A[k,j] == A.data[j-k+A.l+1,k]
-            shB=-l+B.l+1
-            ks=rs*k+ri
-            shC=ci-ks+C.l+1
-            @simd for j=max(1,l-B.l):min(B.u+l,m) # columns of C/B
-                @inbounds C.data[cs*j+shC,ks]+=Aj*B.data[j+shB,l]
-            end
-        end
-    end
-    C
-end
-
-function bmultiply!(C::Matrix,A::BandedMatrix{'R'},B::Matrix,ri::Integer=0,ci::Integer=0,rs::Integer=1,cs::Integer=1)
-    n=size(A,1);m=size(B,2)
-    @assert size(C,1)≥rs*n+ri&&size(C,2)≥cs*m+ci
-    for k=1:n  # rows of C
-        for l=max(1,k-A.l):min(k+A.u,size(A,2)) # columns of A
-            @inbounds Aj=A.data[l-k+A.l+1,k]
-
-             @simd for j=1:m # columns of C/B
-                 @inbounds C[rs*k+ri,cs*j+ci]+=Aj*B[l,j]
-             end
-        end
-    end
-    C
-end
-
-
-Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix)=bmultiply!(C,A,B)
+Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix)=gbmm!(1.0,A,B,0.0,C)

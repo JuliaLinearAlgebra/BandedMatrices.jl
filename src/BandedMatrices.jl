@@ -37,7 +37,7 @@ type BandedMatrix{T} <: AbstractSparseMatrix{T,Int}
 end
 
 
-#include("blas.jl")
+include("blas.jl")
 
 
 BandedMatrix(data::Matrix,m::Integer,a::Integer,b::Integer) = BandedMatrix{eltype(data)}(data,m,a,b)
