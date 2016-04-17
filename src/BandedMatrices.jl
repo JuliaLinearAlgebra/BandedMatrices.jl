@@ -170,23 +170,24 @@ getindex(A::BandedMatrix,kr::Range,j::Integer)=-A.l≤j-kr[1]≤j-kr[end]≤A.u?
 
 getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
 getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
-Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
+#Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
 
 
 function Base.sparse(B::BandedMatrix)
     i=Array(Int,length(B.data));j=Array(Int,length(B.data))
     n,m=size(B.data)
-    Bm=size(B,2)
+    Bn=size(B,1)
     vb=copy(vec(B.data))
-    for k=1:n,ℓ=1:m
-        i[k+n*(ℓ-1)]=ℓ
-        jj=k+ℓ-B.l-1
-        if jj <1 || jj > Bm
-            vb[k+n*(ℓ-1)] = 0
+    for κ=1:n,ℓ=1:m
+        j[κ+n*(ℓ-1)]=ℓ
+        ii=κ+ℓ-B.u-1
+        if ii <1 || ii > Bn
+            vb[κ+n*(ℓ-1)] = 0
         end
-        j[k+n*(ℓ-1)]=min(max(jj,1),Bm)
+        i[κ+n*(ℓ-1)]=min(max(ii,1),Bn)
     end
-    sparse(i,j,vb)
+
+    sparse(i,j,vb,Bn,m)
 end
 
 
@@ -291,7 +292,7 @@ end
 
 
 
-*{T}(A::BandedMatrix{T},b::Vector{T})=BLAS.gbmv('N',A.n,A.l,A.u,one(T),A.data,b)
+*{T}(A::BandedMatrix{T},b::Vector{T})=BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
 
 function *(A::BandedMatrix,b::Vector)
     T=promote_type(eltype(A),eltype(b))

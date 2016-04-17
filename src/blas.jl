@@ -77,22 +77,23 @@ end
 
 function gbmm!{T}(alpha,A::BandedMatrix{T},B::Matrix{T},beta,C::Matrix{T})
     st=max(1,stride(A.data,2))
-    n=size(A.data,2)
-    p=pointer(A.data)
+    n,ν=size(A)
+    a=pointer(A.data)
 
 
-    x=pointer(B)
-    sx=sizeof(eltype(B))
-    ν,m=size(B)
+    b=pointer(B)
+
+    m=size(B,2)
 
     @assert size(C,1)==n
     @assert size(C,2)==m
 
     c=pointer(C)
-    sc=sizeof(eltype(C))
 
-    for k=1:m
-        gbmv!('N',A.m,A.l,A.u,alpha,p,n,st,x+(k-1)*sx*ν,beta,c+(k-1)*sc*n)
+    sz=sizeof(T)
+
+    for j=1:m
+        gbmv!('N',n,A.l,A.u,alpha,a,ν,st,b+(j-1)*sz*ν,beta,c+(j-1)*sz*n)
     end
     C
 end
