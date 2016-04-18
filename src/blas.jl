@@ -49,18 +49,19 @@ function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatr
 
     #TODO: The following redoes columns in degenerate cases
 
-    #Multiply columns where index of B starts from 1
+    # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
     for j=1:min(B.u+1,m)
         gbmv!('N',min(C.l+j,n), A.l, A.u, alpha, a, min(B.l+j,ν), sta, b+sz*((j-1)*stb+B.u-j+1), beta, c+sz*((j-1)*stc+C.u-j+1))
     end
-    #Multiply columns where index of C starts from 1
+    # Multiply columns j where B[k,j]=0 for k<p=(j-B.u-1), A is at 1,1+p and C[1,j]≠0
+    # j ≤ ν + B.u since then 1+p ≤ ν, so inside the columns of A
     for j=B.u+2:min(C.u+1,m,ν+B.u)
         p=j-B.u-1
-        gbmv!('N', min(C.l+j,n), A.l+p, A.u-p, alpha, a+sz*p*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*((j-1)*stc+C.u-j+1))
+        gbmv!('N', min(C.l+j,n), A.l+p, A.u-p, alpha, a+sz*p*sta, min(B.l+B.u+1,ν-p), sta, b+sz*(j-1)*stb, beta, c+sz*((j-1)*stc+C.u-j+1))
     end
 
     # multiply columns where A, B and C are mid
-    for j=C.u+2:min(n-C.l,m)
+    for j=C.u+2:min(n-C.l,m,ν+B.u)
         gbmv!('N', C.l+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 
@@ -70,7 +71,7 @@ function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatr
     end
 
     # multiply columns where A,  B and C are bottom
-    for j=max(ν-B.l+1,C.u+1):min(m,n+C.u)
+    for j=max(ν-B.l+1,C.u+1):min(m,n+C.u,B.u+ν)
         gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
     end
 

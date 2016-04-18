@@ -81,19 +81,38 @@ show(brand(10,10,3,3))
 show(brand(100,80,3,2))
 println()
 
+gc_enable(false)
+
 A*v
-@time A*v
-println("Time should be   0.000082 seconds (150 allocations: 88.214 KB)")
-@time B*w
-println("Time should be   0.000300 seconds (7 allocations: 8.078 KB)")
+@time for k=1:100
+    A*v
+end
+println("Time should be   0.007245 seconds (400 allocations: 7.639 MB)")
+@time for k=1:100
+    B*w
+end
+println("Time should be   0.017208 seconds (300 allocations: 792.188 KB)")
 
 for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
-    println("Testing $n,$ν,$m,$Al,$Au,$Bl,$Bu")
     A=brand(n,ν,Al,Au)
     B=brand(ν,m,Bl,Bu)
     @test_approx_eq full(A*B) full(A)*full(B)
 end
 
-@time A*A
+A=brand(10000,10000,2,3)
+B=brand(1000,1000,200,300)
 
-@time B*B
+
+@time for k=1:10
+    A*A
+end
+
+println("Time should be   0.010083 seconds (30 allocations: 8.393 MB)")
+
+@time for k=1:10
+    B*B
+end
+
+println("Time should be   0.644119 seconds (30 allocations: 76.371 MB)")
+
+gc_enable(true)
