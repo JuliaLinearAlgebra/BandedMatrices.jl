@@ -112,6 +112,17 @@ function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
 end
 
 
+function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
+    @assert size(X)==size(Y)
+    for (k,j) in eachbandedindex(X)
+        @inbounds Y[k,j]+=a*unsafe_getindex(X,k,j)
+    end
+    Y
+end
+
+
+
+
 
 
 ## A_mul_B! overrides

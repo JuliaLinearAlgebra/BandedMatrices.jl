@@ -127,6 +127,10 @@ function getindex(A::BandedMatrix,kr::UnitRange,jr::UnitRange)
     BandedMatrix(A.data[:,jr],length(kr),A.l-shft,A.u+shft)
 end
 
+getindex(A::BandedMatrix,::Colon,jr::UnitRange)=A[1:size(A,1),jr]
+getindex(A::BandedMatrix,kr::UnitRange,jr::Colon)=A[kr,1:size(A,2)]
+getindex(A::BandedMatrix,kr::Colon,jr::Colon)=copy(A)
+
 
 
 unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]=v)
