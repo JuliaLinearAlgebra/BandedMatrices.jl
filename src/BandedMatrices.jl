@@ -122,6 +122,13 @@ function getindex(A::BandedMatrix,k::Integer,j::Integer)
     end
 end
 
+function getindex(A::BandedMatrix,kr::UnitRange,jr::UnitRange)
+    shft=first(kr)-first(jr)
+    BandedMatrix(A.data[:,jr],length(kr),A.l-shft,A.u+shft)
+end
+
+
+
 unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]=v)
 setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(A.data[k-j+A.u+1,j]=v)
 
@@ -151,7 +158,13 @@ end
 
 
 
-Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
+function Base.full(A::BandedMatrix)
+    ret=zeros(eltype(A),size(A,1),size(A,2))
+    for (k,j) in eachbandedindex(A)
+        @inbounds ret[k,j]=A[k,j]
+    end
+    ret
+end
 
 
 ## Band range

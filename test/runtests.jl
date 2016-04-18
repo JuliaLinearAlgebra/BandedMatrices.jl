@@ -93,6 +93,13 @@ println("Time should be   0.007245 seconds (400 allocations: 7.639 MB)")
 end
 println("Time should be   0.017208 seconds (300 allocations: 792.188 KB)")
 
+for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
+    A=brand(n,m,Al,Au)
+    kr,jr=3:10,5:12
+    @test_approx_eq full(A[kr,jr]) full(A)[kr,jr]
+end
+
+
 for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
     A=brand(n,ν,Al,Au)
     B=brand(ν,m,Bl,Bu)
