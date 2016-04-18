@@ -30,7 +30,14 @@ end
 
 
 # this is matrix*matrix
-function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatrix{T})
+
+gbmm!{T}(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix{T})=gbmm!(convert(T,α),
+                                                                       convert(BandedMatrix{T},A),
+                                                                       convert(BandedMatrix{T},B),
+                                                                       convert(T,β),
+                                                                       C)
+
+function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β,C::BandedMatrix{T})
     n,ν=size(A)
     m=size(B,2)
 
@@ -51,35 +58,35 @@ function gbmm!{T}(alpha,A::BandedMatrix{T},B::BandedMatrix{T},beta,C::BandedMatr
 
     # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
     for j=1:min(B.u+1,m)
-        gbmv!('N',min(C.l+j,n), A.l, A.u, alpha, a, min(B.l+j,ν), sta, b+sz*((j-1)*stb+B.u-j+1), beta, c+sz*((j-1)*stc+C.u-j+1))
+        gbmv!('N',min(C.l+j,n), A.l, A.u, α, a, min(B.l+j,ν), sta, b+sz*((j-1)*stb+B.u-j+1), β, c+sz*((j-1)*stc+C.u-j+1))
     end
     # Multiply columns j where B[k,j]=0 for k<p=(j-B.u-1), A is at 1,1+p and C[1,j]≠0
     # j ≤ ν + B.u since then 1+p ≤ ν, so inside the columns of A
     for j=B.u+2:min(C.u+1,m,ν+B.u)
         p=j-B.u-1
-        gbmv!('N', min(C.l+j,n), A.l+p, A.u-p, alpha, a+sz*p*sta, min(B.l+B.u+1,ν-p), sta, b+sz*(j-1)*stb, beta, c+sz*((j-1)*stc+C.u-j+1))
+        gbmv!('N', min(C.l+j,n), A.l+p, A.u-p, α, a+sz*p*sta, min(B.l+B.u+1,ν-p), sta, b+sz*(j-1)*stb, β, c+sz*((j-1)*stc+C.u-j+1))
     end
 
     # multiply columns where A, B and C are mid
     for j=C.u+2:min(n-C.l,m,ν+B.u)
-        gbmv!('N', C.l+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+        gbmv!('N', C.l+C.u+1, A.l+A.u, 0, α, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, β, c+sz*(j-1)*stc)
     end
 
     # multiply columns where A and B are mid and C is bottom
     for j=max(n-C.l+1,C.u+1):min(ν-B.l,n+C.u,m)
-        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, α, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, β, c+sz*(j-1)*stc)
     end
 
     # multiply columns where A,  B and C are bottom
     for j=max(ν-B.l+1,C.u+1):min(m,n+C.u,B.u+ν)
-        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, alpha, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta, b+sz*(j-1)*stb, beta, c+sz*(j-1)*stc)
+        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, α, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta, b+sz*(j-1)*stb, β, c+sz*(j-1)*stc)
     end
 
     C
 end
 
 
-function gbmm!{T}(alpha,A::BandedMatrix{T},B::Matrix{T},beta,C::Matrix{T})
+function gbmm!{T}(α,A::BandedMatrix{T},B::Matrix{T},β,C::Matrix{T})
     st=max(1,stride(A.data,2))
     n,ν=size(A)
     a=pointer(A.data)
@@ -97,7 +104,7 @@ function gbmm!{T}(alpha,A::BandedMatrix{T},B::Matrix{T},beta,C::Matrix{T})
     sz=sizeof(T)
 
     for j=1:m
-        gbmv!('N',n,A.l,A.u,alpha,a,ν,st,b+(j-1)*sz*ν,beta,c+(j-1)*sz*n)
+        gbmv!('N',n,A.l,A.u,α,a,ν,st,b+(j-1)*sz*ν,β,c+(j-1)*sz*n)
     end
     C
 end
