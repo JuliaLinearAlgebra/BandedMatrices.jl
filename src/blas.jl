@@ -106,10 +106,12 @@ function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
     @assert size(X)==size(Y)
     @assert X.l ≤ Y.l && X.u ≤ Y.u
     for (k,j) in eachbandedindex(X)
-        unsafe_pluseq!(Y,a*unsafe_getindex(X,k,j),k,j)
+        @inbounds Y.data[k-j+Y.u+1,j]+=a*unsafe_getindex(X,k,j)
     end
     Y
 end
+
+
 
 
 ## A_mul_B! overrides

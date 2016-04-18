@@ -40,6 +40,8 @@ end
 include("blas.jl")
 
 
+## Constructors
+
 BandedMatrix(data::Matrix,m::Integer,a::Integer,b::Integer) = BandedMatrix{eltype(data)}(data,m,a,b)
 
 BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) = BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
@@ -100,8 +102,59 @@ beye(n::Integer,a...) = beye(Float64,n,a...)
 
 
 
+## Abstract Array Interface
+
 Base.size(A::BandedMatrix,k) = ifelse(k==2,size(A.data,2),A.m)
 Base.size(A::BandedMatrix) = A.m,size(A.data,2)
+
+Base.linearindexing{T}(::Type{BandedMatrix{T}})=Base.LinearSlow()
+
+
+unsafe_getindex(A::BandedMatrix,k::Integer,j::Integer)=A.data[k-j+A.u+1,j]
+
+function getindex(A::BandedMatrix,k::Integer,j::Integer)
+    if k>size(A,1) || j>size(A,2)
+        throw(BoundsError())
+    elseif (-A.l≤j-k≤A.u)
+        unsafe_getindex(A,k,j)
+    else
+        zero(eltype(A))
+    end
+end
+
+unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]=v)
+setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(A.data[k-j+A.u+1,j]=v)
+
+
+
+
+
+# Additional get index overrides
+unsafe_getindex(A::BandedMatrix,kr::Range,jr::Integer)=vec(A.data[kr-j+A.u+1,j])
+
+getindex(A::BandedMatrix,kr::Range,j::Integer)=-A.l≤j-kr[1]≤j-kr[end]≤A.u?unsafe_getindex(A,kr,j):[A[k,j] for k=kr]
+
+getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
+getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
+
+
+function setindex!(A::BandedMatrix,v,kr::Range,jr::Range)
+    for j in jr
+        A[kr,j]=slice(v,:,j)
+    end
+end
+function setindex!(A::BandedMatrix,v,k::Integer,jr::Range)
+    for j in jr
+        A[k,j]=v[j]
+    end
+end
+
+
+
+Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
+
+
+## Band range
 
 
 bandinds(A::BandedMatrix) = -A.l,A.u
@@ -151,28 +204,6 @@ eachbandedindex(B::BandedMatrix)=BandedIterator(size(B,1),size(B,2),B.l,B.u)
 
 
 
-unsafe_getindex(A::BandedMatrix,k::Integer,j::Integer)=A.data[k-j+A.u+1,j]
-unsafe_getindex(A::BandedMatrix,kr::Range,jr::Integer)=vec(A.data[kr-j+A.u+1,j])
-
-
-function getindex(A::BandedMatrix,k::Integer,j::Integer)
-    if k>size(A,1) || j>size(A,2)
-        throw(BoundsError())
-    elseif (-A.l≤j-k≤A.u)
-        unsafe_getindex(A,k,j)
-    else
-        zero(eltype(A))
-    end
-end
-
-
-getindex(A::BandedMatrix,kr::Range,j::Integer)=-A.l≤j-kr[1]≤j-kr[end]≤A.u?unsafe_getindex(A,kr,j):[A[k,j] for k=kr]
-
-getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
-getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
-Base.full(A::BandedMatrix)=A[1:size(A,1),1:size(A,2)]
-
-
 function Base.sparse(B::BandedMatrix)
     i=Array(Int,length(B.data));j=Array(Int,length(B.data))
     n,m=size(B.data)
@@ -201,28 +232,6 @@ Base.norm(B::BandedMatrix,opts...)=norm(full(B),opts...)
 # We turn off bound checking to allow nicer syntax without branching
 #setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=((A.l≤j-k≤A.u)&&k≤A.n)?ussetindex!(A,v,k,j):throw(BoundsError())
 #setindex!(A::BandedMatrix,v,kr::Range,j::Integer)=(A.l≤j-kr[end]≤j-kr[1]≤A.u&&kr[end]≤A.n)?ussetindex!(A,v,kr,j):throw(BoundsError())
-
-
-unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]=v)
-
-
-"unsafe_pluseq!(A,v,k,j) is an unsafe versoin of A[k,j] += v"
-unsafe_pluseq!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]+=v)
-
-
-setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(A.data[k-j+A.u+1,j]=v)
-
-function setindex!(A::BandedMatrix,v,kr::Range,jr::Range)
-    for j in jr
-        A[kr,j]=slice(v,:,j)
-    end
-end
-function setindex!(A::BandedMatrix,v,k::Integer,jr::Range)
-    for j in jr
-        A[k,j]=v[j]
-    end
-end
-
 
 
 ## ALgebra and other functions
