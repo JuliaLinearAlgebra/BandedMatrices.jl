@@ -19,7 +19,7 @@ abstract AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int}
 
 bandwidths(A::AbstractBandedMatrix) = bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractBandedMatrix,k) = k==1?-bandwidth(A,1):bandwidth(A,2)
+bandinds(A::AbstractBandedMatrix,k::Integer) = k==1?-bandwidth(A,1):bandwidth(A,2)
 bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
 
 
