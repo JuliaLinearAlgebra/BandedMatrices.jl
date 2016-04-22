@@ -11,6 +11,74 @@ export BandedMatrix, bandrange, bzeros,beye,brand,bones
 
 
 
+
+# AbstractBandedMatrix must implement
+
+abstract AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int}
+
+
+bandwidths(A::AbstractBandedMatrix) = bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractBandedMatrix,k) = k==1?-bandwidth(A,1):bandwidth(A,2)
+bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
+
+
+function getindex(A::AbstractBandedMatrix,k::Integer,j::Integer)
+    if k>size(A,1) || j>size(A,2)
+        throw(BoundsError())
+    elseif (bandinds(A,1)≤j-k≤bandinds(A,2))
+        unsafe_getindex(A,k,j)
+    else
+        zero(eltype(A))
+    end
+end
+
+# override bandwidth(A,k) for each AbstractBandedMatrix
+# override unsafe_getindex(A,k,j)
+
+
+
+## Gives an iterator over the banded entries of a BandedMatrix
+
+immutable BandedIterator
+    n::Int
+    m::Int
+    l::Int
+    u::Int
+end
+
+
+Base.start(B::BandedIterator)=(1,1)
+
+
+Base.next(B::BandedIterator,state)=
+    state,ifelse(state[1]==min(state[2]+B.l,B.n),
+                (max(state[2]+1-B.u,1),state[2]+1),
+                (state[1]+1,  state[2])
+                 )
+
+Base.done(B::BandedIterator,state)=state[2]>B.m || state[2]>B.n+B.u
+
+Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
+
+function Base.length(B::BandedIterator)
+    if B.m > B.n
+        p=max(0,B.u+B.n-B.m)
+        B.n*(B.u+1)+
+            div(B.l*(2*B.n-B.l-1),2)-div(p*(1+p),2)
+    else
+        p=max(0,B.l+B.m-B.n)
+        B.m*(B.l+1)+
+            div(B.u*(2*B.m-B.u-1),2)-div(p*(1+p),2)
+    end
+end
+
+# returns an iterator of each index in the banded part of a matrix
+eachbandedindex(B::AbstractBandedMatrix)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
+
+
+
+
 ##
 # Represent a banded matrix
 # [ a_11 a_12
@@ -23,9 +91,7 @@ export BandedMatrix, bandrange, bzeros,beye,brand,bones
 #         a_21   a_32   a_43    *
 #         a_32   a_42   *       *       ]
 ###
-
-
-type BandedMatrix{T} <: AbstractSparseMatrix{T,Int}
+type BandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # l+u+1 x n (# of columns)
     m::Int #Number of rows
     l::Int # lower bandwidth ≥0
@@ -112,15 +178,6 @@ Base.linearindexing{T}(::Type{BandedMatrix{T}})=Base.LinearSlow()
 
 unsafe_getindex(A::BandedMatrix,k::Integer,j::Integer)=A.data[k-j+A.u+1,j]
 
-function getindex(A::BandedMatrix,k::Integer,j::Integer)
-    if k>size(A,1) || j>size(A,2)
-        throw(BoundsError())
-    elseif (-A.l≤j-k≤A.u)
-        unsafe_getindex(A,k,j)
-    else
-        zero(eltype(A))
-    end
-end
 
 function getindex(A::BandedMatrix,kr::UnitRange,jr::UnitRange)
     shft=first(kr)-first(jr)
@@ -173,52 +230,7 @@ end
 
 ## Band range
 
-
-bandinds(A::BandedMatrix) = -A.l,A.u
-bandrange(A::BandedMatrix) = -A.l:A.u
-
-
-
-
-## Gives an iterator over the banded entries of a BandedMatrix
-
-immutable BandedIterator
-    n::Int
-    m::Int
-    l::Int
-    u::Int
-end
-
-
-Base.start(B::BandedIterator)=(1,1)
-
-
-Base.next(B::BandedIterator,state)=
-    state,ifelse(state[1]==min(state[2]+B.l,B.n),
-                (max(state[2]+1-B.u,1),state[2]+1),
-                (state[1]+1,  state[2])
-                 )
-
-Base.done(B::BandedIterator,state)=state[2]>B.m || state[2]>B.n+B.u
-
-Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
-
-function Base.length(B::BandedIterator)
-    if B.m > B.n
-        p=max(0,B.u+B.n-B.m)
-        B.n*(B.u+1)+
-            div(B.l*(2*B.n-B.l-1),2)-div(p*(1+p),2)
-    else
-        p=max(0,B.l+B.m-B.n)
-        B.m*(B.l+1)+
-            div(B.u*(2*B.m-B.u-1),2)-div(p*(1+p),2)
-    end
-end
-
-# returns an iterator of each index in the banded part of a matrix
-eachbandedindex(B::BandedMatrix)=BandedIterator(size(B,1),size(B,2),B.l,B.u)
-
-
+bandwidth(A::BandedMatrix,k)=k==1?A.l:A.u
 
 
 function Base.sparse(B::BandedMatrix)
@@ -390,7 +402,7 @@ type PrintShow
 end
 Base.show(io::IO,N::PrintShow)=print(io,N.str)
 
-function Base.showarray(io::IO,B::BandedMatrix;
+function Base.showarray(io::IO,B::AbstractBandedMatrix;
                    header::Bool=true, limit::Bool=Base._limit_output,
                    sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
     header && print(io,summary(B))
