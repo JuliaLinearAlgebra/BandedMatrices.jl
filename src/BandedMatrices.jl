@@ -7,7 +7,7 @@ module BandedMatrices
 import Base: getindex,setindex!,*,.*,+,.+,-,.-,==,<,<=,>,
                 >=,./,/,.^,^,\,transpose
 
-export BandedMatrix, bandrange, bzeros,beye,brand,bones
+export BandedMatrix, bandrange, bzeros,beye,brand,bones,bandwidth
 
 
 
@@ -25,7 +25,7 @@ bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
 
 function getindex(A::AbstractBandedMatrix,k::Integer,j::Integer)
     if k>size(A,1) || j>size(A,2)
-        throw(BoundsError())
+        throw(BoundsError(A,(k,j)))
     elseif (bandinds(A,1)≤j-k≤bandinds(A,2))
         unsafe_getindex(A,k,j)
     else
