@@ -22,6 +22,9 @@ bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractBandedMatrix,k::Integer) = k==1?-bandwidth(A,1):bandwidth(A,2)
 bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
 
+# For SubArray
+bandshift(S)=first(parentindexes(S)[1])-first(parentindexes(S)[2])
+
 
 function getindex(A::AbstractBandedMatrix,k::Integer,j::Integer)
     if k>size(A,1) || j>size(A,2)

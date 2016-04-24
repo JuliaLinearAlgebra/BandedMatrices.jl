@@ -119,6 +119,33 @@ function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
 end
 
 
+function Base.BLAS.axpy!{T1,T2,BM1<:BandedMatrix,BM2<:BandedMatrix}(a::Number,
+                                                                    X::SubArray{T1,2,BM1},
+                                                                    Y::SubArray{T2,2,BM2})
+    error("Implement")
+end
+
+function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::BandedMatrix,S::SubArray{T,2,BM})
+    @assert size(X)==size(S)
+
+    Y=parent(S)
+    shft=bandshift(S)
+
+    @assert X.l ≤ Y.l-shft && X.u ≤ Y.u+shft
+
+    kr,jr=parentindexes(S)
+    for (k,j) in eachbandedindex(X)
+        @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*unsafe_getindex(X,k,j)
+    end
+
+    S
+end
+
+function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::SubArray{T,2,BM},Y::BandedMatrix)
+    error("Implement")
+end
+
+
 function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
     @assert size(X)==size(Y)
     for (k,j) in eachbandedindex(X)
