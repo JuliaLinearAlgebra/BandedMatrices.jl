@@ -153,8 +153,12 @@ for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bo
         $bop{T}(::Type{T},n::Integer,a)=$bop(T,n,-a[1],a[end])
         $bop(n::Integer,m::Integer,a)=$bop(Float64,n,m,-a[1],a[end])
         $bop(n::Integer,a)=$bop(n,-a[1],a[end])
+
+        $bop(B::AbstractBandedMatrix)=$bop(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
     end
 end
+
+Base.similar(B::AbstractBandedMatrix)=BandedMatrix(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
 
 
 
