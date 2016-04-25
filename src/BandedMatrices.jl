@@ -414,7 +414,7 @@ function Base.showarray(io::IO,B::AbstractBandedMatrix;
                    sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
     header && print(io,summary(B))
 
-    if !isempty(B)
+    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
         header && println(io,":")
         M=Array(Any,size(B)...)
         fill!(M,PrintShow(""))
