@@ -109,9 +109,9 @@ function gbmm!{T}(α,A::BandedMatrix{T},B::Matrix{T},β,C::Matrix{T})
     C
 end
 
-function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
+function banded_axpy!(a::Number,X,Y::BandedMatrix)
     @assert size(X)==size(Y)
-    @assert X.l ≤ Y.l && X.u ≤ Y.u
+    @assert bandwidth(X,1) ≤ bandwidth(Y,1) && bandwidth(X,2) ≤ bandwidth(Y,2)
     for (k,j) in eachbandedindex(X)
         @inbounds Y.data[k-j+Y.u+1,j]+=a*unsafe_getindex(X,k,j)
     end
@@ -119,19 +119,13 @@ function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix)
 end
 
 
-function Base.BLAS.axpy!{T1,T2,BM1<:BandedMatrix,BM2<:BandedMatrix}(a::Number,
-                                                                    X::SubArray{T1,2,BM1},
-                                                                    Y::SubArray{T2,2,BM2})
-    error("Implement")
-end
-
-function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::BandedMatrix,S::SubArray{T,2,BM})
+function banded_axpy!{T,BM<:BandedMatrix}(a::Number,X,S::SubArray{T,2,BM})
     @assert size(X)==size(S)
 
     Y=parent(S)
     shft=bandshift(S)
 
-    @assert X.l ≤ Y.l-shft && X.u ≤ Y.u+shft
+    @assert 0 ≤ bandwidth(X,1) ≤ bandwidth(Y,1)-shft && 0 ≤ bandwidth(X,2) ≤ bandwidth(Y,2)+shft
 
     kr,jr=parentindexes(S)
     for (k,j) in eachbandedindex(X)
@@ -141,10 +135,37 @@ function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::BandedMatrix,S::SubArr
     S
 end
 
-function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::SubArray{T,2,BM},Y::BandedMatrix)
-    error("Implement")
+Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix) =
+    banded_axpy!(a,X,Y)
+
+Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::BandedMatrix,S::SubArray{T,2,BM}) =
+    banded_axpy!(a,X,S)
+
+function Base.BLAS.axpy!{T1,T2,BM1<:BandedMatrix,BM2<:BandedMatrix}(a::Number,
+                                                           X::SubArray{T1,2,BM1},
+                                                           Y::SubArray{T2,2,BM2})
+    if bandwidth(X,1) < 0
+        jr=1-bandwidth(X,1):size(X,2)
+        banded_axpy!(a,sub(X,:,jr),sub(Y,:,jr))
+    elseif bandwidth(X,2) < 0
+        kr=1-bandwidth(X,2):size(X,1)
+        banded_axpy!(a,sub(X,kr,:),sub(Y,kr,:))
+    else
+        banded_axpy!(a,X,Y)
+    end
 end
 
+function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::SubArray{T,2,BM},Y::BandedMatrix)
+    if bandwidth(X,1) < 0
+        jr=1-bandwidth(X,1):size(X,2)
+        banded_axpy!(a,sub(X,:,jr),sub(Y,:,jr))
+    elseif bandwidth(X,2) < 0
+        kr=1-bandwidth(X,2):size(X,1)
+        banded_axpy!(a,sub(X,kr,:),sub(Y,kr,:))
+    else
+        banded_axpy!(a,X,Y)
+    end
+end
 
 function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
     @assert size(X)==size(Y)

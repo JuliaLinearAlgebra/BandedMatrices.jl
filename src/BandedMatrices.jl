@@ -22,8 +22,6 @@ bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractBandedMatrix,k::Integer) = k==1?-bandwidth(A,1):bandwidth(A,2)
 bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
 
-# For SubArray
-bandshift(S)=first(parentindexes(S)[1])-first(parentindexes(S)[2])
 
 
 function getindex(A::AbstractBandedMatrix,k::Integer,j::Integer)
@@ -77,7 +75,7 @@ function Base.length(B::BandedIterator)
 end
 
 # returns an iterator of each index in the banded part of a matrix
-eachbandedindex(B::AbstractBandedMatrix)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
+eachbandedindex(B)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
 
 
 
@@ -407,7 +405,7 @@ end
 type PrintShow
     str
 end
-Base.show(io::IO,N::PrintShow)=print(io,N.str)
+Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
 function Base.showarray(io::IO,B::AbstractBandedMatrix;
                    header::Bool=true, limit::Bool=Base._limit_output,
@@ -425,6 +423,19 @@ function Base.showarray(io::IO,B::AbstractBandedMatrix;
         Base.showarray(io,M;header=false)
     end
 end
+
+
+## SubArray routines
+
+bandshift(S) = first(parentindexes(S)[1])-first(parentindexes(S)[2])
+
+bandwidth{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k) = bandwidth(parent(S),k) +
+        (k==1?-1:1)*bandshift(S)
+
+
+unsafe_getindex{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k,j) =
+    unsafe_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
+
 
 
 end #module
