@@ -98,8 +98,13 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
     function BandedMatrix(data::Matrix{T},m,l,u)
-        @assert size(data,1)==l+u+1
-        new(data,m,l,u)
+        if l < 0 || u < 0
+            error("Bandwidths must be non-negative")
+        elseif size(data,1)!=l+u+1
+            error("Data matrix must have number rows equal to number of bands")
+        else
+            new(data,m,l,u)
+        end
     end
 end
 
@@ -196,7 +201,15 @@ getindex(A::BandedMatrix,kr::Colon,jr::Colon)=copy(A)
 
 
 unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]=v)
-setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(A.data[k-j+A.u+1,j]=v)
+function setindex!(A::BandedMatrix,v,k::Integer,j::Integer)
+    if k>size(A,1) || j>size(A,2)
+        throw(BoundsError(A,(k,j)))
+    elseif (bandinds(A,1)≤j-k≤bandinds(A,2))
+        unsafe_setindex!(A,v,k,j)
+    else
+        error("Attempt to set array outside of bands $(bandwidth(A,1)), $(bandwidth(A,2))")
+    end
+end
 
 
 
