@@ -191,7 +191,16 @@ unsafe_getindex(A::BandedMatrix,k::Integer,j::Integer)=A.data[k-j+A.u+1,j]
 
 function getindex(A::BandedMatrix,kr::UnitRange,jr::UnitRange)
     shft=first(kr)-first(jr)
-    BandedMatrix(A.data[:,jr],length(kr),A.l-shft,A.u+shft)
+    if A.l-shft ≥ 0 && A.u+shft ≥ 0
+        BandedMatrix(A.data[:,jr],length(kr),A.l-shft,A.u+shft)
+    else
+        #TODO: Make faster
+        ret=bzeros(eltype(A),length(kr),length(jr),max(0,A.l-shft),max(0,A.u+shft))
+        for (k,j) in eachbandedindex(ret)
+            ret[k,j]=A[kr[k],jr[j]]
+        end
+        ret
+    end
 end
 
 getindex(A::BandedMatrix,::Colon,jr::UnitRange)=A[1:size(A,1),jr]
