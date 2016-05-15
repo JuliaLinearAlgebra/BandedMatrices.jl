@@ -421,6 +421,12 @@ function fliplrud(A::BandedMatrix)
 end
 
 
+for OP in (:(Base.real),:(Base.imag))
+    @eval $OP(A::BandedMatrix) =
+        BandedMatrix($OP(A.data),A.m,A.l,A.u)
+end
+
+
 
 ## Show
 
