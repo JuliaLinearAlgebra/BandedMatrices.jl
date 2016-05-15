@@ -342,17 +342,39 @@ function *(A::BandedMatrix,B::BandedMatrix)
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    T=promote_type(eltype(A),eltype(B))
-    A_mul_B!(bzeros(T,n,m,A.l+B.l,A.u+B.u),A,B)
+
+    ret=BandedMatrix(promote_type(eltype(A),eltype(B)),n,m,A.l+B.l,A.u+B.u)
+    for (k,j) in eachbandedindex(ret)
+        νmin=max(1,k-bandwidth(A,1),j-bandwidth(A,2))
+        νmax=min(size(A,2),k+bandwidth(A,2),j+bandwidth(A,1))
+
+        ret[k,j]=A[k,νmin]*B[νmin,j]
+        for ν=νmin+1:νmax
+            ret[k,j]+=A[k,ν]*B[ν,j]
+        end
+    end
+
+    ret
 end
 
-function *(A::BandedMatrix,B::Matrix)
+
+
+function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::BandedMatrix{V})
     if size(A,2)!=size(B,1)
         throw(DimensionMismatch("*"))
     end
     n,m=size(A,1),size(B,2)
-    T=promote_type(eltype(A),eltype(B))
-    A_mul_B!(Array(T,n,m),A,B)
+
+    A_mul_B!(bzeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
+end
+
+function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::Matrix{V})
+    if size(A,2)!=size(B,1)
+        throw(DimensionMismatch("*"))
+    end
+    n,m=size(A,1),size(B,2)
+
+    A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
 
