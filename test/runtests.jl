@@ -123,3 +123,28 @@ end
 println("Time should be   0.644119 seconds (30 allocations: 76.371 MB)")
 
 gc_enable(true)
+
+
+
+
+## Banded Matrix of Banded Matrix
+
+
+A=BandedMatrix(BandedMatrix{Float64},1,2,0,1)
+A[1,1]=beye(1,1,0,1)
+A[1,2]=bzeros(1,2,0,1)
+A[1,2][1,1]=-1/3
+A[1,2][1,2]=1/3
+B=BandedMatrix(BandedMatrix{Float64},2,1,1,1)
+B[1,1]=0.2beye(1,1,0,1)
+B[2,1]=bzeros(2,1,1,0)
+B[2,1][1,1]=-2/30
+B[2,1][2,1]=1/3
+
+@test_approx_eq (A*B)[1,1] 1/3
+
+
+
+## Bug
+
+BandedMatrices.eachbandedindex(BandedMatrix(Float64,1,2,2,1))|>collect
