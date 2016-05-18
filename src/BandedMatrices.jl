@@ -345,8 +345,8 @@ function *(A::BandedMatrix,B::BandedMatrix)
 
     ret=BandedMatrix(promote_type(eltype(A),eltype(B)),n,m,A.l+B.l,A.u+B.u)
     for (k,j) in eachbandedindex(ret)
-        νmin=max(1,k-bandwidth(A,1),j-bandwidth(A,2))
-        νmax=min(size(A,2),k+bandwidth(A,2),j+bandwidth(A,1))
+        νmin=max(1,k-bandwidth(A,1),j-bandwidth(B,2))
+        νmax=min(size(A,2),k+bandwidth(A,2),j+bandwidth(B,1))
 
         ret[k,j]=A[k,νmin]*B[νmin,j]
         for ν=νmin+1:νmax
