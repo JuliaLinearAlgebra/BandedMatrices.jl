@@ -62,17 +62,19 @@ Base.done(B::BandedIterator,state)=state[2]>B.m || state[2]>B.n+B.u
 
 Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
 
-function Base.length(B::BandedIterator)
-    if B.m > B.n
-        p=max(0,B.u+B.n-B.m)
-        B.n*(B.u+1)+
-            div(B.l*(2*B.n-B.l-1),2)-div(p*(1+p),2)
-    else
-        p=max(0,B.l+B.m-B.n)
-        B.m*(B.l+1)+
-            div(B.u*(2*B.m-B.u-1),2)-div(p*(1+p),2)
-    end
-end
+# Commented out since there's an error
+
+# function Base.length(B::BandedIterator)
+#     if B.m > B.n
+#         p=max(0,B.u+B.n-B.m)
+#         B.n*(B.u+1)+
+#             div(B.l*(2*B.n-B.l-1),2)-div(p*(1+p),2)
+#     else
+#         p=max(0,B.l+B.m-B.n)
+#         B.m*(B.l+1)+
+#             div(B.u*(2*B.m-B.u-1),2)-div(p*(1+p),2)
+#     end
+# end
 
 # returns an iterator of each index in the banded part of a matrix
 eachbandedindex(B)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
