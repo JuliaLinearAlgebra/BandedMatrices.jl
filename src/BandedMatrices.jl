@@ -210,22 +210,6 @@ getindex(A::BandedMatrix,kr::UnitRange,jr::Colon)=A[kr,1:size(A,2)]
 getindex(A::BandedMatrix,kr::Colon,jr::Colon)=copy(A)
 
 
-
-unsafe_setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=(@inbounds A.data[k-j+A.u+1,j]=v)
-function setindex!(A::BandedMatrix,v,k::Integer,j::Integer)
-    if k>size(A,1) || j>size(A,2)
-        throw(BoundsError(A,(k,j)))
-    elseif (bandinds(A,1)≤j-k≤bandinds(A,2))
-        unsafe_setindex!(A,v,k,j)
-    else
-        error("Attempt to set array outside of bands $(bandwidth(A,1)), $(bandwidth(A,2))")
-    end
-end
-
-
-
-
-
 # Additional get index overrides
 unsafe_getindex(A::BandedMatrix,kr::Range,jr::Integer)=vec(A.data[kr-j+A.u+1,j])
 
@@ -235,16 +219,125 @@ getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
 getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
 
 
-function setindex!(A::BandedMatrix,v,kr::Range,jr::Range)
-    for j in jr
-        A[kr,j]=slice(v,:,j)
+# ~~ setindex! ~~
+
+# Design notes
+# ~ the colon (:) denotes all element within the band so A[:, i] are all 
+#   the elements on the i-the column that happen to be on the band. Out of 
+#   band zeros are not returned. 
+# ~ i used k and j to mean the row and column indices
+
+# ~ bound checking functions ~
+
+# indexing along columns
+checkbounds(A::BandedMatrix,   ::Colon, j::Integer) = 
+    (0 < j ≤ size(A, 2) || throw(BoundsError()))
+
+checkbounds(A::BandedMatrix, kr::Range, j::Integer) = 
+    (0 < j ≤ size(A, 2) &&
+     0 < first(kr) ≤ size(A, 1) &&
+     0 < last(kr) ≤ size(A, 1) &&   
+     bandinds(A, 1) ≤ j - first(kr) ≤ bandinds(A, 2) && 
+     bandinds(A, 1) ≤ j - last(kr)  ≤ bandinds(A, 2) || throw(BoundsError()))
+
+# indexing along rows
+checkbounds(A::BandedMatrix, k::Integer, ::Colon) = 
+    (0 < k ≤ size(A, 1) || throw(BoundsError()))
+
+checkbounds(A::BandedMatrix, k::Integer, jr::Range) = 
+    (bandinds(A, 1) ≤ first(j) - k ≤ bandinds(A, 2) && 
+     bandinds(A, 1) ≤ last(j)  - k ≤ bandinds(A, 2) || throw(BoundsError()))
+
+
+# check dimensions of inputs - a vector must fit entirely in the bandwidth
+checkdimensions(A::BandedMatrix, V::AbstractVector, i::Integer, ::Type{Val{:col}}) = 
+    (length(V) == collength(A, i) || throw(DimensionMismatch()))
+
+checkdimensions(A::BandedMatrix, V::AbstractVector, i::Integer, ::Type{Val{:row}}) = 
+    (length(V) == rowlength(A, i) || throw(DimensionMismatch()))
+
+checkdimensions(rng::Range, V::AbstractVector) = 
+    (length(V) == length(rng) || throw(DimensionMismatch()))
+
+
+# start and stop indices of the i-th column
+@inline colstart(A::BandedMatrix, i::Integer) = max(i-A.u, 1)
+@inline  colstop(A::BandedMatrix, i::Integer) = min(i+A.l, size(A, 1))
+
+# start and stop indices of the i-th row
+@inline rowstart(A::BandedMatrix, i::Integer) = max(i-A.l, 1)
+@inline  rowstop(A::BandedMatrix, i::Integer) = min(i+A.u, size(A, 2))
+
+# length of i-the column
+function collength(A::BandedMatrix, i::Integer)
+    0 < i ≤ size(A, 2) || throw(BoundsError())
+    colstop(A, i) - colstart(A, i) + 1
+end
+
+# length of i-th row
+function rowlength(A::BandedMatrix, i::Integer)
+    0 < i ≤ size(A, 1) || throw(BoundsError())
+    rowstop(A, i) - rowstart(A, i) + 1
+end 
+
+
+# ~ setindex methods ~
+
+unsafe_setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer) = 
+    (@inbounds A.data[k-j+A.u+1, j] = convert(T, v)::T)
+
+# unsafe_setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Range, j::Integer) = 
+    # (@inbounds A.data[k-j+A.u+1, j] = convert(T, v)::T)
+
+#   v    -   row   -   col
+# scalar - integer - integer
+function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer)
+    if k > size(A, 1) || j > size(A, 2) || min(j, k) < 1
+        throw(BoundsError(A,(k,j)))
+    elseif bandinds(A,1) ≤ j-k ≤ bandinds(A,2)
+        unsafe_setindex!(A, v, k, j)
+    else
+        # should this have a custom exception?
+        error("Attempt to set array outside of bands $(bandwidth(A,1)), $(bandwidth(A,2))")
     end
 end
-function setindex!(A::BandedMatrix,v,k::Integer,jr::Range)
-    for j in jr
-        A[k,j]=v[j]
-    end
+
+# ~ indexing along columns ~
+
+# scalar - colon - integer
+function setindex!{T}(A::BandedMatrix{T}, v, kr::Colon, j::Integer)
+    checkbounds(A, kr, j)
+    @inbounds A.data[:, j] = v
 end
+
+# vector - colon - integer
+function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Colon, j::Integer)
+    checkbounds(A, kr, j)
+    checkdimensions(A, V, j, Val{:col})
+    # replace with unsafe setindex call
+    @inbounds A[colstart(A, j):colstop(A, j), j] = V
+end
+
+# scalar - range - integer
+function setindex!{T}(A::BandedMatrix{T}, v, kr::Range, j::Integer)
+    checkbounds(A, kr, j)
+    for k in kr
+        unsafe_setindex!(A, v, k, j)
+    end
+    v
+end
+
+# vector - range - integer
+function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Range, j::Integer)
+    checkbounds(A, kr, j)
+    checkdimensions(kr, V)
+    for i = 1:length(V)
+        unsafe_setindex!(A, V[i], kr[i], j)
+    end
+    V
+end
+
+# ~~ end setindex! ~~
 
 
 
