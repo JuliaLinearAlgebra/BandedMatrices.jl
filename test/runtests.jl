@@ -2,6 +2,8 @@ versioninfo()
 
 using BandedMatrices, Base.Test
 
+include("test_bandedlu.jl")
+
 A,B=brand(10,12,2,3),brand(10,12,3,4)
 
 
@@ -147,4 +149,4 @@ B[2,1][2,1]=1/3
 
 ## Bug
 
-BandedMatrices.eachbandedindex(BandedMatrix(Float64,1,2,2,1))|>collect
+# BandedMatrices.eachbandedindex(BandedMatrix(Float64,1,2,2,1))|>collect
