@@ -1,15 +1,19 @@
 __precompile__()
 
 module BandedMatrices
-    using Base
-
+using Base
 
 import Base: getindex,setindex!,*,.*,+,.+,-,.-,==,<,<=,>,
-                >=,./,/,.^,^,\,transpose
+                >=,./,/,.^,^,\,transpose, showerror
 
-export BandedMatrix, bandrange, bzeros,beye,brand,bones,bandwidth
-
-
+export BandedMatrix, 
+       bandrange, 
+       bzeros,
+       beye,
+       brand,
+       bones,
+       bandwidth,
+       BandError
 
 
 # AbstractBandedMatrix must implement
@@ -242,6 +246,18 @@ if VERSION < v"0.5"
     end
 end
 
+# out of band error
+immutable BandError <: Exception
+    A::BandedMatrix
+    kj::Any
+end
+
+function showerror(io::IO, e::BandError)
+    A, j, k, u, l = e.A, e.kj[1], e.kj[2], e.A.u, e.A.l
+    print(io, "attempt to access $(typeof(A)) with bandwidths " * 
+              "($(-l), $u) at band $(j-k), index [$k, $j]")
+end
+
 # maps cartesian indices (k, j) to the corresponding storage row
 @inline outer2inner(u, k, j) = u + k - j + 1
 
@@ -276,8 +292,7 @@ checkbounds(A::BandedMatrix, k::Integer, jr::Range) =
 
 # check indices fall in the band # TODO have BandError exception
 checkbands(A::BandedMatrix, k::Integer, j::Integer) = 
-    (bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2) ||
-        throw(ArgumentError("Attempted to set element outside of band"))) 
+    (bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2) || throw(BandError(A, (j, k)))) 
 
 checkbands(A::BandedMatrix, kr::Range, j::Integer) = 
     (checkbands(A, first(kr), j) && 
@@ -288,14 +303,9 @@ checkbands(A::BandedMatrix, k::Integer, jr::Range) =
      checkbands(A, k,  last(jr)) || throw(BoundsError(A, (k, jr))))        
 
 # check dimensions of inputs - the vector V must fit entirely in the bandwidth
-checkdimensions(A::BandedMatrix, V::AbstractVector, i::Integer, ::Type{Val{:col}}) = 
-    (length(V) == collength(A, i) || throw(DimensionMismatch()))
-
-checkdimensions(A::BandedMatrix, V::AbstractVector, i::Integer, ::Type{Val{:row}}) = 
-    (length(V) == rowlength(A, i) || throw(DimensionMismatch()))
-
-checkdimensions(rng::Range, V::AbstractVector) = 
-    (length(V) == length(rng) || throw(DimensionMismatch()))
+checkdimensions(rng::Range, V::AbstractVector) = (length(V) == length(rng) || 
+    throw(DimensionMismatch("tried to assign $(length(V))-element " * 
+        "array to 1×$(length(rng)) destination")))
 
 
 # ~ setindex methods ~

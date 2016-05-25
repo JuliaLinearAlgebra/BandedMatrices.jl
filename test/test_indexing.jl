@@ -53,8 +53,8 @@ let
     @test a[1, 1] == 0
 
     # out of band
-    @test_throws ArgumentError a[1, 3] = 0
-    @test_throws ArgumentError a[3, 1] = 0
+    @test_throws BandError a[1, 3] = 0
+    @test_throws BandError a[3, 1] = 0
 
     # out of range
     @test_throws BoundsError a[0, 0] = 0
@@ -148,7 +148,7 @@ let
     # wrong range input
     @test_throws BoundsError   a[0:1, 1] = 3
     @test_throws BoundsError   a[1:4, 1] = 3
-    @test_throws ArgumentError a[2:3, 4] = 3
+    @test_throws BandError a[2:3, 4] = 3
     @test_throws BoundsError   a[3:4, 4] = 3
 
 end
@@ -288,7 +288,7 @@ let
     @test_throws BoundsError a[1, 0:3] = 1
     @test_throws BoundsError a[4, 4:6] = 1
 
-    @test_throws ArgumentError a[1, 1:4] = 1
+    @test_throws BandError a[1, 1:4] = 1
 end
 
 # vector - integer - range
@@ -324,7 +324,7 @@ let
     @test_throws BoundsError a[1, 0:3] = [1, 2, 3, 4]
     @test_throws BoundsError a[4, 4:6] = [2, 3]
 
-    @test_throws ArgumentError a[1, 1:4] = [1, 2, 3, 4]
+    @test_throws BandError a[1, 1:4] = [1, 2, 3, 4]
     @test_throws BoundsError a[7, 6:7] = [1, 2]
     @test_throws DimensionMismatch a[1, 1:3] = [1, 2]
 end
