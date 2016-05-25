@@ -231,6 +231,7 @@ getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
 # ~ allow indexing with vectors of indices -- A[1, [2, 3]] = 4
 # ~ allow indexing as in A[1, 1:end] -- what should it do? till end of band?
 # ~ define a custom BandError exception and throw that instead of ArgumentError
+# ~ setindex definition for elements along a band
 
 # ~ Utilities ~
 
@@ -307,6 +308,11 @@ function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
     @boundscheck  checkbands(A, k, j)
     unsafe_setindex!(A, v, k, j)
+end
+
+# scalar - colon - colon
+function setindex!{T}(A::BandedMatrix{T}, v, ::Colon, ::Colon)
+    A.data[:, :] = convert(T, v)::T
 end
 
 # ~ indexing along columns - more efficient ~

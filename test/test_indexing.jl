@@ -328,3 +328,12 @@ let
     @test_throws BoundsError a[7, 6:7] = [1, 2]
     @test_throws DimensionMismatch a[1, 1:3] = [1, 2]
 end
+
+# other methods 
+let
+    a = bzeros(3, 3, 1, 1)
+    a[:, :] = 1
+    @test a == [1 1 0;
+                1 1 1;
+                0 1 1]
+end
