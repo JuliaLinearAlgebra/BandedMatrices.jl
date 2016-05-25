@@ -90,9 +90,9 @@ eachbandedindex(B)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B
 #        a_42 a_43 a_44  ]
 # ordering the data like  (columns first)
 #       [ *      a_12   a_23    a_34
-#         a_11   a_22   a_33    a_43
+#         a_11   a_22   a_33    a_44
 #         a_21   a_32   a_43    *
-#         a_32   a_42   *       *       ]
+#         a_31   a_42   *       *       ]
 ###
 type BandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # l+u+1 x n (# of columns)
