@@ -13,7 +13,8 @@ export BandedMatrix,
        brand,
        bones,
        bandwidth,
-       BandError
+       BandError, 
+       Band
 
 
 # AbstractBandedMatrix must implement
@@ -246,6 +247,13 @@ if VERSION < v"0.5"
     end
 end
 
+# type to set\get data along a band
+immutable Band
+    i::Int
+end
+
+isinband(b::Band, A::BandedMatrix) = (bandinds(A, 1) ≤ b.i ≤ bandinds(A, 2))
+
 # out of band error
 immutable BandError <: Exception
     A::BandedMatrix
@@ -255,7 +263,7 @@ end
 function showerror(io::IO, e::BandError)
     A, j, k, u, l = e.A, e.kj[1], e.kj[2], e.A.u, e.A.l
     print(io, "attempt to access $(typeof(A)) with bandwidths " * 
-              "($(-l), $u) at band $(j-k), index [$k, $j]")
+              "($(-l), $u) at band $(j-k)")
 end
 
 # maps cartesian indices (k, j) to the corresponding storage row
@@ -323,6 +331,12 @@ end
 # scalar - colon - colon
 function setindex!{T}(A::BandedMatrix{T}, v, ::Colon, ::Colon)
     A.data[:, :] = convert(T, v)::T
+end
+
+# scalar - along a band
+function setindex!{T}(A::BandedMatrix{T}, v, b::Band)
+    isinband(b, A) || throw(BandError(A, (b.i, 0)))
+    @inbounds A.data[A.u - b.i + 1, :] = convert(T, v)::T
 end
 
 # ~ indexing along columns - more efficient ~

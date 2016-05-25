@@ -331,9 +331,22 @@ end
 
 # other methods 
 let
+    # all elements
     a = bzeros(3, 3, 1, 1)
     a[:, :] = 1
     @test a == [1 1 0;
                 1 1 1;
                 0 1 1]
+
+    # along a band
+    a[Band( 0)] = 3       
+    a[Band( 1)] = 2
+    a[Band(-1)] = 1
+
+    @test a == [3 2 0;
+                1 3 2;
+                0 1 3]
+
+    @test_throws BandError a[Band(-2)] = 1
+    @test_throws BandError a[Band( 2)] = 1
 end
