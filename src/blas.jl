@@ -138,7 +138,7 @@ function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMat
     m=size(C,2)
 
     for (k,ν) in eachbandedindex(A)
-        for j=max(ν-C.l,1):min(ν+C.u,m)
+        for j=max(ν-B.l,1):min(ν+B.u,m)
             C[k,j]+=α*A[k,ν]*B[ν,j]
         end
     end
