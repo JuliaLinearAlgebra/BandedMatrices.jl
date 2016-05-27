@@ -4,7 +4,7 @@ import Base: \, convert, size
 
 import Base.BLAS: blasfunc,
                   libblas
-                  
+
 import Base.LinAlg: BlasInt,
                     BlasReal,
                     BlasFloat,
@@ -14,7 +14,7 @@ import Base.LinAlg: BlasInt,
                     Ac_ldiv_B!,
                     copy_oftype
 
-import Base.LAPACK: gbtrs!, 
+import Base.LAPACK: gbtrs!,
                     gbtrf!
 
 import Base: lufact
@@ -46,6 +46,21 @@ for (fname, elty) in ((:dgbmv_,:Float64),
     end
 end
 
+# #TODO: Speed up the following
+# function gbmv!{T}(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::Ptr{T}, n::Integer, st::Integer, x::Ptr{T}, beta::T, y::Ptr{T})
+#     data=pointer_to_array(A,(kl+ku+1,n))
+#     xx=pointer_to_array(x,n)
+#     yy=pointer_to_array(y,m)
+#
+#     B=BandedMatrix(data,m,kl,ku)
+#
+#     for (k,j) in eachbandedindex(B)
+#         yy[k] = beta*yy[k] + alpha*B[k,j]*xx[j]
+#     end
+#
+#     yy
+# end
+
 
 # this is matrix*matrix
 
@@ -55,7 +70,7 @@ gbmm!{T}(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix{T})=gbmm!(convert
                                                                        convert(T,β),
                                                                        C)
 
-function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β,C::BandedMatrix{T})
+function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMatrix{T})
     n,ν=size(A)
     m=size(B,2)
 
@@ -103,8 +118,25 @@ function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β,C::BandedMatrix
     C
 end
 
+#TODO: Speedup
+function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMatrix{T})
+    for (k,j) in eachbandedindex(C)
+        C[k,j]*=β
+    end
 
-function gbmm!{T}(α,A::BandedMatrix{T},B::Matrix{T},β,C::Matrix{T})
+    m=size(C,2)
+
+    for (k,ν) in eachbandedindex(A)
+        for j=max(ν-C.l,1):min(ν+C.u,m)
+            C[k,j]+=α*A[k,ν]*B[ν,j]
+        end
+    end
+
+    C
+end
+
+
+function gbmm!{T<:BlasFloat}(α,A::BandedMatrix{T},B::Matrix{T},β,C::Matrix{T})
     st=max(1,stride(A.data,2))
     n,ν=size(A)
     a=pointer(A.data)
@@ -200,26 +232,27 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix)=gbmm!(1.0,A,B,0.,C)
+Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix) = gbmm!(1.0,A,B,0.,C)
 
 ## Matrix*Vector Multiplicaiton
 
 
 
-Base.A_mul_B!(c::Vector,A::BandedMatrix,b::Vector)=BLAS.gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
+Base.A_mul_B!(c::Vector,A::BandedMatrix,b::Vector) =
+    BLAS.gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
 
 
 
 ## Matrix*Matrix Multiplication
 
 
-Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix)=gbmm!(1.0,A,B,0.0,C)
+Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix) = gbmm!(1.0,A,B,0.0,C)
 
 
 
 ## Banded LU decomposition
 
-# this is currently a hack and not the nicest of the interfaces. 
+# this is currently a hack and not the nicest of the interfaces.
 # if the LAPACK storage was built in the BandedMatrix we could get rid of
 # the last three fields of this type, and have the first point to the parent
 # BandedMatrix, rather then to a generic chunk of memory
@@ -229,14 +262,14 @@ immutable BandedLU{T} <: Factorization{T}
     l::Int                 # lower bandwidth
     u::Int                 # upper bandwidth
     m::Int                 # number of rows
-end    
+end
 
 # conversion
-convert{T<:Number, S<:Number}(::Type{BandedLU{T}}, B::BandedLU{S}) = 
+convert{T<:Number, S<:Number}(::Type{BandedLU{T}}, B::BandedLU{S}) =
     BandedLU{T}(convert(Matrix{T}, B.data), B.ipiv, B.l, B.u, B.m)
 
 # size of the parent array
-size(A::BandedLU) = (A.m, size(A.data, 2))    
+size(A::BandedLU) = (A.m, size(A.data, 2))
 size(A::BandedLU, i::Integer) = i <= 0 ? error("dimension out of range") :
                                 i == 1 ? A.m :
                                 i == 2 ? size(A.data, 2) : 1
@@ -258,14 +291,14 @@ lufact(F::BandedLU) = F # no op
 ## Utilities
 
 if VERSION < v"0.5.0-dev"
-    Base.promote_op{R<:Integer,S<:Integer}(op, 
+    Base.promote_op{R<:Integer,S<:Integer}(op,
         ::Type{R}, ::Type{S}) = typeof(op(one(R), one(S)))
 end
 
 # check if matrix is square before solution of linear system or before converting
-checksquare(A::BandedMatrix) = (size(A, 1) == size(A, 2) || 
+checksquare(A::BandedMatrix) = (size(A, 1) == size(A, 2) ||
     throw(ArgumentError("Banded matrix must be square")))
-checksquare(A::BandedLU) = (A.m == size(A.data, 2) || 
+checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
     throw(ArgumentError("Banded matrix must be square")))
 
 
@@ -291,7 +324,7 @@ for typ in [BandedMatrix, BandedLU]
 end
 
 
-## Method definitions for generic eltypes - will make copies 
+## Method definitions for generic eltypes - will make copies
 
 # Direct and transposed algorithms
 for typ in [BandedMatrix, BandedLU]
@@ -304,7 +337,7 @@ for typ in [BandedMatrix, BandedLU]
     end
     # \ is different because it needs a copy
     @eval function (\){T<:Number, S<:Number}(A::$typ{T}, B::StridedVecOrMat{S})
-        checksquare(A) 
+        checksquare(A)
         TS = _promote_to_blas_type(T, S)
         A_ldiv_B!(convert($typ{TS}, A), copy_oftype(B, TS)) # goes to BlasFloat call
     end
@@ -313,7 +346,7 @@ end
 # Hermitian conjugate
 for typ in [BandedMatrix, BandedLU]
     @eval function Ac_ldiv_B!{T<:Complex, S<:Number}(A::$typ{T}, B::StridedVecOrMat{S})
-        checksquare(A) 
+        checksquare(A)
         AA, BB = _convert_to_blas_type(A, B)
         Ac_ldiv_B!(lufact(AA), BB) # call BlasFloat versions
     end
@@ -327,7 +360,7 @@ end
 # Method definitions for BlasFloat types - no copies
 
 # basic interface
-(\){T<:BlasFloat}(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) = 
+(\){T<:BlasFloat}(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) =
     A_ldiv_B!(A, copy(B)) # makes a copy
 
 # Direct and transposed algorithms
@@ -335,7 +368,7 @@ for (ch, fname) in zip(('N', 'T'), (:A_ldiv_B!, :At_ldiv_B!))
     # provide A*_ldiv_B!(::BandedLU, ::StridedVecOrMat) for performance
     @eval function $fname{T<:BlasFloat}(A::BandedLU{T}, B::StridedVecOrMat{T})
         checksquare(A)
-        gbtrs!($ch, A.l, A.u, A.m, A.data, A.ipiv, B) 
+        gbtrs!($ch, A.l, A.u, A.m, A.data, A.ipiv, B)
     end
     # provide A*_ldiv_B!(::BandedMatrix, ::StridedVecOrMat) for generality
     @eval function $fname{T<:BlasFloat}(A::BandedMatrix{T}, B::StridedVecOrMat{T})
@@ -347,7 +380,7 @@ end
 # Hermitian conjugate algorithms - same two routines as above
 function Ac_ldiv_B!{T<:BlasComplex}(A::BandedLU{T}, B::StridedVecOrMat{T})
     checksquare(A)
-    gbtrs!('C', A.l, A.u, A.m, A.data, A.ipiv, B) 
+    gbtrs!('C', A.l, A.u, A.m, A.data, A.ipiv, B)
 end
 
 function Ac_ldiv_B!{T<:BlasComplex}(A::BandedMatrix{T}, B::StridedVecOrMat{T})
@@ -356,7 +389,7 @@ function Ac_ldiv_B!{T<:BlasComplex}(A::BandedMatrix{T}, B::StridedVecOrMat{T})
 end
 
 # fall back for real inputs
-Ac_ldiv_B!{T<:BlasReal}(A::BandedLU{T}, B::StridedVecOrMat{T}) = 
+Ac_ldiv_B!{T<:BlasReal}(A::BandedLU{T}, B::StridedVecOrMat{T}) =
     At_ldiv_B!(A, B)
-Ac_ldiv_B!{T<:BlasReal}(A::BandedMatrix{T}, B::StridedVecOrMat{T}) = 
+Ac_ldiv_B!{T<:BlasReal}(A::BandedMatrix{T}, B::StridedVecOrMat{T}) =
     At_ldiv_B!(A, B)

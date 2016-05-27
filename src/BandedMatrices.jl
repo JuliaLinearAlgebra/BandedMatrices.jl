@@ -11,7 +11,6 @@ export BandedMatrix, bandrange, bzeros,beye,brand,bones,bandwidth
 
 
 
-
 # AbstractBandedMatrix must implement
 
 abstract AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int}
@@ -381,7 +380,16 @@ end
 
 
 
-*{T}(A::BandedMatrix{T},b::Vector{T})=BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
+*{T<:BlasFloat}(A::BandedMatrix{T},b::Vector{T}) =
+    BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
+function *{T}(A::BandedMatrix{T},b::Vector{T})
+    ret = zeros(T,size(A,1))
+    for (k,j) in eachbandedindex(A)
+        @inbounds ret[k]+=A[k,j]*b[j]
+    end
+    ret
+end
+
 
 function *(A::BandedMatrix,b::Vector)
     T=promote_type(eltype(A),eltype(b))
