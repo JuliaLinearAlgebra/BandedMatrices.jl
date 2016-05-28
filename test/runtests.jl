@@ -151,3 +151,22 @@ B[2,1][2,1]=1/3
 ## Bug
 
 # BandedMatrices.eachbandedindex(BandedMatrix(Float64,1,2,2,1))|>collect
+
+
+
+## BigFloat
+
+
+B=bzeros(BigFloat,5,5,2,3)
+    for (k,j)=BandedMatrices.eachbandedindex(B)
+        B[k,j]=randn()
+    end
+
+x=BigFloat[1:size(B,1)...]
+
+
+
+
+
+@test_approx_eq full(B)*x B*x
+@test_approx_eq full(B*B) full(B)*full(B)
