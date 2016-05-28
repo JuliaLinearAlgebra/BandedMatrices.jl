@@ -41,8 +41,8 @@ end
 ## Gives an iterator over the banded entries of a BandedMatrix
 
 immutable BandedIterator
-    n::Int
     m::Int
+    n::Int
     l::Int
     u::Int
 end
@@ -52,28 +52,36 @@ Base.start(B::BandedIterator)=(1,1)
 
 
 Base.next(B::BandedIterator,state)=
-    state,ifelse(state[1]==min(state[2]+B.l,B.n),
+    state,ifelse(state[1]==min(state[2]+B.l,B.m),
                 (max(state[2]+1-B.u,1),state[2]+1),
                 (state[1]+1,  state[2])
                  )
 
-Base.done(B::BandedIterator,state)=state[2]>B.m || state[2]>B.n+B.u
+Base.done(B::BandedIterator,state)=state[2]>B.n || state[2]>B.m+B.u
 
 Base.eltype(::Type{BandedIterator})=Tuple{Int,Int}
 
 # Commented out since there's an error
 
-# function Base.length(B::BandedIterator)
-#     if B.m > B.n
-#         p=max(0,B.u+B.n-B.m)
-#         B.n*(B.u+1)+
-#             div(B.l*(2*B.n-B.l-1),2)-div(p*(1+p),2)
-#     else
-#         p=max(0,B.l+B.m-B.n)
-#         B.m*(B.l+1)+
-#             div(B.u*(2*B.m-B.u-1),2)-div(p*(1+p),2)
-#     end
-# end
+# for m x n matrix, assuming m ≥ n
+# see notes
+function bandslength(m,n,l,u)
+    if m ≥ n
+        (1 + m - n)*n + (-l - l^2 + m + 2l*m - m^2 - n + n^2)÷2 +
+            (-u + 2n*u - u^2)÷2
+    else
+        n*(l+1)+u*n-(u^2+u)÷2
+    end
+end
+
+
+function Base.length(B::BandedIterator)
+    if B.m ≥ B.n
+        bandslength(B.m,B.n,B.l,B.u)
+    else # transpose
+        bandslength(B.n,B.m,B.u,B.l)
+    end
+end
 
 # returns an iterator of each index in the banded part of a matrix
 eachbandedindex(B)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
@@ -228,9 +236,14 @@ end
 # Additional get index overrides
 unsafe_getindex(A::BandedMatrix,kr::Range,jr::Integer)=vec(A.data[kr-j+A.u+1,j])
 
-getindex(A::BandedMatrix,kr::Range,j::Integer)=-A.l≤j-kr[1]≤j-kr[end]≤A.u?unsafe_getindex(A,kr,j):[A[k,j] for k=kr]
+function getindex(A::BandedMatrix,kr::UnitRange,j::Integer)
+    if -A.l≤j-kr[1]≤j-kr[end]≤A.u
+        unsafe_getindex(A,kr,j)
+    else
+        eltype(A)[A[k,j] for k=kr]
+    end
+end
 
-getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
 getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
 
 
@@ -467,22 +480,27 @@ type PrintShow
 end
 Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
-function Base.showarray(io::IO,B::AbstractBandedMatrix;
-                   header::Bool=true, limit::Bool=Base._limit_output,
-                   sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
-    header && print(io,summary(B))
+#TODO: implement showarray in 0.5
 
-    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-        header && println(io,":")
-        M=Array(Any,size(B)...)
-        fill!(M,PrintShow(""))
-        for (k,j) in eachbandedindex(B)
-            M[k,j]=B[k,j]
+if VERSION < v"0.5.0-dev"
+    function Base.showarray(io::IO,B::AbstractBandedMatrix;
+                       header::Bool=true, limit::Bool=Base._limit_output,
+                       sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
+        header && print(io,summary(B))
+
+        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
+            header && println(io,":")
+            M=Array(Any,size(B)...)
+            fill!(M,PrintShow(""))
+            for (k,j) in eachbandedindex(B)
+                M[k,j]=B[k,j]
+            end
+
+            Base.showarray(io,M;header=false)
         end
-
-        Base.showarray(io,M;header=false)
     end
 end
+
 
 
 ## SubArray routines
