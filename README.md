@@ -6,7 +6,7 @@ A Julia package for representing banded matrices
 
 
 This package supports representing banded matrices by only the entries on the
-bands.  Currently, only row-major ordering is supported: a banded matrix
+bands.  Currently, only column-major ordering is supported: a banded matrix
 ```julia
  [ a_11 a_12
    a_21 a_22 a_23
@@ -15,10 +15,10 @@ bands.  Currently, only row-major ordering is supported: a banded matrix
 ```
 is represented by the matrix       
 ```julia
-       [ *     *       a_31    a_42
-         *      a_21   a_32    a_43
-         a_11   a_22   a_33    A_44
-         a_12   a_23   a_34    *       ]
+[ *      a_12   a_23    a_34
+  a_11   a_22   a_33    a_43
+  a_21   a_32   a_43    *
+  a_31   a_42   *       *       ]
 ```        
 
 One can create banded matrices as follows:
