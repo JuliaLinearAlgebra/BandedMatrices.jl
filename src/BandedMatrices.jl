@@ -4,8 +4,27 @@ module BandedMatrices
     using Base
 
 
-import Base: getindex,setindex!,*,.*,+,.+,-,.-,==,<,<=,>,
-                >=,./,/,.^,^,\,transpose
+import Base: getindex, setindex!, *, .*, +, .+, -, .-, ==, <, <=, >,
+                >=, ./, /, .^, ^, \, transpose
+
+
+import Base: convert, size
+
+import Base.BLAS: libblas
+
+import Base.LinAlg: BlasInt,
+                    BlasReal,
+                    BlasFloat,
+                    BlasComplex,
+                    A_ldiv_B!,
+                    At_ldiv_B!,
+                    Ac_ldiv_B!,
+                    copy_oftype
+
+import Base.LAPACK: gbtrs!,
+                    gbtrf!
+
+import Base: lufact
 
 export BandedMatrix, bandrange, bzeros,beye,brand,bones,bandwidth
 
@@ -118,6 +137,7 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 
+include("BandedLU.jl")
 include("blas.jl")
 
 
@@ -395,6 +415,7 @@ end
 
 *{T<:BlasFloat}(A::BandedMatrix{T},b::Vector{T}) =
     BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
+
 function *{T}(A::BandedMatrix{T},b::Vector{T})
     ret = zeros(T,size(A,1))
     for (k,j) in eachbandedindex(A)
@@ -435,6 +456,10 @@ function Base.diag{T}(A::BandedMatrix{T})
 end
 
 
+
+# basic interface
+(\){T<:BlasFloat}(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) =
+    A_ldiv_B!(A, copy(B)) # makes a copy
 
 
 ## Matrix.*Matrix
