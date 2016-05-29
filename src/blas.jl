@@ -209,7 +209,7 @@ function Anon_Bnon_C_gbmv!(α,β,
 
    nr= max(1,j-Cu) : min(j+Cl,n)
 
-   if !isempty(nr) && !isempty(νr)
+   if !isempty(nr)
        cj =  β*C[nr,j]
 
        for k in nr
@@ -267,6 +267,11 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
     @assert ν==size(B,1)
     @assert m==size(C,2)
 
+    # only tested at the moment for this case
+    # TODO: implement when C.u,C.l ≥
+    @assert C.u==A.u+B.u
+    @assert C.l==A.l+B.l
+
 
     a=pointer(A.data)
     b=pointer(B.data)
@@ -276,13 +281,13 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
     stc=max(1,stride(C.data,2))
     sz=sizeof(T)
 
+    Al=A.l;Au=A.u
+    Bl=B.l;Bu=B.u
+    Cl=C.l;Cu=C.u
+
 
     # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
-    cols=1:min(B.u+1,m)
-    print(cols,",")
-    for j=cols
-        @assert ((j-1)*stb+B.u-j+1 + min(B.l+j,ν) ≤ length(B.data))
-        @assert ((j-1)*stc+C.u-j+1 +min(C.l+j,n) ≤ length(C.data))
+    for j=1:min(m,1+B.u)
         A11_Btop_Ctop_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -291,17 +296,10 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
                             c,Cl,Cu,stc)
     end
 
-    if last(cols)==m
-        return C
-    end
-
     # Multiply columns j where B[k,j]=0 for k<p=(j-B.u-1), A is at 1,1+p and C[1,j]≠0
     # j ≤ ν + B.u since then 1+p ≤ ν, so inside the columns of A
-    cols=B.u+2:min(C.u+1,m,ν+B.u)
-    print(cols,",")
-    for j=cols
-        @assert ((j-1)*stb + min(B.l+B.u+1,ν-p) ≤ length(B.data))
-        @assert ((j-1)*stc+C.u-j+1 +min(C.l+j,n) ≤ length(C.data))
+
+    for j=2+B.u:min(1+C.u,ν+B.u,m)
         Atop_Bmid_Ctop_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -309,28 +307,10 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
                             b,Bl,Bu,stb,
                             c,Cl,Cu,stc)
     end
-    if last(cols)==m
-        return C
-    end
 
-
-    cols=C.u+2:min(n-C.l,m,ν-B.l)
-    print(cols,",")
-    # multiply columns where A, B and C are mid
-    for j=cols
-
-    end
-
-    if last(cols)==m
-        return C
-    end
 
     # multiply columns where A and B are mid and C is bottom
-    cols=max(n-C.l+1,C.u+1):min(ν-B.l,n+C.u,m)
-    print(cols,",")
-    for j=cols
-        @assert ((j-1)*stb + B.l+B.u+1  ≤ length(B.data))
-        @assert ((j-1)*stc + n-j+C.u+1  ≤ length(C.data))
+    for j=2+C.u:min(m,ν+B.u,n+C.u)
         Amid_Bmid_Cmid_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -339,42 +319,14 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
                             c,Cl,Cu,stc)
     end
 
-    if last(cols)==m
-        return C
-    end
-
-    # multiply columns where A and C are mid and B is bottom
-    cols=ν-B.l:min(m,n-C.l,ν+B.u)
-    print(cols,",")
-    for j=cols
-        Amid_Bbot_Cmid_gbmv!(α,β,
+    # scale columns of C by β that aren't impacted by α*A*B
+    for j=ν+B.u+1:min(m,n+C.u)
+        Anon_Bnon_C_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
                             a,Al,Au,sta,
                             b,Bl,Bu,stb,
                             c,Cl,Cu,stc)
-    end
-
-    if last(cols)==m
-        return C
-    end
-
-    # multiply columns where A,  B and C are bottom
-    cols=max(ν-B.l+1,n-C.l+1,C.u+1):min(m,n+C.u,B.u+ν)
-    println(cols)
-    for j=cols
-        @assert ((j-1)*stb + B.l+B.u+1-(j-ν+B.l) ≤ length(B.data))
-        @assert ((j-1)*stc + n-j+C.u+1  ≤ length(C.data))
-        Abot_Bbot_Cbot_gbmv!(α,β,
-                            n,ν,m,j,
-                            sz,
-                            a,Al,Au,sta,
-                            b,Bl,Bu,stb,
-                            c,Cl,Cu,stc)
-    end
-
-    if last(cols)==m
-        return C
     end
 
     C

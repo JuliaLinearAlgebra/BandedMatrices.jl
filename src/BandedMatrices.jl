@@ -254,7 +254,7 @@ end
 
 
 # Additional get index overrides
-unsafe_getindex(A::BandedMatrix,kr::Range,jr::Integer)=vec(A.data[kr-j+A.u+1,j])
+unsafe_getindex(A::BandedMatrix,kr::Range,j::Integer)=vec(A.data[kr-j+A.u+1,j])
 
 function getindex(A::BandedMatrix,kr::UnitRange,j::Integer)
     if -A.l≤j-kr[1]≤j-kr[end]≤A.u
