@@ -9,7 +9,7 @@ import BandedMatrices: rowstart,
                        diaglength
 
 # rowstart/rowstop business
-let 
+let
     a = bones(7, 5, 1, 2)
     # 1.0  1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0
@@ -277,7 +277,7 @@ let
     # 1.0  1.0  1.0  0.0  0.0
     # 0.0  1.0  1.0  1.0  0.0
     # 0.0  0.0  1.0  1.0  1.0
-    # 0.0  0.0  0.0  1.0  1.0    
+    # 0.0  0.0  0.0  1.0  1.0
 
     # in band
     a[1, BandRange] = 2
@@ -429,7 +429,7 @@ let
                        0  5  1  2;
                        0  0  5  1]
 
-    @test_throws BandError a[band(-3), :] = 1                    
+    @test_throws BandError a[band(-3), :] = 1
 
     a[band(-2), :] = [4, 4, 4]
     a[band(-1), :] = [1, 2, 3, 4]
@@ -440,12 +440,12 @@ let
                        1  6  10   0;
                        4  2   7  11;
                        0  4   3   8;
-                       0  0   4   4]          
+                       0  0   4   4]
 
-    @test_throws BandError a[band(-3), :] = [1, 2, 3]    
+    @test_throws BandError a[band(-3), :] = [1, 2, 3]
 end
 
-# other special methods 
+# other special methods
 let
     # all elements
     a = bzeros(3, 3, 1, 1)
@@ -454,11 +454,11 @@ let
                 1 1 1;
                 0 1 1]
 
-    # all rows/cols        
+    # all rows/cols
     a[:, :] = 2 # this has special meaning in julia, so it should be allowed
     @test a == [2 2 0;
                 2 2 2;
-                0 2 2] 
+                0 2 2]
 end
 
 # replace a block in the band
@@ -480,16 +480,16 @@ let
                       0  0  3 4;
                       0  0  5 6]
 
-    @test_throws BoundsError a[0:3, 1:2] = 2                      
-    @test_throws BoundsError a[3:6, 3:4] = 2                      
-    @test_throws BoundsError a[1:3, 0:2] = 2                      
-    @test_throws BoundsError a[3:5, 3:5] = 2      
+    @test_throws BoundsError a[0:3, 1:2] = 2
+    @test_throws BoundsError a[3:6, 3:4] = 2
+    @test_throws BoundsError a[1:3, 0:2] = 2
+    @test_throws BoundsError a[3:5, 3:5] = 2
     @test_throws BoundsError a[0:3, 1:2] = [1 2; 3 4]
     @test_throws BoundsError a[3:6, 3:4] = [1 2; 3 4]
     @test_throws BoundsError a[1:3, 0:2] = [1 2; 3 4]
     @test_throws BoundsError a[3:5, 3:5] = [1 2; 3 4]
 
-    @test_throws BandError a[1:3, 1:3] = 2                      
+    @test_throws BandError a[1:3, 1:3] = 2
     @test_throws BandError a[1:3, 1:3] = rand(3, 3)
 
     @test_throws DimensionMismatch a[1:3, 1:2] = rand(3, 3)
