@@ -344,12 +344,6 @@ end
 checkbounds(A::BandedMatrix, k::Integer, j::Integer) = 
     (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
 
-checkbounds(A::BandedMatrix, c::Colon, j::Integer) = 
-    (0 < j ≤ size(A, 2) || throw(BoundsError(A, (c, j))))
-
-checkbounds(A::BandedMatrix, k::Integer, c::Colon) = 
-    (0 < k ≤ size(A, 1) || throw(BoundsError(A, (k, c))))
-
 checkbounds(A::BandedMatrix, kr::Range, j::Integer) = 
     (checkbounds(A, first(kr), j) && 
      checkbounds(A,  last(kr), j) || throw(BoundsError(A, (kr, j))))
@@ -389,6 +383,10 @@ checkdimensions(ldest::Int, src::AbstractVector) =
 @inline unsafe_setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer) = 
     @inbounds A.data[A.u + k - j + 1, j] = convert(T, v)::T
 
+# fast method
+@inline unsafe_setindex!{T}(data::Matrix{T}, u::Integer, v, k::Integer, j::Integer) = 
+    @inbounds data[u + k - j + 1, j] = convert(T, v)::T
+
 # scalar - integer - integer
 function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
@@ -417,10 +415,11 @@ end
 function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band, ::Colon)
     @boundscheck checkband(A, b)
     @boundscheck checkdimensions(diaglength(A, b), V)
-    jstart = max(b.i - A.u + 2, 1)
     row = A.u - b.i + 1
-    for i = 1:length(V) 
-        A.data[row, jstart+i-1] = V[i]
+    data, i = A.data, max(b.i - A.u + 2, 1)
+    for v in V
+        @inbounds data[row, i] = v
+        i += 1
     end
     V
 end
@@ -451,8 +450,9 @@ setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, ::Type{BandRange}, j::Intege
 function setindex!{T}(A::BandedMatrix{T}, v, kr::Range, j::Integer)
     @boundscheck checkbounds(A, kr, j)
     @boundscheck  checkband(A, kr, j)
+    data, u = A.data, A.u
     for k in kr
-        unsafe_setindex!(A, v, k, j)
+        unsafe_setindex!(data, u, v, k, j)
     end
     v
 end
@@ -462,8 +462,9 @@ function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Range, j::Integ
     @boundscheck checkbounds(A, kr, j)
     @boundscheck checkdimensions(kr, V)
     @boundscheck  checkband(A, kr, j)
-    for i = 1:length(V)
-        unsafe_setindex!(A, V[i], kr[i], j)
+    data, u, i = A.data, A.u, 0
+    for v in V
+        unsafe_setindex!(data, u, v, kr[i+=1], j)
     end
     V
 end
@@ -491,9 +492,9 @@ setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, k::Integer, ::Type{BandRange
 function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, jr::Range)
     @boundscheck checkbounds(A, k, jr)
     @boundscheck checkband(A, k, jr)
-    j = rowstart(A, k)
+    data, u = A.data, A.u
     for j in jr
-        unsafe_setindex!(A, v, k, j)
+        unsafe_setindex!(data, u, v, k, j)
     end
     v
 end
@@ -503,8 +504,9 @@ function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, k::Integer, jr::Ran
     @boundscheck checkbounds(A, k, jr)
     @boundscheck checkband(A, k, jr)
     @boundscheck checkdimensions(jr, V)
-    for i = 1:length(V)
-        unsafe_setindex!(A, V[i], k, jr[i])
+    data, u, i = A.data, A.u, 0
+    for v in V
+        unsafe_setindex!(data, u, v, k, jr[i+=1])
     end
     V
 end
