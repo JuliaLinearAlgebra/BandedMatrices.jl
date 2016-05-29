@@ -345,12 +345,13 @@ checkbounds(A::BandedMatrix, k::Integer, j::Integer) =
     (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
 
 checkbounds(A::BandedMatrix, kr::Range, j::Integer) = 
-    (checkbounds(A, first(kr), j) && 
-     checkbounds(A,  last(kr), j) || throw(BoundsError(A, (kr, j))))
+    (checkbounds(A, first(kr), j); checkbounds(A,  last(kr), j))
 
 checkbounds(A::BandedMatrix, k::Integer, jr::Range) = 
-    (checkbounds(A, k, first(jr)) && 
-     checkbounds(A, k,  last(jr)) || throw(BoundsError(A, (k, jr))))
+    (checkbounds(A, k, first(jr)); checkbounds(A, k,  last(jr)))
+
+checkbounds(A::BandedMatrix, kr::Range, jr::Range) = 
+    (checkbounds(A, kr, first(jr)); checkbounds(A, kr,  last(jr)))
 
 # check indices fall in the band 
 checkband(A::BandedMatrix, i::Integer) = 
@@ -366,24 +367,33 @@ checkband(A::BandedMatrix, kr::Range, j::Integer) =
 checkband(A::BandedMatrix, k::Integer, jr::Range) = 
     (checkband(A, k, first(jr)); checkband(A, k,  last(jr)))
 
+checkband(A::BandedMatrix, kr::Range, jr::Range) = 
+    (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
+
 # check dimensions of inputs
-checkdimensions(ldest::Int, lsrc::Int) = (ldest == lsrc || 
-    throw(DimensionMismatch("tried to assign $(lsrc)-element " * 
-        "array to 1×$(ldest) destination")))
+checkdimensions(sizedest::Tuple{Int, Vararg{Int}}, sizesrc::Tuple{Int, Vararg{Int}}) = 
+    (sizedest == sizesrc ||
+        throw(DimensionMismatch("tried to assign $(sizesrc) sized " * 
+                                "array to $(sizedest) destination")) )
 
 checkdimensions(dest::AbstractVector, src::AbstractVector) = 
-    checkdimensions(length(dest), length(src))
+    checkdimensions(size(dest), size(src))
 
 checkdimensions(ldest::Int, src::AbstractVector) = 
-    checkdimensions(ldest, length(src))
+    checkdimensions((ldest, ), size(src))
+
+checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) = 
+    checkdimensions((length(kr), length(jr)), size(src))
+
 
 
 # ~ Special setindex methods ~
 
+# slow method to call in a loop as there is a getfield(A, :data)
 @inline unsafe_setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer) = 
-    @inbounds A.data[A.u + k - j + 1, j] = convert(T, v)::T
+    unsafe_setindex!(A.data, A.u, v, k, j)
 
-# fast method
+# fast method - to be used in loops - )probably can save an addition here)
 @inline unsafe_setindex!{T}(data::Matrix{T}, u::Integer, v, k::Integer, j::Integer) = 
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
 
@@ -510,6 +520,38 @@ function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, k::Integer, jr::Ran
     end
     V
 end
+
+# ~ indexing over a rectangular block
+
+# scalar - range - range
+function setindex!{T}(A::BandedMatrix{T}, v, kr::Range, jr::Range)
+    @boundscheck checkbounds(A, kr, jr)
+    @boundscheck checkband(A, kr, jr)
+    data, u = A.data, A.u
+    for j in jr, k in kr
+        unsafe_setindex!(data, u, v, k, j)
+    end
+    v
+end    
+
+# matrix - range - range
+function setindex!{T}(A::BandedMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range)
+    @boundscheck checkbounds(A, kr, jr)
+    @boundscheck checkband(A, kr, jr)
+    @boundscheck checkdimensions(kr, jr, V)
+    data, u = A.data, A.u
+    jj = 1
+    for j in jr
+        kk = 1
+        for k in kr
+            # we index V manually in column-major order
+            @inbounds unsafe_setindex!(data, u, V[kk, jj], k, j)
+            kk += 1
+        end
+        jj += 1
+    end
+    V
+end   
 
 # ~~ end setindex! ~~
 

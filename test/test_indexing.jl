@@ -460,3 +460,37 @@ let
                 2 2 2;
                 0 2 2] 
 end
+
+# replace a block in the band
+let
+    a = bzeros(5, 4, 2, 1)
+    # 5x4 BandedMatrices.BandedMatrix{Float64}:
+    #  0.0  0.0
+    #  0.0  0.0  0.0
+    #  0.0  0.0  0.0  0.0
+    #       0.0  0.0  0.0
+    #            0.0  0.0
+    a[1:3, 1:2] = 2
+    a[3:5, 3:4] = [1 2;
+                   3 4;
+                   5 6]
+    @test full(a) == [2  2  0 0;
+                      2  2  0 0;
+                      2  2  1 2;
+                      0  0  3 4;
+                      0  0  5 6]
+
+    @test_throws BoundsError a[0:3, 1:2] = 2                      
+    @test_throws BoundsError a[3:6, 3:4] = 2                      
+    @test_throws BoundsError a[1:3, 0:2] = 2                      
+    @test_throws BoundsError a[3:5, 3:5] = 2      
+    @test_throws BoundsError a[0:3, 1:2] = [1 2; 3 4]
+    @test_throws BoundsError a[3:6, 3:4] = [1 2; 3 4]
+    @test_throws BoundsError a[1:3, 0:2] = [1 2; 3 4]
+    @test_throws BoundsError a[3:5, 3:5] = [1 2; 3 4]
+
+    @test_throws BandError a[1:3, 1:3] = 2                      
+    @test_throws BandError a[1:3, 1:3] = rand(3, 3)
+
+    @test_throws DimensionMismatch a[1:3, 1:2] = rand(3, 3)
+end
