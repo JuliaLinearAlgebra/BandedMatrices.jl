@@ -380,11 +380,11 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
 
 # ~ Special setindex methods ~
 
-# slow method to call in a loop as there is a getfield(A, :data) 
+# slow fall back method
 @inline unsafe_setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer) = 
     unsafe_setindex!(A.data, A.u, v, k, j)
 
-# fast method - to be used in loops - )probably can save an addition here)
+# fast method used below 
 @inline unsafe_setindex!{T}(data::Matrix{T}, u::Integer, v, k::Integer, j::Integer) = 
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
 
@@ -392,7 +392,7 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
 function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
     @boundscheck  checkband(A, j-k)
-    unsafe_setindex!(A, v, k, j)
+    unsafe_setindex!(A.data, a.u, v, k, j)
 end
 
 # scalar - colon - colon
