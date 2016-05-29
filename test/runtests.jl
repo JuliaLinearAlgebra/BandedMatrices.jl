@@ -100,6 +100,83 @@ for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
     @test_approx_eq full(A[kr,jr]) full(A)[kr,jr]
 end
 
+# test gbmm! subpieces step by step and column by column
+for n in (1,5,50), ν in (1,5,50), m in (1,5,50),
+                Al in (0,1,2,30), Au in (0,1,2,30),
+                Bl in (0,1,2,30), Bu in (0,1,2,30)
+    A=brand(n,ν,Al,Au)
+    B=brand(ν,m,Bl,Bu)
+    α,β,T=0.123,0.456,Float64
+    C=brand(Float64,n,m,A.l+B.l,A.u+B.u)
+    a=pointer(A.data)
+    b=pointer(B.data)
+    c=pointer(C.data)
+    sta=max(1,stride(A.data,2))
+    stb=max(1,stride(B.data,2))
+    stc=max(1,stride(C.data,2))
+
+    sz=sizeof(T)
+
+    mr=1:min(m,1+B.u)
+    exC=(β*full(C)+α*full(A)*full(B))
+    for j=mr
+        A11_Btop_Ctop_gbmv!(α,β,
+                                       n,ν,m,j,
+                                       sz,
+                                       a,A.l,A.u,sta,
+                                       b,B.l,B.u,stb,
+                                       c,C.l,C.u,stc)
+   end
+    @test_approx_eq C[:,mr] exC[:,mr]
+
+    mr=1+B.u:min(1+C.u,ν-B.l,m)
+    exC=(β*full(C)+α*full(A)*full(B))
+    for j=mr
+        Atop_Bmid_Ctop_gbmv!(α,β,
+                                       n,ν,m,j,
+                                       sz,
+                                       a,A.l,A.u,sta,
+                                       b,B.l,B.u,stb,
+                                       c,C.l,C.u,stc)
+   end
+   if !isempty(mr)
+       @test_approx_eq C[:,mr] exC[:,mr]
+   end
+
+   mr=1+C.u:min(m,ν+B.u,n+C.u)
+   exC=(β*full(C)+α*full(A)*full(B))
+   for j=mr
+       Amid_Bmid_Cmid_gbmv!(α,β,
+                                      n,ν,m,j,
+                                      sz,
+                                      a,A.l,A.u,sta,
+                                      b,B.l,B.u,stb,
+                                      c,C.l,C.u,stc)
+  end
+  if !isempty(mr)
+      @test_approx_eq C[:,mr] exC[:,mr]
+  end
+
+  mr=ν+B.u+1:min(m,n+C.u)
+  exC=(β*full(C)+α*full(A)*full(B))
+  for j=mr
+      Anon_Bnon_C_gbmv!(α,β,
+                                     n,ν,m,j,
+                                     sz,
+                                     a,A.l,A.u,sta,
+                                     b,B.l,B.u,stb,
+                                     c,C.l,C.u,stc)
+ end
+ if !isempty(mr)
+     @test_approx_eq C[:,mr] exC[:,mr]
+ end
+end
+
+
+
+# test gbmm!
+
+
 for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
     println("$n,$ν,$m,$Al,$Au,$Bl,$Bu")
     A=brand(n,ν,Al,Au)
@@ -108,6 +185,80 @@ for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2
 end
 
 
+for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
+    println("$n,$ν,$m,$Al,$Au,$Bl,$Bu")
+    A=brand(n,ν,Al,Au)
+    B=brand(ν,m,Bl,Bu)
+    @test_approx_eq full(A*B) full(A)*full(B)
+end
+
+
+
+
+n,ν,m,Al,Au,Bl,Bu=8,8,8,2,1,2,1
+A=brand(n,ν,Al,Au)
+B=brand(ν,m,Bl,Bu)
+α,β,T=0.123,0.456,Float64
+    C=brand(Float64,n,m,A.l+B.l,A.u+B.u)
+    a=pointer(A.data)
+    b=pointer(B.data)
+    c=pointer(C.data)
+    sta=max(1,stride(A.data,2))
+    stb=max(1,stride(B.data,2))
+    stc=max(1,stride(C.data,2))
+
+    sz=sizeof(T)
+
+    mr=1:min(m,1+B.u)
+    exC=(β*full(C)+α*full(A)*full(B))
+    for j=mr
+        A11_Btop_Ctop_gbmv!(α,β,
+                                       n,ν,m,j,
+                                       sz,
+                                       a,A.l,A.u,sta,
+                                       b,B.l,B.u,stb,
+                                       c,C.l,C.u,stc)
+   end
+    @test_approx_eq C[:,mr] exC[:,mr]
+exC
+
+
+
+C
+
+
+
+
+
+
+C
+
+using Base.Test
+
+Al,Au=A.l,A.u
+Bl,Bu=B.l,B.u
+Cl,Cu=C.l,C.u
+
+A=BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
+B=BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
+C=BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
+
+nr=1:min(Cl+j,n)
+νr=1:min(Bl+j,ν)
+
+cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
+k=2
+    C[k,j]=cj[k-first(nr)+1]
+
+C
+
+
+
+
+
+cj
+
+nr
 
 n,ν,m,Al,Au,Bl,Bu=50,5,5,0,0,30,0
 A=brand(n,ν,Al,Au)
