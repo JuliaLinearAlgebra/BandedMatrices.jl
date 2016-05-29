@@ -265,14 +265,10 @@ getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
 
 # ~~ setindex! ~~
 
-# Design notes
-# ~ the colon (:) denotes all element within the band so A[:, i] are all 
-#   the elements on the i-the column that happen to be on the band. Out of 
-#   band zeros are not returned. 
-# ~ i used k and j to mean the row and column indices
-#
 # TODO
-# ~ allow indexing with vectors of indices -- A[1, [2, 3]] = 4
+# ~ implement indexing with vectors of indices
+# ~ implement scalar/vector - band - integer
+# ~ implement scalar/vector - band - range
 
 # ~ Utilities ~
 
@@ -303,10 +299,6 @@ function showerror(io::IO, e::BandError)
     print(io, "attempt to access $(typeof(A)) with bandwidths " * 
               "($(-l), $u) at band $i")
 end
-
-# check band is not out of band
-@inline isinband(b::Band, A::BandedMatrix)    = isinband(b.i, A)
-@inline isinband(i::Integer, A::BandedMatrix) = (bandinds(A, 1) ≤ i ≤ bandinds(A, 2))
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
 @inline colstart(A::BandedMatrix, i::Integer) = min(max(i-A.u, 1), size(A, 2))
@@ -389,7 +381,7 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
 
 # ~ Special setindex methods ~
 
-# slow method to call in a loop as there is a getfield(A, :data)
+# slow method to call in a loop as there is a getfield(A, :data) 
 @inline unsafe_setindex!{T}(A::BandedMatrix{T}, v, k::Integer, j::Integer) = 
     unsafe_setindex!(A.data, A.u, v, k, j)
 
@@ -434,9 +426,6 @@ function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band, ::Colon)
     V
 end
 
-# TODO
-# scalar - band - integer
-# scalar - band - range
 
 # ~ indexing along columns
 
@@ -450,11 +439,11 @@ setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Colon, j::Integer) =
 
 # scalar - BandRange - integer -- A[1, BandRange] = 2
 setindex!{T}(A::BandedMatrix{T}, v, ::Type{BandRange}, j::Integer) = 
-    (A[colstart(A, j):colstop(A, j), j] = v) # call range method # TODO replace with fast method
+    (A[colstart(A, j):colstop(A, j), j] = v) # call range method
 
 # vector - BandRange - integer -- A[1, BandRange] = 2
 setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, ::Type{BandRange}, j::Integer) = 
-    (A[colstart(A, j):colstop(A, j), j] = V) # call range method # TODO replace with fast method
+    (A[colstart(A, j):colstop(A, j), j] = V) # call range method
 
 # scalar - range - integer -- A[1:2, 1] = 2
 function setindex!{T}(A::BandedMatrix{T}, v, kr::Range, j::Integer)
