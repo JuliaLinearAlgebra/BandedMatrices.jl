@@ -418,10 +418,10 @@ let
     #  0.0  0.0  0.0  0.0
     #       0.0  0.0  0.0
     #            0.0  0.0
-    a[band(-2), :] = 5
-    a[band(-1), :] = 1
-    a[band( 0), :] = 2
-    a[band( 1), :] = 3
+    a[band(-2)] = 5
+    a[band(-1)] = 1
+    a[band( 0)] = 2
+    a[band( 1)] = 3
 
     @test full(a) == [ 2  3  0  0;
                        1  2  3  0;
@@ -429,12 +429,12 @@ let
                        0  5  1  2;
                        0  0  5  1]
 
-    @test_throws BandError a[band(-3), :] = 1
+    @test_throws BandError a[band(-3)] = 1
 
-    a[band(-2), :] = [4, 4, 4]
-    a[band(-1), :] = [1, 2, 3, 4]
-    a[band( 0), :] = [5, 6, 7, 8]
-    a[band( 1), :] = [9, 10, 11]
+    a[band(-2)] = [4, 4, 4]
+    a[band(-1)] = [1, 2, 3, 4]
+    a[band( 0)] = [5, 6, 7, 8]
+    a[band( 1)] = [9, 10, 11]
 
     @test full(a) == [ 5  9   0   0;
                        1  6  10   0;
@@ -442,7 +442,7 @@ let
                        0  4   3   8;
                        0  0   4   4]
 
-    @test_throws BandError a[band(-3), :] = [1, 2, 3]
+    @test_throws BandError a[band(-3)] = [1, 2, 3]
 end
 
 # other special methods

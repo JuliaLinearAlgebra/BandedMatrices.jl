@@ -407,13 +407,13 @@ setindex!{T}(A::BandedMatrix{T}, v, ::Colon) =
 # ~ indexing along a band
 
 # scalar - band - colon
-function setindex!{T}(A::BandedMatrix{T}, v, b::Band, ::Colon)
+function setindex!{T}(A::BandedMatrix{T}, v, b::Band)
     @boundscheck checkband(A, b)
     @inbounds A.data[A.u - b.i + 1, :] = convert(T, v)::T
 end
 
 # vector - band - colon
-function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band, ::Colon)
+function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band)
     @boundscheck checkband(A, b)
     @boundscheck checkdimensions(diaglength(A, b), V)
     row = A.u - b.i + 1
