@@ -316,14 +316,14 @@ end
     min(size(A, 2), size(A, 1)+i) - max(0, i)
 end
 
-# return id of lowest-most empty diagonal intersected by row k
+# return id of first empty diagonal intersected along row k
 function _firstdiagrow(A, k)
     a, b = rowstart(A, k), rowstop(A, k)
     c = a == 1 ? b+1 : a-1
     c-k
 end
 
-# return id of lowest-most empty diagonal intersected by column j
+# return id of first empty diagonal intersected along column j
 function _firstdiagcol(A, j)
     a, b = colstart(A, j), colstop(A, j)
     r = a == 1 ? b+1 : a-1
