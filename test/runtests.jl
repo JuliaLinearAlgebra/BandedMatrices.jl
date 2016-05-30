@@ -217,7 +217,7 @@ A*v
 @time for k=1:100
     A*v
 end
-println("Time should be   0.007245 seconds (400 allocations: 7.639 MB)")
+println("Time should be   0.004986 seconds (400 allocations: 7.639 MB)")
 @time for k=1:100
     B*w
 end
@@ -232,7 +232,7 @@ B=brand(1000,1000,200,300)
     A*A
 end
 
-println("Time should be   0.010083 seconds (30 allocations: 8.393 MB)")
+println("Time should be   0.008115 seconds (30 allocations: 8.393 MB)")
 
 @time for k=1:10
     B*B
