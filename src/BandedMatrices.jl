@@ -262,6 +262,9 @@ end
 
 getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
 
+# Additional get index overrides
+unsafe_getindex(A::BandedMatrix,kr::Range,j::Integer)=vec(A.data[kr-j+A.u+1,j])
+
 
 # ~~ setindex! ~~
 

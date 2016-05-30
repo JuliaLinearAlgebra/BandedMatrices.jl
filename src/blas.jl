@@ -64,6 +64,195 @@ gbmm!{T}(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix{T})=gbmm!(convert
                                                                        convert(T,β),
                                                                        C)
 
+# The following routines multiply
+#
+#  C[:,j] = α*A*B[:,j] + β* C[:,j]
+#
+#  But are divided into cases to minimize the calculated
+#  rows.  We use A is n x ν, B is ν x m
+
+
+
+# Equivalent to
+#
+#  C[1:min(Cl+j,n),j] = α*A[1:min(Cl+j,n),1:min(Bl+j,ν)]*B[1:min(Bl+j,ν),j]
+#                       + β*C[1:min(Cl+j,n),j]
+#
+@inline function A11_Btop_Ctop_gbmv!(α,β,
+                               n,ν,m,j,
+                               sz,
+                               a,Al,Au,sta,
+                               b,Bl,Bu,stb,
+                               c,Cl,Cu,stc)
+   # A=BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
+   # B=BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
+   # C=BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
+   #
+   # nr=1:min(Cl+j,n)
+   # νr=1:min(Bl+j,ν)
+   #
+   # cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
+   #
+   # for k in nr
+   #     C[k,j]=cj[k-first(nr)+1]
+   # end
+   #
+   # c
+
+   gbmv!('N',min(Cl+j,n),
+          Al, Au,
+          α,
+          a, min(Bl+j,ν), sta,
+          b+sz*((j-1)*stb+Bu-j+1), β,
+          c+sz*((j-1)*stc+Cu-j+1))
+end
+
+
+# Equivalent to
+#
+#  C[1:min(Cl+j,n),j] = α*A[1:min(Cl+j,n),p:min(p+Bl+Bu+1,ν)]*
+#                               B[p:min(p+Bl+Bu+1,ν),j]
+#                       + β*C[1:min(Cl+j,n),j]
+# for p = j-B.u
+#
+
+
+@inline function Atop_Bmid_Ctop_gbmv!(α,β,
+                               n,ν,m,j,
+                               sz,
+                               a,Al,Au,sta,
+                               b,Bl,Bu,stb,
+                               c,Cl,Cu,stc)
+   # p=j-Bu
+
+   # A=BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
+   # B=BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
+   # C=BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
+   #
+   # nr=1:min(Cl+j,n)
+   # νr=p:min(p+Bl+Bu+1,ν)
+   #
+   # cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
+   #
+   # for k in nr
+   #     C[k,j]=cj[k-first(nr)+1]
+   # end
+   #
+   # c
+
+   gbmv!('N', min(Cl+j,n),
+           Al+j-Bu-1, Au-j+Bu+1,
+           α,
+           a+sz*(j-Bu-1)*sta, min(Bl+Bu+1,ν-j+Bu+1), sta,
+           b+sz*(j-1)*stb, β,
+           c+sz*((j-1)*stc+Cu-j+1))
+end
+
+
+# Equivalent to
+#
+#  C[nr,j] = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
+#
+# for p  = j-B.u
+#     nr = p-Au : min(p+Al,n)
+#     νr = p    : min(p+Bl+Bu+1,ν)
+#
+#
+
+@inline function Amid_Bmid_Cmid_gbmv!(α,β,
+                               n,ν,m,j,
+                               sz,
+                               a,Al,Au,sta,
+                               b,Bl,Bu,stb,
+                               c,Cl,Cu,stc)
+   p = j-Bu
+   # A = BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
+   # B = BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
+   # C = BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
+   #
+   # nr= j-Cu : min(j+Cl,n)
+   # νr= p    : min(p+Bl+Bu+1,ν)
+   # if !isempty(nr) && !isempty(νr)
+   #     cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
+   #
+   #     for k in nr
+   #         C[k,j]=cj[k-first(nr)+1]
+   #     end
+   # end
+   #
+   # c
+   gbmv!('N', min(Cl+Cu+1,n-j+Cu+1),
+           Al+Au, 0,
+           α,
+           a+sz*(j-Bu-1)*sta, min(Bl+Bu+1,ν-p+1), sta,
+           b+sz*(j-1)*stb, β,
+           c+sz*(j-1)*stc)
+end
+
+# Equivalent to
+#
+#  C[nr,j] =  β*C[nr,j]
+#
+# for nr= max(1,j-Cu) : min(j+Cl,n)
+#
+
+
+@inline function Anon_Bnon_C_gbmv!(α,β,
+                               n,ν,m,j,
+                               sz,
+                               a,Al,Au,sta,
+                               b,Bl,Bu,stb,
+                               c,Cl,Cu,stc)
+   # C = BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
+   #
+   # nr= max(1,j-Cu) : min(j+Cl,n)
+   #
+   # if !isempty(nr)
+   #     cj =  β*C[nr,j]
+   #
+   #     for k in nr
+   #         C[k,j]=cj[k-first(nr)+1]
+   #     end
+   # end
+   #
+   # c
+
+   BLAS.scal!(Cu+Cl+1,β,c+sz*(j-1)*stc,1)
+end
+
+
+
+# function Amid_Bbot_Cmid_gbmv!(α,β,
+#                                n,ν,m,j,
+#                                sz,
+#                                a,Al,Au,sta,
+#                                b,Bl,Bu,stb,
+#                                c,Cl,Cu,stc)
+#    gbmv!('N', Cl+Cu+1,
+#            Al+Au, 0,
+#            α,
+#            a+sz*(j-Bu-1)*sta, ν-j+1, sta,
+#            b+sz*(j-1)*stb, β,
+#            c+sz*(j-1)*stc)
+# end
+#
+#
+# function Abot_Bbot_Cbot_gbmv!(α,β,
+#                                n,ν,m,j,
+#                                sz,
+#                                a,Al,Au,sta,
+#                                b,Bl,Bu,stb,
+#                                c,Cl,Cu,stc)
+#    gbmv!('N', n-j+C.u+1,
+#            A.l+A.u, 0,
+#            α,
+#            a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta,
+#            b+sz*(j-1)*stb, β,
+#            c+sz*(j-1)*stc)
+# end
+
+
+
 function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMatrix{T})
     n,ν=size(A)
     m=size(B,2)
@@ -71,6 +260,11 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
     @assert n==size(C,1)
     @assert ν==size(B,1)
     @assert m==size(C,2)
+
+    # only tested at the moment for this case
+    # TODO: implement when C.u,C.l ≥
+    @assert C.u==A.u+B.u
+    @assert C.l==A.l+B.l
 
 
     a=pointer(A.data)
@@ -81,32 +275,52 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
     stc=max(1,stride(C.data,2))
     sz=sizeof(T)
 
-    #TODO: The following redoes columns in degenerate cases
+    Al=A.l;Au=A.u
+    Bl=B.l;Bu=B.u
+    Cl=C.l;Cu=C.u
+
 
     # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
-    for j=1:min(B.u+1,m)
-        gbmv!('N',min(C.l+j,n), A.l, A.u, α, a, min(B.l+j,ν), sta, b+sz*((j-1)*stb+B.u-j+1), β, c+sz*((j-1)*stc+C.u-j+1))
+    for j=1:min(m,1+B.u)
+        A11_Btop_Ctop_gbmv!(α,β,
+                            n,ν,m,j,
+                            sz,
+                            a,Al,Au,sta,
+                            b,Bl,Bu,stb,
+                            c,Cl,Cu,stc)
     end
+
     # Multiply columns j where B[k,j]=0 for k<p=(j-B.u-1), A is at 1,1+p and C[1,j]≠0
     # j ≤ ν + B.u since then 1+p ≤ ν, so inside the columns of A
-    for j=B.u+2:min(C.u+1,m,ν+B.u)
-        p=j-B.u-1
-        gbmv!('N', min(C.l+j,n), A.l+p, A.u-p, α, a+sz*p*sta, min(B.l+B.u+1,ν-p), sta, b+sz*(j-1)*stb, β, c+sz*((j-1)*stc+C.u-j+1))
+
+    for j=2+B.u:min(1+C.u,ν+B.u,m)
+        Atop_Bmid_Ctop_gbmv!(α,β,
+                            n,ν,m,j,
+                            sz,
+                            a,Al,Au,sta,
+                            b,Bl,Bu,stb,
+                            c,Cl,Cu,stc)
     end
 
-    # multiply columns where A, B and C are mid
-    for j=C.u+2:min(n-C.l,m,ν+B.u)
-        gbmv!('N', C.l+C.u+1, A.l+A.u, 0, α, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, β, c+sz*(j-1)*stc)
-    end
 
     # multiply columns where A and B are mid and C is bottom
-    for j=max(n-C.l+1,C.u+1):min(ν-B.l,n+C.u,m)
-        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, α, a+sz*(j-B.u-1)*sta, B.l+B.u+1, sta, b+sz*(j-1)*stb, β, c+sz*(j-1)*stc)
+    for j=2+C.u:min(m,ν+B.u,n+C.u)
+        Amid_Bmid_Cmid_gbmv!(α,β,
+                            n,ν,m,j,
+                            sz,
+                            a,Al,Au,sta,
+                            b,Bl,Bu,stb,
+                            c,Cl,Cu,stc)
     end
 
-    # multiply columns where A,  B and C are bottom
-    for j=max(ν-B.l+1,C.u+1):min(m,n+C.u,B.u+ν)
-        gbmv!('N', n-j+C.u+1, A.l+A.u, 0, α, a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta, b+sz*(j-1)*stb, β, c+sz*(j-1)*stc)
+    # scale columns of C by β that aren't impacted by α*A*B
+    for j=ν+B.u+1:min(m,n+C.u)
+        Anon_Bnon_C_gbmv!(α,β,
+                            n,ν,m,j,
+                            sz,
+                            a,Al,Au,sta,
+                            b,Bl,Bu,stb,
+                            c,Cl,Cu,stc)
     end
 
     C

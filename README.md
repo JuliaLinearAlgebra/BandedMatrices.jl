@@ -6,26 +6,43 @@ A Julia package for representing banded matrices
 
 
 This package supports representing banded matrices by only the entries on the
-bands.  Currently, only column-major ordering is supported: a banded matrix
+bands.  
+
+One can create banded matrices of type `BandedMatrix` as follows:
+
 ```julia
- [ a_11 a_12
-   a_21 a_22 a_23
-   a_31 a_32 a_33 a_34
-        a_42 a_43 a_44  ]
+bzeros(m,n,l,u)    # creates a banded matrix of zeros, with l sub-diagonals and u super-diagonals
+brand(m,n,l,u)     # creates a random banded matrix, with l sub-diagonals and u super-diagonals
+bones(m,n,l,u)     # creates a banded matrix of ones, with l sub-diagonals and u super-diagonals
+beye(n,l,u)        # creates a banded  n x n identity matrix, with l sub-diagonals and u super-diagonals
 ```
-is represented by the matrix       
+
+Specialized algebra routines are overriden, include `*` and `\`:
+
 ```julia
-[ *      a_12   a_23    a_34
-  a_11   a_22   a_33    a_43
-  a_21   a_32   a_43    *
-  a_31   a_42   *       *       ]
+A = brand(10000,10000,4,3)  # creates a 10000 x 10000 matrix with 4 sub-diagonals
+                            # and 3 super-diagonals
+b = randn(10000)
+A*b  #   Calls optimized matrix*vector routine
+A*A  #   Calls optimized matrix*matrix routine
+A\b  #   Calls optimized matrix\vector routine
+```
+
+
+## Implementation
+
+Currently, only column-major ordering is supported: a banded matrix `B`
+```julia
+[ a_11 a_12
+  a_21 a_22 a_23
+  a_31 a_32 a_33 a_34
+       a_42 a_43 a_44  ]
+```
+is represented as a `BandedMatrix` with a field `B.data` representing the matrix as
+```julia
+[ *     a_12   a_23    a_34
+ a_11   a_22   a_33    a_43
+ a_21   a_32   a_43    *
+ a_31   a_42   *       *       ]
 ```        
-
-One can create banded matrices as follows:
-
-```julia
-bzeros(m,n,l,u)    # creates a banded matrix of zeros, with l subdiagonals and u superdiagonals
-brand(m,n,l,u)     # creates a random banded matrix, with l subdiagonals and u superdiagonals
-bones(m,n,l,u)     # creates a banded matrix of ones, with l subdiagonals and u superdiagonals
-beye(n,l,u)        # creates a banded  n x n identity matrix, with l subdiagonals and u superdiagonals
-```
+`B.l` gives the number of subdiagonals (2) and `B.u` gives the number of super-diagonals (1).  Both `B.l` and `B.u` must be non-negative at the moment.
