@@ -2,8 +2,8 @@
 srand(0)
 
 # conversion to blas type
-type _foo <: Number end 
-let 
+type _foo <: Number end
+let
     typ = Float64
     @test BandedMatrices._promote_to_blas_type(typ, Complex128) == Complex128
     @test BandedMatrices._promote_to_blas_type(typ, Complex64)  == Complex128
@@ -28,7 +28,7 @@ let
 end
 
 # conversion of inputs to appropriate blas type
-let 
+let
     As   = Any[BandedMatrix(rand(1:10, 3, 5), 5, 1, 1),
                BandedMatrix(rand(3, 5)*im,    5, 1, 1),
                BandedMatrix(rand(3, 5),       5, 1, 1)
@@ -37,8 +37,8 @@ let
                rand(1:10,   5),
                rand(1:10.0, 5)*im,
               ]
-    typs = Any[Float64, 
-               Complex128, 
+    typs = Any[Float64,
+               Complex128,
                Complex128]
 
     for (A, b, typ) in zip(As, bs, typs)
@@ -56,11 +56,11 @@ let
 end
 
 # basic A\b interface
-let 
+let
     # banded
     A = brand(5, 1, 1)
     b = Float64[1, 2, 3, 4, 5]
-    
+
     # dense storage
     Af = full(A)
     bf = copy(b)
@@ -72,11 +72,11 @@ let
 end
 
 # advanced interface
-let 
+let
     # banded
     A = brand(5, 1, 1)
     b = rand(5)
-    
+
     # dense storage
     Af = full(A)
     bf = copy(b)
@@ -89,7 +89,7 @@ let
 end
 
 # conversion of inputs if needed
-let 
+let
     # factorisation performs conversion
     Ai = BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
     @test eltype(lufact(Ai)) == Float64
@@ -116,7 +116,7 @@ let
 end
 
 # matrix must be square error
-let 
+let
     for (n, m) in zip([7, 5], [5, 7])
         A = brand(m, n, 1, 1)
         b = rand(m)
@@ -132,7 +132,7 @@ let
     # banded
     A = brand(5, 1, 1)
     b = rand(5)
-    
+
     # dense storage
     Af = full(A)
     bf = copy(b)
@@ -141,7 +141,7 @@ let
     # once the lapack storage is built in to a BandedMatrix
     @test Af'\bf ≈ Base.LinAlg.At_ldiv_B!(lufact(A),  copy(b))
     @test Af'\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(A'), copy(b))
-end 
+end
 
 
 # test complex input algorithm
@@ -149,7 +149,7 @@ let
     # banded
     A = brand(5, 1, 1) + brand(5, 1, 1)*im
     b = rand(5) + rand(5)*im
-    
+
     # dense storage
     Af = full(A)
     bf = copy(b)
@@ -165,14 +165,14 @@ let
     @test transpose(Af)\bf ≈ Base.LinAlg.At_ldiv_B!(lufact(A),  copy(b))
     @test ctranspose(Af)\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(ctranspose(A)), copy(b))
     @test ctranspose(Af)\bf ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
-end 
+end
 
 # test with multiple rhs
 let
     # banded
     A = brand(5, 1, 1)
     b = rand(5, 10)
-    
+
     # dense storage
     Af = full(A)
     bf = copy(b)
@@ -191,7 +191,7 @@ end
 
 # test properties of factorisation
 let
-    BLU = lufact(brand(5, 4, 1, 1)) 
+    BLU = lufact(brand(5, 4, 1, 1))
     @test size(BLU) == (5, 4)
     @test size(BLU, 1) == 5
     @test size(BLU, 2) == 4
