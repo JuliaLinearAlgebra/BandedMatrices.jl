@@ -381,11 +381,17 @@ function banded_axpy!{T,BM<:BandedMatrix}(a::Number,X,S::SubArray{T,2,BM})
     @assert size(X)==size(S)
 
     Y=parent(S)
+    kr,jr=parentindexes(S)
+
+    if isempty(kr) || isempty(jr)
+        return S
+    end
+
     shft=bandshift(S)
 
     @assert 0 ≤ bandwidth(X,1) ≤ bandwidth(Y,1)-shft && 0 ≤ bandwidth(X,2) ≤ bandwidth(Y,2)+shft
 
-    kr,jr=parentindexes(S)
+
     for (k,j) in eachbandedindex(X)
         @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*unsafe_getindex(X,k,j)
     end

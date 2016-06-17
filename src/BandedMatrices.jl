@@ -530,7 +530,7 @@ end
 
 ## SubArray routines
 
-bandshift(S) = first(parentindexes(S)[1])-first(parentindexes(S)[2])
+bandshift(S) = parentindexes(S)[1][1]-parentindexes(S)[2][1]
 
 bandwidth{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k) = bandwidth(parent(S),k) +
         (k==1?-1:1)*bandshift(S)
