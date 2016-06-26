@@ -167,7 +167,7 @@ function banded_qrfact!(R::BandedMatrix)
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W
         BLAS.blascopy!(M,v,1,wp,1)
-        W[1,k]-= BLAS.nrm2(M,wp,1)
+        W[1,k]+= sign(W[1,k])*BLAS.nrm2(M,wp,1)
         normalize!(M,wp)
 
         for j=k:min(k+R.u,n)
@@ -182,7 +182,7 @@ function banded_qrfact!(R::BandedMatrix)
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W
         BLAS.blascopy!(M-p,v,1,wp,1)
-        W[1,k]-= BLAS.nrm2(M-p,wp,1)
+        W[1,k]+= sign(W[1,k])*BLAS.nrm2(M-p,wp,1)
         normalize!(M-p,wp)
 
         for j=k:min(k+R.u,n)
