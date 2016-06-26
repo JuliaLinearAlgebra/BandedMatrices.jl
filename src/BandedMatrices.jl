@@ -138,6 +138,7 @@ end
 
 
 include("BandedLU.jl")
+include("BandedQR.jl")
 include("blas.jl")
 
 

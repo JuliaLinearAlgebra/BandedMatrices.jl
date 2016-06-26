@@ -18,14 +18,17 @@ end
 
 
 size(A::BandedQ) = (A.m, A.m)
-size(Q::BandedQ,i::Integer) = i <= 0 ? error("dimension out of range") :
+size(A::BandedQ,i::Integer) = i <= 0 ? error("dimension out of range") :
                                 i == 1 ? A.m :
                                 i == 2 ? A.m : 1
 
 
-Base.At_mul_B(A::BandedQ,B::Vector) = At_mul_B!(similar(B),A,B)
+Base.At_mul_B{T<:Real}(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) = Ac_mul_B(A,B)
+Base.At_mul_B!{T<:Real}(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) = Ac_mul_B!(Y,A,B)
 
-function Base.At_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
+Base.Ac_mul_B(A::BandedQ,B::Vector) = Ac_mul_B!(similar(B),A,B)
+
+function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -65,6 +68,69 @@ function Base.At_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
 end
 
 
+# Each householder is symmetyric, this just reverses the order of application
+function Base.A_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
+    if length(Y) != size(A,1) || length(B) != size(A,2)
+        throw(DimensionMismatch("Matrices have wrong dimensions"))
+    end
+
+    H=A.H
+    m=A.m
+
+    M=size(H,1)
+    b=pointer(B)
+    y=pointer(Y)
+    h=pointer(H)
+    st=stride(H,2)
+
+    sz=sizeof(T)
+
+    BLAS.blascopy!(m,B,1,Y,1)
+
+    for k=size(H,2):-1:m-M+2
+        p=k-m+M-1
+
+        wp=h+sz*st*(k-1)
+        yp=y+sz*(k-1)
+
+        dt=BLAS.dot(M-p,yp,1,wp,1)
+        BLAS.axpy!(M-p,-2*dt,wp,1,yp,1)
+    end
+
+
+    for k=min(size(H,2),m-M+1):-1:1
+        wp=h+sz*st*(k-1)
+        yp=y+sz*(k-1)
+
+        dt=BLAS.dot(M,yp,1,wp,1)
+        BLAS.axpy!(M,-2*dt,wp,1,yp,1)
+    end
+
+    Y
+end
+
+function Base.A_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
+    for j=1:size(A,2)
+        Y[:,j]=A*B[:,j]
+    end
+    Y
+end
+
+function Base.Ac_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
+    for j=1:size(A,2)
+        Y[:,j]=A'*B[:,j]
+    end
+    Y
+end
+
+Base.full(A::BandedQ) = A*eye(size(A,1))
+
+Base.linearindexing{T}(::Type{BandedQ{T}}) = Base.LinearSlow()
+Base.getindex(A::BandedQ,k::Int,j::Int) = (A*[zeros(j-1);1.0;zeros(size(A,2)-j)])[k]
+
+
+
+
 function Base.getindex(QR::BandedQR,d::Symbol)
     d == :Q && return BandedQ(QR.H,size(QR,1))
     d == :R && return QR.R
@@ -73,6 +139,11 @@ function Base.getindex(QR::BandedQR,d::Symbol)
 end
 
 
+
+function Base.qr(A::BandedMatrix)
+    QR = qrfact(A)
+    QR[:Q],QR[:R]
+end
 
 function Base.qrfact(A::BandedMatrix)
     R=bzeros(eltype(A),size(A,1),size(A,2),A.l,A.l+A.u)
@@ -121,5 +192,5 @@ function banded_qrfact!(R::BandedMatrix)
         end
     end
 
-    BandedQR(W,R)
+    BandedQR(W,BandedMatrix(R.data[1:R.u+1,:],m,0,R.u))
 end
