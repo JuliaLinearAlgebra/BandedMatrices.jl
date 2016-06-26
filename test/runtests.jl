@@ -2,6 +2,7 @@ versioninfo()
 
 using BandedMatrices, Base.Test
 
+include("test_indexing.jl")
 include("test_bandedlu.jl")
 
 A,B=brand(10,12,2,3),brand(10,12,3,4)
