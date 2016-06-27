@@ -1,7 +1,15 @@
-normalize!(w) = BLAS.scal!(length(w),inv(norm(w)),w,1)
-function normalize!(n,w)
+dot(x...) = Base.dot(x...)
+dot{T<:Union{Float64,Float32}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+    BLAS.dot(M,a,incx,b,incy)
+dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+    BLAS.dotc(M,a,incx,b,incy)
+
+
+normalize!(w::Vector) = normalize!(length(w),w)
+normalize!{T<:Union{Float64,Float32}}(n,w::Union{Vector{T},Ptr{T}}) =
     BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
-end
+normalize!{T<:Union{Complex128,Complex64}}(n,w::Union{Vector{T},Ptr{T}}) =
+    BLAS.scal!(n,T(inv(BLAS.nrm2(n,w,1))),w,1)
 
 
 immutable BandedQR{T} <: Factorization{T}
@@ -26,7 +34,14 @@ size(A::BandedQ,i::Integer) = i <= 0 ? error("dimension out of range") :
 Base.At_mul_B{T<:Real}(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) = Ac_mul_B(A,B)
 Base.At_mul_B!{T<:Real}(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) = Ac_mul_B!(Y,A,B)
 
-Base.Ac_mul_B(A::BandedQ,B::Vector) = Ac_mul_B!(similar(B),A,B)
+Base.Ac_mul_B{T<:Real,V<:Complex}(A::BandedQ{T},B::Vector{V}) =
+    Ac_mul_B(A,real(B))+im*Ac_mul_B(A,imag(B))
+Base.Ac_mul_B{T<:Real,V<:Real}(A::BandedQ{T},B::Vector{V}) =
+    Ac_mul_B(A,Vector{T}(B))
+Base.Ac_mul_B{T<:Complex}(A::BandedQ{T},B::Vector) =
+    Ac_mul_B(A,Vector{T}(B))
+Base.Ac_mul_B{T<:Real}(A::BandedQ{T},B::Vector{T}) = Ac_mul_B!(similar(B),A,B)
+Base.Ac_mul_B{T<:Complex}(A::BandedQ{T},B::Vector{T}) = Ac_mul_B!(similar(B),A,B)
 
 function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
     if length(Y) != size(A,1) || length(B) != size(A,2)
@@ -51,7 +66,7 @@ function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         wp=h+sz*st*(k-1)
         yp=y+sz*(k-1)
 
-        dt=BLAS.dot(M,yp,1,wp,1)
+        dt=dot(M,wp,1,yp,1)
         BLAS.axpy!(M,-2*dt,wp,1,yp,1)
     end
 
@@ -61,7 +76,7 @@ function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         wp=h+sz*st*(k-1)
         yp=y+sz*(k-1)
 
-        dt=BLAS.dot(M-p,yp,1,wp,1)
+        dt=dot(M-p,wp,1,yp,1)
         BLAS.axpy!(M-p,-2*dt,wp,1,yp,1)
     end
     Y
@@ -93,7 +108,7 @@ function Base.A_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         wp=h+sz*st*(k-1)
         yp=y+sz*(k-1)
 
-        dt=BLAS.dot(M-p,yp,1,wp,1)
+        dt=dot(M-p,wp,1,yp,1)
         BLAS.axpy!(M-p,-2*dt,wp,1,yp,1)
     end
 
@@ -102,7 +117,7 @@ function Base.A_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         wp=h+sz*st*(k-1)
         yp=y+sz*(k-1)
 
-        dt=BLAS.dot(M,yp,1,wp,1)
+        dt=dot(M,wp,1,yp,1)
         BLAS.axpy!(M,-2*dt,wp,1,yp,1)
     end
 
@@ -123,10 +138,10 @@ function Base.Ac_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
     Y
 end
 
-Base.full(A::BandedQ) = A*eye(size(A,1))
+Base.full(A::BandedQ) = A*eye(eltype(A),size(A,1))
 
 Base.linearindexing{T}(::Type{BandedQ{T}}) = Base.LinearSlow()
-Base.getindex(A::BandedQ,k::Int,j::Int) = (A*[zeros(j-1);1.0;zeros(size(A,2)-j)])[k]
+Base.getindex(A::BandedQ,k::Int,j::Int) = (A*eltype(A)[zeros(j-1);1.0;zeros(size(A,2)-j)])[k]
 
 
 
@@ -172,7 +187,7 @@ function banded_qrfact!(R::BandedMatrix)
 
         for j=k:min(k+R.u,n)
             v=r+sz*(R.u + (k-1)*st + (j-k)*(st-1))
-            dt=BLAS.dot(M,v,1,wp,1)
+            dt=dot(M,wp,1,v,1)
             BLAS.axpy!(M,-2*dt,wp,1,v,1)
         end
     end
@@ -187,7 +202,7 @@ function banded_qrfact!(R::BandedMatrix)
 
         for j=k:min(k+R.u,n)
             v=r+sz*(R.u + (k-1)*st + (j-k)*(st-1))
-            dt=BLAS.dot(M-p,v,1,wp,1)
+            dt=dot(M-p,wp,1,v,1)
             BLAS.axpy!(M-p,-2*dt,wp,1,v,1)
         end
     end
