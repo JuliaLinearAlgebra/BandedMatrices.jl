@@ -475,7 +475,11 @@ for typ in [BandedMatrix, BandedLU]
             $fun(lufact(AA), BB) # call BlasFloat versions
         end
     end
-    # \ is different because it needs a copy
+    # \ is different because it needs a copy, but we have to avoid ambiguity
+    @eval function (\){T<:BlasReal}(A::$typ{T}, B::VecOrMat{Complex{T}})
+        checksquare(A)
+        A_ldiv_B!(convert($typ{Complex{T}}, A), copy(B)) # goes to BlasFloat call
+    end
     @eval function (\){T<:Number, S<:Number}(A::$typ{T}, B::StridedVecOrMat{S})
         checksquare(A)
         TS = _promote_to_blas_type(T, S)

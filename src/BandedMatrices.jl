@@ -25,16 +25,37 @@ import Base.LAPACK: gbtrs!,
 
 import Base: lufact
 
-export BandedMatrix, 
-       bandrange, 
+export BandedMatrix,
+       bandrange,
        bzeros,
        beye,
        brand,
        bones,
        bandwidth,
-       BandError, 
-       band, 
+       BandError,
+       band,
        BandRange
+
+# BLAS/linear algebra overrides
+
+dot(x...) = Base.dot(x...)
+dot{T<:Union{Float64,Float32}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+    BLAS.dot(M,a,incx,b,incy)
+dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+    BLAS.dotc(M,a,incx,b,incy)
+
+dotu{T<:Union{Complex64,Complex128}}(f::Vector{T},g::Vector{T}) =
+    BLAS.dotu(f,g)
+dotu{N<:Real}(f::Vector{Complex{Float64}},g::Vector{N}) = dot(conj(f),g)
+dotu{N<:Real,T<:Number}(f::Vector{N},g::Vector{T}) = dot(f,g)
+
+
+normalize!(w::Vector) = normalize!(length(w),w)
+normalize!{T<:Union{Float64,Float32}}(n,w::Union{Vector{T},Ptr{T}}) =
+    BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
+normalize!{T<:Union{Complex128,Complex64}}(n,w::Union{Vector{T},Ptr{T}}) =
+    BLAS.scal!(n,T(inv(BLAS.nrm2(n,w,1))),w,1)
+
 
 
 # AbstractBandedMatrix must implement
@@ -250,9 +271,6 @@ unsafe_getindex(A::BandedMatrix,kr::Range,jr::Integer)=vec(A.data[kr-j+A.u+1,j])
 
 getindex(A::BandedMatrix,kr::Range,j::Integer)=-A.l≤j-kr[1]≤j-kr[end]≤A.u?unsafe_getindex(A,kr,j):[A[k,j] for k=kr]
 
-getindex(A::BandedMatrix,kr::Range,j::Integer)=[A[k,j] for k=kr]
-getindex(A::BandedMatrix,kr::Range,jr::Range)=[A[k,j] for k=kr,j=jr]
-
 function getindex(A::BandedMatrix,kr::UnitRange,j::Integer)
     if -A.l≤j-kr[1]≤j-kr[end]≤A.u
         unsafe_getindex(A,kr,j)
@@ -286,7 +304,7 @@ immutable Band
 end
 band(i::Int) = Band(i)
 
-# ~~ Indexing on the i-th row/column within band range 
+# ~~ Indexing on the i-th row/column within band range
 immutable BandRange end
 
 # ~~ Out of band error
@@ -297,7 +315,7 @@ end
 
 function showerror(io::IO, e::BandError)
     A, i, u, l = e.A, e.i, e.A.u, e.A.l
-    print(io, "attempt to access $(typeof(A)) with bandwidths " * 
+    print(io, "attempt to access $(typeof(A)) with bandwidths " *
               "($(-l), $u) at band $i")
 end
 
@@ -333,48 +351,48 @@ end
 
 # ~ bound checking functions ~
 
-checkbounds(A::BandedMatrix, k::Integer, j::Integer) = 
+checkbounds(A::BandedMatrix, k::Integer, j::Integer) =
     (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
 
-checkbounds(A::BandedMatrix, kr::Range, j::Integer) = 
+checkbounds(A::BandedMatrix, kr::Range, j::Integer) =
     (checkbounds(A, first(kr), j); checkbounds(A,  last(kr), j))
 
-checkbounds(A::BandedMatrix, k::Integer, jr::Range) = 
+checkbounds(A::BandedMatrix, k::Integer, jr::Range) =
     (checkbounds(A, k, first(jr)); checkbounds(A, k,  last(jr)))
 
-checkbounds(A::BandedMatrix, kr::Range, jr::Range) = 
+checkbounds(A::BandedMatrix, kr::Range, jr::Range) =
     (checkbounds(A, kr, first(jr)); checkbounds(A, kr,  last(jr)))
 
-# check indices fall in the band 
-checkband(A::BandedMatrix, i::Integer) = 
-    (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i))) 
+# check indices fall in the band
+checkband(A::BandedMatrix, i::Integer) =
+    (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i)))
 
 checkband(A::BandedMatrix, b::Band) = checkband(A, b.i)
 
 checkband(A::BandedMatrix, k::Integer, j::Integer) = checkband(A, j-k)
 
-checkband(A::BandedMatrix, kr::Range, j::Integer) = 
+checkband(A::BandedMatrix, kr::Range, j::Integer) =
     (checkband(A, first(kr), j); checkband(A,  last(kr), j))
 
-checkband(A::BandedMatrix, k::Integer, jr::Range) = 
+checkband(A::BandedMatrix, k::Integer, jr::Range) =
     (checkband(A, k, first(jr)); checkband(A, k,  last(jr)))
 
-checkband(A::BandedMatrix, kr::Range, jr::Range) = 
+checkband(A::BandedMatrix, kr::Range, jr::Range) =
     (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
 
 # check dimensions of inputs
-checkdimensions(sizedest::Tuple{Int, Vararg{Int}}, sizesrc::Tuple{Int, Vararg{Int}}) = 
+checkdimensions(sizedest::Tuple{Int, Vararg{Int}}, sizesrc::Tuple{Int, Vararg{Int}}) =
     (sizedest == sizesrc ||
-        throw(DimensionMismatch("tried to assign $(sizesrc) sized " * 
+        throw(DimensionMismatch("tried to assign $(sizesrc) sized " *
                                 "array to $(sizedest) destination")) )
 
-checkdimensions(dest::AbstractVector, src::AbstractVector) = 
+checkdimensions(dest::AbstractVector, src::AbstractVector) =
     checkdimensions(size(dest), size(src))
 
-checkdimensions(ldest::Int, src::AbstractVector) = 
+checkdimensions(ldest::Int, src::AbstractVector) =
     checkdimensions((ldest, ), size(src))
 
-checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) = 
+checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
     checkdimensions((length(kr), length(jr)), size(src))
 
 
@@ -382,11 +400,11 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
 # ~ Special setindex methods ~
 
 # slow fall back method
-@inline unsafe_setindex!(A::BandedMatrix, v, k::Integer, j::Integer) = 
+@inline unsafe_setindex!(A::BandedMatrix, v, k::Integer, j::Integer) =
     unsafe_setindex!(A.data, A.u, v, k, j)
 
-# fast method used below 
-@inline unsafe_setindex!{T}(data::Matrix{T}, u::Integer, v, k::Integer, j::Integer) = 
+# fast method used below
+@inline unsafe_setindex!{T}(data::Matrix{T}, u::Integer, v, k::Integer, j::Integer) =
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
 
 # scalar - integer - integer
@@ -398,11 +416,11 @@ end
 
 # scalar - colon - colon
 setindex!{T}(A::BandedMatrix{T}, v, ::Colon, ::Colon) =
-    @inbounds A.data[:] = convert(T, v)::T 
+    @inbounds A.data[:] = convert(T, v)::T
 
 # scalar - colon
 setindex!{T}(A::BandedMatrix{T}, v, ::Colon) =
-    @inbounds A.data[:] = convert(T, v)::T 
+    @inbounds A.data[:] = convert(T, v)::T
 
 
 # ~ indexing along a band
@@ -434,15 +452,15 @@ setindex!(A::BandedMatrix, v, kr::Colon, j::Integer) =
     throw(BandError(A, _firstdiagcol(A, j)))
 
 # vector - colon - integer -- A[:, 1] = [1, 2, 3] - not allowed
-setindex!(A::BandedMatrix, V::AbstractVector, kr::Colon, j::Integer) = 
+setindex!(A::BandedMatrix, V::AbstractVector, kr::Colon, j::Integer) =
     throw(BandError(A, _firstdiagcol(A, j)))
 
 # scalar - BandRange - integer -- A[1, BandRange] = 2
-setindex!{T}(A::BandedMatrix{T}, v, ::Type{BandRange}, j::Integer) = 
+setindex!{T}(A::BandedMatrix{T}, v, ::Type{BandRange}, j::Integer) =
     (A[colstart(A, j):colstop(A, j), j] = convert(T, v)::T) # call range method
 
 # vector - BandRange - integer -- A[1, BandRange] = 2
-setindex!(A::BandedMatrix, V::AbstractVector, ::Type{BandRange}, j::Integer) = 
+setindex!(A::BandedMatrix, V::AbstractVector, ::Type{BandRange}, j::Integer) =
     (A[colstart(A, j):colstop(A, j), j] = V) # call range method
 
 # scalar - range - integer -- A[1:2, 1] = 2
@@ -472,7 +490,7 @@ end
 # ~ indexing along a row
 
 # scalar - integer - colon -- A[1, :] = 2 - not allowed
-setindex!(A::BandedMatrix, v, k::Integer, jr::Colon) = 
+setindex!(A::BandedMatrix, v, k::Integer, jr::Colon) =
     throw(BandError(A, _firstdiagrow(A, k)))
 
 # vector - integer - colon -- A[1, :] = [1, 2, 3] - not allowed
@@ -480,7 +498,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::Colon) =
     throw(BandError(A, _firstdiagrow(A, k)))
 
 # scalar - integer - BandRange -- A[1, BandRange] = 2
-setindex!{T}(A::BandedMatrix{T}, v, k::Integer, ::Type{BandRange}) = 
+setindex!{T}(A::BandedMatrix{T}, v, k::Integer, ::Type{BandRange}) =
     (A[k, rowstart(A, k):rowstop(A, k)] = convert(T, v)::T) # call range method
 
 # vector - integer - BandRange -- A[1, BandRange] = [1, 2, 3]
@@ -521,7 +539,7 @@ function setindex!(A::BandedMatrix, v, kr::Range, jr::Range)
         unsafe_setindex!(data, u, v, k, j)
     end
     v
-end    
+end
 
 # matrix - range - range
 function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::Range, jr::Range)
@@ -540,7 +558,7 @@ function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::Range, jr::Range)
         jj += 1
     end
     V
-end   
+end
 
 # ~~ end setindex! ~~
 

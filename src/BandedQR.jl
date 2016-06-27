@@ -1,17 +1,3 @@
-dot(x...) = Base.dot(x...)
-dot{T<:Union{Float64,Float32}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
-    BLAS.dot(M,a,incx,b,incy)
-dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
-    BLAS.dotc(M,a,incx,b,incy)
-
-
-normalize!(w::Vector) = normalize!(length(w),w)
-normalize!{T<:Union{Float64,Float32}}(n,w::Union{Vector{T},Ptr{T}}) =
-    BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
-normalize!{T<:Union{Complex128,Complex64}}(n,w::Union{Vector{T},Ptr{T}}) =
-    BLAS.scal!(n,T(inv(BLAS.nrm2(n,w,1))),w,1)
-
-
 immutable BandedQR{T} <: Factorization{T}
     H::Matrix{T}  # Represents the orthogonal matrix Q
     R::BandedMatrix{T}
