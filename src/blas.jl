@@ -410,10 +410,10 @@ function Base.BLAS.axpy!{T1,T2,BM1<:BandedMatrix,BM2<:BandedMatrix}(a::Number,
                                                            Y::SubArray{T2,2,BM2})
     if bandwidth(X,1) < 0
         jr=1-bandwidth(X,1):size(X,2)
-        banded_axpy!(a,sub(X,:,jr),sub(Y,:,jr))
+        banded_axpy!(a,view(X,:,jr),view(Y,:,jr))
     elseif bandwidth(X,2) < 0
         kr=1-bandwidth(X,2):size(X,1)
-        banded_axpy!(a,sub(X,kr,:),sub(Y,kr,:))
+        banded_axpy!(a,view(X,kr,:),view(Y,kr,:))
     else
         banded_axpy!(a,X,Y)
     end
@@ -422,10 +422,10 @@ end
 function Base.BLAS.axpy!{T,BM<:BandedMatrix}(a::Number,X::SubArray{T,2,BM},Y::BandedMatrix)
     if bandwidth(X,1) < 0
         jr=1-bandwidth(X,1):size(X,2)
-        banded_axpy!(a,sub(X,:,jr),sub(Y,:,jr))
+        banded_axpy!(a,view(X,:,jr),view(Y,:,jr))
     elseif bandwidth(X,2) < 0
         kr=1-bandwidth(X,2):size(X,1)
-        banded_axpy!(a,sub(X,kr,:),sub(Y,kr,:))
+        banded_axpy!(a,view(X,kr,:),view(Y,kr,:))
     else
         banded_axpy!(a,X,Y)
     end
