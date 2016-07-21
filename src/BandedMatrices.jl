@@ -68,7 +68,7 @@ bandwidths(A::AbstractBandedMatrix) = bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractBandedMatrix,k::Integer) = k==1?-bandwidth(A,1):bandwidth(A,2)
 bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
-
+bandwidth(A::AbstractMatrix,k::Integer) = k==1?size(A,1)-1:size(A,2)-1
 
 
 function getindex(A::AbstractBandedMatrix,k::Integer,j::Integer)
@@ -132,7 +132,7 @@ function Base.length(B::BandedIterator)
 end
 
 # returns an iterator of each index in the banded part of a matrix
-eachbandedindex(B)=BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
+eachbandedindex(B) = BandedIterator(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
 
 
 
@@ -175,7 +175,16 @@ include("blas.jl")
 
 BandedMatrix(data::Matrix,m::Integer,a::Integer,b::Integer) = BandedMatrix{eltype(data)}(data,m,a,b)
 
-BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) = BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
+# Use zeros to avoid unallocated entries for bigfloat
+BandedMatrix{T<:BlasFloat}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
+    BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
+BandedMatrix{T<:Number}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
+    BandedMatrix{T}(zeros(T,b+a+1,m),n,a,b)
+BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
+    BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
+
+
+
 BandedMatrix{T}(::Type{T},n::Integer,a::Integer,b::Integer) = BandedMatrix(T,n,n,a,b)
 BandedMatrix{T}(::Type{T},n::Integer,::Colon,a::Integer,b::Integer) = BandedMatrix(T,n,n+b,a,b)
 
@@ -576,7 +585,7 @@ end
 
 ## Band range
 
-bandwidth(A::BandedMatrix,k)=k==1?A.l:A.u
+bandwidth(A::BandedMatrix,k::Integer) = k==1?A.l:A.u
 
 
 function Base.sparse(B::BandedMatrix)
@@ -696,7 +705,8 @@ function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::Matrix{V})
     A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
-
+*{T<:Number,V<:Number}(A::Matrix{T},B::BandedMatrix{V}) =
+    A*full(B)
 
 *{T<:BlasFloat}(A::BandedMatrix{T},b::Vector{T}) =
     BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
@@ -817,7 +827,7 @@ end
 
 bandshift(S) = parentindexes(S)[1][1]-parentindexes(S)[2][1]
 
-bandwidth{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k) = bandwidth(parent(S),k) +
+bandwidth{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k::Integer) = bandwidth(parent(S),k) +
         (k==1?-1:1)*bandshift(S)
 
 
