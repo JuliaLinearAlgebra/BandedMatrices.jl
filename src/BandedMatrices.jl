@@ -335,6 +335,9 @@ end
 @inline rowstart(A::BandedMatrix, i::Integer) = min(max(i-A.l, 1), size(A, 1))
 @inline  rowstop(A::BandedMatrix, i::Integer) = min(i+A.u, size(A, 2))
 
+@inline colrange(A::BandedMatrix, i::Integer) = colstart(A,i):colend(A,i)
+@inline rowrange(A::BandedMatrix, i::Integer) = rowstart(A,i):rowend(A,i)
+
 # length of i-the column/row
 @inline collength(A::BandedMatrix, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
 @inline rowlength(A::BandedMatrix, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
