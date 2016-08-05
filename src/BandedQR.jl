@@ -152,6 +152,8 @@ function Base.qrfact(A::BandedMatrix)
     banded_qrfact!(R)
 end
 
+flipsign(x,y) = Base.flipsign(x,y)
+flipsign(x,y::Complex) = y==0?x:x*sign(y)
 
 function banded_qrfact!(R::BandedMatrix)
     T=eltype(R)
@@ -168,7 +170,7 @@ function banded_qrfact!(R::BandedMatrix)
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W
         BLAS.blascopy!(M,v,1,wp,1)
-        W[1,k]+= sign(W[1,k])*BLAS.nrm2(M,wp,1)
+        W[1,k]+= flipsign(BLAS.nrm2(M,wp,1),W[1,k])
         normalize!(M,wp)
 
         for j=k:min(k+R.u,n)
@@ -183,7 +185,7 @@ function banded_qrfact!(R::BandedMatrix)
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W
         BLAS.blascopy!(M-p,v,1,wp,1)
-        W[1,k]+= sign(W[1,k])*BLAS.nrm2(M-p,wp,1)
+        W[1,k]+= flipsign(BLAS.nrm2(M-p,wp,1),W[1,k])
         normalize!(M-p,wp)
 
         for j=k:min(k+R.u,n)
