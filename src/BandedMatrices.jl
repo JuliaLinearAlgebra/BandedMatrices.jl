@@ -156,7 +156,7 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
     u::Int # upper bandwidth ≥0
     function BandedMatrix(data::Matrix{T},m,l,u)
         if l < 0 || u < 0
-            error("Bandwidths must be non-negative")
+            error("Bandwidths $l,$u must both be non-negative")
         elseif size(data,1)!=l+u+1
             error("Data matrix must have number rows equal to number of bands")
         else
@@ -335,8 +335,8 @@ end
 @inline rowstart(A::BandedMatrix, i::Integer) = min(max(i-A.l, 1), size(A, 1))
 @inline  rowstop(A::BandedMatrix, i::Integer) = min(i+A.u, size(A, 2))
 
-@inline colrange(A::BandedMatrix, i::Integer) = colstart(A,i):colend(A,i)
-@inline rowrange(A::BandedMatrix, i::Integer) = rowstart(A,i):rowend(A,i)
+@inline colrange(A::BandedMatrix, i::Integer) = colstart(A,i):colstop(A,i)
+@inline rowrange(A::BandedMatrix, i::Integer) = rowstart(A,i):rowstop(A,i)
 
 # length of i-the column/row
 @inline collength(A::BandedMatrix, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
