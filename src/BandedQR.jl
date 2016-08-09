@@ -153,6 +153,7 @@ function Base.qrfact(A::BandedMatrix)
 end
 
 flipsign(x,y) = Base.flipsign(x,y)
+flipsign(x::BigFloat,y::BigFloat) = sign(y)==1?x:(-x)
 flipsign(x,y::Complex) = y==0?x:x*sign(y)
 
 function banded_qrfact!(R::BandedMatrix)

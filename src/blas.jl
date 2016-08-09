@@ -389,7 +389,8 @@ function banded_axpy!{T,BM<:BandedMatrix}(a::Number,X,S::SubArray{T,2,BM})
 
     shft=bandshift(S)
 
-    @assert 0 ≤ bandwidth(X,1) ≤ bandwidth(Y,1)-shft && 0 ≤ bandwidth(X,2) ≤ bandwidth(Y,2)+shft
+    @assert bandwidth(X,2) ≥ -bandwidth(X,1)
+    @assert bandwidth(X,1) ≤ bandwidth(Y,1)-shft && bandwidth(X,2) ≤ bandwidth(Y,2)+shft
 
 
     for (k,j) in eachbandedindex(X)

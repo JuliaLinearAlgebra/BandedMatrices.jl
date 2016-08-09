@@ -51,7 +51,8 @@ dotu{N<:Real}(f::Vector{Complex{Float64}},g::Vector{N}) = dot(conj(f),g)
 dotu{N<:Real,T<:Number}(f::Vector{N},g::Vector{T}) = dot(f,g)
 
 
-normalize!(w::Vector) = normalize!(length(w),w)
+normalize!(w::AbstractVector) = scale!(w,inv(norm(w)))
+normalize!{T<:BlasFloat}(w::Vector{T}) = normalize!(length(w),w)
 normalize!{T<:Union{Float64,Float32}}(n,w::Union{Vector{T},Ptr{T}}) =
     BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
 normalize!{T<:Union{Complex128,Complex64}}(n,w::Union{Vector{T},Ptr{T}}) =
