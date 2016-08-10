@@ -23,8 +23,8 @@ let
     @test BandedMatrices._promote_to_blas_type(typ, Int32)      == typ
     @test BandedMatrices._promote_to_blas_type(typ, Int16)      == typ
     @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
-    
-    if v"0.5.0-dev+5122" <= VERSION < v"0.5.0-rc0+154"
+
+    if v"0.5.0-dev+5122" <= VERSION
         @test_throws MethodError BandedMatrices._promote_to_blas_type(_foo, Float64)
     else
         @test_throws ErrorException BandedMatrices._promote_to_blas_type(_foo, Float64)
