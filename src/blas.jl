@@ -26,7 +26,9 @@ for (fname, elty) in ((:dgbmv_,:Float64),
              #       CHARACTER TRANS
              # *     .. Array Arguments ..
              #       DOUBLE PRECISION A(LDA,*),X(*),Y(*)
-        function gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::($elty), A::Ptr{$elty}, n::Integer, st::Integer, x::Ptr{$elty}, beta::($elty), y::Ptr{$elty})
+        function gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::($elty),
+                       A::Ptr{$elty}, n::Int, st::Int,
+                       x::Ptr{$elty}, beta::($elty), y::Ptr{$elty})
             ccall((@blasfunc($fname), libblas), Void,
                 (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
                  Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
@@ -55,6 +57,44 @@ end
 #     yy
 # end
 
+gbmv!{T<:BlasFloat}(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
+               A::Matrix{T}, x::Vector{T}, beta::(T), y::Vector{T}) =
+    BLAS.gbmv!(trans,m,kl,ku,alpha,kl,ku,alpha,A,x,beta,y)
+
+
+gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::Vector{T},β::T,y::Vector{T}) =
+    gbmv!(trans,A.m,A.l,A.u,α,A.data,β,y)
+
+
+function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
+                  x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
+                  β::T,y::Vector{T})
+    sz=sizeof(T)
+    gbmv!(trans,A.m,A.l,A.u,α,pointer(A.data),size(A,2),stride(A.data,2),
+                    pointer(b)+sz*(parentindexes(b)[1][1]-1),β,pointer(y))
+    y
+end
+
+function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
+                  x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
+                  β::T,y::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true})
+    sz=sizeof(T)
+    gbmv!(trans,A.m,A.l,A.u,α,pointer(A.data),size(A,2),stride(A.data,2),
+                    pointer(x)+sz*(parentindexes(x)[1][1]-1),β,
+                    pointer(y)+sz*(parentindexes(y)[1][1]-1))
+    y
+end
+
+
+function Base.A_mul_B!{T<:BlasFloat}(c::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
+                                     A::BandedMatrix{T},
+                                    b::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true})
+    sz=sizeof(T)
+    gbmv!('N',A.m,A.l,A.u,1.0,pointer(A.data),size(A,2),stride(A.data,2),
+                    pointer(x)+sz*(parentindexes(x)[1][1]-1),zero(T),
+                    pointer(c)+sz*(parentindexes(c)[1][1]-1))
+    c
+end
 
 # this is matrix*matrix
 
@@ -453,8 +493,9 @@ Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix) = gbmm!(1.0,A,B,0.,C)
 
 
 
-Base.A_mul_B!(c::Vector,A::BandedMatrix,b::Vector) =
-    BLAS.gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
+Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::AbstractVector) =
+    gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
+
 
 
 
