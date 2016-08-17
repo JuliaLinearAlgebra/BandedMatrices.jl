@@ -76,8 +76,8 @@ function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
 end
 
 function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
-                  x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
-                  β::T,y::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true})
+                  x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}}},
+                  β::T,y::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}}})
     gbmv!(trans,A.m,A.l,A.u,α,pointer(A.data),size(A,2),stride(A.data,2),
                     pointer(x),β,
                     pointer(y))

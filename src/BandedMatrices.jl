@@ -331,17 +331,22 @@ function showerror(io::IO, e::BandError)
 end
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
+@inline colstart(A, i::Integer) = min(max(i-bandwidth(A,2), 1), size(A, 2))
+@inline  colstop(A, i::Integer) = min(i+bandwidth(A,1), size(A, 1))
+@inline rowstart(A, i::Integer) = min(max(i-bandwidth(A,1), 1), size(A, 1))
+@inline  rowstop(A, i::Integer) = min(i+bandwidth(A,2), size(A, 2))
+
 @inline colstart(A::BandedMatrix, i::Integer) = min(max(i-A.u, 1), size(A, 2))
 @inline  colstop(A::BandedMatrix, i::Integer) = min(i+A.l, size(A, 1))
 @inline rowstart(A::BandedMatrix, i::Integer) = min(max(i-A.l, 1), size(A, 1))
 @inline  rowstop(A::BandedMatrix, i::Integer) = min(i+A.u, size(A, 2))
 
-@inline colrange(A::BandedMatrix, i::Integer) = colstart(A,i):colstop(A,i)
-@inline rowrange(A::BandedMatrix, i::Integer) = rowstart(A,i):rowstop(A,i)
+@inline colrange(A, i::Integer) = colstart(A,i):colstop(A,i)
+@inline rowrange(A, i::Integer) = rowstart(A,i):rowstop(A,i)
 
 # length of i-the column/row
-@inline collength(A::BandedMatrix, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
-@inline rowlength(A::BandedMatrix, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
+@inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
+@inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
 # length of diagonal
 @inline diaglength(A::BandedMatrix, b::Band) = diaglength(A, b.i)
