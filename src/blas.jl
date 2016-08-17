@@ -78,23 +78,14 @@ end
 function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
                   x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
                   β::T,y::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true})
-    sz=sizeof(T)
     gbmv!(trans,A.m,A.l,A.u,α,pointer(A.data),size(A,2),stride(A.data,2),
-                    pointer(x)+sz*(parentindexes(x)[1][1]-1),β,
-                    pointer(y)+sz*(parentindexes(y)[1][1]-1))
+                    pointer(x),β,
+                    pointer(y))
     y
 end
 
 
-function Base.A_mul_B!{T<:BlasFloat}(c::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
-                                     A::BandedMatrix{T},
-                                    b::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true})
-    sz=sizeof(T)
-    gbmv!('N',A.m,A.l,A.u,1.0,pointer(A.data),size(A,2),stride(A.data,2),
-                    pointer(x)+sz*(parentindexes(x)[1][1]-1),zero(T),
-                    pointer(c)+sz*(parentindexes(c)[1][1]-1))
-    c
-end
+
 
 # this is matrix*matrix
 
@@ -368,13 +359,13 @@ end
 
 #TODO: Speedup
 function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMatrix{T})
-    for (k,j) in eachbandedindex(C)
+    for j=1:size(C,2),k=colrange(C,j)
         C[k,j]*=β
     end
 
     m=size(C,2)
 
-    for (k,ν) in eachbandedindex(A)
+    for ν=1:size(A,2),k=colrange(A,ν)
         for j=max(ν-B.l,1):min(ν+B.u,m)
             C[k,j]+=α*A[k,ν]*B[ν,j]
         end
@@ -410,7 +401,7 @@ end
 function banded_axpy!(a::Number,X,Y::BandedMatrix)
     @assert size(X)==size(Y)
     @assert bandwidth(X,1) ≤ bandwidth(Y,1) && bandwidth(X,2) ≤ bandwidth(Y,2)
-    for (k,j) in eachbandedindex(X)
+    for j=1:size(X,2),k=colrange(X,j)
         @inbounds Y.data[k-j+Y.u+1,j]+=a*unsafe_getindex(X,k,j)
     end
     Y
@@ -433,7 +424,7 @@ function banded_axpy!{T,BM<:BandedMatrix}(a::Number,X,S::SubArray{T,2,BM})
     @assert bandwidth(X,1) ≤ bandwidth(Y,1)-shft && bandwidth(X,2) ≤ bandwidth(Y,2)+shft
 
 
-    for (k,j) in eachbandedindex(X)
+    for j=1:size(X,2),k=colrange(X,j)
         @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*unsafe_getindex(X,k,j)
     end
 
@@ -474,7 +465,7 @@ end
 
 function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
     @assert size(X)==size(Y)
-    for (k,j) in eachbandedindex(X)
+    for j=1:size(X,2),k=colrange(X,j)
         @inbounds Y[k,j]+=a*unsafe_getindex(X,k,j)
     end
     Y
@@ -487,14 +478,15 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix) = gbmm!(1.0,A,B,0.,C)
+Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix) =
+    gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
 
 ## Matrix*Vector Multiplicaiton
 
 
 
 Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::AbstractVector) =
-    gbmv!('N',A.m,A.l,A.u,1.0,A.data,b,0.,c)
+    gbmv!('N',A.m,A.l,A.u,one(eltype(A)),A.data,b,zero(eltype(c)),c)
 
 
 
@@ -502,7 +494,8 @@ Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::AbstractVector) =
 ## Matrix*Matrix Multiplication
 
 
-Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix) = gbmm!(1.0,A,B,0.0,C)
+Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix) =
+    gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
 
 
 
