@@ -583,13 +583,15 @@ end
 
 
 
-function Base.full(A::BandedMatrix)
+function Base.convert(::Type{Matrix},A::BandedMatrix)
     ret=zeros(eltype(A),size(A,1),size(A,2))
     for (k,j) in eachbandedindex(A)
         @inbounds ret[k,j]=A[k,j]
     end
     ret
 end
+
+Base.full(A::BandedMatrix) = convert(Matrix,A)
 
 
 ## Band range
