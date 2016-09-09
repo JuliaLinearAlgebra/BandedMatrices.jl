@@ -39,10 +39,10 @@ export BandedMatrix,
 
 # BLAS/linear algebra overrides
 
-dot(x...) = Base.dot(x...)
-dot{T<:Union{Float64,Float32}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+@inline dot(x...) = Base.dot(x...)
+@inline dot{T<:Union{Float64,Float32}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
     BLAS.dot(M,a,incx,b,incy)
-dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+@inline dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
     BLAS.dotc(M,a,incx,b,incy)
 
 dotu{T<:Union{Complex64,Complex128}}(f::Vector{T},g::Vector{T}) =
