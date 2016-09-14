@@ -811,26 +811,29 @@ type PrintShow
 end
 Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
-#TODO: implement showarray in 0.5
+if VERSION < v"0.5.0-rc4"
+    showarray(io,M;opts...) = Base.showarray(io,M;opts...)
+else
+    showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
+end
 
-if VERSION < v"0.5.0-dev"
-    function Base.showarray(io::IO,B::AbstractBandedMatrix;
-                       header::Bool=true, limit::Bool=Base._limit_output,
-                       sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
-        header && print(io,summary(B))
 
-        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-            header && println(io,":")
-            M=Array(Any,size(B)...)
-            fill!(M,PrintShow(""))
-            for (k,j) in eachbandedindex(B)
-                M[k,j]=B[k,j]
-            end
 
-            Base.showarray(io,M;header=false)
+function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
+    header && print(io,summary(B))
+
+    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
+        header && println(io,":")
+        M=Array(Any,size(B)...)
+        fill!(M,PrintShow(""))
+        for (k,j) in eachbandedindex(B)
+            M[k,j]=B[k,j]
         end
+
+        showarray(io,M;header=false)
     end
 end
+
 
 
 
