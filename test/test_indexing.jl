@@ -121,20 +121,20 @@ let
     # 0.0  0.0  1.0  1.0  1.0
 
     # in band
-    a[1, 1] = 0
-    @test a[1, 1] == 0
+    a[1, 1] = 1
+    @test a[1, 1] == 1
 
     # out of band
-    @test_throws BandError a[1, 3] = 0
-    @test_throws BandError a[3, 1] = 0
+    @test_throws BandError a[1, 3] = 1
+    @test_throws BandError a[3, 1] = 1
 
     # out of range
-    @test_throws BoundsError a[0, 0] = 0
-    @test_throws BoundsError a[0, 1] = 0
-    @test_throws BoundsError a[1, 0] = 0
-    @test_throws BoundsError a[5, 6] = 0
-    @test_throws BoundsError a[6, 5] = 0
-    @test_throws BoundsError a[6, 6] = 0
+    @test_throws BoundsError a[0, 0] = 1
+    @test_throws BoundsError a[0, 1] = 1
+    @test_throws BoundsError a[1, 0] = 1
+    @test_throws BoundsError a[5, 6] = 1
+    @test_throws BoundsError a[6, 5] = 1
+    @test_throws BoundsError a[6, 6] = 1
 end
 
 # ~ indexing along a column
@@ -160,10 +160,10 @@ let
                  0  0  4  5  6;
                  0  0  0  5  6]
 
-    @test_throws BandError a[:, 0] = 0
-    @test_throws BandError a[:, 1] = 0
-    @test_throws BoundsError a[BandRange, 0] = 0
-    @test_throws BoundsError a[BandRange, 6] = 0
+    @test_throws BandError a[:, 0] = 1
+    @test_throws BandError a[:, 1] = 1
+    @test_throws BoundsError a[BandRange, 0] = 1
+    @test_throws BoundsError a[BandRange, 6] = 1
 end
 
 # vector - BandRange/Colon - integer

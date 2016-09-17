@@ -166,6 +166,8 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
+# BandedSubMatrix are also banded
+typealias BandedSubMatrix{T} SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}
 
 include("BandedLU.jl")
 include("BandedQR.jl")
@@ -429,8 +431,11 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
 # scalar - integer - integer
 function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
-    @boundscheck  checkband(A, j-k)
-    unsafe_setindex!(A.data, A.u, v, k, j)
+    if bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2)
+        unsafe_setindex!(A.data, A.u, v, k, j)
+    elseif v ≠ 0  # allow setting outside bands to zero
+        throw(BandError(A,j-k))
+    end
 end
 
 # scalar - colon - colon
@@ -813,24 +818,36 @@ Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
 if VERSION < v"0.5.0-rc4"
     showarray(io,M;opts...) = Base.showarray(io,M;opts...)
+    function Base.showarray(io::IO,B::AbstractBandedMatrix;
+                   header::Bool=true, limit::Bool=Base._limit_output,
+                   sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
+       if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
+           header && println(io,":")
+           M=Array(Any,size(B)...)
+           fill!(M,PrintShow(""))
+           for (k,j) in eachbandedindex(B)
+               M[k,j]=B[k,j]
+           end
+
+           showarray(io,M;header=false)
+       end
+   end
+
 else
     showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
-end
+    function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
+        header && print(io,summary(B))
 
+        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
+            header && println(io,":")
+            M=Array(Any,size(B)...)
+            fill!(M,PrintShow(""))
+            for (k,j) in eachbandedindex(B)
+                M[k,j]=B[k,j]
+            end
 
-
-function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
-    header && print(io,summary(B))
-
-    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-        header && println(io,":")
-        M=Array(Any,size(B)...)
-        fill!(M,PrintShow(""))
-        for (k,j) in eachbandedindex(B)
-            M[k,j]=B[k,j]
+            showarray(io,M;header=false)
         end
-
-        showarray(io,M;header=false)
     end
 end
 
@@ -841,12 +858,10 @@ end
 
 bandshift(S) = parentindexes(S)[1][1]-parentindexes(S)[2][1]
 
-bandwidth{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k::Integer) = bandwidth(parent(S),k) +
-        (k==1?-1:1)*bandshift(S)
+bandwidth{T}(S::BandedSubMatrix{T},k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
 
 
-unsafe_getindex{T,BM<:BandedMatrix}(S::SubArray{T,2,BM},k,j) =
-    unsafe_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
+unsafe_getindex{T}(S::BandedSubMatrix{T},k,j) = unsafe_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
 
 
 
