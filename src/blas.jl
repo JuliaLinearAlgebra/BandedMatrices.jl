@@ -438,7 +438,26 @@ function banded_axpy!{T,BM<:BandedMatrix}(a::Number,X,S::SubArray{T,2,BM})
     shft=bandshift(S)
 
     @assert bandwidth(X,2) ≥ -bandwidth(X,1)
-    @assert bandwidth(X,1) ≤ bandwidth(Y,1)-shft && bandwidth(X,2) ≤ bandwidth(Y,2)+shft
+
+    if bandwidth(X,1) > bandwidth(Y,1)-shft
+        bS = bandwidth(Y,1)-shft
+        bX = bandwidth(X,1)
+        for j=1:size(X,2),k=max(1,j+bS+1):min(j+bX,size(X,1))
+            if X[k,j] ≠ 0
+                error("Cannot add banded matrix to matrix with smaller bandwidth: entry $k,$j is $(X[k,j]).")
+            end
+        end
+    end
+
+    if bandwidth(X,2) > bandwidth(Y,2)+shft
+        bS = bandwidth(Y,2)+shft
+        bX = bandwidth(X,2)
+        for j=1:size(X,2),k=max(1,j-bX):min(j-bS-1,size(X,1))
+            if X[k,j] ≠ 0
+                error("Cannot add banded matrix to matrix with smaller bandwidth: entry $k,$j is $(X[k,j]).")
+            end
+        end
+    end
 
 
     for j=1:size(X,2),k=colrange(X,j)
