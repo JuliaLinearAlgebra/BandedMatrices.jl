@@ -167,7 +167,11 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 # BandedSubMatrix are also banded
-typealias BandedSubMatrix{T} SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}
+typealias BandedSubMatrix{T} Union{
+                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
+                SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
+                SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+            }
 
 include("BandedLU.jl")
 include("BandedQR.jl")
