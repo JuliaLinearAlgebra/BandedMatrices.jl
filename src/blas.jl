@@ -94,12 +94,12 @@ gbmm!{T}(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix{T}) =
           convert(T,β),C)
 
 
-mv!(α,A::BandedMatrix,x,β,y) = gbmv!('N',α,A,x,β,y)
-mv!(α,A::Matrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
+αA_mul_B_plus_βC!(α,A::BandedMatrix,x,β,y) = gbmv!('N',α,A,x,β,y)
+αA_mul_B_plus_βC!(α,A::Matrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
 
 
-mm!(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix) = gbmm!(α,A,B,β,C)
-mm!(α,A::Matrix,B::Matrix,β,C::Matrix) = BLAS.gemm!('N','N',α,A,B,β,C)
+αA_mul_B_plus_βC!(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix) = gbmm!(α,A,B,β,C)
+αA_mul_B_plus_βC!(α,A::Matrix,B::Matrix,β,C::Matrix) = BLAS.gemm!('N','N',α,A,B,β,C)
 
 
 # The following routines multiply
