@@ -160,11 +160,19 @@ let
                  0  0  4  5  6;
                  0  0  0  5  6]
 
+    @test a[BandRange, 1] == [2, 2]
+    @test a[BandRange, 2] == [3, 3, 3]
+    @test a[BandRange, 3] == [4, 4, 4]
+    @test a[BandRange, 4] == [5, 5, 5]
+    @test a[BandRange, 5] == [6, 6]
+
     @test_throws BandError a[:, 0] = 1
     @test_throws BandError a[:, 1] = 1
     @test_throws BoundsError a[BandRange, 0] = 1
     @test_throws BoundsError a[BandRange, 6] = 1
 end
+
+
 
 # vector - BandRange/Colon - integer
 let
@@ -190,12 +198,20 @@ let
                  0  7  10  13  15   0   0;
                  0  0  11  14  16  17   0]
 
-    @test_throws BandError a[:, 0] = [1, 2, 3]
-    @test_throws BandError a[:, 1] = [1, 2, 3]
+    @test a[BandRange, 1] == [1,   2,  3]
+    @test a[BandRange, 2] == [4,   5,  6,  7]
+    @test a[BandRange, 3] == [8,   9, 10, 11]
+    @test a[BandRange, 4] == [12, 13, 14]
+    @test a[BandRange, 5] == [15, 16]
+    @test a[BandRange, 6] == [17]
+
+    @test_throws BoundsError a[:, 0] = [1, 2, 3]
+    @test_throws DimensionMismatch a[:, 1] = [1, 2, 3]
     @test_throws BoundsError a[BandRange, 0] = [1, 2, 3]
     @test_throws BoundsError a[BandRange, 8] = [1, 2, 3]
     @test_throws DimensionMismatch a[BandRange, 1] = [1, 2]
 end
+
 
 # scalar - range - integer
 let
@@ -221,12 +237,20 @@ let
                  1  4  3  0;
                  1  4  5  4]
 
+     a[:, 1] = [1, 1, 1]
+     a[:, 2] = [2, 2, 2]
+     a[:, 3] = [0, 3, 3]
+     a[:, 4] = [0, 0, 4]
+
+     @test a == [ 1  2  0  0;
+                  1  2  3  0;
+                  1  2  3  4]
+
     # wrong range input
     @test_throws BoundsError   a[0:1, 1] = 3
     @test_throws BoundsError   a[1:4, 1] = 3
     @test_throws BandError a[2:3, 4] = 3
     @test_throws BoundsError   a[3:4, 4] = 3
-
 end
 
 # vector - range - integer
@@ -265,7 +289,19 @@ let
     @test_throws BoundsError a[1:8, 1] = 1:8
     @test_throws BoundsError a[2:6, 4] = 2:6
     @test_throws BoundsError a[3:4, 5] = 3:4
+
+    a[:, 1] = [1,1,0,0,0]
+    a[:, 2] = [2,2,2,0,0]
+    a[:, 3] = [3,3,3,3,0]
+    a[:, 4] = [0,4,4,4,4]
+
+    @test a == [1  2  3   0;
+                1  2  3   4;
+                0  2  3   4;
+                0  0  3   4;
+                0  0  0   4]
 end
+
 
 
 # ~ indexing along a row
@@ -285,6 +321,7 @@ let
     a[3, BandRange] = 4
     a[4, BandRange] = 5
     a[5, BandRange] = 6
+
     @test a == [2  2  0  0  0;
                 3  3  3  0  0;
                 0  4  4  4  0;
@@ -292,11 +329,16 @@ let
                 0  0  0  6  6]
 
 
-    @test_throws BandError a[0, :] = 0
-    @test_throws BandError a[1, :] = 0
-    @test_throws BoundsError a[0, BandRange] = 0
-    @test_throws BoundsError a[6, BandRange] = 0
+    @test_throws BandError a[0, :] = 1
+    @test_throws BandError a[1, :] = 1
+    @test_throws BoundsError a[0, BandRange] = 1
+    @test_throws BoundsError a[6, BandRange] = 1
+
+    a[1, :] = 0
+    @test vec(a[1, :]) == [0, 0, 0, 0, 0]
 end
+
+
 
 # vector - integer - BandRange/colon
 let
@@ -326,14 +368,15 @@ let
                  0  0   0   0  17;
                  0  0   0   0   0]
 
-    @test_throws BandError a[0, :] = [1, 2, 3]
-    @test_throws BandError a[1, :] = [1, 2, 3]
+    @test_throws BoundsError a[0, :] = [1, 2, 3]
+    @test_throws DimensionMismatch a[1, :] = [1, 2, 3]
     @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
     @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
     @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
     @test_throws BoundsError a[7, BandRange] = [1, 2, 3]
     @test_throws BoundsError a[7, BandRange] = 1
 end
+
 
 # scalar - integer - range
 let
@@ -356,6 +399,16 @@ let
     a[6, 5:5] = 7
 
     @test a ==  [2  2  2  0  0;
+                 3  3  3  3  0;
+                 0  4  4  4  4;
+                 0  0  5  5  5;
+                 0  0  0  6  6;
+                 0  0  0  0  7;
+                 0  0  0  0  0]
+
+    a[1, 1:4] = 0
+
+    @test a ==  [0  0  0  0  0;
                  3  3  3  3  0;
                  0  4  4  4  4;
                  0  0  5  5  5;
@@ -442,8 +495,17 @@ let
                        0  4   3   8;
                        0  0   4   4]
 
+    @test a[band(-2)] == [4, 4, 4]
+    @test a[band(-1)] == [1, 2, 3, 4]
+    @test a[band( 0)] == [5, 6, 7, 8]
+    @test a[band( 1)] == [9, 10, 11]
+
+
     @test_throws BandError a[band(-3)] = [1, 2, 3]
 end
+
+
+
 
 # other special methods
 let
@@ -456,6 +518,11 @@ let
 
     # all rows/cols
     a[:, :] = 2 # this has special meaning in julia, so it should be allowed
+    @test a == [2 2 0;
+                2 2 2;
+                0 2 2]
+
+    a[:, :] = 2ones(3,3) # this has special meaning in julia, so it should be allowed
     @test a == [2 2 0;
                 2 2 2;
                 0 2 2]
