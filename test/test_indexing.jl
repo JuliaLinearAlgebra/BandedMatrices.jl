@@ -510,23 +510,31 @@ end
 # other special methods
 let
     # all elements
-    a = bzeros(3, 3, 1, 1)
-    a[:] = 1 # this has special meaning in julia, so it should be allowed
-    @test a == [1 1 0;
-                1 1 1;
-                0 1 1]
+    a = bones(3, 3, 1, 1)
+    a[:] = 0
+    @test a == [0 0 0;
+                0 0 0;
+                0 0 0]
 
     # all rows/cols
-    a[:, :] = 2 # this has special meaning in julia, so it should be allowed
+    a[BandRange] = 2
     @test a == [2 2 0;
                 2 2 2;
                 0 2 2]
 
-    a[:, :] = 2ones(3,3) # this has special meaning in julia, so it should be allowed
-    @test a == [2 2 0;
-                2 2 2;
-                0 2 2]
+    a[:, :] = [3 3 0;
+                3 3 3;
+                0 3 3]
+    @test a == [3 3 0;
+                3 3 3;
+                0 3 3]
+
+    @test_throws BandError a[:] = 1
+    @test_throws BandError a[:,:] = 1
+    @test_throws BandError a[:,:] = ones(3,3)
 end
+
+
 
 # replace a block in the band
 let

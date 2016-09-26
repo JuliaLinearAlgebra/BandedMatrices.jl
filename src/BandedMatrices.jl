@@ -522,7 +522,7 @@ function checkbandmatch{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Range, j::
     end
 end
 
-function checkbandmatch{T}(A::BandedMatrix{T}, V::AbstractVector, k, ::Colon)
+function checkbandmatch{T}(A::BandedMatrix{T}, V::AbstractVector, k::Integer, ::Colon)
     for j = 1:rowstart(A,k)-1
         if V[j] ≠ zero(T)
             throw(BandError(A, j-k))
@@ -556,12 +556,15 @@ function checkbandmatch{T}(A::BandedMatrix{T}, V::AbstractMatrix, kr::Range, jr:
             if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
                 # we index V manually in column-major order
                 throw(BandError(A, j-k))
-                kk += 1
             end
+            kk += 1
         end
         jj += 1
     end
 end
+
+checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
+    checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
 
 
 ## TODO: to move
@@ -672,25 +675,38 @@ function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
 end
 
 # scalar - colon - colon
-setindex!{T}(A::BandedMatrix{T}, v, ::Colon, ::Colon) =
-    @inbounds A.data[:] = convert(T, v)::T
+function setindex!{T}(A::BandedMatrix{T}, v, ::Colon, ::Colon)
+    if v == zero(T)
+        @inbounds A.data[:] = convert(T, v)::T
+    else
+        throw(BandError(A, A.u+1))
+    end
+end
 
 # scalar - colon
-setindex!{T}(A::BandedMatrix{T}, v, ::Colon) =
-    @inbounds A.data[:] = convert(T, v)::T
+function setindex!{T}(A::BandedMatrix{T}, v, ::Colon)
+    if v == zero(T)
+        @inbounds A.data[:] = convert(T, v)::T
+    else
+        throw(BandError(A, A.u+1))
+    end
+end
 
 # matrix - colon - colon
-function setindex!{T}(A::BandedMatrix{T}, v::AbstractMatrix, ::Colon, ::Colon)
-    @boundscheck checkdimensions(size(A),size(v))
+function setindex!{T}(A::BandedMatrix{T}, v::AbstractMatrix, kr::Colon, jr::Colon)
+    @boundscheck checkdimensions(size(A), size(v))
+    @boundscheck checkbandmatch(A, v, kr, jr)
+
     for j=1:size(A,2), k=colrange(A,j)
-        A[k,j] = v[k,j]
+        @inbounds A[k,j] = v[k,j]
     end
     A
 end
 
 
-setindex!{T}(A::BandedMatrix{T}, v::AbstractVector, ::Colon) =
-    throw(ArgumentError("This is not currently implemented as the syntax is ambiguous."))
+function setindex!{T}(A::BandedMatrix{T}, v::AbstractVector, ::Colon)
+    A[:, :] = reshape(v,size(A))
+end
 
 
 # ~ indexing along a band
@@ -902,6 +918,10 @@ function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::Range, jr::Range)
     end
     V
 end
+
+# scalar - BandRange -- A[BandRange] = 2
+setindex!{T}(A::BandedMatrix{T}, v, ::Type{BandRange}) =
+    @inbounds A.data[:] = convert(T, v)::T
 
 # ~~ end setindex! ~~
 
