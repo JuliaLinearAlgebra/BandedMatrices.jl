@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Description...">
+  <meta name="author" content="dlfivefifty">
+  
+  <title>BandedMatrices.jl</title>
+  
+
+  <link rel="shortcut icon" href="./img/favicon.ico">
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="./css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="./css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="./css/highlight.css">
+  <link href="./assets/Documenter.css" rel="stylesheet">
+
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "None";
+    var mkdocs_page_input_path = "index.md";
+    var mkdocs_page_url = "/";
+  </script>
+  
+  <script src="./js/jquery-2.1.1.min.js"></script>
+  <script src="./js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="./js/highlight.pack.js"></script>
+  <script src="./js/theme.js"></script> 
+  <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+  <script src="./assets/mathjaxhelper.js"></script>
+
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="." class="icon icon-home"> BandedMatrices.jl</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="./search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        <ul class="current">
+          
+            <li>
+    <li class="toctree-l1 current">
+        <a class="current" href=".">Home</a>
+        
+            <ul>
+            
+                <li class="toctree-l3"><a href="#bandedmatricesjl-documentation">BandedMatrices.jl Documentation</a></li>
+                
+                    <li><a class="toctree-l4" href="#creating-banded-matrices">Creating banded matrices</a></li>
+                
+                    <li><a class="toctree-l4" href="#accessing-banded-matrices">Accessing banded matrices</a></li>
+                
+            
+            </ul>
+        
+    </li>
+<li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href=".">BandedMatrices.jl</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href=".">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>Home</li>
+    <li class="wy-breadcrumbs-aside">
+      
+        
+          <a href="https://github.com/JuliaMatrices/BandedMatrices.jl" class="icon icon-github"> Edit on GitHub</a>
+        
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <p><a id='BandedMatrices.jl-Documentation-1'></a></p>
+<h1 id="bandedmatricesjl-documentation">BandedMatrices.jl Documentation</h1>
+<p><a id='Creating-banded-matrices-1'></a></p>
+<h2 id="creating-banded-matrices">Creating banded matrices</h2>
+<p><a id='BandedMatrices.BandedMatrix' href='#BandedMatrices.BandedMatrix'>#</a>
+<strong><code>BandedMatrices.BandedMatrix</code></strong> &mdash; <em>Type</em>.</p>
+<pre><code>BandedMatrix(T, n, m, l, u)
+</code></pre>
+
+<p>returns an unitialized <code>n</code>×<code>m</code> banded matrix of type <code>T</code> with bandwidths <code>(l,u)</code>.</p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L193' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.beye' href='#BandedMatrices.beye'>#</a>
+<strong><code>BandedMatrices.beye</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>beye(T,n,l,u)
+</code></pre>
+
+<p><code>n×n</code> banded identity matrix of type <code>T</code> with bandwidths <code>(l,u)</code></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L283-L287' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.bones' href='#BandedMatrices.bones'>#</a>
+<strong><code>BandedMatrices.bones</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>bones(T,n,m,l,u)
+</code></pre>
+
+<p>Creates an <code>n×m</code> banded matrix  with ones in the bandwidth of type <code>T</code> with bandwidths <code>(l,u)</code></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L265' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.brand' href='#BandedMatrices.brand'>#</a>
+<strong><code>BandedMatrices.brand</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>brand(T,n,m,l,u)
+</code></pre>
+
+<p>Creates an <code>n×m</code> banded matrix  with random numbers in the bandwidth of type <code>T</code> with bandwidths <code>(l,u)</code></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L272' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.bzeros' href='#BandedMatrices.bzeros'>#</a>
+<strong><code>BandedMatrices.bzeros</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>bzeros(T,n,m,l,u)
+</code></pre>
+
+<p>Creates an <code>n×m</code> banded matrix  of all zeros of type <code>T</code> with bandwidths <code>(l,u)</code></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L258' class='documenter-source'>source</a><br></p>
+<p><a id='Accessing-banded-matrices-1'></a></p>
+<h2 id="accessing-banded-matrices">Accessing banded matrices</h2>
+<p><a id='BandedMatrices.bandwidths' href='#BandedMatrices.bandwidths'>#</a>
+<strong><code>BandedMatrices.bandwidths</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>bandwidths(A)
+</code></pre>
+
+<p>Returns a tuple containing the upper and lower bandwidth of <code>A</code>.</p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L68' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.bandwidth' href='#BandedMatrices.bandwidth'>#</a>
+<strong><code>BandedMatrices.bandwidth</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>bandwidth(A,i)
+</code></pre>
+
+<p>Returns the lower bandwidth (<code>i==1</code>) or the upper bandwidth (<code>i==2</code>).</p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L77' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.bandrange' href='#BandedMatrices.bandrange'>#</a>
+<strong><code>BandedMatrices.bandrange</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>bandrange(A)
+</code></pre>
+
+<p>Returns the range <code>-bandwidth(A,1):bandwidth(A,2)</code>.</p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L84' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.band' href='#BandedMatrices.band'>#</a>
+<strong><code>BandedMatrices.band</code></strong> &mdash; <em>Function</em>.</p>
+<pre><code>band(i)
+</code></pre>
+
+<p>Represents the <code>i</code>-th band of a banded matrix.</p>
+<pre><code class="jlcon">julia&gt; using BandedMatrices
+
+julia&gt; A = bones(5,5,1,1)
+5×5 BandedMatrices.BandedMatrix{Float64}:
+ 1.0  1.0
+ 1.0  1.0  1.0
+      1.0  1.0  1.0
+           1.0  1.0  1.0
+                1.0  1.0
+
+julia&gt; A[band(1)]
+4-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 1.0
+ 1.0
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L331' class='documenter-source'>source</a><br></p>
+<p><a id='BandedMatrices.BandRange' href='#BandedMatrices.BandRange'>#</a>
+<strong><code>BandedMatrices.BandRange</code></strong> &mdash; <em>Type</em>.</p>
+<pre><code>BandRange
+</code></pre>
+
+<p>Represents the entries in a row/column inside the bands.</p>
+<pre><code class="jlcon">julia&gt; using BandedMatrices
+
+julia&gt; A = bones(5,5,1,1)
+5×5 BandedMatrices.BandedMatrix{Float64}:
+ 1.0  1.0
+ 1.0  1.0  1.0
+      1.0  1.0  1.0
+           1.0  1.0  1.0
+                1.0  1.0
+
+julia&gt; A[2,BandRange]
+3-element Array{Float64,1}:
+ 1.0
+ 1.0
+ 1.0
+</code></pre>
+
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/d0a381a3d728f18fbe59aa25dd238de7f86a19a9/src/BandedMatrices.jl#L359' class='documenter-source'>source</a><br></p>
+              
+            </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+<div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/JuliaMatrices/BandedMatrices.jl" class="icon icon-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+      
+    </span>
+</div>
+
+</body>
+</html>
+
+<!--
+MkDocs version : 0.15.3
+Build Date UTC : 2016-09-26 01:28:35.447384
+-->
