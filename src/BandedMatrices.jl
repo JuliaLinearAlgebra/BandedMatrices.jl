@@ -232,27 +232,6 @@ Base.promote_rule{T,V}(::Type{BandedMatrix{T}},::Type{BandedMatrix{V}}) = Banded
 
 
 
-doc"""
-    bzeros(T,n,m,l,u)
-
-Creates an `n×m` banded matrix  of all zeros of type `T` with bandwidths `(l,u)`
-"""
-bzeros
-
-doc"""
-    bones(T,n,m,l,u)
-
-Creates an `n×m` banded matrix  with ones in the bandwidth of type `T` with bandwidths `(l,u)`
-"""
-bones
-
-doc"""
-    brand(T,n,m,l,u)
-
-Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(l,u)`
-"""
-brand
-
 for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bones))
     name_str = "bzeros"
     @eval begin
@@ -275,6 +254,27 @@ for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bo
             $bop(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
     end
 end
+
+doc"""
+    bzeros(T,n,m,l,u)
+
+Creates an `n×m` banded matrix  of all zeros of type `T` with bandwidths `(l,u)`
+"""
+bzeros
+
+doc"""
+    bones(T,n,m,l,u)
+
+Creates an `n×m` banded matrix  with ones in the bandwidth of type `T` with bandwidths `(l,u)`
+"""
+bones
+
+doc"""
+    brand(T,n,m,l,u)
+
+Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(l,u)`
+"""
+brand
 
 Base.similar(B::AbstractBandedMatrix) =
     BandedMatrix(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
