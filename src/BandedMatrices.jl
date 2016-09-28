@@ -178,6 +178,7 @@ end
 typealias BandedSubMatrix{T} Union{
                 SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
+                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
             }
 
