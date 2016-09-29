@@ -287,3 +287,65 @@ x=BigFloat[1:size(B,1)...]
 
 @test_approx_eq full(B)*x B*x
 @test_approx_eq full(B*B) full(B)*full(B)
+
+
+
+A = brand(10,10,1,2)
+B = brand(20,20,1,2)
+
+@test isa(view(B,1:10,1:10),BandedMatrices.BandedSubMatrix{Float64})
+
+B2 = copy(B)
+@test_approx_eq (2.0A+B[1:10,1:10]) BLAS.axpy!(2.0,A,view(B2,1:10,1:10))
+@test_approx_eq (2.0A+B[1:10,1:10]) B2[1:10,1:10]
+
+A2 = copy(A)
+@test_approx_eq (2.0B[1:10,1:10]+A) BLAS.axpy!(2.0,view(B,1:10,1:10),A2)
+@test_approx_eq (2.0B[1:10,1:10]+A) A2
+
+A = brand(20,20,1,2)
+B = brand(20,20,1,2)
+
+@test isa(view(B,1:10,1:10),BandedMatrices.BandedSubMatrix{Float64})
+
+B2 = copy(B)
+@test_approx_eq (2.0A[1:10,1:10]+B[1:10,1:10]) BLAS.axpy!(2.0,view(A,1:10,1:10),view(B2,1:10,1:10))
+@test_approx_eq (2.0A[1:10,1:10]+B[1:10,1:10]) B2[1:10,1:10]
+
+B2 = copy(B)
+@test_approx_eq (2.0A[1:10,:]+B[1:10,:]) BLAS.axpy!(2.0,view(A,1:10,:),view(B2,1:10,:))
+@test_approx_eq (2.0A[1:10,:]+B[1:10,:]) B2[1:10,:]
+
+B2 = copy(B)
+@test_approx_eq (2.0A[:,1:10]+B[:,1:10]) BLAS.axpy!(2.0,view(A,:,1:10),view(B2,:,1:10))
+@test_approx_eq (2.0A[:,1:10]+B[:,1:10]) B2[:,1:10]
+
+
+B2 = copy(B)
+@test_approx_eq (2.0A[:,:]+B[:,:]) BLAS.axpy!(2.0,view(A,:,:),view(B2,:,:))
+@test_approx_eq (2.0A[:,:]+B[:,:]) B2[:,:]
+
+
+
+A = brand(10,10,1,2)
+B = brand(20,10,1,2)
+
+B2 = copy(B)
+@test_approx_eq (2.0A+B[1:10,1:10]) BLAS.axpy!(2.0,A,view(B2,1:10,:))
+@test_approx_eq (2.0A+B[1:10,1:10]) B2[1:10,1:10]
+
+A2 = copy(A)
+@test_approx_eq (2.0B[1:10,1:10]+A) BLAS.axpy!(2.0,view(B,1:10,:),A2)
+@test_approx_eq (2.0B[1:10,1:10]+A) A2
+
+
+A = brand(10,10,1,2)
+B = brand(10,20,1,2)
+
+B2 = copy(B)
+@test_approx_eq (2.0A+B[1:10,1:10]) BLAS.axpy!(2.0,A,view(B2,:,1:10))
+@test_approx_eq (2.0A+B[1:10,1:10]) B2[1:10,1:10]
+
+A2 = copy(A)
+@test_approx_eq (2.0B[1:10,1:10]+A) BLAS.axpy!(2.0,view(B,:,1:10),A2)
+@test_approx_eq (2.0B[1:10,1:10]+A) A2
