@@ -1,6 +1,6 @@
 versioninfo()
 
-using BandedMatrices, Base.Test
+using BandedMatrices, Compat, Base.Test
 
 include("test_indexing.jl")
 include("test_bandedlu.jl")
