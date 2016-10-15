@@ -1,7 +1,7 @@
 versioninfo()
 
 using BandedMatrices, Compat, Base.Test
-
+    import Compat: view
 include("test_indexing.jl")
 include("test_bandedlu.jl")
 include("test_bandedqr.jl")
