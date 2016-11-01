@@ -121,35 +121,35 @@
 </code></pre>
 
 <p>returns an unitialized <code>n</code>×<code>m</code> banded matrix of type <code>T</code> with bandwidths <code>(l,u)</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L194' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L194' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.beye' href='#BandedMatrices.beye'>#</a>
 <strong><code>BandedMatrices.beye</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>beye(T,n,l,u)
 </code></pre>
 
 <p><code>n×n</code> banded identity matrix of type <code>T</code> with bandwidths <code>(l,u)</code></p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L284-L288' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L284-L288' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.bones' href='#BandedMatrices.bones'>#</a>
 <strong><code>BandedMatrices.bones</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>bones(T,n,m,l,u)
 </code></pre>
 
 <p>Creates an <code>n×m</code> banded matrix  with ones in the bandwidth of type <code>T</code> with bandwidths <code>(l,u)</code></p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L266' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L266' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.brand' href='#BandedMatrices.brand'>#</a>
 <strong><code>BandedMatrices.brand</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>brand(T,n,m,l,u)
 </code></pre>
 
 <p>Creates an <code>n×m</code> banded matrix  with random numbers in the bandwidth of type <code>T</code> with bandwidths <code>(l,u)</code></p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L273' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L273' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.bzeros' href='#BandedMatrices.bzeros'>#</a>
 <strong><code>BandedMatrices.bzeros</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>bzeros(T,n,m,l,u)
 </code></pre>
 
 <p>Creates an <code>n×m</code> banded matrix  of all zeros of type <code>T</code> with bandwidths <code>(l,u)</code></p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L259' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L259' class='documenter-source'>source</a><br></p>
 <p><a id='Accessing-banded-matrices-1'></a></p>
 <h2 id="accessing-banded-matrices">Accessing banded matrices</h2>
 <p><a id='BandedMatrices.bandwidths' href='#BandedMatrices.bandwidths'>#</a>
@@ -158,21 +158,21 @@
 </code></pre>
 
 <p>Returns a tuple containing the upper and lower bandwidth of <code>A</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L68' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L68' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.bandwidth' href='#BandedMatrices.bandwidth'>#</a>
 <strong><code>BandedMatrices.bandwidth</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>bandwidth(A,i)
 </code></pre>
 
 <p>Returns the lower bandwidth (<code>i==1</code>) or the upper bandwidth (<code>i==2</code>).</p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L77' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L77' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.bandrange' href='#BandedMatrices.bandrange'>#</a>
 <strong><code>BandedMatrices.bandrange</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>bandrange(A)
 </code></pre>
 
 <p>Returns the range <code>-bandwidth(A,1):bandwidth(A,2)</code>.</p>
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L84' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L84' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.band' href='#BandedMatrices.band'>#</a>
 <strong><code>BandedMatrices.band</code></strong> &mdash; <em>Function</em>.</p>
 <pre><code>band(i)
@@ -197,7 +197,7 @@ julia&gt; A[band(1)]
  1.0
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L332' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L332' class='documenter-source'>source</a><br></p>
 <p><a id='BandedMatrices.BandRange' href='#BandedMatrices.BandRange'>#</a>
 <strong><code>BandedMatrices.BandRange</code></strong> &mdash; <em>Type</em>.</p>
 <pre><code>BandRange
@@ -221,7 +221,7 @@ julia&gt; A[2,BandRange]
  1.0
 </code></pre>
 
-<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/1ab80cfadeb4fc00c06ef9e911c2a64b25a77cf1/src/BandedMatrices.jl#L360' class='documenter-source'>source</a><br></p>
+<p><a target='_blank' href='https://github.com/JuliaMatrices/BandedMatrices.jl/tree/748398b9fe755772b2f733e70ddbc98963bc82b9/src/BandedMatrices.jl#L360' class='documenter-source'>source</a><br></p>
               
             </div>
           </div>
@@ -260,5 +260,5 @@ julia&gt; A[2,BandRange]
 
 <!--
 MkDocs version : 0.15.3
-Build Date UTC : 2016-10-15 03:18:05.099036
+Build Date UTC : 2016-11-01 04:53:46.749353
 -->
