@@ -734,7 +734,7 @@ function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band)
     @boundscheck checkband(A, b)
     @boundscheck checkdimensions(diaglength(A, b), V)
     row = A.u - b.i + 1
-    data, i = A.data, max(b.i - A.u + 2, 1)
+    data, i = A.data, max(b.i + 1, 1)
     for v in V
         @inbounds data[row, i] = convert(T, v)::T
         i += 1
