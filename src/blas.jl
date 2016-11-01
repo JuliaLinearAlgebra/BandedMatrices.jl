@@ -474,6 +474,17 @@ function banded_axpy!{T}(a::Number,X,S::BandedSubMatrix{T})
     S
 end
 
+
+function Base.BLAS.axpy!(a::Number,X::UniformScaling,Y::BandedMatrix)
+    LinAlg.checksquare(Y)
+
+    α = a*X.λ
+    for k=1:size(Y,1)
+        @inbounds Y[k,k] += α
+    end
+    Y
+end
+
 Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix) =
     banded_axpy!(a,X,Y)
 

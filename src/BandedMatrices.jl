@@ -639,6 +639,17 @@ function getindex{T}(A::BandedMatrix{T}, b::Band)
     end
 end
 
+function view{T}(A::BandedMatrix{T}, b::Band)
+    @boundscheck checkband(A, b)
+    if b.i > 0
+        view(A.data,A.u - b.i + 1, b.i+1:min(size(A,2),size(A,1)+b.i))
+    elseif b.i == 0
+        view(A.data,A.u - b.i + 1, 1:min(size(A,2),size(A,1)))
+    else # b.i < 0
+        view(A.data,A.u - b.i + 1, 1:min(size(A,2),size(A,1)+b.i))
+    end
+end
+
 # scalar - BandRange - integer -- A[1, BandRange]
 getindex(A::BandedMatrix, ::Type{BandRange}, j::Integer) = A[colrange(A, j), j]
 
@@ -966,7 +977,7 @@ end
 
 # pass standard routines to full matrix
 
-Base.norm(B::BandedMatrix,opts...)=norm(full(B),opts...)
+Base.norm(B::BandedMatrix,opts...) = norm(full(B),opts...)
 
 
 # We turn off bound checking to allow nicer syntax without branching
@@ -982,16 +993,6 @@ function Base.maximum(B::BandedMatrix)
         m=max(B[k,j],m)
     end
     m
-end
-
-
-for OP in (:*,:.*,:+,:.+,:-,:.-)
-    @eval begin
-        $OP(B::BandedMatrix{Bool},x::Bool) = BandedMatrix($OP(B.data,x),B.m,B.l,B.u)
-        $OP(x::Bool,B::BandedMatrix{Bool}) = BandedMatrix($OP(x,B.data),B.m,B.l,B.u)
-        $OP(B::BandedMatrix,x::Number) = BandedMatrix($OP(B.data,x),B.m,B.l,B.u)
-        $OP(x::Number,B::BandedMatrix) = BandedMatrix($OP(x,B.data),B.m,B.l,B.u)
-    end
 end
 
 function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
@@ -1115,7 +1116,7 @@ end
 
 ## Matrix.*Matrix
 
-function .*(A::BandedMatrix,B::BandedMatrix)
+function .*(A::BandedMatrix, B::BandedMatrix)
     @assert size(A,1)==size(B,1)&&size(A,2)==size(B,2)
 
     l=min(A.l,B.l);u=min(A.u,B.u)
@@ -1126,6 +1127,37 @@ function .*(A::BandedMatrix,B::BandedMatrix)
         @inbounds ret[k,j]=A[k,j]*B[k,j]
     end
     ret
+end
+
+
+## numbers
+for OP in (:*,:/,:.*,:./)
+    @eval $OP(A::BandedMatrix,b::Number) = BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
+end
+
+for OP in (:*,:.*,:./)
+    @eval $OP(a::Number,B::BandedMatrix) = BandedMatrix($OP(a,B.data),B.m,B.l,B.u)
+end
+
+
+## UniformScaling
+
+function +(A::BandedMatrix, B::UniformScaling)
+    ret = deepcopy(A)
+    BLAS.axpy!(1,B,ret)
+end
+
++(A::UniformScaling, B::BandedMatrix) = B+A
+
+function -(A::BandedMatrix, B::UniformScaling)
+    ret = deepcopy(A)
+    BLAS.axpy!(-1,B,ret)
+end
+
+function -(A::UniformScaling, B::BandedMatrix)
+    ret = deepcopy(B)
+    Base.scale!(ret,-1)
+    BLAS.axpy!(1,A,ret)
 end
 
 

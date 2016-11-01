@@ -349,3 +349,14 @@ B2 = copy(B)
 A2 = copy(A)
 @test_approx_eq (2.0B[1:10,1:10]+A) BLAS.axpy!(2.0,view(B,:,1:10),A2)
 @test_approx_eq (2.0B[1:10,1:10]+A) A2
+
+
+
+## UniformScalin g
+A = brand(10,10,1,2)
+
+@test_approx_eq full(A+I) full(A)+I
+@test_approx_eq full(I-A) I-full(A)
+
+
+@test_approx_eq full(A/2) full(A)/2
