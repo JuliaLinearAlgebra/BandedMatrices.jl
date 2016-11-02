@@ -1230,7 +1230,7 @@ end
 
 
 ## SubArray routines
-
+# gives the band which is diagonal for the parent
 bandshift(S) = parentindexes(S)[1][1]-parentindexes(S)[2][1]
 
 bandwidth{T}(S::BandedSubMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
