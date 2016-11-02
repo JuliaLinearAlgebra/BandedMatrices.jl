@@ -12,6 +12,17 @@ end
 
 
 
+function Base.scale!(α::Number, A::BandedMatrix)
+    Base.scale!(α, A.data)
+    A
+end
+
+function Base.scale!(A::BandedMatrix, α::Number)
+    Base.scale!(A.data, α)
+    A
+end
+
+
 
 
 for (fname, elty) in ((:dgbmv_,:Float64),

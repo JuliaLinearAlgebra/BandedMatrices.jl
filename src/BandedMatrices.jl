@@ -182,6 +182,7 @@ typealias BandedSubMatrix{T} Union{
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
             }
 
+
 include("BandedLU.jl")
 include("BandedQR.jl")
 include("blas.jl")
@@ -1237,6 +1238,25 @@ bandwidth{T}(S::BandedSubMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1
 
 unsafe_getindex{T}(S::BandedSubMatrix{T},k,j) = unsafe_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
 
+function Base.convert{T}(::Type{BandedMatrix},S::BandedSubMatrix{T})
+    A=parent(S)
+    kr,jr=parentindexes(S)
+    shft=kr[1]-jr[1]
+    l,u=bandwidths(A)
+    if -u ≤ shft ≤ l
+        BandedMatrix(A.data[:,jr],length(kr),l-shft,u+shft)
+    elseif shft > l
+        # need to add extra zeros at top since negative bandwidths not supported
+        # new bandwidths = (0,u+shft)
+        dat = zeros(T,u+shft+1,length(jr))
+        dat[1:l+u+1,:] = A.data[:,jr]
+        BandedMatrix(dat,length(kr),0,u+shft)
+    else  # shft < -u
+        dat = zeros(T,l-shft+1,length(jr))
+        dat[-shft-u+1:end,:] = A.data[:,jr]  # l-shft+1 - (-shft-u) == l+u+1
+        BandedMatrix(dat,length(kr),l-shft,0)
+    end
+end
 
 
 end #module
