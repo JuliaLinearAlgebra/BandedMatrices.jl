@@ -613,4 +613,8 @@ let
     @test_throws BandError a[1:3, 1:3] = rand(3, 3)
 
     @test_throws DimensionMismatch a[1:3, 1:2] = rand(3, 3)
+
+    s = BandedMatrix(view(a,1:3,1:2))
+    @test isa(s,BandedMatrix)
+    @test full(s) == a[1:3,1:2]
 end
