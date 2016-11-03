@@ -486,8 +486,20 @@ function banded_axpy!{T}(a::Number,X,S::BandedSubMatrix{T})
 end
 
 
+if VERSION < v"0.5"
+    # taken from 0.5
+    function checksquare(A)
+        m,n = size(A)
+        m == n || throw(DimensionMismatch("matrix is not square"))
+        m
+    end
+else
+    checksquare(A) = LinAlg.checksquare(A)
+end
+
+
 function Base.BLAS.axpy!(a::Number,X::UniformScaling,Y::BandedMatrix)
-    LinAlg.checksquare(Y)
+    checksquare(Y)
 
     α = a*X.λ
     for k=1:size(Y,1)
