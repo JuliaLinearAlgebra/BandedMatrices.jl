@@ -360,3 +360,15 @@ A = brand(10,10,1,2)
 
 
 @test_approx_eq full(A/2) full(A)/2
+
+
+## Test StridedMatrix
+A=brand(10,10,1,2)
+v=rand(20)
+
+@test_approx_eq A*view(v,1:10) full(A)*v[1:10]
+@test_approx_eq A*view(v,1:2:20) full(A)*v[1:2:20]
+
+M=rand(20,20)
+@test_approx_eq A*view(M,1:10,1:10) full(A)*M[1:10,1:10]
+@test_approx_eq A*view(M,1:2:20,1:2:20) full(A)*M[1:2:20,1:2:20]

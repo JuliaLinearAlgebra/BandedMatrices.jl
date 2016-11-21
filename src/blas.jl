@@ -39,7 +39,7 @@ for (fname, elty) in ((:dgbmv_,:Float64),
              #       DOUBLE PRECISION A(LDA,*),X(*),Y(*)
         function gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::($elty),
                        A::Ptr{$elty}, n::Int, st::Int,
-                       x::Ptr{$elty}, beta::($elty), y::Ptr{$elty})
+                       x::Ptr{$elty}, incx::Int, beta::($elty), y::Ptr{$elty}, incy::Int)
             ccall((@blasfunc($fname), libblas), Void,
                 (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
                  Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
@@ -47,7 +47,7 @@ for (fname, elty) in ((:dgbmv_,:Float64),
                  Ptr{BlasInt}),
                  &trans, &m, &n, &kl,
                  &ku, &alpha, A, &st,
-                 x, &1, &beta, y, &1)
+                 x, &incx, &beta, y, &incy)
             y
         end
     end
@@ -69,31 +69,13 @@ end
 # end
 
 gbmv!{T<:BlasFloat}(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
-               A::Matrix{T}, x::Vector{T}, beta::(T), y::Vector{T}) =
+               A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) =
     BLAS.gbmv!(trans,m,kl,ku,alpha,kl,ku,alpha,A,x,beta,y)
 
 
-gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::Vector{T},β::T,y::Vector{T}) =
-    gbmv!(trans,A.m,A.l,A.u,α,A.data,β,y)
+gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
+    gbmv!(trans,A.m,A.l,A.u,α,A.data,x,β,y)
 
-
-function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
-                  x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}},true},
-                  β::T,y::Vector{T})
-    sz=sizeof(T)
-    gbmv!(trans,A.m,A.l,A.u,α,pointer(A.data),size(A,2),stride(A.data,2),
-                    pointer(b)+sz*(parentindexes(b)[1][1]-1),β,pointer(y))
-    y
-end
-
-function gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},
-                  x::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}}},
-                  β::T,y::SubArray{T,1,Vector{T},Tuple{UnitRange{Int}}})
-    gbmv!(trans,A.m,A.l,A.u,α,pointer(A.data),size(A,2),stride(A.data,2),
-                    pointer(x),β,
-                    pointer(y))
-    y
-end
 
 
 
@@ -152,8 +134,8 @@ gbmm!{T}(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix{T}) =
           Al, Au,
           α,
           a, min(Bl+j,ν), sta,
-          b+sz*((j-1)*stb+Bu-j+1), β,
-          c+sz*((j-1)*stc+Cu-j+1))
+          b+sz*((j-1)*stb+Bu-j+1), 1, β,
+          c+sz*((j-1)*stc+Cu-j+1), 1)
 end
 
 
@@ -193,8 +175,8 @@ end
            Al+j-Bu-1, Au-j+Bu+1,
            α,
            a+sz*(j-Bu-1)*sta, min(Bl+Bu+1,ν-j+Bu+1), sta,
-           b+sz*(j-1)*stb, β,
-           c+sz*((j-1)*stc+Cu-j+1))
+           b+sz*(j-1)*stb, 1, β,
+           c+sz*((j-1)*stc+Cu-j+1), 1)
 end
 
 
@@ -234,8 +216,8 @@ end
            Al+Au, 0,
            α,
            a+sz*(j-Bu-1)*sta, min(Bl+Bu+1,ν-p+1), sta,
-           b+sz*(j-1)*stb, β,
-           c+sz*(j-1)*stc)
+           b+sz*(j-1)*stb, 1, β,
+           c+sz*(j-1)*stc, 1)
 end
 
 # Equivalent to
@@ -393,13 +375,15 @@ function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMat
 end
 
 
-function gbmm!{T<:BlasFloat}(α,A::BandedMatrix{T},B::Matrix{T},β,C::Matrix{T})
+function gbmm!{T<:BlasFloat}(α,A::BandedMatrix{T},B::StridedMatrix{T},β,C::StridedMatrix{T})
     st=max(1,stride(A.data,2))
     n,ν=size(A)
     a=pointer(A.data)
 
 
     b=pointer(B)
+    stb=stride(B,2)
+
 
     m=size(B,2)
 
@@ -407,11 +391,11 @@ function gbmm!{T<:BlasFloat}(α,A::BandedMatrix{T},B::Matrix{T},β,C::Matrix{T})
     @assert size(C,2)==m
 
     c=pointer(C)
-
+    stc=stride(C,2)
     sz=sizeof(T)
 
     for j=1:m
-        gbmv!('N',n,A.l,A.u,α,a,ν,st,b+(j-1)*sz*ν,β,c+(j-1)*sz*n)
+        gbmv!('N',n,A.l,A.u,α,a,ν,st,b+(j-1)*sz*stb,stride(B,1),β,c+(j-1)*sz*stc,stride(C,1))
     end
     C
 end
@@ -541,7 +525,15 @@ end
 function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
     @assert size(X)==size(Y)
     for j=1:size(X,2),k=colrange(X,j)
-        @inbounds Y[k,j]+=a*unsafe_getindex(X,k,j)
+        Y[k,j]+=a*unsafe_getindex(X,k,j)
+    end
+    Y
+end
+
+function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::DenseMatrix)
+    @assert size(X)==size(Y)
+    @inbounds for j=1:size(X,2),k=colrange(X,j)
+        Y[k,j]+=a*unsafe_getindex(X,k,j)
     end
     Y
 end
@@ -553,14 +545,14 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::Matrix) =
+Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::StridedMatrix) =
     gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
 
 ## Matrix*Vector Multiplicaiton
 
 
 
-Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::AbstractVector) =
+Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::StridedVector) =
     gbmv!('N',A.m,A.l,A.u,one(eltype(A)),A.data,b,zero(eltype(c)),c)
 
 

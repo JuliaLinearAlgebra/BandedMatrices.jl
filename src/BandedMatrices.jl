@@ -229,6 +229,7 @@ function Base.convert{BM<:BandedMatrix}(::Type{BM},M::Matrix)
     ret
 end
 
+Base.copy(B::BandedMatrix) = BandedMatrix(copy(B.data),B.m,B.l,B.u)
 
 Base.promote_rule{T,V}(::Type{BandedMatrix{T}},::Type{BandedMatrix{V}}) = BandedMatrix{promote_type(T,V)}
 
@@ -1054,7 +1055,7 @@ function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::BandedMatrix{V})
     A_mul_B!(bzeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
 end
 
-function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::Matrix{V})
+function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::StridedMatrix{V})
     if size(A,2)!=size(B,1)
         throw(DimensionMismatch("*"))
     end
@@ -1063,13 +1064,13 @@ function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::Matrix{V})
     A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
-*{T<:Number,V<:Number}(A::Matrix{T},B::BandedMatrix{V}) =
+*{T<:Number,V<:Number}(A::StridedMatrix{T},B::BandedMatrix{V}) =
     A*full(B)
 
-*{T<:BlasFloat}(A::BandedMatrix{T},b::Vector{T}) =
+*{T<:BlasFloat}(A::BandedMatrix{T},b::StridedVector{T}) =
     BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
 
-function *{T}(A::BandedMatrix{T},b::Vector{T})
+function *{T}(A::BandedMatrix{T},b::StridedVector{T})
     ret = zeros(T,size(A,1))
     for (k,j) in eachbandedindex(A)
         @inbounds ret[k]+=A[k,j]*b[j]
@@ -1078,9 +1079,9 @@ function *{T}(A::BandedMatrix{T},b::Vector{T})
 end
 
 
-function *(A::BandedMatrix,b::Vector)
+function *(A::BandedMatrix,b::StridedVector)
     T=promote_type(eltype(A),eltype(b))
-    convert(BandedMatrix{T},A)*convert(Vector{T},b)
+    convert(BandedMatrix{T},A)*convert(AbstractVector{T},b)
 end
 
 function Base.transpose(B::BandedMatrix)
