@@ -1,3 +1,24 @@
+## These routines give access to the necessary information to call BLAS
+
+
+@inline leadingdimension(B::BandedMatrix) = stride(B.data,2)
+@inline leadingdimension{T}(B::BandedSubMatrix{T}) = leadingdimension(parent(B))
+
+
+@inline Base.pointer(B::BandedMatrix) = pointer(B.data)
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}) =
+    pointer(parent(B))
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}}) =
+    pointer(parent(B))
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}}) =
+    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}) =
+    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)
+
+
+
+
+
 # We implement for pointers
 
 
@@ -76,22 +97,28 @@ gbmv!{T<:BlasFloat}(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
 gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
     gbmv!(trans,A.m,A.l,A.u,α,A.data,x,β,y)
 
+gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BLASBandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
+    gbmv!(trans,size(A,1),bandwidth(A,1),bandwidth(A,2),α,
+          pointer(A),size(A,2),leadingdimension(A),
+          x,stride(x),β,y,stride(y))
+
 
 
 
 
 # this is matrix*matrix
 
-gbmm!{T}(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix{T}) =
+gbmm!{U,V,T}(α,A::BLASBandedMatrix{U},B::BLASBandedMatrix{V},β,C::BLASBandedMatrix{T}) =
     gbmm!(convert(T,α),convert(BandedMatrix{T},A),convert(BandedMatrix{T},B),
           convert(T,β),C)
 
 
-αA_mul_B_plus_βC!(α,A::BandedMatrix,x,β,y) = gbmv!('N',α,A,x,β,y)
+αA_mul_B_plus_βC!{T}(α,A::BLASBandedMatrix{T},x,β,y) = gbmv!('N',α,A,x,β,y)
 αA_mul_B_plus_βC!(α,A::Matrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
 
 
-αA_mul_B_plus_βC!(α,A::BandedMatrix,B::BandedMatrix,β,C::BandedMatrix) = gbmm!(α,A,B,β,C)
+αA_mul_B_plus_βC!{T,U,V}(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) =
+    gbmm!(α,A,B,β,C)
 αA_mul_B_plus_βC!(α,A::Matrix,B::Matrix,β,C::Matrix) = BLAS.gemm!('N','N',α,A,B,β,C)
 
 
@@ -284,35 +311,36 @@ end
 
 
 
-function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMatrix{T})
-    n,ν=size(A)
-    m=size(B,2)
+function gbmm!{T<:BlasFloat}(α::T,A::BLASBandedMatrix{T},B::BLASBandedMatrix{T},β::T,C::BLASBandedMatrix{T})
+    n,ν = size(A)
+    m = size(B,2)
 
-    @assert n==size(C,1)
-    @assert ν==size(B,1)
-    @assert m==size(C,2)
+    @assert n == size(C,1)
+    @assert ν == size(B,1)
+    @assert m == size(C,2)
+
+    Al = bandwidth(A,1); Au = bandwidth(A,2)
+    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
+    Cl = bandwidth(C,1); Cu = bandwidth(C,2)
 
     # only tested at the moment for this case
     # TODO: implement when C.u,C.l ≥
-    @assert C.u==A.u+B.u
-    @assert C.l==A.l+B.l
+    @assert Cu == Au+Bu
+    @assert Cl == Al+Bl
 
 
-    a=pointer(A.data)
-    b=pointer(B.data)
-    c=pointer(C.data)
-    sta=max(1,stride(A.data,2))
-    stb=max(1,stride(B.data,2))
-    stc=max(1,stride(C.data,2))
-    sz=sizeof(T)
+    a = pointer(A)
+    b = pointer(B)
+    c = pointer(C)
+    sta = leadingdimension(A)
+    stb = leadingdimension(B)
+    stc = leadingdimension(C)
+    sz = sizeof(T)
 
-    Al=A.l;Au=A.u
-    Bl=B.l;Bu=B.u
-    Cl=C.l;Cu=C.u
 
 
     # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
-    for j=1:min(m,1+B.u)
+    for j = 1:min(m,1+Bu)
         A11_Btop_Ctop_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -324,7 +352,7 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
     # Multiply columns j where B[k,j]=0 for k<p=(j-B.u-1), A is at 1,1+p and C[1,j]≠0
     # j ≤ ν + B.u since then 1+p ≤ ν, so inside the columns of A
 
-    for j=2+B.u:min(1+C.u,ν+B.u,m)
+    for j = 2+Bu:min(1+Cu,ν+Bu,m)
         Atop_Bmid_Ctop_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -335,7 +363,7 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
 
 
     # multiply columns where A and B are mid and C is bottom
-    for j=2+C.u:min(m,ν+B.u,n+C.u)
+    for j = 2+Cu:min(m,ν+Bu,n+Cu)
         Amid_Bmid_Cmid_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -345,7 +373,7 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
     end
 
     # scale columns of C by β that aren't impacted by α*A*B
-    for j=ν+B.u+1:min(m,n+C.u)
+    for j = ν+Bu+1:min(m,n+Cu)
         Anon_Bnon_C_gbmv!(α,β,
                             n,ν,m,j,
                             sz,
@@ -358,15 +386,15 @@ function gbmm!{T<:BlasFloat}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C
 end
 
 #TODO: Speedup
-function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMatrix{T})
+function gbmm!{T}(α::T,A::BLASBandedMatrix{T},B::BLASBandedMatrix{T},β::T,C::BLASBandedMatrix{T})
     for j=1:size(C,2),k=colrange(C,j)
         C[k,j]*=β
     end
 
     m=size(C,2)
-
+    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
     for ν=1:size(A,2),k=colrange(A,ν)
-        for j=max(ν-B.l,1):min(ν+B.u,m)
+        for j=max(ν-Bl,1):min(ν+Bu,m)
             C[k,j]+=α*A[k,ν]*B[ν,j]
         end
     end
@@ -375,27 +403,29 @@ function gbmm!{T}(α::T,A::BandedMatrix{T},B::BandedMatrix{T},β::T,C::BandedMat
 end
 
 
-function gbmm!{T<:BlasFloat}(α,A::BandedMatrix{T},B::StridedMatrix{T},β,C::StridedMatrix{T})
-    st=max(1,stride(A.data,2))
-    n,ν=size(A)
-    a=pointer(A.data)
+function gbmm!{T<:BlasFloat}(α,A::BLASBandedMatrix{T},B::StridedMatrix{T},β,C::StridedMatrix{T})
+    st = leadingdimension(A)
+    n,ν = size(A)
+    a = pointer(A)
 
 
-    b=pointer(B)
-    stb=stride(B,2)
+    b = pointer(B)
+    stb = stride(B,2)
 
 
-    m=size(B,2)
+    m = size(B,2)
 
-    @assert size(C,1)==n
-    @assert size(C,2)==m
+    @assert size(C,1) == n
+    @assert size(C,2) == m
 
     c=pointer(C)
     stc=stride(C,2)
     sz=sizeof(T)
 
+    Al = bandwidth(A,1); Au = bandwidth(A,2)
+
     for j=1:m
-        gbmv!('N',n,A.l,A.u,α,a,ν,st,b+(j-1)*sz*stb,stride(B,1),β,c+(j-1)*sz*stc,stride(C,1))
+        gbmv!('N',n,Al,Au,α,a,ν,st,b+(j-1)*sz*stb,stride(B,1),β,c+(j-1)*sz*stc,stride(C,1))
     end
     C
 end
@@ -482,7 +512,7 @@ else
 end
 
 
-function Base.BLAS.axpy!(a::Number,X::UniformScaling,Y::BandedMatrix)
+function Base.BLAS.axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
     checksquare(Y)
 
     α = a*X.λ
@@ -545,8 +575,8 @@ end
 
 ## A_mul_B! overrides
 
-Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::StridedMatrix) =
-    gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
+Base.A_mul_B!{T}(C::Matrix,A::BLASBandedMatrix{T},B::StridedMatrix) =
+    gbmm!(one(eltype(C)),A,B,zero(eltype(C)),C)
 
 ## Matrix*Vector Multiplicaiton
 
@@ -555,13 +585,17 @@ Base.A_mul_B!(C::Matrix,A::BandedMatrix,B::StridedMatrix) =
 Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::StridedVector) =
     gbmv!('N',A.m,A.l,A.u,one(eltype(A)),A.data,b,zero(eltype(c)),c)
 
+Base.A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::BLASBandedMatrix{T},b::StridedVector{T}) =
+    gbmv!('N',size(A,1),bandwidth(A,1),bandwidth(A,2),one(T),
+            pointer(A),size(A,2),leadingdimension(A),pointer(b),stride(b),zero(T),pointer(c),stride(c))
+
 
 
 
 ## Matrix*Matrix Multiplication
 
 
-Base.A_mul_B!(C::BandedMatrix,A::BandedMatrix,B::BandedMatrix) =
+Base.A_mul_B!{T,U,V}(C::BLASBandedMatrix{T},A::BLASBandedMatrix{U},B::BLASBandedMatrix{V}) =
     gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
 
 

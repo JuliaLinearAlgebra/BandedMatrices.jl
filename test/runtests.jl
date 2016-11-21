@@ -372,3 +372,25 @@ v=rand(20)
 M=rand(20,20)
 @test_approx_eq A*view(M,1:10,1:10) full(A)*M[1:10,1:10]
 @test_approx_eq A*view(M,1:2:20,1:2:20) full(A)*M[1:2:20,1:2:20]
+
+
+A=brand(10,10,1,2)
+B=brand(20,10,1,2)
+C=brand(10,20,1,2)
+D=brand(20,20,1,2)
+M=rand(10,10)
+V=view(rand(20,20),1:2:20,1:2:20)
+
+
+for S in (view(A,:,:),view(B,1:10,:),view(C,:,1:10),view(D,1:10,1:10),
+            view(D,2:11,1:10),view(D,1:10,2:11),view(D,11:20,11:20))
+    @test_approx_eq A*S full(A)*full(S)
+    @test_approx_eq S*A full(S)*full(A)
+    @test_approx_eq S*S full(S)*full(S)
+
+    @test_approx_eq M*S M*full(S)
+    @test_approx_eq S*M full(S)*M
+
+    @test_approx_eq V*S full(V)*full(S)
+    @test_approx_eq S*V full(S)*full(V)
+end

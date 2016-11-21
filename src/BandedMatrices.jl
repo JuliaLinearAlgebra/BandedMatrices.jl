@@ -182,6 +182,15 @@ typealias BandedSubMatrix{T} Union{
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
             }
 
+# these are the banded matrices that are ameniable to BLAS routines
+typealias BLASBandedMatrix{T} Union{
+                BandedMatrix{T},
+                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
+                SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
+                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
+                SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+            }
+
 
 include("BandedLU.jl")
 include("BandedQR.jl")
@@ -1010,7 +1019,7 @@ function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     ret
 end
 
-function -{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
+function -{T,V}(A::BandedMatrix{T}, B::BandedMatrix{V})
     if size(A) != size(B)
         throw(DimensionMismatch("+"))
     end
@@ -1024,20 +1033,20 @@ function -{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
 end
 
 
-function *(A::BandedMatrix,B::BandedMatrix)
+function *(A::BandedMatrix, B::BandedMatrix)
     if size(A,2)!=size(B,1)
         throw(DimensionMismatch("*"))
     end
-    n,m=size(A,1),size(B,2)
+    n,m = size(A,1),size(B,2)
 
-    ret=BandedMatrix(promote_type(eltype(A),eltype(B)),n,m,A.l+B.l,A.u+B.u)
+    ret = BandedMatrix(promote_type(eltype(A),eltype(B)),n,m,A.l+B.l,A.u+B.u)
     for (k,j) in eachbandedindex(ret)
-        νmin=max(1,k-bandwidth(A,1),j-bandwidth(B,2))
-        νmax=min(size(A,2),k+bandwidth(A,2),j+bandwidth(B,1))
+        νmin = max(1,k-bandwidth(A,1),j-bandwidth(B,2))
+        νmax = min(size(A,2),k+bandwidth(A,2),j+bandwidth(B,1))
 
-        ret[k,j]=A[k,νmin]*B[νmin,j]
+        ret[k,j] = A[k,νmin]*B[νmin,j]
         for ν=νmin+1:νmax
-            ret[k,j]+=A[k,ν]*B[ν,j]
+            ret[k,j] += A[k,ν]*B[ν,j]
         end
     end
 
@@ -1046,16 +1055,18 @@ end
 
 
 
-function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::BandedMatrix{V})
-    if size(A,2)!=size(B,1)
+function *{T<:Number,V<:Number}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
+    if size(A,2) != size(B,1)
         throw(DimensionMismatch("*"))
     end
-    n,m=size(A,1),size(B,2)
-
-    A_mul_B!(bzeros(promote_type(T,V),n,m,A.l+B.l,A.u+B.u),A,B)
+    n,m = size(A,1),size(B,2)
+    Y = bzeros(promote_type(T,V),n,m,
+                    bandwidth(A,1)+bandwidth(B,1),
+                    bandwidth(A,2)+bandwidth(B,2))
+    A_mul_B!(Y,A,B)
 end
 
-function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::StridedMatrix{V})
+function *{T<:Number,V<:Number}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     if size(A,2)!=size(B,1)
         throw(DimensionMismatch("*"))
     end
@@ -1064,11 +1075,16 @@ function *{T<:Number,V<:Number}(A::BandedMatrix{T},B::StridedMatrix{V})
     A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
-*{T<:Number,V<:Number}(A::StridedMatrix{T},B::BandedMatrix{V}) =
-    A*full(B)
+*{T<:Number,V<:Number}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) =
+    A*Matrix(B)
 
 *{T<:BlasFloat}(A::BandedMatrix{T},b::StridedVector{T}) =
     BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
+
+*{T<:BlasFloat}(A::BLASBandedMatrix{T},b::StridedVector{T}) =
+    BLAS.gbmv('N',size(A,1),bandwidth(A,1),bandwidth(A,2),one(T),
+                pointer(A),size(A,2),leadingdimension(A),
+                pointer(b),stride(b))
 
 function *{T}(A::BandedMatrix{T},b::StridedVector{T})
     ret = zeros(T,size(A,1))
@@ -1079,7 +1095,7 @@ function *{T}(A::BandedMatrix{T},b::StridedVector{T})
 end
 
 
-function *(A::BandedMatrix,b::StridedVector)
+function *{TT}(A::BLASBandedMatrix{TT},b::StridedVector)
     T=promote_type(eltype(A),eltype(b))
     convert(BandedMatrix{T},A)*convert(AbstractVector{T},b)
 end
