@@ -71,6 +71,11 @@ for (fname, elty) in ((:dgbmv_,:Float64),
                  x, &incx, &beta, y, &incy)
             y
         end
+
+        gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::($elty),
+                       A::Ptr{$elty}, n::Int, st::Int,
+                       x::Ptr{$elty}, beta::($elty), y::Ptr{$elty}) =
+            gmv!(trans, m, kl, ku, alpha, A, n, st, x, 1, beta, y, 1)
     end
 end
 
@@ -91,7 +96,7 @@ end
 
 gbmv!{T<:BlasFloat}(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
                A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) =
-    BLAS.gbmv!(trans,m,kl,ku,alpha,kl,ku,alpha,A,x,beta,y)
+    BLAS.gbmv!(trans,m,kl,ku,alpha,A,x,beta,y)
 
 
 gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =

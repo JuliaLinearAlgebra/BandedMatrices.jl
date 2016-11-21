@@ -1,10 +1,23 @@
 using Documenter, BandedMatrices
 
-makedocs()
+makedocs(modules=[BandedMatrices],
+			doctest = true,
+			clean = true,
+			format = :html,
+			sitename = "BandedMatrices.jl",
+			authors = "Sheehan Olver",
+			pages = Any[
+					"Home" => "index.md"
+					]
+			)
+
 
 deploydocs(
-    deps   = Deps.pip("mkdocs", "python-markdown-math"),
     repo   = "github.com/JuliaMatrices/BandedMatrices.jl.git",
+    latest = "master",
     julia  = "0.5",
-    osname = "osx"
-)
+    osname = "linux",
+    target = "build",
+    deps   = nothing,
+    make   = nothing
+    )

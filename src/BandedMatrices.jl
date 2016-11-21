@@ -1076,7 +1076,7 @@ function *{T<:Number,V<:Number}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
 end
 
 *{T<:Number,V<:Number}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) =
-    A*Matrix(B)
+    A*Array(B)
 
 *{T<:BlasFloat}(A::BandedMatrix{T},b::StridedVector{T}) =
     BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
