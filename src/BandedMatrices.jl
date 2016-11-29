@@ -623,7 +623,7 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     data[u + k - j + 1, j]
 
 # scalar - integer - integer
-function getindex(A::AbstractBandedMatrix, k::Integer, j::Integer)
+@inline function getindex(A::AbstractBandedMatrix, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
 
     if bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2)
@@ -634,12 +634,12 @@ function getindex(A::AbstractBandedMatrix, k::Integer, j::Integer)
 end
 
 # scalar - colon - colon
-getindex(A::BandedMatrix, kr::Colon, jr::Colon) = copy(A)
+@inline getindex(A::BandedMatrix, kr::Colon, jr::Colon) = copy(A)
 
 # ~ indexing along a band
 
 # scalar - band - colon
-function getindex{T}(A::BandedMatrix{T}, b::Band)
+@inline function getindex{T}(A::BandedMatrix{T}, b::Band)
     @boundscheck checkband(A, b)
     if b.i > 0
         vec(A.data[A.u - b.i + 1, b.i+1:min(size(A,2),size(A,1)+b.i)])
@@ -650,7 +650,7 @@ function getindex{T}(A::BandedMatrix{T}, b::Band)
     end
 end
 
-function view{T}(A::BandedMatrix{T}, b::Band)
+@inline function view{T}(A::BandedMatrix{T}, b::Band)
     @boundscheck checkband(A, b)
     if b.i > 0
         view(A.data,A.u - b.i + 1, b.i+1:min(size(A,2),size(A,1)+b.i))
@@ -662,10 +662,10 @@ function view{T}(A::BandedMatrix{T}, b::Band)
 end
 
 # scalar - BandRange - integer -- A[1, BandRange]
-getindex(A::BandedMatrix, ::Type{BandRange}, j::Integer) = A[colrange(A, j), j]
+@inline getindex(A::BandedMatrix, ::Type{BandRange}, j::Integer) = A[colrange(A, j), j]
 
 # scalar - integer - BandRange -- A[1, BandRange]
-getindex(A::BandedMatrix, k::Integer, ::Type{BandRange}) = A[k, rowrange(A, k)]
+@inline getindex(A::BandedMatrix, k::Integer, ::Type{BandRange}) = A[k, rowrange(A, k)]
 
 
 # ~ indexing along a row
@@ -686,7 +686,7 @@ getindex(A::BandedMatrix, k::Integer, ::Type{BandRange}) = A[k, rowrange(A, k)]
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
 
 # scalar - integer - integer
-function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
+@inline function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
     if bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2)
         unsafe_setindex!(A.data, A.u, v, k, j)
@@ -716,7 +716,7 @@ function setindex!{T}(A::BandedMatrix{T}, v, ::Colon)
 end
 
 # matrix - colon - colon
-function setindex!{T}(A::BandedMatrix{T}, v::AbstractMatrix, kr::Colon, jr::Colon)
+@inline function setindex!{T}(A::BandedMatrix{T}, v::AbstractMatrix, kr::Colon, jr::Colon)
     @boundscheck checkdimensions(size(A), size(v))
     @boundscheck checkbandmatch(A, v, kr, jr)
 
@@ -735,13 +735,13 @@ end
 # ~ indexing along a band
 
 # scalar - band - colon
-function setindex!{T}(A::BandedMatrix{T}, v, b::Band)
+@inline function setindex!{T}(A::BandedMatrix{T}, v, b::Band)
     @boundscheck checkband(A, b)
     @inbounds A.data[A.u - b.i + 1, :] = convert(T, v)::T
 end
 
 # vector - band - colon
-function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band)
+@inline function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, b::Band)
     @boundscheck checkband(A, b)
     @boundscheck checkdimensions(diaglength(A, b), V)
     row = A.u - b.i + 1
@@ -767,7 +767,7 @@ end
 
 
 # vector - colon - integer -- A[:, 1] = [1, 2, 3] - not allowed
-function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Colon, j::Integer)
+@inline function setindex!{T}(A::BandedMatrix{T}, V::AbstractVector, kr::Colon, j::Integer)
     @boundscheck checkbounds(A, kr, j)
     @boundscheck checkdimensions(1:size(A,1), V)
     @boundscheck checkbandmatch(A,V,:,j)
@@ -785,7 +785,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, ::Type{BandRange}, j::Integer) =
     (A[colrange(A, j), j] = V) # call range method
 
 # scalar - range - integer -- A[1:2, 1] = 2
-function setindex!(A::BandedMatrix, v, kr::Range, j::Integer)
+@inline function setindex!(A::BandedMatrix, v, kr::Range, j::Integer)
     @boundscheck checkbounds(A, kr, j)
 
     if v ≠ zero(eltype(A))
@@ -803,7 +803,7 @@ function setindex!(A::BandedMatrix, v, kr::Range, j::Integer)
 end
 
 # vector - range - integer -- A[1:3, 1] = [1, 2, 3]
-function setindex!(A::BandedMatrix, V::AbstractVector, kr::Range, j::Integer)
+@inline function setindex!(A::BandedMatrix, V::AbstractVector, kr::Range, j::Integer)
     @boundscheck checkbounds(A, kr, j)
     @boundscheck checkdimensions(kr, V)
     @boundscheck checkbandmatch(A, V, kr, j)
@@ -869,7 +869,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::Type{BandRange}) =
     (A[k, rowstart(A, k):rowstop(A, k)] = V) # call range method
 
 # scalar - integer - range -- A[1, 2:3] = 3
-function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, jr::Range)
+@inline function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, jr::Range)
     @boundscheck checkbounds(A, k, jr)
     if v == zero(T)
         data, u = A.data, A.u
@@ -889,7 +889,7 @@ function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, jr::Range)
 end
 
 # vector - integer - range -- A[1, 2:3] = [3, 4]
-function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::Range)
+@inline function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::Range)
     @boundscheck checkbounds(A, k, jr)
     @boundscheck checkdimensions(jr, V)
     @boundscheck checkbandmatch(A, V, k, jr)
@@ -910,7 +910,7 @@ end
 # ~ indexing over a rectangular block
 
 # scalar - range - range
-function setindex!(A::BandedMatrix, v, kr::Range, jr::Range)
+@inline function setindex!(A::BandedMatrix, v, kr::Range, jr::Range)
     @boundscheck checkbounds(A, kr, jr)
     @boundscheck checkband(A, kr, jr)
     data, u = A.data, A.u
@@ -921,7 +921,7 @@ function setindex!(A::BandedMatrix, v, kr::Range, jr::Range)
 end
 
 # matrix - range - range
-function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::Range, jr::Range)
+@inline function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::Range, jr::Range)
     @boundscheck checkbounds(A, kr, jr)
     @boundscheck checkdimensions(kr, jr, V)
     @boundscheck checkbandmatch(A, V, kr, jr)
