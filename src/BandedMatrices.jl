@@ -620,20 +620,22 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
 
 # fast method used below
 @inline unsafe_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
-    Base.unsafe_getindex(data,u + k - j + 1, j)
+    data[u + k - j + 1, j]
 
 # banded get index, used for banded matrices with other data types
 @inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
-    @boundscheck !(-l ≤ j-k ≤ u) && return zero(eltype(data))
-    unsafe_getindex(data, u, k, j)
+    if -l ≤ j-k ≤ u
+        unsafe_getindex(data, u, k, j)
+    else
+        zero(eltype(data))
+    end
 end
 
 
 # scalar - integer - integer
 @inline function getindex(A::AbstractBandedMatrix, k::Integer, j::Integer)
-    u = A.u
-    @boundscheck  checkbounds(A, k, j) && !(-A.l ≤ j-k ≤ u) && return zero(eltype(A))
-    unsafe_getindex(A.data, u, k, j)
+    @boundscheck  checkbounds(A, k, j)
+    banded_getindex(A.data, A.l, A.u, k, j)
 end
 
 # scalar - colon - colon
@@ -680,25 +682,29 @@ end
 
 # ~ Special setindex methods ~
 
-# fast method used below
-@inline unsafe_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) =
-    @inbounds data[u + k - j + 1, j] = convert(T, v)::T
-
 # slow fall back method
 @inline unsafe_setindex!(A::BandedMatrix, v, k::Integer, j::Integer) =
     unsafe_setindex!(A.data, A.u, v, k, j)
 
+# fast method used below
+@inline unsafe_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) =
+    @inbounds data[u + k - j + 1, j] = convert(T, v)::T
+
 @inline function banded_setindex!(data::AbstractMatrix, l::Int, u::Int, v, k::Integer, j::Integer)
-    @boundscheck !(-l ≤ j-k ≤ u) && (v == 0 ? (return v) : throw(BandError(BandedMatrix(data,size(data,2)+l,l,u),j-k)))
-    unsafe_setindex!(data, u, v, k, j)
+    if -l ≤ j-k ≤ u
+        unsafe_setindex!(data, u, v, k, j)
+    elseif v ≠ 0  # allow setting outside bands to zero
+        throw(BandError(BandedMatrix(data,size(data,2)+l,l,u),j-k))
+    else # v == 0
+        v
+    end
 end
 
 
 # scalar - integer - integer
 @inline function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
-    u = A.u
-    @boundscheck  checkbounds(A, k, j) && !(-A.l ≤ j-k ≤ u) && (v == 0 ? (return v) : throw(BandError(A,j-k)))
-    unsafe_setindex!(A.data, u, v, k ,j)
+    @boundscheck  checkbounds(A, k, j)
+    banded_setindex!(A.data, A.l, A.u, v, k ,j)
 end
 
 # scalar - colon - colon
