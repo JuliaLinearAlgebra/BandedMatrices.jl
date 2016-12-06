@@ -102,29 +102,28 @@ gbmv!{T<:BlasFloat}(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
 gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
     gbmv!(trans,A.m,A.l,A.u,α,A.data,x,β,y)
 
-gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BLASBandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
+gbmv!{T<:BlasFloat}(trans::Char,α::T,A::AbstractMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
     gbmv!(trans,size(A,1),bandwidth(A,1),bandwidth(A,2),α,
           pointer(A),size(A,2),leadingdimension(A),
-          x,stride(x),β,y,stride(y))
+          pointer(x),stride(x,1),β,pointer(y),stride(y,1))
 
 
 
 
 
 # this is matrix*matrix
-
-gbmm!{U,V,T}(α,A::BLASBandedMatrix{U},B::BLASBandedMatrix{V},β,C::BLASBandedMatrix{T}) =
-    gbmm!(convert(T,α),convert(BandedMatrix{T},A),convert(BandedMatrix{T},B),
+gbmm!{U,V,T}(α,A::AbstractMatrix{U},B::AbstractMatrix{V},β,C::AbstractMatrix{T}) =
+    gbmm!(convert(T,α),convert(AbstractMatrix{T},A),convert(AbstractMatrix{T},B),
           convert(T,β),C)
 
 
 αA_mul_B_plus_βC!{T}(α,A::BLASBandedMatrix{T},x,β,y) = gbmv!('N',α,A,x,β,y)
-αA_mul_B_plus_βC!(α,A::Matrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
+αA_mul_B_plus_βC!(α,A::StridedMatrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
 
 
 αA_mul_B_plus_βC!{T,U,V}(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) =
     gbmm!(α,A,B,β,C)
-αA_mul_B_plus_βC!(α,A::Matrix,B::Matrix,β,C::Matrix) = BLAS.gemm!('N','N',α,A,B,β,C)
+αA_mul_B_plus_βC!(α,A::StridedMatrix,B::StridedMatrix,β,C::StridedMatrix) = BLAS.gemm!('N','N',α,A,B,β,C)
 
 
 # The following routines multiply
@@ -316,7 +315,7 @@ end
 
 
 
-function gbmm!{T<:BlasFloat}(α::T,A::BLASBandedMatrix{T},B::BLASBandedMatrix{T},β::T,C::BLASBandedMatrix{T})
+function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::AbstractMatrix{T},β::T,C::AbstractMatrix{T})
     n,ν = size(A)
     m = size(B,2)
 
@@ -391,7 +390,7 @@ function gbmm!{T<:BlasFloat}(α::T,A::BLASBandedMatrix{T},B::BLASBandedMatrix{T}
 end
 
 #TODO: Speedup
-function gbmm!{T}(α::T,A::BLASBandedMatrix{T},B::BLASBandedMatrix{T},β::T,C::BLASBandedMatrix{T})
+function gbmm!{T}(α::T,A::AbstractMatrix{T},B::AbstractMatrix{T},β::T,C::AbstractMatrix{T})
     for j=1:size(C,2),k=colrange(C,j)
         C[k,j]*=β
     end
@@ -408,7 +407,7 @@ function gbmm!{T}(α::T,A::BLASBandedMatrix{T},B::BLASBandedMatrix{T},β::T,C::B
 end
 
 
-function gbmm!{T<:BlasFloat}(α,A::BLASBandedMatrix{T},B::StridedMatrix{T},β,C::StridedMatrix{T})
+function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::StridedMatrix{T},β::T,C::StridedMatrix{T})
     st = leadingdimension(A)
     n,ν = size(A)
     a = pointer(A)
@@ -586,13 +585,21 @@ Base.A_mul_B!{T}(C::Matrix,A::BLASBandedMatrix{T},B::StridedMatrix) =
 ## Matrix*Vector Multiplicaiton
 
 
+@inline function banded_A_mul_B!{T<:BlasFloat}(c::StridedVector{T},A::AbstractMatrix,b::StridedVector{T})
+    gbmv!('N',size(A,1),bandwidth(A,1),bandwidth(A,2),one(T),
+            pointer(A),size(A,2),leadingdimension(A),pointer(b),stride(b,1),zero(T),pointer(c),stride(c,1))
+    c
+end
 
-Base.A_mul_B!(c::AbstractVector,A::BandedMatrix,b::StridedVector) =
+
+
+@inline banded_A_mul_B!(c::AbstractVector,A::BandedMatrix,b::StridedVector) =
     gbmv!('N',A.m,A.l,A.u,one(eltype(A)),A.data,b,zero(eltype(c)),c)
 
-Base.A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::BLASBandedMatrix{T},b::StridedVector{T}) =
-    gbmv!('N',size(A,1),bandwidth(A,1),bandwidth(A,2),one(T),
-            pointer(A),size(A,2),leadingdimension(A),pointer(b),stride(b),zero(T),pointer(c),stride(c))
+Base.A_mul_B!{T}(c::AbstractVector,A::BLASBandedMatrix{T},b::AbstractVector) =
+    banded_A_mul_B!(c,A,b)
+
+
 
 
 

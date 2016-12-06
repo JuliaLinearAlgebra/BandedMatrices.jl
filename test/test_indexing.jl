@@ -1,5 +1,4 @@
-using Base.Test
-using BandedMatrices
+using Base.Test, BandedMatrices
 import BandedMatrices: rowstart,
                        rowstop,
                        colstart,

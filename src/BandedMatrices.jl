@@ -79,7 +79,7 @@ doc"""
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
-bandwidth(A::AbstractMatrix,k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
+bandwidth(A::DenseMatrix,k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
 
 doc"""
     bandrange(A)
@@ -619,18 +619,23 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     unsafe_getindex(A.data, A.u, k, j)
 
 # fast method used below
-@inline unsafe_getindex(data::Matrix, u::Integer, k::Integer, j::Integer) =
+@inline unsafe_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
     data[u + k - j + 1, j]
+
+# banded get index, used for banded matrices with other data types
+@inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
+    if -l ≤ j-k ≤ u
+        unsafe_getindex(data, u, k, j)
+    else
+        zero(eltype(data))
+    end
+end
+
 
 # scalar - integer - integer
 @inline function getindex(A::AbstractBandedMatrix, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
-
-    if bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2)
-        unsafe_getindex(A.data, A.u, k,j)
-    else
-        zero(eltype(A))
-    end
+    banded_getindex(A.data, A.l, A.u, k, j)
 end
 
 # scalar - colon - colon
@@ -682,19 +687,24 @@ end
     unsafe_setindex!(A.data, A.u, v, k, j)
 
 # fast method used below
-@inline unsafe_setindex!{T}(data::Matrix{T}, u::Integer, v, k::Integer, j::Integer) =
+@inline unsafe_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) =
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
+
+@inline function banded_setindex!(data::AbstractMatrix, l::Int, u::Int, v, k::Integer, j::Integer)
+    if -l ≤ j-k ≤ u
+        unsafe_setindex!(data, u, v, k, j)
+    elseif v ≠ 0  # allow setting outside bands to zero
+        throw(BandError(BandedMatrix(data,size(data,2)+l,l,u),j-k))
+    else # v == 0
+        v
+    end
+end
+
 
 # scalar - integer - integer
 @inline function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
-    if bandinds(A, 1) ≤ j-k ≤ bandinds(A, 2)
-        unsafe_setindex!(A.data, A.u, v, k, j)
-    elseif v ≠ 0  # allow setting outside bands to zero
-        throw(BandError(A,j-k))
-    else # v == 0
-        v
-    end
+    banded_setindex!(A.data, A.l, A.u, v, k ,j)
 end
 
 # scalar - colon - colon
@@ -1082,9 +1092,7 @@ end
     BLAS.gbmv('N',A.m,A.l,A.u,one(T),A.data,b)
 
 *{T<:BlasFloat}(A::BLASBandedMatrix{T},b::StridedVector{T}) =
-    BLAS.gbmv('N',size(A,1),bandwidth(A,1),bandwidth(A,2),one(T),
-                pointer(A),size(A,2),leadingdimension(A),
-                pointer(b),stride(b))
+    A_mul_B!(Array(T,size(A,1)),A,b)
 
 function *{T}(A::BandedMatrix{T},b::StridedVector{T})
     ret = zeros(T,size(A,1))
