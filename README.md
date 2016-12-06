@@ -3,7 +3,7 @@ A Julia package for representing banded matrices
 
 [![Build Status](https://travis-ci.org/JuliaMatrices/BandedMatrices.jl.svg?branch=master)](https://travis-ci.org/JuliaMatrices/BandedMatrices.jl)
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/stable)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/stable) 
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/latest)
 
 
@@ -49,7 +49,3 @@ is represented as a `BandedMatrix` with a field `B.data` representing the matrix
  a_31   a_42   *       *       ]
 ```        
 `B.l` gives the number of subdiagonals (2) and `B.u` gives the number of super-diagonals (1).  Both `B.l` and `B.u` must be non-negative at the moment.
-
-
-<font color="red">Warning</font>: `@inbounds` on a banded matrix assumes that you are within the bands of the matrix,
-and will give undefined behaviour otherwise.
