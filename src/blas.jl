@@ -434,28 +434,36 @@ function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::StridedMatrix{T},β::
     C
 end
 
-function banded_axpy!(a::Number,X,Y::BandedMatrix)
-    if size(X) ≠ size(Y)
+function banded_axpy!(a::Number,X,Y)
+    n,m = size(X)
+    if (n,m) ≠ size(Y)
         throw(BoundsError())
     end
-    if bandwidth(X,1) > bandwidth(Y,1)
+    Xl,Xu = bandwidths(X)
+    Yl,Yu = bandwidths(Y)
+
+    if Xl > Yl
         # test that all entries are zero in extra bands
-        for j=1:size(X,2),k=max(1,j+bandwidth(Y,1)+1):min(j+bandwidth(X,1),size(X,1))
+        for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
             if inbands_getindex(X,k,j) ≠ 0
                 error("X has nonzero entries in bands outside bandrange of Y.")
             end
         end
     end
-    if bandwidth(X,2) > bandwidth(Y,2)
+    if Xu > Yu
         # test that all entries are zero in extra bands
-        for j=1:size(X,2),k=max(1,j-bandwidth(X,2)):min(j-bandwidth(X,2)-1,size(X,1))
+        for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
             if inbands_getindex(X,k,j) ≠ 0
                 error("X has nonzero entries in bands outside bandrange of Y.")
             end
         end
     end
-    for j=1:size(X,2),k=colrange(X,j)∩colrange(Y,j)
-        @inbounds Y.data[k-j+Y.u+1,j]+=a*inbands_getindex(X,k,j)
+
+    l = min(Xl,Yl)
+    u = min(Xu,Yu)
+
+    @inbounds for j=1:m,k=max(1,j-u):min(n,j+l)
+        inbands_setindex!(Y,a*inbands_getindex(X,k,j)+inbands_getindex(Y,k,j),k,j)
     end
     Y
 end
