@@ -70,9 +70,9 @@ doc"""
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
 """
-bandwidths(A::AbstractBandedMatrix) = bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractBandedMatrix,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
+bandwidths(A::AbstractMatrix) = bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractMatrix) = -bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractMatrix,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
 doc"""
     bandwidth(A,i)
@@ -272,7 +272,7 @@ for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bo
         $bop(n::Integer,m::Integer,a) = $bop(Float64,n,m,-a[1],a[end])
         $bop(n::Integer,a) = $bop(n,-a[1],a[end])
 
-        $bop(B::AbstractBandedMatrix) =
+        $bop(B::AbstractMatrix) =
             $bop(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
     end
 end
@@ -624,13 +624,14 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
 
 # ~~ getindex ~~
 
-# slow fall back method
-@inline inbands_getindex(A::BandedMatrix, k::Integer, j::Integer) =
-    inbands_getindex(A.data, A.u, k, j)
 
 # fast method used below
 @inline inbands_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
     data[u + k - j + 1, j]
+
+@inline inbands_getindex(A::BandedMatrix, k::Integer, j::Integer) =
+    inbands_getindex(A.data, A.u, k, j)
+
 
 # banded get index, used for banded matrices with other data types
 @inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
@@ -697,8 +698,10 @@ end
     inbands_setindex!(A.data, A.u, v, k, j)
 
 # fast method used below
-@inline inbands_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) =
+@inline function inbands_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer)
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
+    v
+end
 
 @inline function banded_setindex!(data::AbstractMatrix, l::Int, u::Int, v, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
