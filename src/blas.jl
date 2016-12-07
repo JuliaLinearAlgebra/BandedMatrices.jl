@@ -441,7 +441,7 @@ function banded_axpy!(a::Number,X,Y::BandedMatrix)
     if bandwidth(X,1) > bandwidth(Y,1)
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j+bandwidth(Y,1)+1):min(j+bandwidth(X,1),size(X,1))
-            if unsafe_getindex(X,k,j) ≠ 0
+            if inbands_getindex(X,k,j) ≠ 0
                 error("X has nonzero entries in bands outside bandrange of Y.")
             end
         end
@@ -449,13 +449,13 @@ function banded_axpy!(a::Number,X,Y::BandedMatrix)
     if bandwidth(X,2) > bandwidth(Y,2)
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j-bandwidth(X,2)):min(j-bandwidth(X,2)-1,size(X,1))
-            if unsafe_getindex(X,k,j) ≠ 0
+            if inbands_getindex(X,k,j) ≠ 0
                 error("X has nonzero entries in bands outside bandrange of Y.")
             end
         end
     end
     for j=1:size(X,2),k=colrange(X,j)∩colrange(Y,j)
-        @inbounds Y.data[k-j+Y.u+1,j]+=a*unsafe_getindex(X,k,j)
+        @inbounds Y.data[k-j+Y.u+1,j]+=a*inbands_getindex(X,k,j)
     end
     Y
 end
@@ -497,7 +497,7 @@ function banded_axpy!{T}(a::Number,X,S::BandedSubMatrix{T})
 
 
     for j=1:size(X,2),k=colrange(X,j)
-        @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*unsafe_getindex(X,k,j)
+        @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*inbands_getindex(X,k,j)
     end
 
     S
@@ -559,7 +559,7 @@ end
 function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
     @assert size(X)==size(Y)
     for j=1:size(X,2),k=colrange(X,j)
-        Y[k,j]+=a*unsafe_getindex(X,k,j)
+        Y[k,j]+=a*inbands_getindex(X,k,j)
     end
     Y
 end
@@ -567,7 +567,7 @@ end
 function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::DenseMatrix)
     @assert size(X)==size(Y)
     @inbounds for j=1:size(X,2),k=colrange(X,j)
-        Y[k,j]+=a*unsafe_getindex(X,k,j)
+        Y[k,j]+=a*inbands_getindex(X,k,j)
     end
     Y
 end

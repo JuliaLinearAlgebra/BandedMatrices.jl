@@ -90,8 +90,16 @@ bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
 
 
 
+doc"""
+    isbanded(A)
+
+returns true if a matrix implements the banded interface.
+"""
+isbanded(::AbstractBandedMatrix) = true
+isbanded(::) = false
+
 # override bandwidth(A,k) for each AbstractBandedMatrix
-# override unsafe_getindex(A,k,j)
+# override inbands_getindex(A,k,j)
 
 
 
@@ -191,6 +199,8 @@ typealias BLASBandedMatrix{T} Union{
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
             }
 
+
+isbanded{T}(::BandedSubMatrix{T}) = true
 
 include("BandedLU.jl")
 include("BandedQR.jl")
@@ -598,7 +608,7 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     #
     # function getindex(A::BandedMatrix,kr::UnitRange,j::Integer)
     #     if -A.l≤j-kr[1]≤j-kr[end]≤A.u
-    #         unsafe_getindex(A,kr,j)
+    #         inbands_getindex(A,kr,j)
     #     else
     #         eltype(A)[A[k,j] for k=kr]
     #     end
@@ -606,26 +616,26 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     #
     # getindex(A::BandedMatrix,kr::Range,jr::Range) = [A[k,j] for k=kr,j=jr]
     #
-    # unsafe_getindex(A::BandedMatrix, kr::Range, j::Integer) = vec(A.data[kr-j+A.u+1,j])
+    # inbands_getindex(A::BandedMatrix, kr::Range, j::Integer) = vec(A.data[kr-j+A.u+1,j])
     # getindex(A::BandedMatrix,kr::Range,j::Integer) =
-    #     -A.l≤j-kr[1]≤j-kr[end]≤A.u?unsafe_getindex(A,kr,j):[A[k,j] for k=kr]
+    #     -A.l≤j-kr[1]≤j-kr[end]≤A.u?inbands_getindex(A,kr,j):[A[k,j] for k=kr]
     #
 
 
 # ~~ getindex ~~
 
 # slow fall back method
-@inline unsafe_getindex(A::BandedMatrix, k::Integer, j::Integer) =
-    unsafe_getindex(A.data, A.u, k, j)
+@inline inbands_getindex(A::BandedMatrix, k::Integer, j::Integer) =
+    inbands_getindex(A.data, A.u, k, j)
 
 # fast method used below
-@inline unsafe_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
+@inline inbands_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
     data[u + k - j + 1, j]
 
 # banded get index, used for banded matrices with other data types
 @inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
-        unsafe_getindex(data, u, k, j)
+        inbands_getindex(data, u, k, j)
     else
         zero(eltype(data))
     end
@@ -683,16 +693,16 @@ end
 # ~ Special setindex methods ~
 
 # slow fall back method
-@inline unsafe_setindex!(A::BandedMatrix, v, k::Integer, j::Integer) =
-    unsafe_setindex!(A.data, A.u, v, k, j)
+@inline inbands_setindex!(A::BandedMatrix, v, k::Integer, j::Integer) =
+    inbands_setindex!(A.data, A.u, v, k, j)
 
 # fast method used below
-@inline unsafe_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) =
+@inline inbands_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) =
     @inbounds data[u + k - j + 1, j] = convert(T, v)::T
 
 @inline function banded_setindex!(data::AbstractMatrix, l::Int, u::Int, v, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
-        unsafe_setindex!(data, u, v, k, j)
+        inbands_setindex!(data, u, v, k, j)
     elseif v ≠ 0  # allow setting outside bands to zero
         throw(BandError(BandedMatrix(data,size(data,2)+l,l,u),j-k))
     else # v == 0
@@ -802,11 +812,11 @@ setindex!(A::BandedMatrix, V::AbstractVector, ::Type{BandRange}, j::Integer) =
         @boundscheck  checkband(A, kr, j)
         data, u = A.data, A.u
         for k in kr
-            unsafe_setindex!(data, u, v, k, j)
+            inbands_setindex!(data, u, v, k, j)
         end
     else
         for k in kr ∩ colrange(A, j)
-            unsafe_setindex!(data, u, v, k, j)
+            inbands_setindex!(data, u, v, k, j)
         end
     end
     v
@@ -825,7 +835,7 @@ end
     for v in V
         k = kr[i+=1]
         if a ≤ k ≤ b
-            unsafe_setindex!(data, u, v, k, j)
+            inbands_setindex!(data, u, v, k, j)
         end
     end
     V
@@ -838,7 +848,7 @@ end
 function setindex!{T}(A::BandedMatrix{T}, v, k::Integer, jr::Colon)
     if v == zero(T)
         for j in rowrange(A, k)
-            unsafe_setindex!(A, v, k, j)
+            inbands_setindex!(A, v, k, j)
         end
         v
     else
@@ -884,14 +894,14 @@ setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::Type{BandRange}) =
     if v == zero(T)
         data, u = A.data, A.u
         for j in rowrange(A, k) ∩ jr
-            unsafe_setindex!(data, u, v, k, j)
+            inbands_setindex!(data, u, v, k, j)
         end
         v
     else
         @boundscheck checkband(A, k, jr)
         data, u = A.data, A.u
         for j in jr
-            unsafe_setindex!(data, u, v, k, j)
+            inbands_setindex!(data, u, v, k, j)
         end
     end
 
@@ -911,7 +921,7 @@ end
     for v in V
         j = jr[i+=1]
         if a ≤ j ≤ b
-            unsafe_setindex!(data, u, v, k, j)
+            inbands_setindex!(data, u, v, k, j)
         end
     end
     V
@@ -925,7 +935,7 @@ end
     @boundscheck checkband(A, kr, jr)
     data, u = A.data, A.u
     for j in jr, k in kr
-        unsafe_setindex!(data, u, v, k, j)
+        inbands_setindex!(data, u, v, k, j)
     end
     v
 end
@@ -943,7 +953,7 @@ end
         for k in kr
             if -l ≤ j - k ≤ u
                 # we index V manually in column-major order
-                @inbounds unsafe_setindex!(data, u, V[kk, jj], k, j)
+                @inbounds inbands_setindex!(data, u, V[kk, jj], k, j)
                 kk += 1
             end
         end
@@ -1261,7 +1271,7 @@ bandshift(S) = parentindexes(S)[1][1]-parentindexes(S)[2][1]
 bandwidth{T}(S::BandedSubMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
 
 
-unsafe_getindex{T}(S::BandedSubMatrix{T},k,j) = unsafe_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
+inbands_getindex{T}(S::BandedSubMatrix{T},k,j) = inbands_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
 
 function Base.convert{T}(::Type{BandedMatrix},S::BandedSubMatrix{T})
     A=parent(S)
