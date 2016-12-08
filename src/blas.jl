@@ -564,21 +564,18 @@ function Base.BLAS.axpy!{T}(a::Number,X::BandedSubMatrix{T},Y::BandedMatrix)
     end
 end
 
-function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix)
-    @assert size(X)==size(Y)
-    for j=1:size(X,2),k=colrange(X,j)
-        Y[k,j]+=a*inbands_getindex(X,k,j)
-    end
-    Y
-end
 
-function Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::DenseMatrix)
+# used to add a banded matrix to a dense matrix
+function banded_dense_axpy!(a,X,Y)
     @assert size(X)==size(Y)
     @inbounds for j=1:size(X,2),k=colrange(X,j)
         Y[k,j]+=a*inbands_getindex(X,k,j)
     end
     Y
 end
+
+Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix) =
+    banded_dense_axpy!(a,X,Y)
 
 
 
