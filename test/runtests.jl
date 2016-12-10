@@ -2,6 +2,7 @@ versioninfo()
 
 using BandedMatrices, Compat, Base.Test
     import Compat: view
+
 include("test_indexing.jl")
 include("test_bandedlu.jl")
 include("test_bandedqr.jl")
@@ -49,8 +50,8 @@ v=rand(Float64,3)
 
  # Test for errors in collect
 A=brand(12,10,2,3)
-collect(BandedMatrices.eachbandedindex(A))
-for (k,j) in BandedMatrices.eachbandedindex(A)
+
+for j = 1:size(A,2), k = colrange(A,j)
      A[k,j]
 end
 
@@ -265,17 +266,12 @@ B[2,1][2,1]=1/3
 
 
 
-## Bug
-
-# BandedMatrices.eachbandedindex(BandedMatrix(Float64,1,2,2,1))|>collect
-
-
 
 ## BigFloat
 
 
 B=bzeros(BigFloat,5,5,2,3)
-    for (k,j)=BandedMatrices.eachbandedindex(B)
+    for j = 1:size(B,2), k = colrange(B,j)
         B[k,j]=randn()
     end
 
@@ -393,4 +389,19 @@ for S in (view(A,:,:),view(B,1:10,:),view(C,:,1:10),view(D,1:10,1:10),
 
     @test_approx_eq V*S full(V)*full(S)
     @test_approx_eq S*V full(S)*full(V)
+end
+
+
+# negative bands
+
+for A in (brand(3,4,-1,2),brand(5,4,-1,2),
+            brand(3,4,2,-1),brand(5,4,2,-1))
+    b = rand(size(A,2))
+    @test_approx_eq A*b full(A)*b
+end
+
+
+for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
+    B in (brand(4,4,1,2),brand(4,4,-1,2),brand(4,4,2,-1))
+    @test_approx_eq A*B full(A)*full(B)
 end

@@ -87,7 +87,7 @@ end
 #
 #     B=BandedMatrix(data,m,kl,ku)
 #
-#     for (k,j) in eachbandedindex(B)
+#     for j = 1:size(B,2), k = colrange(B,j)
 #         yy[k] = beta*yy[k] + alpha*B[k,j]*xx[j]
 #     end
 #
@@ -590,16 +590,30 @@ Base.A_mul_B!{T}(C::Matrix,A::BLASBandedMatrix{T},B::StridedMatrix) =
 ## Matrix*Vector Multiplicaiton
 
 
-@inline function banded_A_mul_B!{T<:BlasFloat}(c::StridedVector{T},A::AbstractMatrix,b::StridedVector{T})
-    gbmv!('N',size(A,1),bandwidth(A,1),bandwidth(A,2),one(T),
-            pointer(A),size(A,2),leadingdimension(A),pointer(b),stride(b,1),zero(T),pointer(c),stride(c,1))
+
+function banded_A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::AbstractMatrix{T},b::StridedVector{T})
+    m,n = size(A)
+
+    @boundscheck if length(c) ≠ m || length(b) ≠ n
+        throw(DimensionMismatch())
+    end
+
+    l,u = bandwidths(A)
+    if l < 0 && u < 0
+        # no bands
+        c[:] = zero(eltype(c))
+    elseif l < 0
+        A_mul_B!(c,view(A,:,1-l:n),view(b,1-l:n))
+    elseif u < 0
+        c[1:-u] = zero(eltype(c))
+        A_mul_B!(view(c,1-u:m),view(A,1-u:m,:),b)
+    else
+        gbmv!('N',m,l,u,one(T),
+                pointer(A),n,leadingdimension(A),pointer(b),stride(b,1),zero(T),pointer(c),stride(c,1))
+    end
     c
 end
 
-
-
-@inline banded_A_mul_B!(c::AbstractVector,A::BandedMatrix,b::StridedVector) =
-    gbmv!('N',A.m,A.l,A.u,one(eltype(A)),A.data,b,zero(eltype(c)),c)
 
 Base.A_mul_B!{T}(c::AbstractVector,A::BLASBandedMatrix{T},b::AbstractVector) =
     banded_A_mul_B!(c,A,b)
@@ -612,8 +626,29 @@ Base.A_mul_B!{T}(c::AbstractVector,A::BLASBandedMatrix{T},b::AbstractVector) =
 ## Matrix*Matrix Multiplication
 
 
-Base.A_mul_B!{T,U,V}(C::BLASBandedMatrix{T},A::BLASBandedMatrix{U},B::BLASBandedMatrix{V}) =
-    gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
+function Base.A_mul_B!{T,U,V}(C::BLASBandedMatrix{T},A::BLASBandedMatrix{U},B::BLASBandedMatrix{V})
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+    Am, An = size(A)
+    Bm, Bn = size(B)
+
+    if (Al < 0 && Au < 0) || (Bl < 0 && Bu < 0)
+        C.data[:,:] = zero(T)
+    elseif Al < 0
+        A_mul_B!(C,view(A,:,1-Al:An),view(B,1-Al:An,:))
+    elseif Au < 0
+        C[1:-Au,:] = zero(T)
+        A_mul_B!(view(C,1-Au:Am,:),view(A,1-Au:Am,:),B)
+    elseif Bl < 0
+        C[:,1:-Bl] = zero(T)
+        A_mul_B!(view(C,:,1-Bl:Bn),A,view(B,:,1-Bl:Bn))
+    elseif Bu < 0
+        A_mul_B!(C,view(A,:,1-Bu:Bm),view(B,1-Bu:Bm,:))
+    else
+        gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
+    end
+    C
+end
 
 
 

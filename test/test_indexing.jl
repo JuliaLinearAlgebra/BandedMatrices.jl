@@ -9,7 +9,7 @@ import BandedMatrices: rowstart,
 
 # rowstart/rowstop business
 let
-    a = bones(7, 5, 1, 2)
+    A = bones(7, 5, 1, 2)
     # 1.0  1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0
     # 0.0  1.0  1.0  1.0  1.0
@@ -17,32 +17,44 @@ let
     # 0.0  0.0  0.0  1.0  1.0
     # 0.0  0.0  0.0  0.0  1.0
     # 0.0  0.0  0.0  0.0  0.0
-    @test (rowstart(a, 1), rowstop(a, 1), rowlength(a, 1)) == (1, 3, 3)
-    @test (rowstart(a, 2), rowstop(a, 2), rowlength(a, 2)) == (1, 4, 4)
-    @test (rowstart(a, 3), rowstop(a, 3), rowlength(a, 3)) == (2, 5, 4)
-    @test (rowstart(a, 4), rowstop(a, 4), rowlength(a, 4)) == (3, 5, 3)
-    @test (rowstart(a, 5), rowstop(a, 5), rowlength(a, 5)) == (4, 5, 2)
-    @test (rowstart(a, 6), rowstop(a, 6), rowlength(a, 6)) == (5, 5, 1)
-    @test (rowstart(a, 7), rowstop(a, 7), rowlength(a, 7)) == (6, 5, 0) # zero length
-    @test (colstart(a, 1), colstop(a, 1), collength(a, 1)) == (1, 2, 2)
-    @test (colstart(a, 2), colstop(a, 2), collength(a, 2)) == (1, 3, 3)
-    @test (colstart(a, 3), colstop(a, 3), collength(a, 3)) == (1, 4, 4)
-    @test (colstart(a, 4), colstop(a, 4), collength(a, 4)) == (2, 5, 4)
-    @test (colstart(a, 5), colstop(a, 5), collength(a, 5)) == (3, 6, 4)
+    @test (rowstart(A, 1), rowstop(A, 1), rowlength(A, 1)) == (1, 3, 3)
+    @test (rowstart(A, 2), rowstop(A, 2), rowlength(A, 2)) == (1, 4, 4)
+    @test (rowstart(A, 3), rowstop(A, 3), rowlength(A, 3)) == (2, 5, 4)
+    @test (rowstart(A, 4), rowstop(A, 4), rowlength(A, 4)) == (3, 5, 3)
+    @test (rowstart(A, 5), rowstop(A, 5), rowlength(A, 5)) == (4, 5, 2)
+    @test (rowstart(A, 6), rowstop(A, 6), rowlength(A, 6)) == (5, 5, 1)
+    @test (rowstart(A, 7), rowstop(A, 7), rowlength(A, 7)) == (6, 5, 0) # zero length
+    @test (colstart(A, 1), colstop(A, 1), collength(A, 1)) == (1, 2, 2)
+    @test (colstart(A, 2), colstop(A, 2), collength(A, 2)) == (1, 3, 3)
+    @test (colstart(A, 3), colstop(A, 3), collength(A, 3)) == (1, 4, 4)
+    @test (colstart(A, 4), colstop(A, 4), collength(A, 4)) == (2, 5, 4)
+    @test (colstart(A, 5), colstop(A, 5), collength(A, 5)) == (3, 6, 4)
 
-    a = bones(3, 6, 1, 2)
+    A = bones(3, 6, 1, 2)
     # 1.0  1.0  1.0  0.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0  0.0
     # 0.0  1.0  1.0  1.0  1.0  0.0
-    @test (rowstart(a, 1), rowstop(a, 1), rowlength(a, 1)) == (1, 3, 3)
-    @test (rowstart(a, 2), rowstop(a, 2), rowlength(a, 2)) == (1, 4, 4)
-    @test (rowstart(a, 3), rowstop(a, 3), rowlength(a, 3)) == (2, 5, 4)
-    @test (colstart(a, 1), colstop(a, 1), collength(a, 1)) == (1, 2, 2)
-    @test (colstart(a, 2), colstop(a, 2), collength(a, 2)) == (1, 3, 3)
-    @test (colstart(a, 3), colstop(a, 3), collength(a, 3)) == (1, 3, 3)
-    @test (colstart(a, 4), colstop(a, 4), collength(a, 4)) == (2, 3, 2)
-    @test (colstart(a, 5), colstop(a, 5), collength(a, 5)) == (3, 3, 1)
-    @test (colstart(a, 6), colstop(a, 6), collength(a, 6)) == (4, 3, 0) # zero length
+    @test (rowstart(A, 1), rowstop(A, 1), rowlength(A, 1)) == (1, 3, 3)
+    @test (rowstart(A, 2), rowstop(A, 2), rowlength(A, 2)) == (1, 4, 4)
+    @test (rowstart(A, 3), rowstop(A, 3), rowlength(A, 3)) == (2, 5, 4)
+    @test (colstart(A, 1), colstop(A, 1), collength(A, 1)) == (1, 2, 2)
+    @test (colstart(A, 2), colstop(A, 2), collength(A, 2)) == (1, 3, 3)
+    @test (colstart(A, 3), colstop(A, 3), collength(A, 3)) == (1, 3, 3)
+    @test (colstart(A, 4), colstop(A, 4), collength(A, 4)) == (2, 3, 2)
+    @test (colstart(A, 5), colstop(A, 5), collength(A, 5)) == (3, 3, 1)
+    @test (colstart(A, 6), colstop(A, 6), collength(A, 6)) == (4, 3, 0) # zero length
+
+    A = bones(3, 4, -1, 2)
+    # 0.0  1.0  1.0  0.0
+    # 0.0  0.0  1.0  1.0
+    # 0.0  0.0  0.0  1.0
+    @test rowrange(A, 1) == 2:3
+    @test rowrange(A, 2) == 3:4
+    @test rowrange(A, 3) == 4:4
+    @test colrange(A, 1) == 1:0
+    @test colrange(A, 2) == 1:1
+    @test colrange(A, 3) == 1:2
+    @test colrange(A, 4) == 2:3
 end
 
 # test length of diagonal
@@ -111,6 +123,7 @@ let
     @test BandedMatrices._firstdiagcol(A, 5) == 2
 end
 
+
 # scalar - integer - integer
 let
     a = bones(5, 5, 1, 1)
@@ -120,8 +133,8 @@ let
     # 0.0  0.0  1.0  1.0  1.0
 
     # in band
-    a[1, 1] = 1
-    @test a[1, 1] == 1
+    a[1, 1] = 2
+    @test a[1, 1] == 2
 
     # out of band
     @test_throws BandError a[1, 3] = 1
@@ -134,7 +147,13 @@ let
     @test_throws BoundsError a[5, 6] = 1
     @test_throws BoundsError a[6, 5] = 1
     @test_throws BoundsError a[6, 6] = 1
+
+    a = bones(5, 5, -1, 1)
+    a[1, 2] = 2
+    @test a[1, 2] == 2
+    @test_throws BandError a[1, 1] = 1
 end
+
 
 # ~ indexing along a column
 
@@ -169,8 +188,18 @@ let
     @test_throws BandError a[:, 1] = 1
     @test_throws BoundsError a[BandRange, 0] = 1
     @test_throws BoundsError a[BandRange, 6] = 1
-end
 
+    a = bones(3, 5, -1, 2)
+    @test isempty(a[BandRange,1])
+    a[BandRange,2] = [1]
+    a[BandRange,3] = [2, 2]
+    a[BandRange,4] = [3, 3]
+    a[BandRange,5] = [4]
+
+    @test a ==   [0 1 2 0 0;
+                  0 0 2 3 0;
+                  0 0 0 3 4]
+end
 
 
 # vector - BandRange/Colon - integer
