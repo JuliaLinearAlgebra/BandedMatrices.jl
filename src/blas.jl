@@ -120,6 +120,8 @@ gbmm!{U,V,T}(α,A::AbstractMatrix{U},B::AbstractMatrix{V},β,C::AbstractMatrix{T
 αA_mul_B_plus_βC!{T}(α,A::BLASBandedMatrix{T},x,β,y) = gbmv!('N',α,A,x,β,y)
 αA_mul_B_plus_βC!(α,A::StridedMatrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
 
+αA_mul_B_plus_βC!(α,A,x,β,y) = (y .= α*A*x + β*y)
+
 
 αA_mul_B_plus_βC!{T,U,V}(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) =
     gbmm!(α,A,B,β,C)
