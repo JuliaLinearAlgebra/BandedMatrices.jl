@@ -1212,4 +1212,7 @@ function Base.convert{T}(::Type{BandedMatrix},S::BandedSubMatrix{T})
 end
 
 
+include("precompile.jl")
+_precompile_()
+
 end #module
