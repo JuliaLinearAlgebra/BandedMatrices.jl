@@ -405,3 +405,20 @@ for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
     B in (brand(4,4,1,2),brand(4,4,-1,2),brand(4,4,2,-1))
     @test_approx_eq A*B full(A)*full(B)
 end
+
+
+
+# test trivial convert routines
+
+A = brand(3,4,1,2)
+
+BandedMatrix{Float64}(A)
+@test isa(BandedMatrix{Float64}(A),BandedMatrix{Float64})
+@test isa(AbstractMatrix{Float64}(A),BandedMatrix{Float64})
+@test isa(AbstractArray{Float64}(A),BandedMatrix{Float64})
+@test isa(BandedMatrix(A),BandedMatrix{Float64})
+@test isa(AbstractMatrix(A),BandedMatrix{Float64})
+@test isa(AbstractArray(A),BandedMatrix{Float64})
+@test isa(BandedMatrix{Complex32}(A),BandedMatrix{Complex32})
+@test isa(AbstractMatrix{Complex32}(A),BandedMatrix{Complex32})
+@test isa(AbstractArray{Complex32}(A),BandedMatrix{Complex32})

@@ -188,8 +188,10 @@ BandedMatrix{T}(::Type{T},n::Integer,::Colon,a) = BandedMatrix(T,n,:,-a[1],a[end
 BandedMatrix{T}(::Type{T},n::Integer,a) = BandedMatrix(T,n,-a[1],a[end])
 
 
-Base.convert{V}(::Type{BandedMatrix{V}},M::BandedMatrix) =
-    BandedMatrix{V}(convert(Matrix{V},M.data),M.m,M.l,M.u)
+for MAT in (:BandedMatrix, :AbstractMatrix, :AbstractArray)
+    @eval Base.convert{V}(::Type{$MAT{V}},M::BandedMatrix) =
+        BandedMatrix{V}(convert(Matrix{V},M.data),M.m,M.l,M.u)
+end
 function Base.convert{BM<:BandedMatrix}(::Type{BM},M::Matrix)
     ret = BandedMatrix(eltype(BM)==Any ? eltype(M) :
                         promote_type(eltype(BM),eltype(M)),size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
