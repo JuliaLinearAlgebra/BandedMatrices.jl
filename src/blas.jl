@@ -79,6 +79,36 @@ for (fname, elty) in ((:dgbmv_,:Float64),
     end
 end
 
+
+for (fname, elty) in ((:dsbmv_,:Float64),
+                      (:ssbmv_,:Float32),
+                      (:zsbmv_,:Complex128),
+                      (:csbmv_,:Complex64))
+    @eval begin
+                # SUBROUTINE DSBMV(UPLO, N, K, ALPHA, A, LDA,
+                # X, INCX, BETA, Y, INCY)
+                # DOUBLE PRECISION ALPHA,BETA
+                # INTEGER INCX,INCY,K,LDA,N
+                # CHARACTER*1 UPLO
+                # DOUBLE PRECISION A(LDA,*), X(*), Y(*)
+
+        function sbmv!(uplo::Char, n::Int, k::Int, alpha::($elty),
+                       A::Ptr{$elty}, lda::Int,
+                       x::Ptr{$elty}, incx::Int, beta::($elty), y::Ptr{$elty}, incy::Int)
+            ccall((@blasfunc($fname), libblas), Void,
+                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{$elty}, Ptr{BlasInt}),
+                 &uplo, &n, &k,
+                 &alpha, A, &lda,
+                 x, &incx, &beta,
+                 y, &incy)
+            y
+        end
+    end
+end
+
 # #TODO: Speed up the following
 # function gbmv!{T}(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::Ptr{T}, n::Integer, st::Integer, x::Ptr{T}, beta::T, y::Ptr{T})
 #     data=pointer_to_array(A,(kl+ku+1,n))
@@ -106,6 +136,12 @@ gbmv!{T<:BlasFloat}(trans::Char,α::T,A::AbstractMatrix{T},x::StridedVector{T},�
     gbmv!(trans,size(A,1),bandwidth(A,1),bandwidth(A,2),α,
           pointer(A),size(A,2),leadingdimension(A),
           pointer(x),stride(x,1),β,pointer(y),stride(y,1))
+
+
+sbmv!{T<:BlasFloat}(uplo::Char, k::Int, alpha::T,
+                    A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) =
+  BLAS.sbmv!(uplo,k,alpha,A,x,beta,y)
+
 
 
 

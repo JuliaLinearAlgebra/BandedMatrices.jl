@@ -422,3 +422,6 @@ BandedMatrix{Float64}(A)
 @test isa(BandedMatrix{Complex32}(A),BandedMatrix{Complex32})
 @test isa(AbstractMatrix{Complex32}(A),BandedMatrix{Complex32})
 @test isa(AbstractArray{Complex32}(A),BandedMatrix{Complex32})
+
+
+include("test_symbanded.jl")

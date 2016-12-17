@@ -188,7 +188,7 @@ BandedMatrix{T}(::Type{T},n::Integer,::Colon,a) = BandedMatrix(T,n,:,-a[1],a[end
 BandedMatrix{T}(::Type{T},n::Integer,a) = BandedMatrix(T,n,-a[1],a[end])
 
 
-for MAT in (:BandedMatrix, :AbstractMatrix, :AbstractArray)
+for MAT in (:BandedMatrix, :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval Base.convert{V}(::Type{$MAT{V}},M::BandedMatrix) =
         BandedMatrix{V}(convert(Matrix{V},M.data),M.m,M.l,M.u)
 end
@@ -420,39 +420,39 @@ data_rowrange(A, i::Integer) = range((i ≤ 1+A.l ? A.u+i : (i-A.l)*size(A.data,
 
 # ~ bound checking functions ~
 
-checkbounds(A::BandedMatrix, k::Integer, j::Integer) =
+checkbounds(A::AbstractBandedMatrix, k::Integer, j::Integer) =
     (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
 
-checkbounds(A::BandedMatrix, kr::Range, j::Integer) =
+checkbounds(A::AbstractBandedMatrix, kr::Range, j::Integer) =
     (checkbounds(A, first(kr), j); checkbounds(A,  last(kr), j))
 
-checkbounds(A::BandedMatrix, k::Integer, jr::Range) =
+checkbounds(A::AbstractBandedMatrix, k::Integer, jr::Range) =
     (checkbounds(A, k, first(jr)); checkbounds(A, k,  last(jr)))
 
-checkbounds(A::BandedMatrix, kr::Range, jr::Range) =
+checkbounds(A::AbstractBandedMatrix, kr::Range, jr::Range) =
     (checkbounds(A, kr, first(jr)); checkbounds(A, kr,  last(jr)))
 
-checkbounds(A::BandedMatrix, k::Colon, j::Integer) =
+checkbounds(A::AbstractBandedMatrix, k::Colon, j::Integer) =
     (0 < j ≤ size(A, 2) || throw(BoundsError(A, (size(A,1),j))))
 
-checkbounds(A::BandedMatrix, k::Integer, j::Colon) =
+checkbounds(A::AbstractBandedMatrix, k::Integer, j::Colon) =
     (0 < k ≤ size(A, 1) || throw(BoundsError(A, (k,size(A,2)))))
 
 # check indices fall in the band
-checkband(A::BandedMatrix, i::Integer) =
+checkband(A::AbstractBandedMatrix, i::Integer) =
     (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i)))
 
-checkband(A::BandedMatrix, b::Band) = checkband(A, b.i)
+checkband(A::AbstractBandedMatrix, b::Band) = checkband(A, b.i)
 
-checkband(A::BandedMatrix, k::Integer, j::Integer) = checkband(A, j-k)
+checkband(A::AbstractBandedMatrix, k::Integer, j::Integer) = checkband(A, j-k)
 
-checkband(A::BandedMatrix, kr::Range, j::Integer) =
+checkband(A::AbstractBandedMatrix, kr::Range, j::Integer) =
     (checkband(A, first(kr), j); checkband(A,  last(kr), j))
 
-checkband(A::BandedMatrix, k::Integer, jr::Range) =
+checkband(A::AbstractBandedMatrix, k::Integer, jr::Range) =
     (checkband(A, k, first(jr)); checkband(A, k,  last(jr)))
 
-checkband(A::BandedMatrix, kr::Range, jr::Range) =
+checkband(A::AbstractBandedMatrix, kr::Range, jr::Range) =
     (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
 
 # check dimensions of inputs
@@ -564,7 +564,7 @@ end
 
 
 # scalar - integer - integer
-@inline function getindex(A::AbstractBandedMatrix, k::Integer, j::Integer)
+@inline function getindex(A::BandedMatrix, k::Integer, j::Integer)
     @boundscheck  checkbounds(A, k, j)
     banded_getindex(A.data, A.l, A.u, k, j)
 end
@@ -598,10 +598,10 @@ end
 end
 
 # scalar - BandRange - integer -- A[1, BandRange]
-@inline getindex(A::BandedMatrix, ::Type{BandRange}, j::Integer) = A[colrange(A, j), j]
+@inline getindex(A::AbstractMatrix, ::Type{BandRange}, j::Integer) = A[colrange(A, j), j]
 
 # scalar - integer - BandRange -- A[1, BandRange]
-@inline getindex(A::BandedMatrix, k::Integer, ::Type{BandRange}) = A[k, rowrange(A, k)]
+@inline getindex(A::AbstractMatrix, k::Integer, ::Type{BandRange}) = A[k, rowrange(A, k)]
 
 
 # ~ indexing along a row
@@ -941,7 +941,7 @@ Base.norm(B::BandedMatrix,opts...) = norm(full(B),opts...)
 
 ## ALgebra and other functions
 
-function Base.maximum(B::BandedMatrix)
+function Base.maximum(B::AbstractBandedMatrix)
     m=zero(eltype(B))
     for j = 1:size(B,2), k = colrange(B,j)
         m=max(B[k,j],m)
@@ -1213,6 +1213,8 @@ function Base.convert{T}(::Type{BandedMatrix},S::BandedSubMatrix{T})
     end
 end
 
+
+include("SymBandedMatrix.jl")
 
 include("precompile.jl")
 _precompile_()
