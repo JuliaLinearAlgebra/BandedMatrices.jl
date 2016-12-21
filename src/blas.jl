@@ -109,6 +109,29 @@ for (fname, elty) in ((:dsbmv_,:Float64),
     end
 end
 
+
+## Symmetric tridiagonalization
+for (fname, elty) in ((:dsbtrd_,:Float64),
+                      (:ssbtrd_,:Float32))
+    @eval begin
+        function sbtrd!(vect::Char, uplo::Char,
+                        n::Int, k::Int, ab::Ptr{$elty}, ldab::Int,
+                        d::Ptr{$elty}, e::Ptr{$elty}, q::Ptr{$elty}, ldq::Int,
+                        work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), LAPACK.liblapack), Void,
+                (Ptr{UInt8}, Ptr{UInt8},
+                 Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &vect, &uplo,
+                 &n, &k, ab, &ldab,
+                 d, e, q, &ldq, work, info)
+            d, e, q
+        end
+    end
+end
+
+
 # #TODO: Speed up the following
 # function gbmv!{T}(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::Ptr{T}, n::Integer, st::Integer, x::Ptr{T}, beta::T, y::Ptr{T})
 #     data=pointer_to_array(A,(kl+ku+1,n))

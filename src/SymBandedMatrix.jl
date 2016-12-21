@@ -302,3 +302,29 @@ end
 
 Base.A_mul_B!{T}(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) =
     symbanded_A_mul_B!(c,A,b)
+
+
+
+
+## eigvals routine
+
+
+function tridiagonalize!(A::SymBandedMatrix)
+    n=size(A,1)
+    d = Array(Float64,n)
+    e = Array(Float64,n-1)
+    q = Array(Float64,0)
+    work = Array(Float64,n)
+
+    sbtrd!('N','U',
+                size(A,1),A.k,pointer(A),leadingdimension(A),
+                pointer(d),pointer(e),pointer(q), n, pointer(work))
+
+    SymTridiagonal(d,e)
+end
+
+
+tridiagonalize(A::SymBandedMatrix) = tridiagonalize!(copy(A))
+
+Base.eigvals!(A::SymBandedMatrix) = eigvals!(tridiagonalize!(A))
+Base.eigvals(A::SymBandedMatrix) = eigvals!(copy(A))
