@@ -45,3 +45,27 @@ band
 ```@docs
 BandRange
 ```
+
+
+
+## Creating symmetric banded matrices
+
+```@docs
+SymBandedMatrix
+```
+
+```@docs
+sbeye
+```
+
+```@docs
+sbones
+```
+
+```@docs
+sbrand
+```
+
+```@docs
+sbzeros
+```

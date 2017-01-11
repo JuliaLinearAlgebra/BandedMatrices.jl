@@ -1,13 +1,13 @@
 __precompile__()
 
 module BandedMatrices
-using Base, Compat
+using Base
 
 import Base: getindex, setindex!, *, .*, +, .+, -, .-, ==, <, <=, >,
                 >=, ./, /, .^, ^, \, transpose, showerror
 
 
-import Base: convert, size
+import Base: convert, size, view
 
 import Base.BLAS: libblas
 
@@ -24,7 +24,6 @@ import Base.LAPACK: gbtrs!,
                     gbtrf!
 
 import Base: lufact
-import Compat: view
 
 export BandedMatrix,
        bandrange,
