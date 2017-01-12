@@ -26,6 +26,7 @@ import Base.LAPACK: gbtrs!,
 import Base: lufact
 
 export BandedMatrix,
+       SymBandedMatrix,
        bandrange,
        bzeros,
        beye,
