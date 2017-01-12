@@ -112,4 +112,36 @@ var documenterSearchIndex = {"docs": [
     "text": "bandwidthsbandwidthbandrangebandBandRange"
 },
 
+{
+    "location": "index.html#BandedMatrices.sbeye",
+    "page": "Home",
+    "title": "BandedMatrices.sbeye",
+    "category": "Function",
+    "text": "sbeye(T,n,l,u)\n\nn×n banded identity matrix of type T with bandwidths (l,u)\n\n\n\n"
+},
+
+{
+    "location": "index.html#BandedMatrices.sbrand",
+    "page": "Home",
+    "title": "BandedMatrices.sbrand",
+    "category": "Function",
+    "text": "sbrand(T,n,k)\n\nCreates an n×n symmetric banded matrix  with random numbers in the bandwidth of type T with bandwidths (k,k)\n\n\n\n"
+},
+
+{
+    "location": "index.html#BandedMatrices.sbzeros",
+    "page": "Home",
+    "title": "BandedMatrices.sbzeros",
+    "category": "Function",
+    "text": "sbzeros(T,n,k)\n\nCreates an n×n symmetric banded matrix  of all zeros of type T with bandwidths (k,k)\n\n\n\n"
+},
+
+{
+    "location": "index.html#Creating-symmetric-banded-matrices-1",
+    "page": "Home",
+    "title": "Creating symmetric banded matrices",
+    "category": "section",
+    "text": "SymBandedMatrixsbeyesbonessbrandsbzeros"
+},
+
 ]}
