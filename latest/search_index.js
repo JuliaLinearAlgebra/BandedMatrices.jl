@@ -113,6 +113,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#BandedMatrices.SymBandedMatrix",
+    "page": "Home",
+    "title": "BandedMatrices.SymBandedMatrix",
+    "category": "Type",
+    "text": "SymBandedMatrix(T, n, k)\n\nreturns an unitialized n×n symmetric banded matrix of type T with bandwidths (-k,k).\n\n\n\n"
+},
+
+{
     "location": "index.html#BandedMatrices.sbeye",
     "page": "Home",
     "title": "BandedMatrices.sbeye",
