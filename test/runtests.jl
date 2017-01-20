@@ -391,7 +391,7 @@ for S in (view(A,:,:),view(B,1:10,:),view(C,:,1:10),view(D,1:10,1:10),
 end
 
 
-# negative bands
+## negative bands
 
 for A in (brand(3,4,-1,2),brand(5,4,-1,2),
             brand(3,4,2,-1),brand(5,4,2,-1))
@@ -405,7 +405,14 @@ for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
     @test_approx_eq A*B full(A)*full(B)
 end
 
+# check that col/rowstop is ≥ 0
+A = brand(3,4,-2,2)
+@test BandedMatrices.colstop(A, 1) == BandedMatrices.colstop(A, 2) == 0
+@test BandedMatrices.colstop(A, 3) == 1
 
+A = brand(3,4,2,-2)
+@test BandedMatrices.rowstop(A, 1) == BandedMatrices.rowstop(A, 2) == 0
+@test BandedMatrices.rowstop(A, 3) == 1
 
 # test trivial convert routines
 

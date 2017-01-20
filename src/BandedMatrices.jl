@@ -372,14 +372,14 @@ end
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
 @inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1)
-@inline  colstop(A, i::Integer) = min(i+bandwidth(A,1), size(A, 1))
+@inline  colstop(A, i::Integer) = max(min(i+bandwidth(A,1), size(A, 1)), 0)
 @inline rowstart(A, i::Integer) = max(i-bandwidth(A,1), 1)
-@inline  rowstop(A, i::Integer) = min(i+bandwidth(A,2), size(A, 2))
+@inline  rowstop(A, i::Integer) = max(min(i+bandwidth(A,2), size(A, 2)), 0)
 
 @inline colstart(A::BandedMatrix, i::Integer) = max(i-A.u, 1)
-@inline  colstop(A::BandedMatrix, i::Integer) = min(i+A.l, size(A, 1))
+@inline  colstop(A::BandedMatrix, i::Integer) = max(min(i+A.l, size(A, 1)), 0)
 @inline rowstart(A::BandedMatrix, i::Integer) = max(i-A.l, 1)
-@inline  rowstop(A::BandedMatrix, i::Integer) = min(i+A.u, size(A, 2))
+@inline  rowstop(A::BandedMatrix, i::Integer) = max(min(i+A.u, size(A, 2)), 0)
 
 @inline colrange(A, i::Integer) = colstart(A,i):colstop(A,i)
 @inline rowrange(A, i::Integer) = rowstart(A,i):rowstop(A,i)
