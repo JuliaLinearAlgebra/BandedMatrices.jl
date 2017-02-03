@@ -160,7 +160,7 @@ function banded_qrfact!(R::BandedMatrix)
     T=eltype(R)
     M=R.l+1   # number of diag+subdiagonal bands
     m,n=size(R)
-    W=Array(T,M,(n<m?n:m-1))
+    W=Matrix{T}(M,(n<m?n:m-1))
     w=pointer(W)
     r=pointer(R.data)
     sz=sizeof(T)

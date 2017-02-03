@@ -7,11 +7,11 @@ A = sbrand(10,2)
 
 
 b=rand(10)
-@test_approx_eq A*b full(A)*b
+@test A*b ≈ full(A)*b
 
 
 # eigvals
 
 srand(0)
 A = sbrand(Float64,100,4)
-@test_approx_eq eigvals(A) eigvals(full(A))
+@test eigvals(A) ≈ eigvals(full(A))

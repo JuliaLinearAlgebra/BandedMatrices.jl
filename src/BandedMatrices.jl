@@ -3,9 +3,13 @@ __precompile__()
 module BandedMatrices
 using Base
 
-import Base: getindex, setindex!, *, .*, +, .+, -, .-, ==, <, <=, >,
-                >=, ./, /, .^, ^, \, transpose, showerror
+import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
+                >=, /, ^, \, transpose, showerror
 
+
+if VERSION < v"0.6.0-dev"
+    import Base: .*, .+, .-, ./, .^
+end
 
 import Base: convert, size, view
 
@@ -170,11 +174,11 @@ returns an unitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)
 
 # Use zeros to avoid unallocated entries for bigfloat
 BandedMatrix{T<:BlasFloat}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
-    BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
+    BandedMatrix{T}(Matrix{T}(b+a+1,m),n,a,b)
 BandedMatrix{T<:Number}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
     BandedMatrix{T}(zeros(T,b+a+1,m),n,a,b)
 BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
-    BandedMatrix{T}(Array(T,b+a+1,m),n,a,b)
+    BandedMatrix{T}(Matrix{T}(b+a+1,m),n,a,b)
 
 
 
@@ -910,7 +914,7 @@ bandwidth(A::BandedMatrix,k::Integer) = k==1?A.l:A.u
 
 
 function Base.sparse(B::BandedMatrix)
-    i=Array(Int,length(B.data));j=Array(Int,length(B.data))
+    i=Vector{Int}(length(B.data));j=Vector{Int}(length(B.data))
     n,m=size(B.data)
     Bn=size(B,1)
     vb=copy(vec(B.data))
@@ -1015,14 +1019,14 @@ function *{T<:Number,V<:Number}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     end
     n,m=size(A,1),size(B,2)
 
-    A_mul_B!(Array(promote_type(T,V),n,m),A,B)
+    A_mul_B!(Matrix{promote_type(T,V)}(n,m),A,B)
 end
 
 *{T<:Number,V<:Number}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) =
     A*Array(B)
 
 *{T<:BlasFloat}(A::BLASBandedMatrix{T},b::StridedVector{T}) =
-    A_mul_B!(Array(T,size(A,1)),A,b)
+    A_mul_B!(Vector{T}(size(A,1)),A,b)
 
 function *{T}(A::BandedMatrix{T},b::StridedVector{T})
     ret = zeros(T,size(A,1))
@@ -1072,7 +1076,7 @@ end
 
 ## Matrix.*Matrix
 
-function .*(A::BandedMatrix, B::BandedMatrix)
+function broadcast(::typeof(*), A::BandedMatrix, B::BandedMatrix)
     @assert size(A,1)==size(B,1)&&size(A,2)==size(B,2)
 
     l=min(A.l,B.l);u=min(A.u,B.u)
@@ -1086,13 +1090,28 @@ function .*(A::BandedMatrix, B::BandedMatrix)
 end
 
 
+
+
 ## numbers
-for OP in (:*,:/,:.*,:./)
-    @eval $OP(A::BandedMatrix,b::Number) = BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
+for OP in (:*,:/)
+    @eval begin
+        $OP(A::BandedMatrix, b::Number) = BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
+        broadcast(::typeof($OP), A::BandedMatrix, b::Number) =
+            BandedMatrix($OP.(A.data,b),A.m,A.l,A.u)
+    end
 end
 
-for OP in (:*,:.*,:./)
-    @eval $OP(a::Number,B::BandedMatrix) = BandedMatrix($OP(a,B.data),B.m,B.l,B.u)
+
+*(a::Number,B::BandedMatrix) = BandedMatrix(a*B.data,B.m,B.l,B.u)
+broadcast(::typeof(*), a::Number, B::BandedMatrix) = BandedMatrix(a.*B.data,B.m,B.l,B.u)
+
+if VERSION < v"0.6.0-dev"
+    @eval quote
+        .*(A::BandedMatrix, B::BandedMatrix) = (*).(A,B)
+        .*(A::BandedMatrix, b::Number) = (*).(A,b)
+        .*(a::Number, B::BandedMatrix) = (*).(a,B)
+        ./(A::BandedMatrix, b::Number) = (/).(A,b)
+    end
 end
 
 
@@ -1153,7 +1172,7 @@ if VERSION < v"0.5.0-rc4"
 
        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
            header && println(io,":")
-           M=Array(Any,size(B)...)
+           M=Array{Any}(size(B)...)
            fill!(M,PrintShow(""))
            for j = 1:size(B,2), k = colrange(B,j)
                M[k,j]=B[k,j]
@@ -1170,7 +1189,7 @@ else
 
         if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
             header && println(io,":")
-            M=Array(Any,size(B)...)
+            M=Array{Any}(size(B)...)
             fill!(M,PrintShow(""))
             for j = 1:size(B,2), k = colrange(B,j)
                 M[k,j]=B[k,j]

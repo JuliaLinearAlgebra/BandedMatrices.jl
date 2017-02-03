@@ -34,11 +34,11 @@ returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwid
 
 # Use zeros to avoid unallocated entries for bigfloat
 SymBandedMatrix{T<:BlasFloat}(::Type{T},n::Integer,k::Integer) =
-    SymBandedMatrix{T}(Array(T,k+1,n),k)
+    SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
 SymBandedMatrix{T<:Number}(::Type{T},n::Integer,k::Integer) =
     SymBandedMatrix{T}(zeros(T,k+1,n),k)
 SymBandedMatrix{T}(::Type{T},n::Integer,k::Integer) =
-    SymBandedMatrix{T}(Array(T,k+1,n),k)
+    SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
 
 
 for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
@@ -250,7 +250,7 @@ end
     A*Array(B)
 
 *{T<:BlasFloat}(A::SymBandedMatrix{T},b::StridedVector{T}) =
-    A_mul_B!(Array(T,size(A,1)),A,b)
+    A_mul_B!(Vector{T}(size(A,1)),A,b)
 
 function *{T}(A::SymBandedMatrix{T},b::StridedVector{T})
     ret = zeros(T,size(A,1))
@@ -309,12 +309,12 @@ Base.A_mul_B!{T}(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) =
 ## eigvals routine
 
 
-function tridiagonalize!(A::SymBandedMatrix)
+function tridiagonalize!{T}(A::SymBandedMatrix{T})
     n=size(A,1)
-    d = Array(Float64,n)
-    e = Array(Float64,n-1)
-    q = Array(Float64,0)
-    work = Array(Float64,n)
+    d = Vector{T}(n)
+    e = Vector{T}(n-1)
+    q = Vector{T}(0)
+    work = Vector{T}(n)
 
     sbtrd!('N','U',
                 size(A,1),A.k,pointer(A),leadingdimension(A),
