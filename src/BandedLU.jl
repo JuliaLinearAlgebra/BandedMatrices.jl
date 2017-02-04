@@ -38,11 +38,6 @@ lufact(F::BandedLU) = F # no op
 
 ## Utilities
 
-if VERSION < v"0.5.0-dev"
-    Base.promote_op{R<:Integer,S<:Integer}(op,
-        ::Type{R}, ::Type{S}) = typeof(op(one(R), one(S)))
-end
-
 # check if matrix is square before solution of linear system or before converting
 checksquare(A::BandedMatrix) = (size(A, 1) == size(A, 2) ||
     throw(ArgumentError("Banded matrix must be square")))

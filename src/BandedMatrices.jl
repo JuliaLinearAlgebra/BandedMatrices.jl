@@ -7,7 +7,7 @@ import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror
 
 
-if VERSION < v"0.6.0-dev"
+if VERSION < v"0.6.0-dev.1632"
     import Base: .*, .+, .-, ./, .^
 end
 
@@ -294,14 +294,6 @@ Base.linearindexing{T}(::Type{BandedMatrix{T}}) = Base.LinearSlow()
 # ~ implement scalar/vector - band - range
 
 # ~ Utilities ~
-
-# prepare for v0.5 new bound checking facilities
-if VERSION < v"0.5"
-    macro boundscheck(ex)
-        ex
-    end
-end
-
 # ~~ Type to set\get data along a band
 immutable Band
     i::Int
@@ -1105,7 +1097,7 @@ end
 *(a::Number,B::BandedMatrix) = BandedMatrix(a*B.data,B.m,B.l,B.u)
 broadcast(::typeof(*), a::Number, B::BandedMatrix) = BandedMatrix(a.*B.data,B.m,B.l,B.u)
 
-if VERSION < v"0.6.0-dev"
+if VERSION < v"0.6.0-dev.1632"
     @eval quote
         .*(A::BandedMatrix, B::BandedMatrix) = (*).(A,B)
         .*(A::BandedMatrix, b::Number) = (*).(A,b)
@@ -1163,42 +1155,23 @@ type PrintShow
 end
 Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
-if VERSION < v"0.5.0-rc4"
-    showarray(io,M;opts...) = Base.showarray(io,M;opts...)
-    function Base.showarray(io::IO,B::AbstractBandedMatrix;
-                   header::Bool=true, limit::Bool=Base._limit_output,
-                   sz = (s = Base.tty_size(); (s[1]-4, s[2])), repr=false)
-       header && print(io,summary(B))
 
-       if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-           header && println(io,":")
-           M=Array{Any}(size(B)...)
-           fill!(M,PrintShow(""))
-           for j = 1:size(B,2), k = colrange(B,j)
-               M[k,j]=B[k,j]
-           end
+showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
+function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
+    header && print(io,summary(B))
 
-           showarray(io,M;header=false)
-       end
-   end
-
-else
-    showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
-    function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
-        header && print(io,summary(B))
-
-        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-            header && println(io,":")
-            M=Array{Any}(size(B)...)
-            fill!(M,PrintShow(""))
-            for j = 1:size(B,2), k = colrange(B,j)
-                M[k,j]=B[k,j]
-            end
-
-            showarray(io,M;header=false)
+    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
+        header && println(io,":")
+        M=Array{Any}(size(B)...)
+        fill!(M,PrintShow(""))
+        for j = 1:size(B,2), k = colrange(B,j)
+            M[k,j]=B[k,j]
         end
+
+        showarray(io,M;header=false)
     end
 end
+
 
 
 

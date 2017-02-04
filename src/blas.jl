@@ -23,13 +23,8 @@
 
 
 
-if VERSION < v"0.5.0-dev"
-    macro blasfunc(x)
-       return :( $(BLAS.blasfunc(x) ))
-    end
-else
-    import Base.BLAS.@blasfunc
-end
+
+import Base.BLAS.@blasfunc
 
 
 
@@ -573,16 +568,7 @@ function banded_axpy!{T}(a::Number,X,S::BandedSubMatrix{T})
 end
 
 
-if VERSION < v"0.5"
-    # taken from 0.5
-    function checksquare(A)
-        m,n = size(A)
-        m == n || throw(DimensionMismatch("matrix is not square"))
-        m
-    end
-else
-    checksquare(A) = LinAlg.checksquare(A)
-end
+checksquare(A) = LinAlg.checksquare(A)
 
 
 function Base.BLAS.axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
