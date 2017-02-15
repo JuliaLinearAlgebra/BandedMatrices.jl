@@ -14,11 +14,11 @@ export sbrand, sbeye, sbzeros
 type SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # k+1 x n (# of columns)
     k::Int # bandwidth ≥ 0
-    function SymBandedMatrix(data::Matrix{T},k)
+    function (::Type{SymBandedMatrix{T}}){T}(data::Matrix{T},k)
         if size(data,1) != k+1
             error("Data matrix must have number rows equal to number of superdiagonals")
         else
-            new(data,k)
+            new{T}(data,k)
         end
     end
 end

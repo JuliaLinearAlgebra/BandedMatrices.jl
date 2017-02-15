@@ -1,7 +1,7 @@
 __precompile__()
 
 module BandedMatrices
-using Base
+using Base, Compat
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror
@@ -69,7 +69,7 @@ normalize!{T<:Union{Complex128,Complex64}}(n,w::Union{Vector{T},Ptr{T}}) =
 
 # AbstractBandedMatrix must implement
 
-abstract AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int}
+@compat abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
 
 doc"""
     bandwidths(A)
@@ -128,17 +128,17 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
     m::Int #Number of rows
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
-    function BandedMatrix(data::Matrix{T},m,l,u)
+    function (::Type{BandedMatrix{T}}){T}(data::Matrix{T},m,l,u)
         if size(data,1)!=l+u+1
             error("Data matrix must have number rows equal to number of bands")
         else
-            new(data,m,l,u)
+            new{T}(data,m,l,u)
         end
     end
 end
 
 # BandedSubMatrix are also banded
-typealias BandedSubMatrix{T} Union{
+@compat const BandedSubMatrix{T} = Union{
                 SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
                 SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
@@ -146,7 +146,7 @@ typealias BandedSubMatrix{T} Union{
             }
 
 # these are the banded matrices that are ameniable to BLAS routines
-typealias BLASBandedMatrix{T} Union{
+@compat const BLASBandedMatrix{T} = Union{
                 BandedMatrix{T},
                 SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
                 SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
