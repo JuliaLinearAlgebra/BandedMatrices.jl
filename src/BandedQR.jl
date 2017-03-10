@@ -126,7 +126,7 @@ end
 
 Base.full(A::BandedQ) = A*eye(eltype(A),size(A,1))
 
-Base.linearindexing{T}(::Type{BandedQ{T}}) = Base.LinearSlow()
+@compat Base.IndexStyle{T}(::Type{BandedQ{T}}) = IndexCartesian()
 Base.getindex(A::BandedQ,k::Int,j::Int) = (A*eltype(A)[zeros(j-1);1.0;zeros(size(A,2)-j)])[k]
 
 

@@ -108,7 +108,7 @@ end
 
 bandwidth(A::SymBandedMatrix,k) = A.k
 
-Base.linearindexing{T}(::Type{SymBandedMatrix{T}}) = Base.LinearSlow()
+@compat Base.IndexStyle{T}(::Type{SymBandedMatrix{T}}) = IndexCartesian()
 
 
 @inline inbands_getindex(A::SymBandedMatrix, k::Integer, j::Integer) =

@@ -282,7 +282,7 @@ beye(n::Integer,a...) = beye(Float64,n,a...)
 Base.size(A::BandedMatrix, k) = ifelse(k==2,size(A.data,2),A.m)
 Base.size(A::BandedMatrix) = A.m,size(A.data,2)
 
-Base.linearindexing{T}(::Type{BandedMatrix{T}}) = Base.LinearSlow()
+@compat Base.IndexStyle{T}(::Type{BandedMatrix{T}}) = IndexCartesian()
 
 
 
