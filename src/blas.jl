@@ -127,6 +127,51 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
 end
 
 
+## Triangular * and \
+
+for (fname, elty) in ((:dtbmv_,:Float64),
+                      (:stbmv_,:Float32),
+                      (:ztbmv_,:Complex128),
+                      (:ctbmv_,:Complex64))
+    @eval begin
+        function tbmv!(uplo::Char, trans::Char, diag::Char,
+                        n::Int, k::Int, A::Ptr{$elty}, lda::Int,
+                        x::Ptr{$elty}, incx::Int)
+            ccall((@blasfunc($fname), libblas), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{UInt8},
+                 Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}),
+                 &uplo, &trans, &diag,
+                 &n, &k, A, &lda,
+                 x, &incx)
+            x
+        end
+    end
+end
+
+for (fname, elty) in ((:dtbsv_,:Float64),
+                      (:stbsv_,:Float32),
+                      (:ztbsv_,:Complex128),
+                      (:ctbsv_,:Complex64))
+    @eval begin
+        function tbsv!(uplo::Char, trans::Char, diag::Char,
+                        n::Int, k::Int, A::Ptr{$elty}, lda::Int,
+                        x::Ptr{$elty}, incx::Int)
+            ccall((@blasfunc($fname), libblas), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{UInt8},
+                 Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}),
+                 &uplo, &trans, &diag,
+                 &n, &k, A, &lda,
+                 x, &incx)
+            x
+        end
+    end
+end
+
+
 # #TODO: Speed up the following
 # function gbmv!{T}(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::Ptr{T}, n::Integer, st::Integer, x::Ptr{T}, beta::T, y::Ptr{T})
 #     data=pointer_to_array(A,(kl+ku+1,n))
