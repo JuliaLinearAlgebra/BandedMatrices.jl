@@ -401,6 +401,14 @@ for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
     @test A*B ≈ full(A)*full(B)
 end
 
+let B = brand(4,3,1,2)
+    for A in (brand(3,4,-1,0),brand(3,4,0,-1))
+        @test full(A) == zeros(3,4)
+        A*B == zeros(3,3)
+    end
+end
+
+
 # check that col/rowstop is ≥ 0
 A = brand(3,4,-2,2)
 @test BandedMatrices.colstop(A, 1) == BandedMatrices.colstop(A, 2) == 0

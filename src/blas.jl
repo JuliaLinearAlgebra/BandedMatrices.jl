@@ -724,7 +724,7 @@ function Base.A_mul_B!{T,U,V}(C::BLASBandedMatrix{T},A::BLASBandedMatrix{U},B::B
     Am, An = size(A)
     Bm, Bn = size(B)
 
-    if (Al < 0 && Au < 0) || (Bl < 0 && Bu < 0)
+    if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
         C.data[:,:] = zero(T)
     elseif Al < 0
         A_mul_B!(C,view(A,:,1-Al:An),view(B,1-Al:An,:))
