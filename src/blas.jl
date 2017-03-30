@@ -691,7 +691,7 @@ function banded_A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::AbstractMatrix{T}
     end
 
     l,u = bandwidths(A)
-    if l < 0 && u < 0
+    if -l > u
         # no bands
         c[:] = zero(eltype(c))
     elseif l < 0

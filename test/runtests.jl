@@ -401,10 +401,13 @@ for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
     @test A*B ≈ full(A)*full(B)
 end
 
-let B = brand(4,3,1,2)
+# zero arrays
+
+let B = brand(4,3,1,2),b = rand(4)
     for A in (brand(3,4,-1,0),brand(3,4,0,-1))
         @test full(A) == zeros(3,4)
-        A*B == zeros(3,3)
+        @test A*B == zeros(3,3)
+        @test A*b == zeros(3)
     end
 end
 
