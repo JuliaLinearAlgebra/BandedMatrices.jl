@@ -129,7 +129,7 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
     function (::Type{BandedMatrix{T}}){T}(data::Matrix{T},m,l,u)
-        if size(data,1)!=l+u+1
+        if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
             error("Data matrix must have number rows equal to number of bands")
         else
             new{T}(data,m,l,u)
@@ -174,11 +174,11 @@ returns an unitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)
 
 # Use zeros to avoid unallocated entries for bigfloat
 BandedMatrix{T<:BlasFloat}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
-    BandedMatrix{T}(Matrix{T}(b+a+1,m),n,a,b)
+    BandedMatrix{T}(Matrix{T}(max(0,b+a+1),m),n,a,b)
 BandedMatrix{T<:Number}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
-    BandedMatrix{T}(zeros(T,b+a+1,m),n,a,b)
+    BandedMatrix{T}(zeros(T,max(0,b+a+1),m),n,a,b)
 BandedMatrix{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
-    BandedMatrix{T}(Matrix{T}(b+a+1,m),n,a,b)
+    BandedMatrix{T}(Matrix{T}(max(0,b+a+1),m),n,a,b)
 
 
 
@@ -215,7 +215,7 @@ for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bo
     name_str = "bzeros"
     @eval begin
         $bop{T}(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) =
-            BandedMatrix($op(T,b+a+1,m),n,a,b)
+            BandedMatrix($op(T,max(0,b+a+1),m),n,a,b)
         $bop{T}(::Type{T},n::Integer,a::Integer,b::Integer) = $bop(T,n,n,a,b)
         $bop{T}(::Type{T},n::Integer,::Colon,a::Integer,b::Integer) = $bop(T,n,n+b,a,b)
         $bop{T}(::Type{T},::Colon,m::Integer,a::Integer,b::Integer) = $bop(T,m+a,m,a,b)

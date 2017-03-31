@@ -403,13 +403,15 @@ end
 
 # zero arrays
 
-let B = brand(4,3,1,2),b = rand(4)
-    for A in (brand(3,4,-1,0),brand(3,4,0,-1))
+let b = rand(4)
+    for A in (brand(3,4,-1,0),brand(3,4,0,-1),brand(3,4,-1,-1)),
+        B in (brand(4,3,1,2),brand(4,3,-1,0),brand(4,3,-1,-1))
         @test full(A) == zeros(3,4)
         @test A*B == zeros(3,3)
         @test A*b == zeros(3)
     end
 end
+
 
 
 # check that col/rowstop is ≥ 0
