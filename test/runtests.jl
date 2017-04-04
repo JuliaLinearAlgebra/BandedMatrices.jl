@@ -440,3 +440,12 @@ BandedMatrix{Float64}(A)
 
 
 include("test_symbanded.jl")
+
+
+
+# Test dense overrides
+A = rand(10,11)
+@test bandwidths(A) == (9,10)
+A = rand(10)
+@test bandwidths(A) == (9,0)
+@test bandwidths(A') == (0,9)
