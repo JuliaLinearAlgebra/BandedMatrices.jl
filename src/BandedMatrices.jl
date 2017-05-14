@@ -391,7 +391,7 @@ end
 # length of diagonal
 @inline diaglength(A::BandedMatrix, b::Band) = diaglength(A, b.i)
 @inline function diaglength(A::BandedMatrix, i::Integer)
-    min(size(A, 2), size(A, 1)+i) - max(0, i)
+    max(min(size(A, 2), size(A, 1)+i) - max(0, i), 0)
 end
 
 # return id of first empty diagonal intersected along row k
