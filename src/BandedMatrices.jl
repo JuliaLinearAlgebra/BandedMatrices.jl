@@ -87,7 +87,7 @@ doc"""
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
 bandwidth(A::DenseVecOrMat,k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
-if VERSION ≥ v"0.6-"
+if isdefined(Base, :RowVector)
     bandwidth{T,DV<:DenseVector}(A::RowVector{T,DV},k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
 end
 
