@@ -163,7 +163,7 @@ end
 
 # fast method used below
 @inline function syminbands_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer)
-    @inbounds data[u + abs(k-j) + 1, max(k,j)] = convert(T, v)::T
+    @inbounds data[u - abs(k-j) + 1, max(k,j)] = convert(T, v)::T
     v
 end
 
