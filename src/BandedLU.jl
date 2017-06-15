@@ -18,9 +18,9 @@ convert{T<:Number, S<:Number}(::Type{BandedLU{T}}, B::BandedLU{S}) =
 
 # size of the parent array
 size(A::BandedLU) = (A.m, size(A.data, 2))
-size(A::BandedLU, i::Integer) = i <= 0 ? error("dimension out of range") :
-                                i == 1 ? A.m :
-                                i == 2 ? size(A.data, 2) : 1
+size(A::BandedLU, k::Integer) = k <= 0 ? error("dimension out of range") :
+                                k == 1 ? A.m :
+                                k == 2 ? size(A.data, 2) : 1
 
 # LU factorisation with pivoting. This makes a copy!
 function lufact{T<:Number}(A::BandedMatrix{T})

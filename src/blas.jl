@@ -104,6 +104,78 @@ for (fname, elty) in ((:dsbmv_,:Float64),
     end
 end
 
+# Symmetric/Hermitian Positive Definite banded Cholesky factorization
+for (fname, elty) in ((:dpbtrf_,:Float64),
+                      (:spbtrf_,:Float32),
+                      (:zpbtrf_,:Complex128),
+                      (:cpbtrf_,:Complex64))
+    @eval begin
+                # SUBROUTINE DPBTRF( UPLO, N, KD, AB, LDAB, INFO )
+                # CHARACTER          UPLO
+                # INTEGER            INFO, KD, LDAB, N
+                # DOUBLE PRECISION   AB( LDAB, * )
+
+        function pbtrf!(uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int)
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), libblas), Void,
+                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}),
+                 &uplo, &n, &kd, AB, &ldab, info)
+            AB
+        end
+    end
+end
+
+# Symmetric/Hermitian Positive Definite split-Cholesky factorization
+for (fname, elty) in ((:dpbstf_,:Float64),
+                      (:spbstf_,:Float32),
+                      (:zpbstf_,:Complex128),
+                      (:cpbstf_,:Complex64))
+    @eval begin
+                # SUBROUTINE DPBSTF( UPLO, N, KD, AB, LDAB, INFO )
+                # CHARACTER          UPLO
+                # INTEGER            INFO, KD, LDAB, N
+                # DOUBLE PRECISION   AB( LDAB, * )
+
+        function pbstf!(uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int)
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), libblas), Void,
+                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}),
+                 &uplo, &n, &kd, AB, &ldab, info)
+            AB
+        end
+    end
+end
+
+# Convert Symmetric Positive Definite generalized eigenvalue problem
+# to a symmetric eigenvalue problem assuming B has been processed by
+# a split-Cholesky factorization.
+for (fname, elty) in ((:dsbgst_,:Float64),
+                      (:ssbgst_,:Float32))
+    @eval begin
+                # SUBROUTINE DSBGST( VECT, UPLO, N, KA, KB, AB, LDAB,
+                # BB, LDBB, X, LDX, WORK, INFO )
+                # CHARACTER          UPLO, VECT
+                # INTEGER            INFO, KA, KB, LDAB, LDBB, LDX, N
+                # DOUBLE PRECISION   AB( LDAB, * ), BB( LDBB, * ), WORK( * ),
+                # X( LDX, * )
+
+        function sbgst!(vect::Char, uplo::Char, n::Int, ka::Int, kb::Int,
+                         AB::Ptr{$elty}, ldab::Int, BB::Ptr{$elty}, ldbb::Int,
+                         X::Ptr{$elty}, ldx::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), libblas), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{BlasInt}),
+                 &vect, &uplo, &n, &ka, &kb, AB, &ldab, BB, &ldbb,
+                 X, &ldx, work, info)
+            AB
+        end
+    end
+end
 
 ## Symmetric tridiagonalization
 for (fname, elty) in ((:dsbtrd_,:Float64),

@@ -13,5 +13,48 @@ b=rand(10)
 # eigvals
 
 srand(0)
-A = sbrand(Float64,100,4)
-@test eigvals(A) ≈ eigvals(full(A))
+A = sbrand(Float64, 100, 4)
+@test eigvals(A) ≈ eigvals(Symmetric(full(A)))
+
+# generalized eigvals
+
+function An{T}(::Type{T}, N::Int)
+    A = sbzeros(T, N, 2)
+    for n = 0:N-1
+        A.data[3,n+1] = T((n+1)*(n+2))
+    end
+    A
+end
+
+function Bn{T}(::Type{T}, N::Int)
+    B = sbzeros(T, N, 2)
+    for n = 0:N-1
+        B.data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
+    end
+    for n = 0:N-3
+        B.data[1,n+3] = -sqrt(T((n+1)*(n+2)*(n+3)*(n+4))/T((2n+3)*(2n+5)*(2n+5)*(2n+7)))
+    end
+    B
+end
+
+A = An(Float64, 100)
+B = Bn(Float64, 100)
+
+λ = eigvals(A, B)
+
+@test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
+
+err = λ*(2/π)^2./(1:length(λ)).^2-1
+
+@test norm(err[1:40]) < 100eps(Float64)
+
+A = An(Float32, 100)
+B = Bn(Float32, 100)
+
+λ = eigvals(A, B)
+
+@test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
+
+err = λ*(2.f0/π)^2./(1:length(λ)).^2-1
+
+@test norm(err[1:40]) < 100eps(Float32)

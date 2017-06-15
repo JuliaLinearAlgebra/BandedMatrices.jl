@@ -100,9 +100,11 @@ sbeye(n::Integer,a...) = sbeye(Float64,n,a...)
 
 ## Abstract Array Interface
 
-Base.size(A::SymBandedMatrix, k) = size(A.data,2)
-function Base.size(A::SymBandedMatrix)
-    n = size(A.data,2)
+size(A::SymBandedMatrix, k) = k <= 0 ? error("dimension out of range") :
+                              k == 1 ? size(A.data, 2) :
+                              k == 2 ? size(A.data, 2) : 1
+function size(A::SymBandedMatrix)
+    n = size(A.data, 2)
     n,n
 end
 
@@ -310,7 +312,7 @@ Base.A_mul_B!{T}(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) =
 
 
 function tridiagonalize!{T}(A::SymBandedMatrix{T})
-    n=size(A,1)
+    n=size(A, 1)
     d = Vector{T}(n)
     e = Vector{T}(n-1)
     q = Vector{T}(0)
@@ -328,3 +330,23 @@ tridiagonalize(A::SymBandedMatrix) = tridiagonalize!(copy(A))
 
 Base.eigvals!(A::SymBandedMatrix) = eigvals!(tridiagonalize!(A))
 Base.eigvals(A::SymBandedMatrix) = eigvals!(copy(A))
+
+function Base.eigvals!{T}(A::SymBandedMatrix{T}, B::SymBandedMatrix{T})
+    n = size(A, 1)
+    @assert n == size(B, 1)
+    # compute split-Cholesky factorization of B.
+    kb = bandwidth(B, 2)
+    ldb = leadingdimension(B)
+    pbstf!('U', n, kb, pointer(B), ldb)
+    # convert to a regular symmetric eigenvalue problem.
+    ka = bandwidth(A, 2)
+    lda = leadingdimension(A)
+    X = Array{T}(0,0)
+    work = Vector{T}(2n)
+    sbgst!('N', 'U', n, ka, kb, pointer(A), lda, pointer(B), ldb,
+           pointer(X), max(1, n), pointer(work))
+    # compute eigenvalues of symmetric eigenvalue problem.
+    eigvals!(A)
+end
+
+Base.eigvals(A::SymBandedMatrix, B::SymBandedMatrix) = eigvals!(copy(A), copy(B))

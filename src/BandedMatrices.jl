@@ -27,7 +27,7 @@ import Base.LinAlg: BlasInt,
 import Base.LAPACK: gbtrs!,
                     gbtrf!
 
-import Base: lufact
+import Base: lufact, cholfact, cholfact!
 
 export BandedMatrix,
        SymBandedMatrix,
@@ -283,8 +283,10 @@ beye(n::Integer,a...) = beye(Float64,n,a...)
 
 ## Abstract Array Interface
 
-Base.size(A::BandedMatrix, k) = ifelse(k==2,size(A.data,2),A.m)
-Base.size(A::BandedMatrix) = A.m,size(A.data,2)
+size(A::BandedMatrix) = A.m, size(A.data, 2)
+size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
+                                    k == 1 ? A.m :
+                                    k == 2 ? size(A.data, 2) : 1
 
 @compat Base.IndexStyle{T}(::Type{BandedMatrix{T}}) = IndexCartesian()
 
@@ -1215,6 +1217,7 @@ end
 
 
 include("SymBandedMatrix.jl")
+include("BandedCholesky.jl")
 
 include("precompile.jl")
 _precompile_()
