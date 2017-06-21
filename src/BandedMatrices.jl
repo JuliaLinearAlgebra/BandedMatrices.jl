@@ -52,10 +52,10 @@ export BandedMatrix,
 @inline dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
     BLAS.dotc(M,a,incx,b,incy)
 
-dotu{T<:Union{Complex64,Complex128}}(f::Vector{T},g::Vector{T}) =
+dotu{T<:Union{Complex64,Complex128}}(f::StridedVector{T},g::StridedVector{T}) =
     BLAS.dotu(f,g)
-dotu{N<:Real}(f::Vector{Complex{Float64}},g::Vector{N}) = dot(conj(f),g)
-dotu{N<:Real,T<:Number}(f::Vector{N},g::Vector{T}) = dot(f,g)
+dotu{N<:Real}(f::AbstractVector{Complex{Float64}},g::AbstractVector{N}) = dot(conj(f),g)
+dotu{N<:Real,T<:Number}(f::AbstractVector{N},g::AbstractVector{T}) = dot(f,g)
 
 
 normalize!(w::AbstractVector) = scale!(w,inv(norm(w)))
