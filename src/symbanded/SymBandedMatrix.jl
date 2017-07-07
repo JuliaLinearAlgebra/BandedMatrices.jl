@@ -277,37 +277,6 @@ Base.ctranspose{T<:Real}(B::SymBandedMatrix{T}) = copy(B)
 Base.diag{T}(A::SymBandedMatrix{T}) = vec(A.data[A.k+1,:])
 
 
-
-## A_***_B routines
-
-@inline leadingdimension(B::SymBandedMatrix) = stride(B.data,2)
-@inline Base.pointer(B::SymBandedMatrix) = pointer(B.data)
-
-sbmv!{T<:BlasFloat}(α::T,A::SymBandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
-  sbmv!('U',A.k,α,A.data,x,β,y)
-
-
-
-function symbanded_A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::AbstractMatrix{T},b::StridedVector{T})
-    n = size(A,1)
-
-    @boundscheck if length(c) ≠ n || length(b) ≠ n
-        throw(DimensionMismatch())
-    end
-
-    k = bandwidth(A,2)
-    sbmv!('U',n,k,one(T),
-            pointer(A),leadingdimension(A),pointer(b),stride(b,1),zero(T),pointer(c),stride(c,1))
-    c
-end
-
-
-Base.A_mul_B!{T}(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) =
-    symbanded_A_mul_B!(c,A,b)
-
-
-
-
 ## eigvals routine
 
 
@@ -350,3 +319,9 @@ function Base.eigvals!{T}(A::SymBandedMatrix{T}, B::SymBandedMatrix{T})
 end
 
 Base.eigvals(A::SymBandedMatrix, B::SymBandedMatrix) = eigvals!(copy(A), copy(B))
+
+
+## These routines give access to the necessary information to call BLAS
+
+@inline leadingdimension(B::SymBandedMatrix) = stride(B.data,2)
+@inline Base.pointer(B::SymBandedMatrix) = pointer(B.data)

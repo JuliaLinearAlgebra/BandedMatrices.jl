@@ -65,3 +65,8 @@ for typ in [BandedMatrix, BandedLU]
         AA, BB # one of these two might make a copy
     end
 end
+
+
+# basic interface
+(\){T<:BlasFloat}(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) =
+    A_ldiv_B!(A, copy(B)) # makes a copy
