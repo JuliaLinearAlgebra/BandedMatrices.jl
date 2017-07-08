@@ -29,7 +29,7 @@ for (fname, elty) in ((:dgbmv_,:Float64),
         gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::($elty),
                        A::Ptr{$elty}, n::Int, st::Int,
                        x::Ptr{$elty}, beta::($elty), y::Ptr{$elty}) =
-            gmv!(trans, m, kl, ku, alpha, A, n, st, x, 1, beta, y, 1)
+            gbmv!(trans, m, kl, ku, alpha, A, n, st, x, 1, beta, y, 1)
     end
 end
 
