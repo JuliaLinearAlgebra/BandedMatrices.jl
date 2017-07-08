@@ -56,5 +56,7 @@ include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
 
+include("precompile.jl")
+_precompile_()
 
 end #module
