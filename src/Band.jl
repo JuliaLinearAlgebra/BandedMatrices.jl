@@ -105,26 +105,6 @@ function _firstdiagcol(A, j)
 end
 
 
-# ~ bound checking functions ~
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, j::Integer) =
-    (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
-
-checkbounds(A::AbstractBandedMatrix, kr::Range, j::Integer) =
-    (checkbounds(A, first(kr), j); checkbounds(A,  last(kr), j))
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, jr::Range) =
-    (checkbounds(A, k, first(jr)); checkbounds(A, k,  last(jr)))
-
-checkbounds(A::AbstractBandedMatrix, kr::Range, jr::Range) =
-    (checkbounds(A, kr, first(jr)); checkbounds(A, kr,  last(jr)))
-
-checkbounds(A::AbstractBandedMatrix, k::Colon, j::Integer) =
-    (0 < j ≤ size(A, 2) || throw(BoundsError(A, (size(A,1),j))))
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, j::Colon) =
-    (0 < k ≤ size(A, 1) || throw(BoundsError(A, (k,size(A,2)))))
-
 # check indices fall in the band
 checkband(A::AbstractBandedMatrix, i::Integer) =
     (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i)))

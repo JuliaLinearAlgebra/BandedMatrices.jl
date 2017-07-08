@@ -44,7 +44,7 @@ include("blas.jl")
 include("lapack.jl")
 
 include("AbstractBandedMatrix.jl")
-include("band.jl")
+include("Band.jl")
 include("utils.jl")
 
 include("banded/BandedMatrix.jl")
