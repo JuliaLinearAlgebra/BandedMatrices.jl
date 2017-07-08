@@ -137,9 +137,6 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 """
 brand
 
-Base.similar(B::AbstractBandedMatrix) =
-    BandedMatrix(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
-
 
 """
     beye(T,n,l,u)
@@ -157,6 +154,8 @@ beye{T}(::Type{T},n::Integer) = beye(T,n,0,0)
 beye(n::Integer) = beye(n,0,0)
 beye(n::Integer,a...) = beye(Float64,n,a...)
 
+Base.similar(B::BLASBandedMatrix) =
+    BandedMatrix(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
 
 
 ## Abstract Array Interface
@@ -166,189 +165,15 @@ size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
                                     k == 1 ? A.m :
                                     k == 2 ? size(A.data, 2) : 1
 
+
+bandwidth(A::BandedMatrix,k::Integer) = k==1?A.l:A.u
+
 @compat Base.IndexStyle{T}(::Type{BandedMatrix{T}}) = IndexCartesian()
-
-
-
-
-
-# TODO
-# ~ implement indexing with vectors of indices
-# ~ implement scalar/vector - band - integer
-# ~ implement scalar/vector - band - range
-
-# ~ Utilities ~
-# ~~ Type to set\get data along a band
-immutable Band
-    i::Int
-end
-
-doc"""
-    band(i)
-
-Represents the `i`-th band of a banded matrix.
-
-```jldoctest
-julia> using BandedMatrices
-
-julia> A = bones(5,5,1,1)
-5×5 BandedMatrices.BandedMatrix{Float64}:
- 1.0  1.0
- 1.0  1.0  1.0
-      1.0  1.0  1.0
-           1.0  1.0  1.0
-                1.0  1.0
-
-julia> A[band(1)]
-4-element Array{Float64,1}:
- 1.0
- 1.0
- 1.0
- 1.0
-```
-
-"""
-band(i::Int) = Band(i)
-
-
-doc"""
-    BandRange
-
-Represents the entries in a row/column inside the bands.
-
-```jldoctest
-julia> using BandedMatrices
-
-julia> A = bones(5,5,1,1)
-5×5 BandedMatrices.BandedMatrix{Float64}:
- 1.0  1.0
- 1.0  1.0  1.0
-      1.0  1.0  1.0
-           1.0  1.0  1.0
-                1.0  1.0
-
-julia> A[2,BandRange]
-3-element Array{Float64,1}:
- 1.0
- 1.0
- 1.0
-```
-"""
-
-# ~~ Indexing on the i-th row/column within band range
-immutable BandRange end
-
-# ~~ Out of band error
-immutable BandError <: Exception
-    A::BandedMatrix
-    i::Int
-end
-
-function showerror(io::IO, e::BandError)
-    A, i, u, l = e.A, e.i, e.A.u, e.A.l
-    print(io, "attempt to access $(typeof(A)) with bandwidths " *
-              "($(-l), $u) at band $i")
-end
-
-# start/stop indices of the i-th column/row, bounded by actual matrix size
-@inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1)
-@inline  colstop(A, i::Integer) = max(min(i+bandwidth(A,1), size(A, 1)), 0)
-@inline rowstart(A, i::Integer) = max(i-bandwidth(A,1), 1)
-@inline  rowstop(A, i::Integer) = max(min(i+bandwidth(A,2), size(A, 2)), 0)
 
 @inline colstart(A::BandedMatrix, i::Integer) = max(i-A.u, 1)
 @inline  colstop(A::BandedMatrix, i::Integer) = max(min(i+A.l, size(A, 1)), 0)
 @inline rowstart(A::BandedMatrix, i::Integer) = max(i-A.l, 1)
 @inline  rowstop(A::BandedMatrix, i::Integer) = max(min(i+A.u, size(A, 2)), 0)
-
-@inline colrange(A, i::Integer) = colstart(A,i):colstop(A,i)
-@inline rowrange(A, i::Integer) = rowstart(A,i):rowstop(A,i)
-
-# length of i-the column/row
-@inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
-@inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
-
-# length of diagonal
-@inline diaglength(A::BandedMatrix, b::Band) = diaglength(A, b.i)
-@inline function diaglength(A::BandedMatrix, i::Integer)
-    max(min(size(A, 2), size(A, 1)+i) - max(0, i), 0)
-end
-
-# return id of first empty diagonal intersected along row k
-function _firstdiagrow(A, k)
-    a, b = rowstart(A, k), rowstop(A, k)
-    c = a == 1 ? b+1 : a-1
-    c-k
-end
-
-# return id of first empty diagonal intersected along column j
-function _firstdiagcol(A, j)
-    a, b = colstart(A, j), colstop(A, j)
-    r = a == 1 ? b+1 : a-1
-    j-r
-end
-
-
-# give range of data matrix corresponding to colrange/rowrange
-data_colrange(A, i::Integer) = (max(1,A.u+2-i):min(size(A,1)+A.u-i+1,size(A.data,1))) +
-                                (i-1)*size(A.data,1)
-
-data_rowrange(A, i::Integer) = range((i ≤ 1+A.l ? A.u+i : (i-A.l)*size(A.data,1)) ,
-                                size(A.data,1)-1 ,  # step size
-                                i+A.u ≤ size(A,2) ? A.l+A.u+1 : size(A,2)-i+A.l+1)
-
-
-# ~ bound checking functions ~
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, j::Integer) =
-    (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
-
-checkbounds(A::AbstractBandedMatrix, kr::Range, j::Integer) =
-    (checkbounds(A, first(kr), j); checkbounds(A,  last(kr), j))
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, jr::Range) =
-    (checkbounds(A, k, first(jr)); checkbounds(A, k,  last(jr)))
-
-checkbounds(A::AbstractBandedMatrix, kr::Range, jr::Range) =
-    (checkbounds(A, kr, first(jr)); checkbounds(A, kr,  last(jr)))
-
-checkbounds(A::AbstractBandedMatrix, k::Colon, j::Integer) =
-    (0 < j ≤ size(A, 2) || throw(BoundsError(A, (size(A,1),j))))
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, j::Colon) =
-    (0 < k ≤ size(A, 1) || throw(BoundsError(A, (k,size(A,2)))))
-
-# check indices fall in the band
-checkband(A::AbstractBandedMatrix, i::Integer) =
-    (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i)))
-
-checkband(A::AbstractBandedMatrix, b::Band) = checkband(A, b.i)
-
-checkband(A::AbstractBandedMatrix, k::Integer, j::Integer) = checkband(A, j-k)
-
-checkband(A::AbstractBandedMatrix, kr::Range, j::Integer) =
-    (checkband(A, first(kr), j); checkband(A,  last(kr), j))
-
-checkband(A::AbstractBandedMatrix, k::Integer, jr::Range) =
-    (checkband(A, k, first(jr)); checkband(A, k,  last(jr)))
-
-checkband(A::AbstractBandedMatrix, kr::Range, jr::Range) =
-    (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
-
-# check dimensions of inputs
-checkdimensions(sizedest::Tuple{Int, Vararg{Int}}, sizesrc::Tuple{Int, Vararg{Int}}) =
-    (sizedest == sizesrc ||
-        throw(DimensionMismatch("tried to assign $(sizesrc) sized " *
-                                "array to $(sizedest) destination")) )
-
-checkdimensions(dest::AbstractVector, src::AbstractVector) =
-    checkdimensions(size(dest), size(src))
-
-checkdimensions(ldest::Int, src::AbstractVector) =
-    checkdimensions((ldest, ), size(src))
-
-checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
-    checkdimensions((length(kr), length(jr)), size(src))
 
 
 # checks if the bands match A
@@ -422,8 +247,13 @@ checkbandmatch(A::BandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
 
 
-# ~~ getindex ~~
+# TODO
+# ~ implement indexing with vectors of indices
+# ~ implement scalar/vector - band - integer
+# ~ implement scalar/vector - band - range
 
+
+# ~~ getindex ~~
 
 # fast method used below
 @inline inbands_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
@@ -488,6 +318,13 @@ end
 
 
 
+# give range of data matrix corresponding to colrange/rowrange
+data_colrange{T}(A::BandedMatrix{T}, i::Integer) = (max(1,A.u+2-i):min(size(A,1)+A.u-i+1,size(A.data,1))) +
+                                (i-1)*size(A.data,1)
+
+data_rowrange{T}(A::BandedMatrix{T}, i::Integer) = range((i ≤ 1+A.l ? A.u+i : (i-A.l)*size(A.data,1)) ,
+                                size(A.data,1)-1 ,  # step size
+                                i+A.u ≤ size(A,2) ? A.l+A.u+1 : size(A,2)-i+A.l+1)
 
 # ~~ setindex! ~~
 
@@ -784,11 +621,6 @@ end
 Base.full(A::BandedMatrix) = convert(Matrix,A)
 
 
-## Band range
-
-bandwidth(A::BandedMatrix,k::Integer) = k==1?A.l:A.u
-
-
 function Base.sparse(B::BandedMatrix)
     i=Vector{Int}(length(B.data));j=Vector{Int}(length(B.data))
     n,m=size(B.data)
@@ -831,13 +663,6 @@ function Base.scale!(A::BandedMatrix, α::Number)
     A
 end
 
-function Base.maximum(B::AbstractBandedMatrix)
-    m=zero(eltype(B))
-    for j = 1:size(B,2), k = colrange(B,j)
-        m=max(B[k,j],m)
-    end
-    m
-end
 
 function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
     if size(A) != size(B)
@@ -985,15 +810,6 @@ end
 *(a::Number,B::BandedMatrix) = BandedMatrix(a*B.data,B.m,B.l,B.u)
 broadcast(::typeof(*), a::Number, B::BandedMatrix) = BandedMatrix(a.*B.data,B.m,B.l,B.u)
 
-if VERSION < v"0.6.0-dev.1632"
-    @eval quote
-        .*(A::BandedMatrix, B::BandedMatrix) = (*).(A,B)
-        .*(A::BandedMatrix, b::Number) = (*).(A,b)
-        .*(a::Number, B::BandedMatrix) = (*).(a,B)
-        ./(A::BandedMatrix, b::Number) = (/).(A,b)
-    end
-end
-
 
 ## UniformScaling
 
@@ -1033,34 +849,6 @@ for OP in (:(Base.real),:(Base.imag))
     @eval $OP(A::BandedMatrix) =
         BandedMatrix($OP(A.data),A.m,A.l,A.u)
 end
-
-
-
-## Show
-
-type PrintShow
-    str
-end
-Base.show(io::IO,N::PrintShow) = print(io,N.str)
-
-
-showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
-function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
-    header && print(io,summary(B))
-
-    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-        header && println(io,":")
-        M=Array{Any}(size(B)...)
-        fill!(M,PrintShow(""))
-        for j = 1:size(B,2), k = colrange(B,j)
-            M[k,j]=B[k,j]
-        end
-
-        showarray(io,M;header=false)
-    end
-end
-
-
 
 
 

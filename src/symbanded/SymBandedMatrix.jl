@@ -97,6 +97,9 @@ end
 sbeye(n::Integer,a...) = sbeye(Float64,n,a...)
 
 
+Base.similar(B::SymBandedMatrix) =
+    SymBandedMatrix(eltype(B),size(B,1),bandwidth(B,1))
+
 
 ## Abstract Array Interface
 
