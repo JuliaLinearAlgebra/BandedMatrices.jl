@@ -1,6 +1,6 @@
 # AbstractBandedMatrix must implement
 
-@compat abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
+abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
 
 doc"""
     bandwidths(A)

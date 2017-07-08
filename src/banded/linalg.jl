@@ -503,9 +503,6 @@ Base.A_mul_B!{T}(c::AbstractVector,A::BLASBandedMatrix{T},b::AbstractVector) =
 
 
 
-
-
-
 ## Matrix*Matrix Multiplication
 
 

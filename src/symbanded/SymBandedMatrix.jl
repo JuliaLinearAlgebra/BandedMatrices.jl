@@ -113,7 +113,7 @@ end
 
 bandwidth(A::SymBandedMatrix,k) = A.k
 
-@compat Base.IndexStyle{T}(::Type{SymBandedMatrix{T}}) = IndexCartesian()
+Base.IndexStyle{T}(::Type{SymBandedMatrix{T}}) = IndexCartesian()
 
 
 @inline inbands_getindex(A::SymBandedMatrix, k::Integer, j::Integer) =

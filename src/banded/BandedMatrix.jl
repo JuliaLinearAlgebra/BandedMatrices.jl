@@ -25,21 +25,21 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 # BandedSubMatrix are also banded
-@compat const BandedSubMatrix{T} = Union{
-                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
-                SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
-                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
-                SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
-            }
+const BandedSubMatrix{T} = Union{
+        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
+        SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
+        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
+        SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+    }
 
 # these are the banded matrices that are ameniable to BLAS routines
-@compat const BLASBandedMatrix{T} = Union{
-                BandedMatrix{T},
-                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
-                SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
-                SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
-                SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
-            }
+const BLASBandedMatrix{T} = Union{
+        BandedMatrix{T},
+        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
+        SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
+        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
+        SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+    }
 
 
 isbanded{T}(::BandedSubMatrix{T}) = true
@@ -168,7 +168,7 @@ size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
 
 bandwidth(A::BandedMatrix,k::Integer) = k==1?A.l:A.u
 
-@compat Base.IndexStyle{T}(::Type{BandedMatrix{T}}) = IndexCartesian()
+Base.IndexStyle{T}(::Type{BandedMatrix{T}}) = IndexCartesian()
 
 @inline colstart(A::BandedMatrix, i::Integer) = max(i-A.u, 1)
 @inline  colstop(A::BandedMatrix, i::Integer) = max(min(i+A.l, size(A, 1)), 0)
