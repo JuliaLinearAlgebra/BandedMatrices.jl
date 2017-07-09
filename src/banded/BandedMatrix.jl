@@ -24,25 +24,20 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
-# BandedSubMatrix are also banded
-const BandedSubMatrix{T} = Union{
-        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
-    }
+const SubBandedMatrix{T, I} = SubArray{T,2,BandedMatrix{T},I}
+
+# SubBandedMatrix with range indexes is also banded
+const BandedSubBandedMatrix{T} =
+    SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{Union{RangeIndex, Base.AbstractCartesianIndex}}}
 
 # these are the banded matrices that are ameniable to BLAS routines
 const BLASBandedMatrix{T} = Union{
         BandedMatrix{T},
-        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+        BandedSubBandedMatrix{T}
     }
 
 
-isbanded{T}(::BandedSubMatrix{T}) = true
+isbanded{T}(::BandedSubBandedMatrix{T}) = true
 
 ## Constructors
 
@@ -154,7 +149,7 @@ beye{T}(::Type{T},n::Integer) = beye(T,n,0,0)
 beye(n::Integer) = beye(n,0,0)
 beye(n::Integer,a...) = beye(Float64,n,a...)
 
-Base.similar(B::BLASBandedMatrix) =
+Base.similar(B::BandedMatrix) =
     BandedMatrix(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
 
 
@@ -663,96 +658,6 @@ function Base.scale!(A::BandedMatrix, α::Number)
     A
 end
 
-
-function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
-    if size(A) != size(B)
-        throw(DimensionMismatch("+"))
-    end
-    n,m=size(A,1),size(A,2)
-
-    ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(1.,B,ret)
-
-    ret
-end
-
-function -{T,V}(A::BandedMatrix{T}, B::BandedMatrix{V})
-    if size(A) != size(B)
-        throw(DimensionMismatch("+"))
-    end
-    n,m=size(A,1),size(A,2)
-
-    ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(-1.,B,ret)
-
-    ret
-end
-
-
-function *(A::BandedMatrix, B::BandedMatrix)
-    if size(A,2)!=size(B,1)
-        throw(DimensionMismatch("*"))
-    end
-    n,m = size(A,1),size(B,2)
-
-    ret = BandedMatrix(promote_type(eltype(A),eltype(B)),n,m,A.l+B.l,A.u+B.u)
-    for j = 1:size(ret,2), k = colrange(ret,j)
-        νmin = max(1,k-bandwidth(A,1),j-bandwidth(B,2))
-        νmax = min(size(A,2),k+bandwidth(A,2),j+bandwidth(B,1))
-
-        ret[k,j] = A[k,νmin]*B[νmin,j]
-        for ν=νmin+1:νmax
-            ret[k,j] += A[k,ν]*B[ν,j]
-        end
-    end
-
-    ret
-end
-
-
-
-function *{T<:Number,V<:Number}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
-    if size(A,2) != size(B,1)
-        throw(DimensionMismatch("*"))
-    end
-    Al, Au = bandwidths(A)
-    Bl, Bu = bandwidths(B)
-    n,m = size(A,1),size(B,2)
-    Y = BandedMatrix(promote_type(T,V),n,m,Al+Bl,Au+Bu)
-    A_mul_B!(Y,A,B)
-end
-
-function *{T<:Number,V<:Number}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
-    if size(A,2)!=size(B,1)
-        throw(DimensionMismatch("*"))
-    end
-    n,m=size(A,1),size(B,2)
-
-    A_mul_B!(Matrix{promote_type(T,V)}(n,m),A,B)
-end
-
-*{T<:Number,V<:Number}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) =
-    A*Array(B)
-
-*{T<:BlasFloat}(A::BLASBandedMatrix{T},b::StridedVector{T}) =
-    A_mul_B!(Vector{T}(size(A,1)),A,b)
-
-function *{T}(A::BandedMatrix{T},b::StridedVector{T})
-    ret = zeros(T,size(A,1))
-    for j = 1:size(A,2), k = colrange(A,j)
-        @inbounds ret[k]+=A[k,j]*b[j]
-    end
-    ret
-end
-
-
-function *{TT}(A::BLASBandedMatrix{TT},b::StridedVector)
-    T=promote_type(eltype(A),eltype(b))
-    convert(BandedMatrix{T},A)*convert(AbstractVector{T},b)
-end
-
 function Base.transpose(B::BandedMatrix)
     Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
     for j = 1:size(B,2), k = colrange(B,j)
@@ -851,8 +756,7 @@ for OP in (:(Base.real),:(Base.imag))
 end
 
 
-
-## SubArray routines
+## BandedSubBandedMatrix routines
 # gives the band which is diagonal for the parent
 bandshift(a::Range,b::Range) = first(a)-first(b)
 bandshift(::Colon,b::Range) = 1-first(b)
@@ -860,12 +764,12 @@ bandshift(a::Range,::Colon) = first(a)-1
 bandshift(::Colon,b::Colon) = 0
 bandshift(S) = bandshift(parentindexes(S)[1],parentindexes(S)[2])
 
-bandwidth{T}(S::BandedSubMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
+bandwidth{T}(S::BandedSubBandedMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
+
+inbands_getindex{T}(S::BandedSubBandedMatrix{T},k::Integer,j::Integer) = inbands_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
 
 
-inbands_getindex{T}(S::BandedSubMatrix{T},k,j) = inbands_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
-
-function Base.convert{T}(::Type{BandedMatrix},S::BandedSubMatrix{T})
+function Base.convert{T}(::Type{BandedMatrix},S::BandedSubBandedMatrix{T})
     A=parent(S)
     kr,jr=parentindexes(S)
     shft=kr[1]-jr[1]
@@ -888,15 +792,9 @@ end
 ## These routines give access to the necessary information to call BLAS
 
 @inline leadingdimension(B::BandedMatrix) = stride(B.data,2)
-@inline leadingdimension{T}(B::BandedSubMatrix{T}) = leadingdimension(parent(B))
+@inline leadingdimension{T}(B::BandedSubBandedMatrix{T}) = leadingdimension(parent(B))
 
 
 @inline Base.pointer(B::BandedMatrix) = pointer(B.data)
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}) =
-    pointer(parent(B))
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}}) =
-    pointer(parent(B))
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}}) =
-    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}) =
+@inline Base.pointer{T}(B::BandedSubBandedMatrix{T}) =
     pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)

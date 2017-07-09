@@ -34,3 +34,8 @@ checkdimensions(ldest::Int, src::AbstractVector) =
 
 checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
     checkdimensions((length(kr), length(jr)), size(src))
+
+
+# fallbacks for inbands_getindex and inbands_setindex!
+@inline inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer) = getindex(x, i, j)
+@inline inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer) = setindex!(x, v, i, j)
