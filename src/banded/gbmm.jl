@@ -271,12 +271,8 @@ function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::StridedMatrix{T},β::
     st = leadingdimension(A)
     n,ν = size(A)
     a = pointer(A)
-
-
     b = pointer(B)
     stb = stride(B,2)
-
-
     m = size(B,2)
 
     @assert size(C,1) == n
@@ -294,6 +290,26 @@ function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::StridedMatrix{T},β::
     C
 end
 
+function gbmm!{T<:BlasFloat}(α::T,A::StridedMatrix{T},B::AbstractMatrix{T},β::T,C::StridedMatrix{T})
+    st = leadingdimension(B)
+    n,ν = size(B)
+    a = pointer(A)
+    b = pointer(B)
+    m = size(A, 1)
+
+    @assert size(C,1) == m
+    @assert size(C,2) == ν
+
+    c=pointer(C)
+    sz=sizeof(T)
+
+    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
+
+    for j=1:m
+        gbmv!('T',n,ν,Bl,Bu,α,b,st,a+(j-1)*sz,stride(A,2),β,c+(j-1)*sz,stride(C,2))
+    end
+    C
+end
 
 αA_mul_B_plus_βC!{T}(α,A::BLASBandedMatrix{T},x,β,y) = gbmv!('N',α,A,x,β,y)
 αA_mul_B_plus_βC!(α,A::StridedMatrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)

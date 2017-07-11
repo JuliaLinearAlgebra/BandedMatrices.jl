@@ -225,8 +225,9 @@ function banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, A::AbstractMat
     C
 end
 
-_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::BLASBandedMatrix{T}, B::StridedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
 _banded_matmatmul!{T <: BlasFloat}(C::BLASBandedMatrix{T} ,A::BLASBandedMatrix{T}, B::BLASBandedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
+_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::BLASBandedMatrix{T}, B::StridedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
+_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::StridedMatrix{T}, B::BLASBandedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
 _banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::AbstractMatrix{V}) = banded_generic_matmatmul!(C, A, B)
 
 function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::AbstractMatrix{V})

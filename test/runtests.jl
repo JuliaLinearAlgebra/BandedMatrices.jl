@@ -58,14 +58,19 @@ end
 A=brand(1000,1000,200,300)
 B=rand(1000,1000)
 @test A*B ≈ full(A)*B
+@test B*A ≈ B*full(A)
 
 A=brand(1200,1000,200,300)
 B=rand(1000,1000)
+C=rand(1200,1200)
 @test A*B ≈ full(A)*B
+@test C*A ≈ C*full(A)
 
 A=brand(1000,1200,200,300)
 B=rand(1200,1200)
+C=rand(1000,1000)
 @test A*B ≈ full(A)*B
+@test C*A ≈ C*full(A)
 
 
 
