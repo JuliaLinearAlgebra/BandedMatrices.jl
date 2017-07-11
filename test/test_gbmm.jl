@@ -81,7 +81,7 @@ for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2
     C=brand(Float64,n,m,A.l+B.l,A.u+B.u)
 
     exC=α*full(A)*full(B)+β*full(C)
-    BandedMatrices.gbmm!(α,A,B,β,C)
+    BandedMatrices.gbmm!('N','N', α,A,B,β,C)
 
     @test full(exC) ≈ full(C)
 end

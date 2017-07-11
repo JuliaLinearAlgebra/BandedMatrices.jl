@@ -97,20 +97,6 @@ end
 for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
     A=brand(n,ν,Al,Au)
     B=brand(ν,m,Bl,Bu)
-    α,β,T=0.123,0.456,Float64
-    C=brand(Float64,n,m,A.l+B.l,A.u+B.u)
-
-    exC=α*full(A)*full(B)+β*full(C)
-    BandedMatrices.gbmm!(α,A,B,β,C)
-
-    @test full(exC) ≈ full(C)
-end
-
-
-
-for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
-    A=brand(n,ν,Al,Au)
-    B=brand(ν,m,Bl,Bu)
     @test full(A*B) ≈ full(A)*full(B)
 end
 
@@ -217,7 +203,7 @@ A2 = copy(A)
 
 
 
-## UniformScalin g
+## UniformScaling
 A = brand(10,10,1,2)
 
 @test full(A+I) ≈ full(A)+I
