@@ -209,7 +209,7 @@ function banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, A::AbstractMat
     else
         Bl,Bu = size(B,1)-1,size(B,2)-1
     end
-    Cl,Cu = Al+Bl, Au+Bu
+    Cl,Cu = prodbandwidths(A, B)
 
     @inbounds for j = 1:Bn, k = max(j-Cu, 1):max(min(j+Cl, Am), 0)
         νmin = max(1,k-Al,j-Bu)
@@ -238,16 +238,8 @@ function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, 
     end
     # TODO: checkbandmatch
 
-    if isbanded(A)
-        Al,Au = bandwidths(A)
-    else
-        Al,Au = size(A,1)-1,size(A,2)-1
-    end
-    if isbanded(B)
-        Bl,Bu = bandwidths(B)
-    else
-        Bl,Bu = size(B,1)-1,size(B,2)-1
-    end
+    Al,Au = bandwidths(A)
+    Bl,Bu = bandwidths(B)
 
     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
         C[:,:] = zero(T)
@@ -279,7 +271,7 @@ function *{T, V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
     Al, Au = bandwidths(A)
     Bl, Bu = bandwidths(B)
     n,m = size(A,1),size(B,2)
-    Y = BandedMatrix(promote_type(T,V),n,m,Al+Bl,Au+Bu)
+    Y = BandedMatrix(promote_type(T,V),n,m,prodbandwidths(A, B)...)
     A_mul_B!(Y,A,B)
 end
 

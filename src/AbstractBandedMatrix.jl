@@ -7,9 +7,9 @@ doc"""
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
 """
-bandwidths(A::AbstractArray) = bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractArray) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractArray,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
+bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractBandedMatrix,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
 
 doc"""
@@ -17,10 +17,7 @@ doc"""
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
-bandwidth(A::DenseVecOrMat,k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
-if isdefined(Base, :RowVector)
-    bandwidth{T,DV<:DenseVector}(A::RowVector{T,DV},k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
-end
+bandwidth(A::AbstractVecOrMat,k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
 
 doc"""
     bandrange(A)

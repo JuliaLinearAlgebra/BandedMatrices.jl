@@ -111,7 +111,7 @@ function size(A::SymBandedMatrix)
     n,n
 end
 
-bandwidth(A::SymBandedMatrix,k) = A.k
+bandwidth(A::SymBandedMatrix, k::Integer) = A.k
 
 Base.IndexStyle{T}(::Type{SymBandedMatrix{T}}) = IndexCartesian()
 
