@@ -261,6 +261,9 @@ function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, 
         A_mul_B!(view(C,:,1-Bl:Bn),A,view(B,:,1-Bl:Bn))
     elseif Bu < 0
         A_mul_B!(C,view(A,:,1-Bu:Bm),view(B,1-Bu:Bm,:))
+    elseif Al + Au < 100 && Bl + Bu < 100
+        # for narrow matrices, `banded_generic_matmatmul` is faster
+        banded_generic_matmatmul!(C, A, B)
     else
         _banded_matmatmul!(C, A, B)
     end
