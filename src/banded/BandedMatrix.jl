@@ -26,9 +26,9 @@ end
 
 const SubBandedMatrix{T, I} = SubArray{T,2,BandedMatrix{T},I}
 
-# SubBandedMatrix with range indexes is also banded
+# SubBandedMatrix with unit range indexes is also banded
 const BandedSubBandedMatrix{T} =
-    SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{Union{RangeIndex, Base.AbstractCartesianIndex}}}
+    SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
 # these are the banded matrices that are ameniable to BLAS routines
 const BLASBandedMatrix{T} = Union{
