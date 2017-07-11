@@ -1,5 +1,6 @@
 using BandedMatrices, Base.Test
 
+include("test_gbmm.jl")
 include("test_indexing.jl")
 include("test_bandedlu.jl")
 include("test_bandedqr.jl")
