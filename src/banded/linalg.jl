@@ -239,8 +239,8 @@ function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, 
 end
 
 A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
-A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::StridedMatrix) = banded_matmatmul!(C, A, B)
-A_mul_B!(C::AbstractMatrix ,A::StridedMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
+A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::AbstractMatrix) = banded_matmatmul!(C, A, B)
+A_mul_B!(C::AbstractMatrix ,A::AbstractMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
 
 
 function *{T, V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
