@@ -716,26 +716,6 @@ end
 broadcast(::typeof(*), a::Number, B::BandedMatrix) = BandedMatrix(a.*B.data,B.m,B.l,B.u)
 
 
-## UniformScaling
-
-function +(A::BandedMatrix, B::UniformScaling)
-    ret = deepcopy(A)
-    BLAS.axpy!(1,B,ret)
-end
-
-+(A::UniformScaling, B::BandedMatrix) = B+A
-
-function -(A::BandedMatrix, B::UniformScaling)
-    ret = deepcopy(A)
-    BLAS.axpy!(-1,B,ret)
-end
-
-function -(A::UniformScaling, B::BandedMatrix)
-    ret = deepcopy(B)
-    Base.scale!(ret,-1)
-    BLAS.axpy!(1,A,ret)
-end
-
 
 #implements fliplr(flipud(A))
 function fliplrud(A::BandedMatrix)
@@ -766,7 +746,15 @@ bandshift(S) = bandshift(parentindexes(S)[1],parentindexes(S)[2])
 
 bandwidth{T}(S::BandedSubBandedMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
 
-inbands_getindex{T}(S::BandedSubBandedMatrix{T},k::Integer,j::Integer) = inbands_getindex(parent(S),parentindexes(S)[1][k],parentindexes(S)[2][j])
+# function inbands_getindex{T}(S::BandedSubBandedMatrix{T},k::Integer,j::Integer)
+#     pind = parentindexes(S)
+#     inbands_getindex(parent(S), pind[1][k], pind[2][j])
+# end
+
+# function inbands_setindex!{T}(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer)
+#     pind = parentindexes(S)
+#     inbands_setindex!(parent(S),v, pind[1][k], pind[2][j])
+# end
 
 
 function Base.convert{T}(::Type{BandedMatrix},S::BandedSubBandedMatrix{T})

@@ -13,3 +13,8 @@ function prodbandwidths(A::AbstractMatrix, B::AbstractMatrix)
     n = size(B, 2)
     min(bandwidth(A, 1) + bandwidth(B, 1), m-1), min(bandwidth(A, 2) + bandwidth(B, 2), n-1)
 end
+
+# return the bandwidths of A+B
+function sumbandwidths(A::AbstractMatrix, B::AbstractMatrix)
+    max(bandwidth(A, 1), bandwidth(B, 1)), max(bandwidth(A, 2), bandwidth(B, 2))
+end

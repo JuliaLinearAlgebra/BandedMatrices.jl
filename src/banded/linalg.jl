@@ -1,6 +1,6 @@
 # additions and subtractions
 
-function banded_axpy!(a::Number,X,Y)
+@inline function banded_axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix)
     n,m = size(X)
     if (n,m) ≠ size(Y)
         throw(BoundsError())
@@ -8,7 +8,7 @@ function banded_axpy!(a::Number,X,Y)
     Xl,Xu = bandwidths(X)
     Yl,Yu = bandwidths(Y)
 
-    if Xl > Yl
+    @boundscheck if Xl > Yl
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
             if inbands_getindex(X,k,j) ≠ 0
@@ -16,7 +16,7 @@ function banded_axpy!(a::Number,X,Y)
             end
         end
     end
-    if Xu > Yu
+    @boundscheck if Xu > Yu
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
             if inbands_getindex(X,k,j) ≠ 0
@@ -35,127 +35,103 @@ function banded_axpy!(a::Number,X,Y)
 end
 
 
-function banded_axpy!{T}(a::Number,X,S::BandedSubBandedMatrix{T})
-    @assert size(X)==size(S)
-
-    Y=parent(S)
-    kr,jr=parentindexes(S)
-
-    if isempty(kr) || isempty(jr)
-        return S
-    end
-
-    shft=bandshift(S)
-
-    @assert bandwidth(X,2) ≥ -bandwidth(X,1)
-
-    if bandwidth(X,1) > bandwidth(Y,1)-shft
-        bS = bandwidth(Y,1)-shft
-        bX = bandwidth(X,1)
-        for j=1:size(X,2),k=max(1,j+bS+1):min(j+bX,size(X,1))
-            if X[k,j] ≠ 0
-                error("Cannot add banded matrix to matrix with smaller bandwidth: entry $k,$j is $(X[k,j]).")
-            end
-        end
-    end
-
-    if bandwidth(X,2) > bandwidth(Y,2)+shft
-        bS = bandwidth(Y,2)+shft
-        bX = bandwidth(X,2)
-        for j=1:size(X,2),k=max(1,j-bX):min(j-bS-1,size(X,1))
-            if X[k,j] ≠ 0
-                error("Cannot add banded matrix to matrix with smaller bandwidth: entry $k,$j is $(X[k,j]).")
-            end
-        end
-    end
-
-
-    for j=1:size(X,2),k=colrange(X,j)
-        @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*inbands_getindex(X,k,j)
-    end
-
-    S
-end
-
-
-function Base.BLAS.axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
-    checksquare(Y)
-
-    α = a*X.λ
-    for k=1:size(Y,1)
-        @inbounds Y[k,k] += α
-    end
-    Y
-end
-
-Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix) =
-    banded_axpy!(a,X,Y)
-
-Base.BLAS.axpy!{T}(a::Number,X::BandedMatrix,S::BandedSubBandedMatrix{T}) =
-    banded_axpy!(a,X,S)
-
-function Base.BLAS.axpy!{T1,T2}(a::Number,X::BandedSubBandedMatrix{T1},Y::BandedSubBandedMatrix{T2})
-    if bandwidth(X,1) < 0
-        jr=1-bandwidth(X,1):size(X,2)
-        banded_axpy!(a,view(X,:,jr),view(Y,:,jr))
-    elseif bandwidth(X,2) < 0
-        kr=1-bandwidth(X,2):size(X,1)
-        banded_axpy!(a,view(X,kr,:),view(Y,kr,:))
-    else
-        banded_axpy!(a,X,Y)
-    end
-end
-
-function Base.BLAS.axpy!{T}(a::Number,X::BandedSubBandedMatrix{T},Y::BandedMatrix)
-    if bandwidth(X,1) < 0
-        jr=1-bandwidth(X,1):size(X,2)
-        banded_axpy!(a,view(X,:,jr),view(Y,:,jr))
-    elseif bandwidth(X,2) < 0
-        kr=1-bandwidth(X,2):size(X,1)
-        banded_axpy!(a,view(X,kr,:),view(Y,kr,:))
-    else
-        banded_axpy!(a,X,Y)
-    end
-end
-
-
 # used to add a banded matrix to a dense matrix
-function banded_dense_axpy!(a,X,Y)
-    @assert size(X)==size(Y)
+@inline  function banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix)
+    if size(X) != size(Y)
+        throw(DimensionMismatch("+"))
+    end
     @inbounds for j=1:size(X,2),k=colrange(X,j)
         Y[k,j]+=a*inbands_getindex(X,k,j)
     end
     Y
 end
 
-Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix) =
-    banded_dense_axpy!(a,X,Y)
+@inline BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
+@inline BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
 
-function +{T,V}(A::BandedMatrix{T},B::BandedMatrix{V})
-    if size(A) != size(B)
-        throw(DimensionMismatch("+"))
-    end
-    n,m=size(A,1),size(A,2)
 
-    ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(1.,B,ret)
-
+function +{T,V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
+    n, m=size(A)
+    ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
+    @inbounds BLAS.axpy!(1.,A,ret)
+    @inbounds BLAS.axpy!(1.,B,ret)
     ret
 end
 
-function -{T,V}(A::BandedMatrix{T}, B::BandedMatrix{V})
-    if size(A) != size(B)
-        throw(DimensionMismatch("+"))
-    end
-    n,m=size(A,1),size(A,2)
-
-    ret = bzeros(promote_type(T,V),n,m,max(A.l,B.l),max(A.u,B.u))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(-1.,B,ret)
-
+function +{T}(A::BLASBandedMatrix{T},B::StridedMatrix{T})
+    ret = deepcopy(B)
+    @inbounds BLAS.axpy!(one(T),A,ret)
     ret
 end
+
+function +{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+    n, m=size(A)
+    ret = zeros(promote_type(T,V),n,m)
+    @inbounds BLAS.axpy!(one(T),A,ret)
+    @inbounds BLAS.axpy!(one(V),B,ret)
+    ret
+end
+
++{T,V}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) = B+A
+
+
+function -{T,V}(A::BLASBandedMatrix{T}, B::BLASBandedMatrix{V})
+    n, m=size(A)
+    ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
+    @inbounds BLAS.axpy!(one(T),A,ret)
+    @inbounds BLAS.axpy!(-one(V),B,ret)
+    ret
+end
+
+function -{T}(A::BLASBandedMatrix{T},B::AbstractMatrix{T})
+    ret = deepcopy(B)
+    Base.scale!(ret,-1)
+    @inbounds BLAS.axpy!(one(T),A,ret)
+    ret
+end
+
+
+function -{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+    n, m=size(A)
+    ret = zeros(promote_type(T,V),n,m)
+    @inbounds BLAS.axpy!(one(T),A,ret)
+    @inbounds BLAS.axpy!(-one(V),B,ret)
+    ret
+end
+
+-{T,V}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) = Base.scale!(B-A,-1)
+
+
+
+## UniformScaling
+
+function BLAS.axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
+    checksquare(Y)
+    α = a * X.λ
+    @inbounds for k = 1:size(Y,1)
+        inbands_setindex!(Y, inbands_getindex(Y, k, k) + α, k, k)
+    end
+    Y
+end
+
+function +(A::BLASBandedMatrix, B::UniformScaling)
+    ret = deepcopy(A)
+    BLAS.axpy!(1,B,ret)
+end
+
++(A::UniformScaling, B::BLASBandedMatrix) = B+A
+
+function -(A::BLASBandedMatrix, B::UniformScaling)
+    ret = deepcopy(A)
+    BLAS.axpy!(-1,B,ret)
+end
+
+function -(A::UniformScaling, B::BLASBandedMatrix)
+    ret = deepcopy(B)
+    Base.scale!(ret,-1)
+    BLAS.axpy!(1,A,ret)
+end
+
 
 # matrix * vector
 
