@@ -46,29 +46,29 @@ end
     Y
 end
 
-BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
-BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
+axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
+axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
 
 
 function +{T,V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
     n, m=size(A)
     ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(1.,B,ret)
+    axpy!(1.,A,ret)
+    axpy!(1.,B,ret)
     ret
 end
 
 function +{T}(A::BLASBandedMatrix{T},B::StridedMatrix{T})
     ret = deepcopy(B)
-    BLAS.axpy!(one(T),A,ret)
+    axpy!(one(T),A,ret)
     ret
 end
 
 function +{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     n, m=size(A)
     ret = zeros(promote_type(T,V),n,m)
-    BLAS.axpy!(one(T),A,ret)
-    BLAS.axpy!(one(V),B,ret)
+    axpy!(one(T),A,ret)
+    axpy!(one(V),B,ret)
     ret
 end
 
@@ -78,15 +78,15 @@ end
 function -{T,V}(A::BLASBandedMatrix{T}, B::BLASBandedMatrix{V})
     n, m=size(A)
     ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
-    BLAS.axpy!(one(T),A,ret)
-    BLAS.axpy!(-one(V),B,ret)
+    axpy!(one(T),A,ret)
+    axpy!(-one(V),B,ret)
     ret
 end
 
 function -{T}(A::BLASBandedMatrix{T},B::AbstractMatrix{T})
     ret = deepcopy(B)
     Base.scale!(ret,-1)
-    BLAS.axpy!(one(T),A,ret)
+    axpy!(one(T),A,ret)
     ret
 end
 
@@ -94,8 +94,8 @@ end
 function -{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     n, m=size(A)
     ret = zeros(promote_type(T,V),n,m)
-    BLAS.axpy!(one(T),A,ret)
-    BLAS.axpy!(-one(V),B,ret)
+    axpy!(one(T),A,ret)
+    axpy!(-one(V),B,ret)
     ret
 end
 
@@ -105,7 +105,7 @@ end
 
 ## UniformScaling
 
-function BLAS.axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
+function axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
     checksquare(Y)
     α = a * X.λ
     @inbounds for k = 1:size(Y,1)
@@ -116,20 +116,20 @@ end
 
 function +(A::BLASBandedMatrix, B::UniformScaling)
     ret = deepcopy(A)
-    BLAS.axpy!(1,B,ret)
+    axpy!(1,B,ret)
 end
 
 +(A::UniformScaling, B::BLASBandedMatrix) = B+A
 
 function -(A::BLASBandedMatrix, B::UniformScaling)
     ret = deepcopy(A)
-    BLAS.axpy!(-1,B,ret)
+    axpy!(-1,B,ret)
 end
 
 function -(A::UniformScaling, B::BLASBandedMatrix)
     ret = deepcopy(B)
     Base.scale!(ret,-1)
-    BLAS.axpy!(1,A,ret)
+    axpy!(1,A,ret)
 end
 
 
