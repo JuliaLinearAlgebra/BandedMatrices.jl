@@ -6,6 +6,7 @@ using BandedMatrices
 
 A=brand(10000,10000,2,3)
 B=brand(1000,1000,200,300)
+E=brand(10000,10000,-2,2)
 C = rand(1000, 1000)
 D = rand(10000, 1000)
 tD = D'
@@ -28,6 +29,12 @@ print("D*A:")
 tD*A;
 @time for k=1:10
     tD*A
+end
+
+print("A*E:")
+A*E
+@time for k=1:10
+    A*E
 end
 
 print("B*B:")

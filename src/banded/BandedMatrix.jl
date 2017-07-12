@@ -739,9 +739,9 @@ end
 ## BandedSubBandedMatrix routines
 # gives the band which is diagonal for the parent
 bandshift(a::Range,b::Range) = first(a)-first(b)
-bandshift(::ColonRange,b::Range) = 1-first(b)
-bandshift(a::Range,::ColonRange) = first(a)-1
-bandshift(::ColonRange,b::ColonRange) = 0
+bandshift(::Base.Slice{Base.OneTo{Int}},b::Range) = 1-first(b)
+bandshift(a::Range,::Base.Slice{Base.OneTo{Int}}) = first(a)-1
+bandshift(::Base.Slice{Base.OneTo{Int}},b::Base.Slice{Base.OneTo{Int}}) = 0
 bandshift(S) = bandshift(parentindexes(S)[1],parentindexes(S)[2])
 
 bandwidth{T}(S::BandedSubBandedMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
