@@ -114,7 +114,6 @@ for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2
     @test full(A*B) ≈ full(A)*full(B)
 end
 
-
 ## Banded Matrix of Banded Matrix
 
 BandedMatrixWithZero = Union{BandedMatrix{Float64}, UniformScaling}
