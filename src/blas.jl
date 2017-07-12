@@ -12,8 +12,8 @@ for (fname, elty) in ((:dgbmv_,:Float64),
              #       CHARACTER TRANS
              # *     .. Array Arguments ..
              #       DOUBLE PRECISION A(LDA,*),X(*),Y(*)
-        function gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::($elty),
-                       A::Ptr{$elty}, n::Int, st::Int,
+        function gbmv!(trans::Char, m::Int, n::Int, kl::Int, ku::Int, alpha::($elty),
+                       A::Ptr{$elty}, st::Int,
                        x::Ptr{$elty}, incx::Int, beta::($elty), y::Ptr{$elty}, incy::Int)
             ccall((@blasfunc($fname), libblas), Void,
                 (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
@@ -25,39 +25,13 @@ for (fname, elty) in ((:dgbmv_,:Float64),
                  x, &incx, &beta, y, &incy)
             y
         end
-
-        gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::($elty),
-                       A::Ptr{$elty}, n::Int, st::Int,
-                       x::Ptr{$elty}, beta::($elty), y::Ptr{$elty}) =
-            gbmv!(trans, m, kl, ku, alpha, A, n, st, x, 1, beta, y, 1)
     end
 end
 
-
-# #TODO: Speed up the following
-# function gbmv!{T}(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::Ptr{T}, n::Integer, st::Integer, x::Ptr{T}, beta::T, y::Ptr{T})
-#     data=pointer_to_array(A,(kl+ku+1,n))
-#     xx=pointer_to_array(x,n)
-#     yy=pointer_to_array(y,m)
-#
-#     B=BandedMatrix(data,m,kl,ku)
-#
-#     for j = 1:size(B,2), k = colrange(B,j)
-#         yy[k] = beta*yy[k] + alpha*B[k,j]*xx[j]
-#     end
-#
-#     yy
-# end
-
-
 gbmv!{T<:BlasFloat}(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
                A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) =
-    BLAS.gbmv!(trans,m,kl,ku,alpha,A,x,beta,y)
-
-gbmv!{T<:BlasFloat}(trans::Char,α::T,A::AbstractMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
-    gbmv!(trans,size(A,1),bandwidth(A,1),bandwidth(A,2),α,
-          pointer(A),size(A,2),leadingdimension(A),
-          pointer(x),stride(x,1),β,pointer(y),stride(y,1))
+    gbmv!(trans,m,size(A,2),kl,ku,alpha,
+          pointer(A),max(1,stride(A,2)),pointer(x),stride(x,1),beta,y,stride(y,1))
 
 
 for (fname, elty) in ((:dsbmv_,:Float64),
@@ -91,7 +65,7 @@ end
 
 sbmv!{T<:BlasFloat}(uplo::Char, k::Int, alpha::T,
                     A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) =
-  BLAS.sbmv!(uplo,k,alpha,A,x,beta,y)
+    sbmv!(uplo,size(A,2),k,alpha,pointer(A),max(1,stride(A,2)),x,stride(x,1),beta,y,stride(y,1))
 
 
 ## Triangular *

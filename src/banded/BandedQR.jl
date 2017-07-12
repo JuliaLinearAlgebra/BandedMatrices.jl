@@ -53,7 +53,7 @@ function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         yp=y+sz*(k-1)
 
         dt=dot(M,wp,1,yp,1)
-        BLAS.axpy!(M,-2*dt,wp,1,yp,1)
+        Base.axpy!(M,-2*dt,wp,1,yp,1)
     end
 
     for k=m-M+2:size(H,2)
@@ -63,7 +63,7 @@ function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         yp=y+sz*(k-1)
 
         dt=dot(M-p,wp,1,yp,1)
-        BLAS.axpy!(M-p,-2*dt,wp,1,yp,1)
+        Base.axpy!(M-p,-2*dt,wp,1,yp,1)
     end
     Y
 end
@@ -95,7 +95,7 @@ function Base.A_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         yp=y+sz*(k-1)
 
         dt=dot(M-p,wp,1,yp,1)
-        BLAS.axpy!(M-p,-2*dt,wp,1,yp,1)
+        Base.axpy!(M-p,-2*dt,wp,1,yp,1)
     end
 
 
@@ -104,7 +104,7 @@ function Base.A_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
         yp=y+sz*(k-1)
 
         dt=dot(M,wp,1,yp,1)
-        BLAS.axpy!(M,-2*dt,wp,1,yp,1)
+        Base.axpy!(M,-2*dt,wp,1,yp,1)
     end
 
     Y
@@ -177,7 +177,7 @@ function banded_qrfact!(R::BandedMatrix)
         for j=k:min(k+R.u,n)
             v=r+sz*(R.u + (k-1)*st + (j-k)*(st-1))
             dt=dot(M,wp,1,v,1)
-            BLAS.axpy!(M,-2*dt,wp,1,v,1)
+            Base.axpy!(M,-2*dt,wp,1,v,1)
         end
     end
 
@@ -192,7 +192,7 @@ function banded_qrfact!(R::BandedMatrix)
         for j=k:min(k+R.u,n)
             v=r+sz*(R.u + (k-1)*st + (j-k)*(st-1))
             dt=dot(M-p,wp,1,v,1)
-            BLAS.axpy!(M-p,-2*dt,wp,1,v,1)
+            Base.axpy!(M-p,-2*dt,wp,1,v,1)
         end
     end
 

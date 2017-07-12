@@ -16,6 +16,8 @@ import Base.LinAlg: BlasInt,
                     BlasReal,
                     BlasFloat,
                     BlasComplex,
+                    axpy!,
+                    A_mul_B!,
                     A_ldiv_B!,
                     At_ldiv_B!,
                     Ac_ldiv_B!,
@@ -50,13 +52,15 @@ include("utils.jl")
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
 include("banded/BandedQR.jl")
+include("banded/gbmm.jl")
 include("banded/linalg.jl")
+include("banded/utils.jl")
 
 include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
 
-include("precompile.jl")
-_precompile_()
+# include("precompile.jl")
+# _precompile_()
 
 end #module

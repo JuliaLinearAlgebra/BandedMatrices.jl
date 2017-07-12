@@ -111,7 +111,7 @@ function size(A::SymBandedMatrix)
     n,n
 end
 
-bandwidth(A::SymBandedMatrix,k) = A.k
+bandwidth(A::SymBandedMatrix, k::Integer) = A.k
 
 Base.IndexStyle{T}(::Type{SymBandedMatrix{T}}) = IndexCartesian()
 
@@ -211,8 +211,8 @@ function +{T,V}(A::SymBandedMatrix{T},B::SymBandedMatrix{V})
     n,m=size(A)
 
     ret = sbzeros(promote_type(T,V),n,max(A.k,B.k))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(1.,B,ret)
+    Base.axpy!(1.,A,ret)
+    Base.axpy!(1.,B,ret)
 
     ret
 end
@@ -224,8 +224,8 @@ function -{T,V}(A::SymBandedMatrix{T}, B::SymBandedMatrix{V})
     n,m=size(A)
 
     ret = sbzeros(promote_type(T,V),n,max(A.k,B.k))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(-1.,B,ret)
+    Base.axpy!(1.,A,ret)
+    Base.axpy!(-1.,B,ret)
 
     ret
 end

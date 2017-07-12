@@ -1,10 +1,11 @@
-versioninfo()
-
 using BandedMatrices, Base.Test
 
+include("test_gbmm.jl")
 include("test_indexing.jl")
 include("test_bandedlu.jl")
 include("test_bandedqr.jl")
+include("test_symbanded.jl")
+
 
 A,B=brand(10,12,2,3),brand(10,12,3,4)
 
@@ -58,38 +59,31 @@ end
 A=brand(1000,1000,200,300)
 B=rand(1000,1000)
 @test A*B ≈ full(A)*B
+@test B*A ≈ B*full(A)
 
 A=brand(1200,1000,200,300)
 B=rand(1000,1000)
+C=rand(1200,1200)
 @test A*B ≈ full(A)*B
+@test C*A ≈ C*full(A)
 
 A=brand(1000,1200,200,300)
 B=rand(1200,1200)
+C=rand(1000,1000)
 @test A*B ≈ full(A)*B
+@test C*A ≈ C*full(A)
 
 
 
 B=brand(10,10,0,4)
 @test B*[collect(1.0:10) collect(1.0:10)] ≈ full(B)*[collect(1.0:10) collect(1.0:10)]
 
-A=brand(10000,10000,2,3)
-B=brand(1000,1000,200,300)
-v=rand(10000)
-w=rand(1000)
 
-show(brand(10,10,3,3))
-show(brand(100,80,3,2))
-println()
+# TODO: test show function
+# show(brand(10,10,3,3))
+# show(brand(100,80,3,2))
+# println()
 
-
-A*v
-@time for k=1:100
-    A*v
-end
-
-@time for k=1:100
-    B*w
-end
 
 
 for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
@@ -98,81 +92,7 @@ for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
     @test full(A[kr,jr]) ≈ full(A)[kr,jr]
 end
 
-# test gbmm! subpieces step by step and column by column
-for n in (1,5,50), ν in (1,5,50), m in (1,5,50),
-                Al in (0,1,2,30), Au in (0,1,2,30),
-                Bl in (0,1,2,30), Bu in (0,1,2,30)
-    A=brand(n,ν,Al,Au)
-    B=brand(ν,m,Bl,Bu)
-    α,β,T=0.123,0.456,Float64
-    C=brand(Float64,n,m,A.l+B.l,A.u+B.u)
-    a=pointer(A.data)
-    b=pointer(B.data)
-    c=pointer(C.data)
-    sta=max(1,stride(A.data,2))
-    stb=max(1,stride(B.data,2))
-    stc=max(1,stride(C.data,2))
-
-    sz=sizeof(T)
-
-    mr=1:min(m,1+B.u)
-    exC=(β*full(C)+α*full(A)*full(B))
-    for j=mr
-        BandedMatrices.A11_Btop_Ctop_gbmv!(α,β,
-                                       n,ν,m,j,
-                                       sz,
-                                       a,A.l,A.u,sta,
-                                       b,B.l,B.u,stb,
-                                       c,C.l,C.u,stc)
-   end
-    @test C[:,mr] ≈ exC[:,mr]
-
-    mr=1+B.u:min(1+C.u,ν+B.u,m)
-    exC=(β*full(C)+α*full(A)*full(B))
-    for j=mr
-        BandedMatrices.Atop_Bmid_Ctop_gbmv!(α,β,
-                                       n,ν,m,j,
-                                       sz,
-                                       a,A.l,A.u,sta,
-                                       b,B.l,B.u,stb,
-                                       c,C.l,C.u,stc)
-   end
-   if !isempty(mr)
-       @test C[:,mr] ≈ exC[:,mr]
-   end
-
-   mr=1+C.u:min(m,ν+B.u,n+C.u)
-   exC=(β*full(C)+α*full(A)*full(B))
-   for j=mr
-       BandedMatrices.Amid_Bmid_Cmid_gbmv!(α,β,
-                                      n,ν,m,j,
-                                      sz,
-                                      a,A.l,A.u,sta,
-                                      b,B.l,B.u,stb,
-                                      c,C.l,C.u,stc)
-  end
-  if !isempty(mr)
-      @test C[:,mr] ≈ exC[:,mr]
-  end
-
-  mr=ν+B.u+1:min(m,n+C.u)
-  exC=(β*full(C)+α*full(A)*full(B))
-  for j=mr
-      BandedMatrices.Anon_Bnon_C_gbmv!(α,β,
-                                     n,ν,m,j,
-                                     sz,
-                                     a,A.l,A.u,sta,
-                                     b,B.l,B.u,stb,
-                                     c,C.l,C.u,stc)
- end
- if !isempty(mr)
-     @test C[:,mr] ≈ exC[:,mr]
- end
-end
-
-
-# test gbmm!
-
+# test matrix multiplications
 
 for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
     A=brand(n,ν,Al,Au)
@@ -194,73 +114,18 @@ for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2
     @test full(A*B) ≈ full(A)*full(B)
 end
 
-
-
-A=brand(10000,10000,2,3)
-B=brand(1000,1000,200,300)
-
-
-@time for k=1:10
-    A*A
-end
-
-@time for k=1:10
-    B*B
-end
-
-
-#gc_enable(false)
-
-A*v
-@time for k=1:100
-    A*v
-end
-println("Time should be   0.004986 seconds (400 allocations: 7.639 MB)")
-@time for k=1:100
-    B*w
-end
-println("Time should be   0.017208 seconds (300 allocations: 792.188 KB)")
-
-
-A=brand(10000,10000,2,3)
-B=brand(1000,1000,200,300)
-
-
-@time for k=1:10
-    A*A
-end
-
-println("Time should be   0.008115 seconds (30 allocations: 8.393 MB)")
-
-@time for k=1:10
-    B*B
-end
-
-println("Time should be   0.644119 seconds (30 allocations: 76.371 MB)")
-
-A=brand(1000,1000,-2,2)
-B=brand(1000,1000,2,2)
-A*B  # 1.39s
-@time for k=1:1000
-    A*B
-end
-
-println("Time should be   0.080086 seconds (9.00 k allocations: 38.513 MiB, 4.67% gc time)")
-
-#gc_enable(true)
-
-
-
-
 ## Banded Matrix of Banded Matrix
 
+BandedMatrixWithZero = Union{BandedMatrix{Float64}, UniformScaling}
+# need to define the concept of zero
+Base.zero(::Type{BandedMatrixWithZero}) = 0*I
 
-A=BandedMatrix(BandedMatrix{Float64},1,2,0,1)
+A=BandedMatrix(BandedMatrixWithZero,1,2,0,1)
 A[1,1]=beye(1,1,0,1)
 A[1,2]=bzeros(1,2,0,1)
 A[1,2][1,1]=-1/3
 A[1,2][1,2]=1/3
-B=BandedMatrix(BandedMatrix{Float64},2,1,1,1)
+B=BandedMatrix(BandedMatrixWithZero,2,1,1,1)
 B[1,1]=0.2beye(1,1,0,1)
 B[2,1]=bzeros(2,1,1,0)
 B[2,1][1,1]=-2/30
@@ -293,36 +158,36 @@ x=BigFloat[1:size(B,1)...]
 A = brand(10,10,1,2)
 B = brand(20,20,1,2)
 
-@test isa(view(B,1:10,1:10),BandedMatrices.BandedSubMatrix{Float64})
+@test isa(view(B,1:10,1:10),BandedMatrices.BandedSubBandedMatrix{Float64})
 
 B2 = copy(B)
-@test (2.0A+B[1:10,1:10]) ≈ BLAS.axpy!(2.0,A,view(B2,1:10,1:10))
+@test (2.0A+B[1:10,1:10]) ≈ Base.axpy!(2.0,A,view(B2,1:10,1:10))
 @test (2.0A+B[1:10,1:10]) ≈ B2[1:10,1:10]
 
 A2 = copy(A)
-@test (2.0B[1:10,1:10]+A) ≈ BLAS.axpy!(2.0,view(B,1:10,1:10),A2)
+@test (2.0B[1:10,1:10]+A) ≈ Base.axpy!(2.0,view(B,1:10,1:10),A2)
 @test (2.0B[1:10,1:10]+A) ≈ A2
 
 A = brand(20,20,1,2)
 B = brand(20,20,1,2)
 
-@test isa(view(B,1:10,1:10),BandedMatrices.BandedSubMatrix{Float64})
+@test isa(view(B,1:10,1:10),BandedMatrices.BandedSubBandedMatrix{Float64})
 
 B2 = copy(B)
-@test (2.0A[1:10,1:10]+B[1:10,1:10]) ≈ BLAS.axpy!(2.0,view(A,1:10,1:10),view(B2,1:10,1:10))
+@test (2.0A[1:10,1:10]+B[1:10,1:10]) ≈ Base.axpy!(2.0,view(A,1:10,1:10),view(B2,1:10,1:10))
 @test (2.0A[1:10,1:10]+B[1:10,1:10]) ≈ B2[1:10,1:10]
 
 B2 = copy(B)
-@test (2.0A[1:10,:]+B[1:10,:]) ≈ BLAS.axpy!(2.0,view(A,1:10,:),view(B2,1:10,:))
+@test (2.0A[1:10,:]+B[1:10,:]) ≈ Base.axpy!(2.0,view(A,1:10,:),view(B2,1:10,:))
 @test (2.0A[1:10,:]+B[1:10,:]) ≈ B2[1:10,:]
 
 B2 = copy(B)
-@test (2.0A[:,1:10]+B[:,1:10]) ≈ BLAS.axpy!(2.0,view(A,:,1:10),view(B2,:,1:10))
+@test (2.0A[:,1:10]+B[:,1:10]) ≈ Base.axpy!(2.0,view(A,:,1:10),view(B2,:,1:10))
 @test (2.0A[:,1:10]+B[:,1:10]) ≈ B2[:,1:10]
 
 
 B2 = copy(B)
-@test (2.0A[:,:]+B[:,:]) ≈ BLAS.axpy!(2.0,view(A,:,:),view(B2,:,:))
+@test (2.0A[:,:]+B[:,:]) ≈ Base.axpy!(2.0,view(A,:,:),view(B2,:,:))
 @test (2.0A[:,:]+B[:,:]) ≈ B2[:,:]
 
 
@@ -331,11 +196,11 @@ A = brand(10,10,1,2)
 B = brand(20,10,1,2)
 
 B2 = copy(B)
-@test (2.0A+B[1:10,1:10]) ≈ BLAS.axpy!(2.0,A,view(B2,1:10,:))
+@test (2.0A+B[1:10,1:10]) ≈ Base.axpy!(2.0,A,view(B2,1:10,:))
 @test (2.0A+B[1:10,1:10]) ≈ B2[1:10,1:10]
 
 A2 = copy(A)
-@test (2.0B[1:10,1:10]+A) ≈ BLAS.axpy!(2.0,view(B,1:10,:),A2)
+@test (2.0B[1:10,1:10]+A) ≈ Base.axpy!(2.0,view(B,1:10,:),A2)
 @test (2.0B[1:10,1:10]+A) ≈ A2
 
 
@@ -343,11 +208,11 @@ A = brand(10,10,1,2)
 B = brand(10,20,1,2)
 
 B2 = copy(B)
-@test (2.0A+B[1:10,1:10]) ≈ BLAS.axpy!(2.0,A,view(B2,:,1:10))
+@test (2.0A+B[1:10,1:10]) ≈ Base.axpy!(2.0,A,view(B2,:,1:10))
 @test (2.0A+B[1:10,1:10]) ≈ B2[1:10,1:10]
 
 A2 = copy(A)
-@test (2.0B[1:10,1:10]+A) ≈ BLAS.axpy!(2.0,view(B,:,1:10),A2)
+@test (2.0B[1:10,1:10]+A) ≈ Base.axpy!(2.0,view(B,:,1:10),A2)
 @test (2.0B[1:10,1:10]+A) ≈ A2
 
 
@@ -446,10 +311,6 @@ BandedMatrix{Float64}(A)
 @test isa(BandedMatrix{Complex32}(A),BandedMatrix{Complex32})
 @test isa(AbstractMatrix{Complex32}(A),BandedMatrix{Complex32})
 @test isa(AbstractArray{Complex32}(A),BandedMatrix{Complex32})
-
-
-include("test_symbanded.jl")
-
 
 
 # Test dense overrides

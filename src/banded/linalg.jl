@@ -1,332 +1,6 @@
-gbmv!{T<:BlasFloat}(trans::Char,α::T,A::BandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
-    gbmv!(trans,A.m,A.l,A.u,α,A.data,x,β,y)
+# additions and subtractions
 
-# this is matrix*matrix
-gbmm!{U,V,T}(α,A::AbstractMatrix{U},B::AbstractMatrix{V},β,C::AbstractMatrix{T}) =
-    gbmm!(convert(T,α),convert(AbstractMatrix{T},A),convert(AbstractMatrix{T},B),
-          convert(T,β),C)
-
-
-αA_mul_B_plus_βC!{T}(α,A::BLASBandedMatrix{T},x,β,y) = gbmv!('N',α,A,x,β,y)
-αA_mul_B_plus_βC!(α,A::StridedMatrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
-
-αA_mul_B_plus_βC!(α,A,x,β,y) = (y .= α*A*x + β*y)
-
-
-αA_mul_B_plus_βC!{T,U,V}(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) =
-    gbmm!(α,A,B,β,C)
-αA_mul_B_plus_βC!(α,A::StridedMatrix,B::StridedMatrix,β,C::StridedMatrix) = BLAS.gemm!('N','N',α,A,B,β,C)
-
-
-# The following routines multiply
-#
-#  C[:,j] = α*A*B[:,j] + β* C[:,j]
-#
-#  But are divided into cases to minimize the calculated
-#  rows.  We use A is n x ν, B is ν x m
-
-
-
-# Equivalent to
-#
-#  C[1:min(Cl+j,n),j] = α*A[1:min(Cl+j,n),1:min(Bl+j,ν)]*B[1:min(Bl+j,ν),j]
-#                       + β*C[1:min(Cl+j,n),j]
-#
-@inline function A11_Btop_Ctop_gbmv!(α,β,
-                               n,ν,m,j,
-                               sz,
-                               a,Al,Au,sta,
-                               b,Bl,Bu,stb,
-                               c,Cl,Cu,stc)
-   # A=BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
-   # B=BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
-   # C=BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
-   #
-   # nr=1:min(Cl+j,n)
-   # νr=1:min(Bl+j,ν)
-   #
-   # cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
-   #
-   # for k in nr
-   #     C[k,j]=cj[k-first(nr)+1]
-   # end
-   #
-   # c
-
-   gbmv!('N',min(Cl+j,n),
-          Al, Au,
-          α,
-          a, min(Bl+j,ν), sta,
-          b+sz*((j-1)*stb+Bu-j+1), 1, β,
-          c+sz*((j-1)*stc+Cu-j+1), 1)
-end
-
-
-# Equivalent to
-#
-#  C[1:min(Cl+j,n),j] = α*A[1:min(Cl+j,n),p:min(p+Bl+Bu+1,ν)]*
-#                               B[p:min(p+Bl+Bu+1,ν),j]
-#                       + β*C[1:min(Cl+j,n),j]
-# for p = j-B.u
-#
-
-
-@inline function Atop_Bmid_Ctop_gbmv!(α,β,
-                               n,ν,m,j,
-                               sz,
-                               a,Al,Au,sta,
-                               b,Bl,Bu,stb,
-                               c,Cl,Cu,stc)
-   # p=j-Bu
-
-   # A=BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
-   # B=BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
-   # C=BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
-   #
-   # nr=1:min(Cl+j,n)
-   # νr=p:min(p+Bl+Bu+1,ν)
-   #
-   # cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
-   #
-   # for k in nr
-   #     C[k,j]=cj[k-first(nr)+1]
-   # end
-   #
-   # c
-
-   gbmv!('N', min(Cl+j,n),
-           Al+j-Bu-1, Au-j+Bu+1,
-           α,
-           a+sz*(j-Bu-1)*sta, min(Bl+Bu+1,ν-j+Bu+1), sta,
-           b+sz*(j-1)*stb, 1, β,
-           c+sz*((j-1)*stc+Cu-j+1), 1)
-end
-
-
-# Equivalent to
-#
-#  C[nr,j] = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
-#
-# for p  = j-B.u
-#     nr = p-Au : min(p+Al,n)
-#     νr = p    : min(p+Bl+Bu+1,ν)
-#
-#
-
-@inline function Amid_Bmid_Cmid_gbmv!(α,β,
-                               n,ν,m,j,
-                               sz,
-                               a,Al,Au,sta,
-                               b,Bl,Bu,stb,
-                               c,Cl,Cu,stc)
-   p = j-Bu
-   # A = BandedMatrix(pointer_to_array(a,(Al+Au+1,ν)),n,Al,Au)
-   # B = BandedMatrix(pointer_to_array(b,(Bl+Bu+1,m)),ν,Bl,Bu)
-   # C = BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
-   #
-   # nr= j-Cu : min(j+Cl,n)
-   # νr= p    : min(p+Bl+Bu+1,ν)
-   # if !isempty(nr) && !isempty(νr)
-   #     cj = α*A[nr,νr]*B[νr,j] + β*C[nr,j]
-   #
-   #     for k in nr
-   #         C[k,j]=cj[k-first(nr)+1]
-   #     end
-   # end
-   #
-   # c
-   gbmv!('N', min(Cl+Cu+1,n-j+Cu+1),
-           Al+Au, 0,
-           α,
-           a+sz*(j-Bu-1)*sta, min(Bl+Bu+1,ν-p+1), sta,
-           b+sz*(j-1)*stb, 1, β,
-           c+sz*(j-1)*stc, 1)
-end
-
-# Equivalent to
-#
-#  C[nr,j] =  β*C[nr,j]
-#
-# for nr= max(1,j-Cu) : min(j+Cl,n)
-#
-
-
-@inline function Anon_Bnon_C_gbmv!(α,β,
-                               n,ν,m,j,
-                               sz,
-                               a,Al,Au,sta,
-                               b,Bl,Bu,stb,
-                               c,Cl,Cu,stc)
-   # C = BandedMatrix(pointer_to_array(c,(Cl+Cu+1,m)),n,Cl,Cu)
-   #
-   # nr= max(1,j-Cu) : min(j+Cl,n)
-   #
-   # if !isempty(nr)
-   #     cj =  β*C[nr,j]
-   #
-   #     for k in nr
-   #         C[k,j]=cj[k-first(nr)+1]
-   #     end
-   # end
-   #
-   # c
-
-   BLAS.scal!(Cu+Cl+1,β,c+sz*(j-1)*stc,1)
-end
-
-
-
-# function Amid_Bbot_Cmid_gbmv!(α,β,
-#                                n,ν,m,j,
-#                                sz,
-#                                a,Al,Au,sta,
-#                                b,Bl,Bu,stb,
-#                                c,Cl,Cu,stc)
-#    gbmv!('N', Cl+Cu+1,
-#            Al+Au, 0,
-#            α,
-#            a+sz*(j-Bu-1)*sta, ν-j+1, sta,
-#            b+sz*(j-1)*stb, β,
-#            c+sz*(j-1)*stc)
-# end
-#
-#
-# function Abot_Bbot_Cbot_gbmv!(α,β,
-#                                n,ν,m,j,
-#                                sz,
-#                                a,Al,Au,sta,
-#                                b,Bl,Bu,stb,
-#                                c,Cl,Cu,stc)
-#    gbmv!('N', n-j+C.u+1,
-#            A.l+A.u, 0,
-#            α,
-#            a+sz*(j-B.u-1)*sta, B.l+B.u+1-(j-ν+B.l), sta,
-#            b+sz*(j-1)*stb, β,
-#            c+sz*(j-1)*stc)
-# end
-
-
-
-function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::AbstractMatrix{T},β::T,C::AbstractMatrix{T})
-    n,ν = size(A)
-    m = size(B,2)
-
-    @assert n == size(C,1)
-    @assert ν == size(B,1)
-    @assert m == size(C,2)
-
-    Al = bandwidth(A,1); Au = bandwidth(A,2)
-    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
-    Cl = bandwidth(C,1); Cu = bandwidth(C,2)
-
-    # only tested at the moment for this case
-    # TODO: implement when C.u,C.l ≥
-    @assert Cu == Au+Bu
-    @assert Cl == Al+Bl
-
-
-    a = pointer(A)
-    b = pointer(B)
-    c = pointer(C)
-    sta = leadingdimension(A)
-    stb = leadingdimension(B)
-    stc = leadingdimension(C)
-    sz = sizeof(T)
-
-
-
-    # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
-    for j = 1:min(m,1+Bu)
-        A11_Btop_Ctop_gbmv!(α,β,
-                            n,ν,m,j,
-                            sz,
-                            a,Al,Au,sta,
-                            b,Bl,Bu,stb,
-                            c,Cl,Cu,stc)
-    end
-
-    # Multiply columns j where B[k,j]=0 for k<p=(j-B.u-1), A is at 1,1+p and C[1,j]≠0
-    # j ≤ ν + B.u since then 1+p ≤ ν, so inside the columns of A
-
-    for j = 2+Bu:min(1+Cu,ν+Bu,m)
-        Atop_Bmid_Ctop_gbmv!(α,β,
-                            n,ν,m,j,
-                            sz,
-                            a,Al,Au,sta,
-                            b,Bl,Bu,stb,
-                            c,Cl,Cu,stc)
-    end
-
-
-    # multiply columns where A and B are mid and C is bottom
-    for j = 2+Cu:min(m,ν+Bu,n+Cu)
-        Amid_Bmid_Cmid_gbmv!(α,β,
-                            n,ν,m,j,
-                            sz,
-                            a,Al,Au,sta,
-                            b,Bl,Bu,stb,
-                            c,Cl,Cu,stc)
-    end
-
-    # scale columns of C by β that aren't impacted by α*A*B
-    for j = ν+Bu+1:min(m,n+Cu)
-        Anon_Bnon_C_gbmv!(α,β,
-                            n,ν,m,j,
-                            sz,
-                            a,Al,Au,sta,
-                            b,Bl,Bu,stb,
-                            c,Cl,Cu,stc)
-    end
-
-    C
-end
-
-#TODO: Speedup
-function gbmm!{T}(α::T,A::AbstractMatrix{T},B::AbstractMatrix{T},β::T,C::AbstractMatrix{T})
-    for j=1:size(C,2),k=colrange(C,j)
-        C[k,j]*=β
-    end
-
-    m=size(C,2)
-    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
-    for ν=1:size(A,2),k=colrange(A,ν)
-        for j=max(ν-Bl,1):min(ν+Bu,m)
-            C[k,j]+=α*A[k,ν]*B[ν,j]
-        end
-    end
-
-    C
-end
-
-
-function gbmm!{T<:BlasFloat}(α::T,A::AbstractMatrix{T},B::StridedMatrix{T},β::T,C::StridedMatrix{T})
-    st = leadingdimension(A)
-    n,ν = size(A)
-    a = pointer(A)
-
-
-    b = pointer(B)
-    stb = stride(B,2)
-
-
-    m = size(B,2)
-
-    @assert size(C,1) == n
-    @assert size(C,2) == m
-
-    c=pointer(C)
-    stc=stride(C,2)
-    sz=sizeof(T)
-
-    Al = bandwidth(A,1); Au = bandwidth(A,2)
-
-    for j=1:m
-        gbmv!('N',n,Al,Au,α,a,ν,st,b+(j-1)*sz*stb,stride(B,1),β,c+(j-1)*sz*stc,stride(C,1))
-    end
-    C
-end
-
-function banded_axpy!(a::Number,X,Y)
+@inline function banded_axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix)
     n,m = size(X)
     if (n,m) ≠ size(Y)
         throw(BoundsError())
@@ -334,7 +8,7 @@ function banded_axpy!(a::Number,X,Y)
     Xl,Xu = bandwidths(X)
     Yl,Yu = bandwidths(Y)
 
-    if Xl > Yl
+    @boundscheck if Xl > Yl
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
             if inbands_getindex(X,k,j) ≠ 0
@@ -342,7 +16,7 @@ function banded_axpy!(a::Number,X,Y)
             end
         end
     end
-    if Xu > Yu
+    @boundscheck if Xu > Yu
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
             if inbands_getindex(X,k,j) ≠ 0
@@ -361,159 +35,190 @@ function banded_axpy!(a::Number,X,Y)
 end
 
 
-function banded_axpy!{T}(a::Number,X,S::BandedSubMatrix{T})
-    @assert size(X)==size(S)
-
-    Y=parent(S)
-    kr,jr=parentindexes(S)
-
-    if isempty(kr) || isempty(jr)
-        return S
-    end
-
-    shft=bandshift(S)
-
-    @assert bandwidth(X,2) ≥ -bandwidth(X,1)
-
-    if bandwidth(X,1) > bandwidth(Y,1)-shft
-        bS = bandwidth(Y,1)-shft
-        bX = bandwidth(X,1)
-        for j=1:size(X,2),k=max(1,j+bS+1):min(j+bX,size(X,1))
-            if X[k,j] ≠ 0
-                error("Cannot add banded matrix to matrix with smaller bandwidth: entry $k,$j is $(X[k,j]).")
-            end
-        end
-    end
-
-    if bandwidth(X,2) > bandwidth(Y,2)+shft
-        bS = bandwidth(Y,2)+shft
-        bX = bandwidth(X,2)
-        for j=1:size(X,2),k=max(1,j-bX):min(j-bS-1,size(X,1))
-            if X[k,j] ≠ 0
-                error("Cannot add banded matrix to matrix with smaller bandwidth: entry $k,$j is $(X[k,j]).")
-            end
-        end
-    end
-
-
-    for j=1:size(X,2),k=colrange(X,j)
-        @inbounds Y.data[kr[k]-jr[j]+Y.u+1,jr[j]]+=a*inbands_getindex(X,k,j)
-    end
-
-    S
-end
-
-
-checksquare(A) = LinAlg.checksquare(A)
-
-
-function Base.BLAS.axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
-    checksquare(Y)
-
-    α = a*X.λ
-    for k=1:size(Y,1)
-        @inbounds Y[k,k] += α
-    end
-    Y
-end
-
-Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::BandedMatrix) =
-    banded_axpy!(a,X,Y)
-
-Base.BLAS.axpy!{T}(a::Number,X::BandedMatrix,S::BandedSubMatrix{T}) =
-    banded_axpy!(a,X,S)
-
-function Base.BLAS.axpy!{T1,T2}(a::Number,X::BandedSubMatrix{T1},Y::BandedSubMatrix{T2})
-    if bandwidth(X,1) < 0
-        jr=1-bandwidth(X,1):size(X,2)
-        banded_axpy!(a,view(X,:,jr),view(Y,:,jr))
-    elseif bandwidth(X,2) < 0
-        kr=1-bandwidth(X,2):size(X,1)
-        banded_axpy!(a,view(X,kr,:),view(Y,kr,:))
-    else
-        banded_axpy!(a,X,Y)
-    end
-end
-
-function Base.BLAS.axpy!{T}(a::Number,X::BandedSubMatrix{T},Y::BandedMatrix)
-    if bandwidth(X,1) < 0
-        jr=1-bandwidth(X,1):size(X,2)
-        banded_axpy!(a,view(X,:,jr),view(Y,:,jr))
-    elseif bandwidth(X,2) < 0
-        kr=1-bandwidth(X,2):size(X,1)
-        banded_axpy!(a,view(X,kr,:),view(Y,kr,:))
-    else
-        banded_axpy!(a,X,Y)
-    end
-end
-
-
 # used to add a banded matrix to a dense matrix
-function banded_dense_axpy!(a,X,Y)
-    @assert size(X)==size(Y)
+@inline  function banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix)
+    @boundscheck if size(X) != size(Y)
+        throw(DimensionMismatch("+"))
+    end
     @inbounds for j=1:size(X,2),k=colrange(X,j)
         Y[k,j]+=a*inbands_getindex(X,k,j)
     end
     Y
 end
 
-Base.BLAS.axpy!(a::Number,X::BandedMatrix,Y::AbstractMatrix) =
-    banded_dense_axpy!(a,X,Y)
+axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
+axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
+
+
+function +{T,V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
+    n, m=size(A)
+    ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
+    axpy!(1.,A,ret)
+    axpy!(1.,B,ret)
+    ret
+end
+
+function +{T}(A::BLASBandedMatrix{T},B::StridedMatrix{T})
+    ret = deepcopy(B)
+    axpy!(one(T),A,ret)
+    ret
+end
+
+function +{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+    n, m=size(A)
+    ret = zeros(promote_type(T,V),n,m)
+    axpy!(one(T),A,ret)
+    axpy!(one(V),B,ret)
+    ret
+end
+
++{T,V}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) = B+A
+
+
+function -{T,V}(A::BLASBandedMatrix{T}, B::BLASBandedMatrix{V})
+    n, m=size(A)
+    ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
+    axpy!(one(T),A,ret)
+    axpy!(-one(V),B,ret)
+    ret
+end
+
+function -{T}(A::BLASBandedMatrix{T},B::AbstractMatrix{T})
+    ret = deepcopy(B)
+    Base.scale!(ret,-1)
+    axpy!(one(T),A,ret)
+    ret
+end
+
+
+function -{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+    n, m=size(A)
+    ret = zeros(promote_type(T,V),n,m)
+    axpy!(one(T),A,ret)
+    axpy!(-one(V),B,ret)
+    ret
+end
+
+-{T,V}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) = Base.scale!(B-A,-1)
 
 
 
+## UniformScaling
+
+function axpy!{T}(a::Number,X::UniformScaling,Y::BLASBandedMatrix{T})
+    checksquare(Y)
+    α = a * X.λ
+    @inbounds for k = 1:size(Y,1)
+        inbands_setindex!(Y, inbands_getindex(Y, k, k) + α, k, k)
+    end
+    Y
+end
+
+function +(A::BLASBandedMatrix, B::UniformScaling)
+    ret = deepcopy(A)
+    axpy!(1,B,ret)
+end
+
++(A::UniformScaling, B::BLASBandedMatrix) = B+A
+
+function -(A::BLASBandedMatrix, B::UniformScaling)
+    ret = deepcopy(A)
+    axpy!(-1,B,ret)
+end
+
+function -(A::UniformScaling, B::BLASBandedMatrix)
+    ret = deepcopy(B)
+    Base.scale!(ret,-1)
+    axpy!(1,A,ret)
+end
 
 
+# matrix * vector
 
-## A_mul_B! overrides
+function banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V})
+    @inbounds c[:] = zero(T)
+    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+        c[k] += inbands_getindex(A,k,j)*b[j]
+    end
+    c
+end
 
-Base.A_mul_B!{T}(C::Matrix,A::BLASBandedMatrix{T},B::StridedMatrix) =
-    gbmm!(one(eltype(C)),A,B,zero(eltype(C)),C)
+_banded_matvecmul!{T <: BlasFloat}(c::StridedVector{T}, A::BLASBandedMatrix{T}, b::StridedVector{T}) = gbmv!('N',one(T),A,b,zero(T),c)
+_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_generic_matvecmul!(c, A, b)
 
-## Matrix*Vector Multiplicaiton
-
-
-
-function banded_A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::AbstractMatrix{T},b::StridedVector{T})
+function banded_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V})
     m,n = size(A)
 
     @boundscheck if length(c) ≠ m || length(b) ≠ n
-        throw(DimensionMismatch())
+        throw(DimensionMismatch("*"))
     end
 
     l,u = bandwidths(A)
     if -l > u
         # no bands
-        c[:] = zero(eltype(c))
+        c[:] = zero(T)
     elseif l < 0
         A_mul_B!(c,view(A,:,1-l:n),view(b,1-l:n))
     elseif u < 0
-        c[1:-u] = zero(eltype(c))
+        c[1:-u] = zero(T)
         A_mul_B!(view(c,1-u:m),view(A,1-u:m,:),b)
     else
-        gbmv!('N',m,l,u,one(T),
-                pointer(A),n,leadingdimension(A),pointer(b),stride(b,1),zero(T),pointer(c),stride(c,1))
+        _banded_matvecmul!(c, A, b)
     end
     c
 end
 
-
-Base.A_mul_B!{T}(c::AbstractVector,A::BLASBandedMatrix{T},b::AbstractVector) =
-    banded_A_mul_B!(c,A,b)
-
+A_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, A, b)
+*{U, V}(A::BLASBandedMatrix{U},b::StridedVector{V}) = A_mul_B!(Vector{promote_type(U, V)}(size(A, 1)), A, b)
 
 
-## Matrix*Matrix Multiplication
-
-
-function Base.A_mul_B!{T,U,V}(C::BLASBandedMatrix{T},A::BLASBandedMatrix{U},B::BLASBandedMatrix{V})
-    Al, Au = bandwidths(A)
-    Bl, Bu = bandwidths(B)
+function banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, A::AbstractMatrix{U}, B::AbstractMatrix{V})
     Am, An = size(A)
     Bm, Bn = size(B)
+    if isbanded(A)
+        Al,Au = bandwidths(A)
+    else
+        Al,Au = size(A,1)-1,size(A,2)-1
+    end
+    if isbanded(B)
+        Bl,Bu = bandwidths(B)
+    else
+        Bl,Bu = size(B,1)-1,size(B,2)-1
+    end
+    Cl,Cu = prodbandwidths(A, B)
+
+    @inbounds for j = 1:Bn, k = max(j-Cu, 1):max(min(j+Cl, Am), 0)
+        νmin = max(1,k-Al,j-Bu)
+        νmax = min(size(A,2),k+Au,j+Bl)
+
+        tmp = zero(T)
+        for ν=νmin:νmax
+            tmp = tmp + inbands_getindex(A,k,ν) * inbands_getindex(B,ν,j)
+        end
+        inbands_setindex!(C,tmp,k,j)
+    end
+
+    C
+end
+
+_banded_matmatmul!{T <: BlasFloat}(C::BLASBandedMatrix{T} ,A::BLASBandedMatrix{T}, B::BLASBandedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
+_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::BLASBandedMatrix{T}, B::StridedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
+_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::StridedMatrix{T}, B::BLASBandedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
+_banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::AbstractMatrix{V}) = banded_generic_matmatmul!(C, A, B)
+
+function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::AbstractMatrix{V})
+    Am, An = size(A)
+    Bm, Bn = size(B)
+    @boundscheck if size(A,2) != size(B,1) || size(C,1) != Am || size(C,2) != Bn
+        throw(DimensionMismatch("*"))
+    end
+    # TODO: checkbandmatch
+
+    Al,Au = bandwidths(A)
+    Bl,Bu = bandwidths(B)
 
     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
-        C.data[:,:] = zero(T)
+        C[:,:] = zero(T)
     elseif Al < 0
         A_mul_B!(C,view(A,:,1-Al:An),view(B,1-Al:An,:))
     elseif Au < 0
@@ -524,12 +229,37 @@ function Base.A_mul_B!{T,U,V}(C::BLASBandedMatrix{T},A::BLASBandedMatrix{U},B::B
         A_mul_B!(view(C,:,1-Bl:Bn),A,view(B,:,1-Bl:Bn))
     elseif Bu < 0
         A_mul_B!(C,view(A,:,1-Bu:Bm),view(B,1-Bu:Bm,:))
+    elseif Al + Au < 100 && Bl + Bu < 100
+        # for narrow matrices, `banded_generic_matmatmul` is faster
+        banded_generic_matmatmul!(C, A, B)
     else
-        gbmm!(one(eltype(A)),A,B,zero(eltype(C)),C)
+        _banded_matmatmul!(C, A, B)
     end
     C
 end
 
+A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
+A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::AbstractMatrix) = banded_matmatmul!(C, A, B)
+A_mul_B!(C::AbstractMatrix ,A::AbstractMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
+
+
+function *{T, V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+    n,m = size(A,1),size(B,2)
+    Y = BandedMatrix(promote_type(T,V),n,m,prodbandwidths(A, B)...)
+    A_mul_B!(Y,A,B)
+end
+
+function *{T, V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+    n,m=size(A,1),size(B,2)
+    A_mul_B!(Matrix{promote_type(T,V)}(n,m),A,B)
+end
+
+function *{T, V}(A::StridedMatrix{T},B::BLASBandedMatrix{V})
+    n,m=size(A,1),size(B,2)
+    A_mul_B!(Matrix{promote_type(T,V)}(n,m),A,B)
+end
 
 
 ## Method definitions for generic eltypes - will make copies
