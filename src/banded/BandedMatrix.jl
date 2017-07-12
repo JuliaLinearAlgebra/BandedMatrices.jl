@@ -25,20 +25,21 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 # BandedSubMatrix are also banded
+const ColonRange = Base.Slice{Base.OneTo{Int}} # the type used in SubArray for Colon
 const BandedSubMatrix{T} = Union{
         SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+        SubArray{T,2,BandedMatrix{T},Tuple{ColonRange,UnitRange{Int}}},
+        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},ColonRange}},
+        SubArray{T,2,BandedMatrix{T},Tuple{ColonRange,ColonRange}}
     }
 
 # these are the banded matrices that are ameniable to BLAS routines
 const BLASBandedMatrix{T} = Union{
         BandedMatrix{T},
         SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}},
-        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}},
-        SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}
+        SubArray{T,2,BandedMatrix{T},Tuple{ColonRange,UnitRange{Int}}},
+        SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},ColonRange}},
+        SubArray{T,2,BandedMatrix{T},Tuple{ColonRange,ColonRange}}
     }
 
 
@@ -855,9 +856,9 @@ end
 ## SubArray routines
 # gives the band which is diagonal for the parent
 bandshift(a::Range,b::Range) = first(a)-first(b)
-bandshift(::Colon,b::Range) = 1-first(b)
-bandshift(a::Range,::Colon) = first(a)-1
-bandshift(::Colon,b::Colon) = 0
+bandshift(::ColonRange,b::Range) = 1-first(b)
+bandshift(a::Range,::ColonRange) = first(a)-1
+bandshift(::ColonRange,b::ColonRange) = 0
 bandshift(S) = bandshift(parentindexes(S)[1],parentindexes(S)[2])
 
 bandwidth{T}(S::BandedSubMatrix{T}, k::Integer) = bandwidth(parent(S),k) + (k==1?-1:1)*bandshift(S)
@@ -892,11 +893,11 @@ end
 
 
 @inline Base.pointer(B::BandedMatrix) = pointer(B.data)
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{Colon,Colon}}) =
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{ColonRange,ColonRange}}) =
     pointer(parent(B))
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},Colon}}) =
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},ColonRange}}) =
     pointer(parent(B))
-@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{Colon,UnitRange{Int}}}) =
+@inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{ColonRange,UnitRange{Int}}}) =
     pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)
 @inline Base.pointer{T}(B::SubArray{T,2,BandedMatrix{T},Tuple{UnitRange{Int},UnitRange{Int}}}) =
     pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)

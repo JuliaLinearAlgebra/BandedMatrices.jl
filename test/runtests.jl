@@ -238,6 +238,15 @@ end
 
 println("Time should be   0.644119 seconds (30 allocations: 76.371 MB)")
 
+A=brand(1000,1000,-2,2)
+B=brand(1000,1000,2,2)
+A*B  # 1.39s
+@time for k=1:1000
+    A*B
+end
+
+println("Time should be   0.080086 seconds (9.00 k allocations: 38.513 MiB, 4.67% gc time)")
+
 #gc_enable(true)
 
 
