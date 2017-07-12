@@ -37,7 +37,7 @@ end
 
 # used to add a banded matrix to a dense matrix
 @inline  function banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix)
-    if size(X) != size(Y)
+    @boundscheck if size(X) != size(Y)
         throw(DimensionMismatch("+"))
     end
     @inbounds for j=1:size(X,2),k=colrange(X,j)
@@ -46,29 +46,29 @@ end
     Y
 end
 
-@inline BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
-@inline BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
+BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
+BLAS.axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
 
 
 function +{T,V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
     n, m=size(A)
     ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
-    @inbounds BLAS.axpy!(1.,A,ret)
-    @inbounds BLAS.axpy!(1.,B,ret)
+    BLAS.axpy!(1.,A,ret)
+    BLAS.axpy!(1.,B,ret)
     ret
 end
 
 function +{T}(A::BLASBandedMatrix{T},B::StridedMatrix{T})
     ret = deepcopy(B)
-    @inbounds BLAS.axpy!(one(T),A,ret)
+    BLAS.axpy!(one(T),A,ret)
     ret
 end
 
 function +{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     n, m=size(A)
     ret = zeros(promote_type(T,V),n,m)
-    @inbounds BLAS.axpy!(one(T),A,ret)
-    @inbounds BLAS.axpy!(one(V),B,ret)
+    BLAS.axpy!(one(T),A,ret)
+    BLAS.axpy!(one(V),B,ret)
     ret
 end
 
@@ -78,15 +78,15 @@ end
 function -{T,V}(A::BLASBandedMatrix{T}, B::BLASBandedMatrix{V})
     n, m=size(A)
     ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
-    @inbounds BLAS.axpy!(one(T),A,ret)
-    @inbounds BLAS.axpy!(-one(V),B,ret)
+    BLAS.axpy!(one(T),A,ret)
+    BLAS.axpy!(-one(V),B,ret)
     ret
 end
 
 function -{T}(A::BLASBandedMatrix{T},B::AbstractMatrix{T})
     ret = deepcopy(B)
     Base.scale!(ret,-1)
-    @inbounds BLAS.axpy!(one(T),A,ret)
+    BLAS.axpy!(one(T),A,ret)
     ret
 end
 
@@ -94,8 +94,8 @@ end
 function -{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     n, m=size(A)
     ret = zeros(promote_type(T,V),n,m)
-    @inbounds BLAS.axpy!(one(T),A,ret)
-    @inbounds BLAS.axpy!(-one(V),B,ret)
+    BLAS.axpy!(one(T),A,ret)
+    BLAS.axpy!(-one(V),B,ret)
     ret
 end
 
