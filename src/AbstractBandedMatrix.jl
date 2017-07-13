@@ -8,8 +8,8 @@ doc"""
 Returns a tuple containing the upper and lower bandwidth of `A`.
 """
 bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractBandedMatrix) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractBandedMatrix,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
+bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractVecOrMat,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
 
 doc"""

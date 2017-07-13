@@ -1,6 +1,6 @@
 # additions and subtractions
 
-@inline function banded_axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix)
+@inline function banded_banded_axpy!(a::Number, X, Y)
     n,m = size(X)
     if (n,m) ≠ size(Y)
         throw(BoundsError())
@@ -36,7 +36,7 @@ end
 
 
 # used to add a banded matrix to a dense matrix
-@inline  function banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix)
+@inline  function banded_dense_axpy!(a::Number, X ,Y)
     @boundscheck if size(X) != size(Y)
         throw(DimensionMismatch("+"))
     end
@@ -45,6 +45,12 @@ end
     end
     Y
 end
+
+@inline banded_axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) =
+    banded_banded_axpy!(a, X, Y)
+
+@inline  banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix) =
+    banded_dense_axpy!(a, X, Y)
 
 axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
 axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)

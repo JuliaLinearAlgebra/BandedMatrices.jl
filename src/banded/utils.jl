@@ -11,7 +11,7 @@ checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
 function prodbandwidths(A::AbstractMatrix, B::AbstractMatrix)
     m = size(A, 1)
     n = size(B, 2)
-    min(bandwidth(A, 1) + bandwidth(B, 1), m-1), min(bandwidth(A, 2) + bandwidth(B, 2), n-1)
+    bandwidth(A, 1) + bandwidth(B, 1), bandwidth(A, 2) + bandwidth(B, 2)
 end
 
 # return the bandwidths of A+B

@@ -319,3 +319,10 @@ A = rand(10,11)
 A = rand(10)
 @test bandwidths(A) == (9,0)
 @test bandwidths(A') == (0,9)
+
+
+# Issue #27
+
+A=brand(1,10,0,9)
+B=brand(10,10,255,255)
+@test full(A*B)  ≈ full(A)*full(B)
