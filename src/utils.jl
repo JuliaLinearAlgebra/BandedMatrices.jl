@@ -34,3 +34,16 @@ checkdimensions(ldest::Int, src::AbstractVector) =
 
 checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
     checkdimensions((length(kr), length(jr)), size(src))
+
+
+# return the bandwidths of A*B
+function prodbandwidths(A::AbstractMatrix, B::AbstractMatrix)
+    m = size(A, 1)
+    n = size(B, 2)
+    bandwidth(A, 1) + bandwidth(B, 1), bandwidth(A, 2) + bandwidth(B, 2)
+end
+
+# return the bandwidths of A+B
+function sumbandwidths(A::AbstractMatrix, B::AbstractMatrix)
+    max(bandwidth(A, 1), bandwidth(B, 1)), max(bandwidth(A, 2), bandwidth(B, 2))
+end

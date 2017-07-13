@@ -54,7 +54,6 @@ include("banded/BandedLU.jl")
 include("banded/BandedQR.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
-include("banded/utils.jl")
 
 include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")

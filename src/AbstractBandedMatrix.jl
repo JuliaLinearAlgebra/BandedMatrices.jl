@@ -78,6 +78,11 @@ function Base.maximum(B::AbstractBandedMatrix)
     m
 end
 
+# check if matrix is square
+checksquare(A::AbstractBandedMatrix) = (size(A, 1) == size(A, 2) ||
+    throw(ArgumentError("Banded matrix must be square")))
+
+
 # ~ bound checking functions ~
 
 checkbounds(A::AbstractBandedMatrix, k::Integer, j::Integer) =

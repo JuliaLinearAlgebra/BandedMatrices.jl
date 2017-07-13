@@ -39,6 +39,9 @@ lufact(F::BandedLU) = F # no op
 ## Utilities
 
 
+checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
+    throw(ArgumentError("Banded matrix must be square")))
+
 ## Conversion/Promotion
 
 # Returns the narrowest blas type given the eltypes of A and b in A*x=b
