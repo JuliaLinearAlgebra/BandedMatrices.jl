@@ -70,38 +70,11 @@ function showerror(io::IO, e::BandError)
               "($(bandwidth(A, 1)), $(bandwidth(A, 2))) at band $i")
 end
 
-# start/stop indices of the i-th column/row, bounded by actual matrix size
-@inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1)
-@inline  colstop(A, i::Integer) = max(min(i+bandwidth(A,1), size(A, 1)), 0)
-@inline rowstart(A, i::Integer) = max(i-bandwidth(A,1), 1)
-@inline  rowstop(A, i::Integer) = max(min(i+bandwidth(A,2), size(A, 2)), 0)
-
-
-@inline colrange(A, i::Integer) = colstart(A,i):colstop(A,i)
-@inline rowrange(A, i::Integer) = rowstart(A,i):rowstop(A,i)
-
-# length of i-the column/row
-@inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
-@inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
 # length of diagonal
 @inline diaglength(A::AbstractBandedMatrix, b::Band) = diaglength(A, b.i)
 @inline function diaglength(A::AbstractBandedMatrix, i::Integer)
     max(min(size(A, 2), size(A, 1)+i) - max(0, i), 0)
-end
-
-# return id of first empty diagonal intersected along row k
-function _firstdiagrow(A, k)
-    a, b = rowstart(A, k), rowstop(A, k)
-    c = a == 1 ? b+1 : a-1
-    c-k
-end
-
-# return id of first empty diagonal intersected along column j
-function _firstdiagcol(A, j)
-    a, b = colstart(A, j), colstop(A, j)
-    r = a == 1 ? b+1 : a-1
-    j-r
 end
 
 
@@ -121,3 +94,74 @@ checkband(A::AbstractBandedMatrix, k::Integer, jr::Range) =
 
 checkband(A::AbstractBandedMatrix, kr::Range, jr::Range) =
     (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
+
+
+# checks if the bands match A
+function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, ::Colon, j::Integer)
+    for k = 1:colstart(A,j)-1
+        if V[k] ≠ zero(T)
+            throw(BandError(A, j-k))
+        end
+    end
+    for k = colstop(A,j)+1:size(A,1)
+        if V[k] ≠ zero(T)
+            throw(BandError(A, j-k))
+        end
+    end
+end
+
+function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, kr::Range, j::Integer)
+    a = colstart(A, j)
+    b = colstop(A, j)
+    i = 0
+    for v in V
+        k = kr[i+=1]
+        if (k < a || k > b) && v ≠ zero(T)
+            throw(BandError(A, j-k))
+        end
+    end
+end
+
+function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, k::Integer, ::Colon)
+    for j = 1:rowstart(A,k)-1
+        if V[j] ≠ zero(T)
+            throw(BandError(A, j-k))
+        end
+    end
+    for j = rowstop(A,j)+1:size(A,2)
+        if V[j] ≠ zero(T)
+            throw(BandError(A, j-k))
+        end
+    end
+end
+
+function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, k::Integer, jr::Range)
+    a = rowstart(A, k)
+    b = rowstop(A, k)
+    i = 0
+    for v in V
+        j = jr[i+=1]
+        if (j < a || j > b) && v ≠ zero(T)
+            throw(BandError(A, j-k))
+        end
+    end
+end
+
+function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range)
+    u, l = A.u, A.l
+    jj = 1
+    for j in jr
+        kk = 1
+        for k in kr
+            if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
+                # we index V manually in column-major order
+                throw(BandError(A, j-k))
+            end
+            kk += 1
+        end
+        jj += 1
+    end
+end
+
+checkbandmatch(A::AbstractBandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
+    checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
