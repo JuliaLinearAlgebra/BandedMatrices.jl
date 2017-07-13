@@ -5,6 +5,7 @@ include("test_indexing.jl")
 include("test_bandedlu.jl")
 include("test_bandedqr.jl")
 include("test_symbanded.jl")
+include("test_interface.jl")
 
 
 A,B=brand(10,12,2,3),brand(10,12,3,4)

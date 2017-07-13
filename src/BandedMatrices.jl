@@ -60,6 +60,7 @@ include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
 
+include("interface.jl")
 include("deprecate.jl")
 
 

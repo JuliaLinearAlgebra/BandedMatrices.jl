@@ -25,7 +25,7 @@ type BandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 
-# SubBandedMatrix with unit range indexes is also banded
+# BandedMatrix with unit range indexes is also banded
 const BandedSubBandedMatrix{T} =
     SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 

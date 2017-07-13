@@ -7,9 +7,9 @@ doc"""
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
 """
-bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractVecOrMat,k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
+bandwidths(A::AbstractMatrix) = bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractMatrix) = -bandwidth(A,1),bandwidth(A,2)
+bandinds(A::AbstractMatrix, k::Integer) = k==1 ? -bandwidth(A,1):bandwidth(A,2)
 
 
 doc"""
@@ -17,14 +17,14 @@ doc"""
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
-bandwidth(A::AbstractVecOrMat,k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
+bandwidth(A::AbstractMatrix, k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
 
 doc"""
     bandrange(A)
 
 Returns the range `-bandwidth(A,1):bandwidth(A,2)`.
 """
-bandrange(A::AbstractBandedMatrix) = -bandwidth(A,1):bandwidth(A,2)
+bandrange(A::AbstractMatrix) = -bandwidth(A,1):bandwidth(A,2)
 
 
 
@@ -67,6 +67,11 @@ checkbounds(A::AbstractBandedMatrix, k::Colon, j::Integer) =
 
 checkbounds(A::AbstractBandedMatrix, k::Integer, j::Colon) =
     (0 < k ≤ size(A, 1) || throw(BoundsError(A, (k,size(A,2)))))
+
+
+# fallbacks for inbands_getindex and inbands_setindex!
+@inline inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer) = getindex(x, i, j)
+@inline inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer) = setindex!(x, v, i, j)
 
 
 ## Show
