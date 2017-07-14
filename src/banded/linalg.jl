@@ -1,6 +1,6 @@
 # additions and subtractions
 
-@inline function banded_banded_axpy!(a::Number, X, Y)
+function banded_generic_axpy!{U, V}(a::Number, X::AbstractMatrix{U}, Y::AbstractMatrix{V})
     n,m = size(X)
     if (n,m) ≠ size(Y)
         throw(BoundsError())
@@ -8,7 +8,7 @@
     Xl,Xu = bandwidths(X)
     Yl,Yu = bandwidths(Y)
 
-    @boundscheck if Xl > Yl
+    if Xl > Yl
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
             if inbands_getindex(X,k,j) ≠ 0
@@ -16,7 +16,7 @@
             end
         end
     end
-    @boundscheck if Xu > Yu
+    if Xu > Yu
         # test that all entries are zero in extra bands
         for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
             if inbands_getindex(X,k,j) ≠ 0
@@ -34,10 +34,8 @@
     Y
 end
 
-
-# used to add a banded matrix to a dense matrix
-@inline  function banded_dense_axpy!(a::Number, X ,Y)
-    @boundscheck if size(X) != size(Y)
+function banded_dense_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix)
+    if size(X) != size(Y)
         throw(DimensionMismatch("+"))
     end
     @inbounds for j=1:size(X,2),k=colrange(X,j)
@@ -46,11 +44,8 @@ end
     Y
 end
 
-@inline banded_axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) =
-    banded_banded_axpy!(a, X, Y)
-
-@inline  banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix) =
-    banded_dense_axpy!(a, X, Y)
+banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::BLASBandedMatrix) = banded_generic_axpy!(a, X, Y)
+banded_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix) = banded_dense_axpy!(a, X, Y)
 
 axpy!(a::Number, X::BLASBandedMatrix, Y::BLASBandedMatrix) = banded_axpy!(a, X, Y)
 axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
@@ -64,13 +59,13 @@ function +{T,V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
     ret
 end
 
-function +{T}(A::BLASBandedMatrix{T},B::StridedMatrix{T})
+function +{T}(A::BLASBandedMatrix{T},B::AbstractMatrix{T})
     ret = deepcopy(B)
     axpy!(one(T),A,ret)
     ret
 end
 
-function +{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+function +{T,V}(A::BLASBandedMatrix{T},B::AbstractMatrix{V})
     n, m=size(A)
     ret = zeros(promote_type(T,V),n,m)
     axpy!(one(T),A,ret)
@@ -78,7 +73,7 @@ function +{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     ret
 end
 
-+{T,V}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) = B+A
++{T,V}(A::AbstractMatrix{T},B::BLASBandedMatrix{V}) = B+A
 
 
 function -{T,V}(A::BLASBandedMatrix{T}, B::BLASBandedMatrix{V})
@@ -97,7 +92,7 @@ function -{T}(A::BLASBandedMatrix{T},B::AbstractMatrix{T})
 end
 
 
-function -{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
+function -{T,V}(A::BLASBandedMatrix{T},B::AbstractMatrix{V})
     n, m=size(A)
     ret = zeros(promote_type(T,V),n,m)
     axpy!(one(T),A,ret)
@@ -105,7 +100,7 @@ function -{T,V}(A::BLASBandedMatrix{T},B::StridedMatrix{V})
     ret
 end
 
--{T,V}(A::StridedMatrix{T},B::BLASBandedMatrix{V}) = Base.scale!(B-A,-1)
+-{T,V}(A::AbstractMatrix{T},B::BLASBandedMatrix{V}) = Base.scale!(B-A,-1)
 
 
 
@@ -141,7 +136,10 @@ end
 
 # matrix * vector
 
-function banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V})
+function _banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V})
+    if tA ≠ 'N'
+        error("Only 'N' flag is supported.")
+    end
     @inbounds c[:] = zero(T)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
         c[k] += inbands_getindex(A,k,j)*b[j]
@@ -149,13 +147,14 @@ function banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedM
     c
 end
 
-_banded_matvecmul!{T <: BlasFloat}(c::StridedVector{T}, A::BLASBandedMatrix{T}, b::StridedVector{T}) = gbmv!('N',one(T),A,b,zero(T),c)
-_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_generic_matvecmul!(c, A, b)
+positively_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V}) = _banded_generic_matvecmul!(c, tA, A, b)
+# use BLAS routine for positively banded BLASBandedMatrix
+positively_banded_matvecmul!{T <: BlasFloat}(c::StridedVector{T}, tA::Char, A::BLASBandedMatrix{T}, b::StridedVector{T}) = gbmv!(tA, one(T), A, b, zero(T), c)
 
-function banded_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V})
+function generally_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V})
     m,n = size(A)
 
-    @boundscheck if length(c) ≠ m || length(b) ≠ n
+    if length(c) ≠ m || length(b) ≠ n
         throw(DimensionMismatch("*"))
     end
 
@@ -169,16 +168,25 @@ function banded_matvecmul!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}
         c[1:-u] = zero(T)
         A_mul_B!(view(c,1-u:m),view(A,1-u:m,:),b)
     else
-        _banded_matvecmul!(c, A, b)
+        positively_banded_matvecmul!(c, tA, A, b)
     end
     c
 end
 
-A_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, A, b)
-*{U, V}(A::BLASBandedMatrix{U},b::StridedVector{V}) = A_mul_B!(Vector{promote_type(U, V)}(size(A, 1)), A, b)
+banded_matvecmul!{T <: BlasFloat}(c::StridedVector{T}, tA::Char, A::BLASBandedMatrix{T}, b::AbstractVector{T}) = generally_banded_matvecmul!(c, tA, A, b)
+
+banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V}) = generally_banded_matvecmul!(c, tA, A, b)
+
+A_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'N', A, b)
+
+*{U, V}(A::BLASBandedMatrix{U}, b::StridedVector{V}) = A_mul_B!(Vector{promote_type(U, V)}(size(A, 1)), A, b)
 
 
-function banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, A::AbstractMatrix{U}, B::AbstractMatrix{V})
+# matrix * matrix
+function _banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::AbstractMatrix{U}, B::AbstractMatrix{V})
+    if tA ≠ 'N' || tB ≠ 'N'
+        error("Only 'N' flag is supported.")
+    end
     Am, An = size(A)
     Bm, Bn = size(B)
     if isbanded(A)
@@ -207,15 +215,28 @@ function banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, A::AbstractMat
     C
 end
 
-_banded_matmatmul!{T <: BlasFloat}(C::BLASBandedMatrix{T} ,A::BLASBandedMatrix{T}, B::BLASBandedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
-_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::BLASBandedMatrix{T}, B::StridedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
-_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T} ,A::StridedMatrix{T}, B::BLASBandedMatrix{T}) = gbmm!(one(T), A, B, zero(T), C)
-_banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::AbstractMatrix{V}) = banded_generic_matmatmul!(C, A, B)
+# use BLAS routine for positively banded BLASBandedMatrices
+function _positively_banded_matmatmul!{T <: BlasFloat}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::AbstractMatrix{T}, B::AbstractMatrix{T})
+    Al,Au = bandwidths(A)
+    Bl,Bu = bandwidths(B)
+    # _banded_generic_matmatmul! is faster for sparse matrix
+    if Al + Au < 100 && Bl + Bu < 100
+        _banded_generic_matmatmul!(C, tA, tB, A, B)
+    else
+        gbmm!(tA, tB, one(T), A, B, zero(T), C)
+    end
+end
 
-function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::AbstractMatrix{V})
+positively_banded_matmatmul!{T <: BlasFloat}(C::BLASBandedMatrix{T}, tA::Char, tB::Char, A::BLASBandedMatrix{T}, B::BLASBandedMatrix{T}) = _positively_banded_matmatmul!(C, tA, tB, A, B)
+positively_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T}, tA::Char, tB::Char, A::BLASBandedMatrix{T}, B::StridedMatrix{T}) = _positively_banded_matmatmul!(C, tA, tB, A, B)
+positively_banded_matmatmul!{T <: BlasFloat}(C::StridedMatrix{T}, tA::Char, tB::Char, A::StridedMatrix{T}, B::BLASBandedMatrix{T}) = _positively_banded_matmatmul!(C, tA, tB, A, B)
+positively_banded_matmatmul!{T, U, V}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::AbstractMatrix{U}, B::AbstractMatrix{V}) = _banded_generic_matmatmul!(C, tA, tB, A, B)
+
+
+function generally_banded_matmatmul!{T, U, V}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::AbstractMatrix{U}, B::AbstractMatrix{V})
     Am, An = size(A)
     Bm, Bn = size(B)
-    @boundscheck if size(A,2) != size(B,1) || size(C,1) != Am || size(C,2) != Bn
+    if size(A,2) != size(B,1) || size(C,1) != Am || size(C,2) != Bn
         throw(DimensionMismatch("*"))
     end
     # TODO: checkbandmatch
@@ -235,19 +256,22 @@ function banded_matmatmul!{T, U, V}(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, 
         A_mul_B!(view(C,:,1-Bl:Bn),A,view(B,:,1-Bl:Bn))
     elseif Bu < 0
         A_mul_B!(C,view(A,:,1-Bu:Bm),view(B,1-Bu:Bm,:))
-    elseif Al + Au < 100 && Bl + Bu < 100
-        # for narrow matrices, `banded_generic_matmatmul` is faster
-        banded_generic_matmatmul!(C, A, B)
     else
-        _banded_matmatmul!(C, A, B)
+        positively_banded_matmatmul!(C, tA::Char, tB::Char, A, B)
     end
     C
 end
 
-A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
-A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::AbstractMatrix) = banded_matmatmul!(C, A, B)
-A_mul_B!(C::AbstractMatrix ,A::AbstractMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, A, B)
 
+banded_matmatmul!{T <: BlasFloat}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::BLASBandedMatrix{T}, B::BLASBandedMatrix{T}) = generally_banded_matmatmul!(C, tA, tB, A, B)
+banded_matmatmul!{T <: BlasFloat}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::BLASBandedMatrix{T}, B::StridedMatrix{T}) = generally_banded_matmatmul!(C, tA, tB, A, B)
+banded_matmatmul!{T <: BlasFloat}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::StridedMatrix{T}, B::BLASBandedMatrix{T}) = generally_banded_matmatmul!(C, tA, tB, A, B)
+
+banded_generic_matmatmul!{T, U, V}(C::AbstractMatrix{T}, tA::Char, tB::Char, A::AbstractMatrix{U}, B::AbstractMatrix{V}) = generally_banded_matmatmul!(C, tA, tB, A, B)
+
+A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, 'N', 'N', A, B)
+A_mul_B!(C::AbstractMatrix ,A::BLASBandedMatrix, B::AbstractMatrix) = banded_matmatmul!(C, 'N', 'N', A, B)
+A_mul_B!(C::AbstractMatrix ,A::AbstractMatrix, B::BLASBandedMatrix) = banded_matmatmul!(C, 'N', 'N', A, B)
 
 function *{T, V}(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V})
     Al, Au = bandwidths(A)

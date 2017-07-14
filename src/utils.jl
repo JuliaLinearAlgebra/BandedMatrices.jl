@@ -36,6 +36,14 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
     checkdimensions((length(kr), length(jr)), size(src))
 
 
-# fallbacks for inbands_getindex and inbands_setindex!
-@inline inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer) = getindex(x, i, j)
-@inline inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer) = setindex!(x, v, i, j)
+# return the bandwidths of A*B
+function prodbandwidths(A::AbstractMatrix, B::AbstractMatrix)
+    m = size(A, 1)
+    n = size(B, 2)
+    bandwidth(A, 1) + bandwidth(B, 1), bandwidth(A, 2) + bandwidth(B, 2)
+end
+
+# return the bandwidths of A+B
+function sumbandwidths(A::AbstractMatrix, B::AbstractMatrix)
+    max(bandwidth(A, 1), bandwidth(B, 1)), max(bandwidth(A, 2), bandwidth(B, 2))
+end

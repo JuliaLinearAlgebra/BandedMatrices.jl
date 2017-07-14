@@ -37,6 +37,12 @@ A*E
     A*E
 end
 
+print("E*D:")
+E*D
+@time for k=1:10
+    E*D
+end
+
 print("B*B:")
 B*B;
 @time for k=1:10
@@ -69,53 +75,51 @@ end
 
 #gc_enable(true)
 
-function julia(n, b1, b2)
-    A = brand(n, n, b1, b2)
-    BandedMatrices.banded_generic_matmatmul!(BandedMatrix(Float64,n, n, 2*b1, 2*b2), A, A)
+# benchmark pure julia routine vs BLAS routine
+
+# Banded * Dense
+
+julia(A, D) = BandedMatrices._banded_generic_matmatmul!(Matrix{Float64}(size(A, 1), size(D, 2)), 'N', 'N', A, D)
+blas(A, D) = BandedMatrices.gbmm!('N', 'N', one(Float64), A, D, zero(Float64), Matrix{Float64}(size(A, 1), size(D, 2)))
+dense(A, D) = Array(A)*Array(D)
+
+for n in [100, 1000, 10000, 100000]
+    for b in [1, 50, 200, 500]
+        A, D = brand(n, n, b, b), rand(n, 2)
+        println("n = $n, b = $b")
+        if b == 1 && n ≤ 10000
+            print("dense")
+            @time dense(A, D)
+        end
+        print("julia")
+        @time julia(A, D);
+        print("blas ")
+        @time blas(A, D);
+    end
 end
 
-function blas(n, b1, b2)
-    A = brand(n, n, b1, b2)
-    BandedMatrices.gbmm!(one(Float64), A, A, zero(Float64), BandedMatrix(Float64,n, n, 2*b1, 2*b2))
+# Banded * Banded
+
+julia(A) = BandedMatrices._banded_generic_matmatmul!(
+    BandedMatrix(Float64, size(A, 1), size(A, 2), 2*bandwidth(A, 1), 2*bandwidth(A, 2)), 'N', 'N', A, A)
+blas(A) = BandedMatrices.gbmm!(
+    'N', 'N', one(Float64), A, A, zero(Float64), BandedMatrix(Float64, size(A, 1), size(A, 2), 2*bandwidth(A, 1), 2*bandwidth(A, 2)))
+dense(A) = (B=Array(A); B*B)
+
+for n in [100, 1000, 10000]
+    for b in [1, 50, 200, 500]
+        A = brand(n, n, b, b)
+        println("n = $n, b = $b")
+        if b == 1 && n ≤ 1000
+            print("dense")
+            @time dense(A)
+        end
+        print("julia")
+        @time julia(A);
+        print("blas ")
+        @time blas(A);
+    end
 end
-
-function julia(n, b1, b2)
-    A = brand(n, n, b1, b2)
-    D = rand(n, 2)
-    BandedMatrices.banded_generic_matmatmul!(Matrix{Float64}(n, 2), A, D)
-end
-
-function blas(n, b1, b2)
-    A = brand(n, n, b1, b2)
-    D = rand(n, 2)
-    BandedMatrices.gbmm!(one(Float64), A, D, zero(Float64), Matrix{Float64}(n, 2))
-end
-
-@time julia(100, 1, 1);
-@time blas(100, 1, 1);
-@time julia(100, 50, 50);
-@time blas(100, 50, 50);
-@time julia(100, 75, 75);
-@time blas(100, 75, 75);
-@time julia(1000, 2, 3);
-@time blas(1000, 2, 3);
-@time julia(1000, 50, 50);
-@time blas(1000, 50, 50);
-@time julia(1000, 200, 300);
-@time blas(1000, 200, 300);
-@time julia(10000, 2, 3);
-@time blas(10000, 2, 3);
-@time julia(10000, 50, 50);
-@time blas(10000, 50, 50);
-@time julia(10000, 200, 300);
-@time blas(10000, 200, 300);
-@time julia(100000, 2, 3);
-@time blas(100000, 2, 3);
-@time julia(100000, 50, 50);
-@time blas(100000, 50, 50);
-@time julia(100000, 200, 300);
-@time blas(100000, 200, 300);
-
 
 # println("Large dimension QR solve")
 # A=brand(100000,100000,3,4)
@@ -135,3 +139,5 @@ end
 
 # println("Time should be   0.401671 seconds (24 allocations: 36.665 MB)")
 # println("Time should be   0.009276 seconds (30 allocations: 12.262 MB
+
+nothing
