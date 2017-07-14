@@ -7,6 +7,15 @@ import BandedMatrices: rowstart,
                        collength,
                        diaglength
 
+
+let
+    for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
+        A=brand(n,m,Al,Au)
+        kr,jr=3:10,5:12
+        @test full(A[kr,jr]) ≈ full(A)[kr,jr]
+    end
+end
+
 # rowstart/rowstop business
 let
     A = bones(7, 5, 1, 2)
