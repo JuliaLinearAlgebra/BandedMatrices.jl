@@ -137,12 +137,19 @@ end
 # matrix * vector
 
 function _banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V})
-    if tA ≠ 'N'
-        error("Only 'N' flag is supported.")
-    end
     @inbounds c[:] = zero(T)
-    @inbounds for j = 1:size(A,2), k = colrange(A,j)
-        c[k] += inbands_getindex(A,k,j)*b[j]
+    if tA == 'N'
+        @inbounds for j = 1:size(A,2), k = colrange(A,j)
+            c[k] += inbands_getindex(A,k,j)*b[j]
+        end
+    elseif tA == 'C'
+        @inbounds for j = 1:size(A,2), k = colrange(A,j)
+            c[j] += inbands_getindex(A,k,j)'*b[k]
+        end
+    elseif tA == 'T'
+        @inbounds for j = 1:size(A,2), k = colrange(A,j)
+            c[j] += inbands_getindex(A,k,j)*b[k]
+        end
     end
     c
 end
@@ -152,21 +159,20 @@ positively_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::Abstrac
 positively_banded_matvecmul!{T <: BlasFloat}(c::StridedVector{T}, tA::Char, A::BLASBandedMatrix{T}, b::StridedVector{T}) = gbmv!(tA, one(T), A, b, zero(T), c)
 
 function generally_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V})
-    m,n = size(A)
-
+    m, n = blas_size(tA, A)
     if length(c) ≠ m || length(b) ≠ n
         throw(DimensionMismatch("*"))
     end
 
-    l,u = bandwidths(A)
+    l, u = blas_bandwidths(tA, A)
     if -l > u
         # no bands
         c[:] = zero(T)
     elseif l < 0
-        A_mul_B!(c,view(A,:,1-l:n),view(b,1-l:n))
+        A_mul_B!(c, blas_view(tA, A, :, 1-l:n), view(b, 1-l:n))
     elseif u < 0
         c[1:-u] = zero(T)
-        A_mul_B!(view(c,1-u:m),view(A,1-u:m,:),b)
+        A_mul_B!(view(c, 1-u:m), blas_view(tA, A, 1-u:m, :), b)
     else
         positively_banded_matvecmul!(c, tA, A, b)
     end
@@ -178,6 +184,9 @@ banded_matvecmul!{T <: BlasFloat}(c::StridedVector{T}, tA::Char, A::BLASBandedMa
 banded_generic_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V}) = generally_banded_matvecmul!(c, tA, A, b)
 
 A_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'N', A, b)
+Ac_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'C', A, b)
+Ac_mul_B!{T<:BlasReal, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'T', A, b)
+At_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'T', A, b)
 
 *{U, V}(A::BLASBandedMatrix{U}, b::StridedVector{V}) = A_mul_B!(Vector{promote_type(U, V)}(size(A, 1)), A, b)
 

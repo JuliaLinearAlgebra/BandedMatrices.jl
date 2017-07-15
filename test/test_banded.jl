@@ -25,14 +25,25 @@ w=rand(10)
 
 A=brand(Float64,5,3,2,2)
 v=rand(Complex128,3)
+w=rand(Complex128,5)
 @test A*v ≈ full(A)*v
+@test A'*w ≈ full(A)'*w
 
 A=brand(Complex128,5,3,2,2)
 v=rand(Complex128,3)
+w=rand(Complex128,5)
 @test A*v ≈ full(A)*v
+@test A'*w ≈ full(A)'*w
 
 v=rand(Float64,3)
+w=rand(Float64,5)
 @test A*v ≈ full(A)*v
+@test A'*w ≈ full(A)'*w
+
+v=rand(Float64,3)
+w=rand(Float64,5)
+@test A*v ≈ full(A)*v
+@test A'*w ≈ full(A)'*w
 
 
 # test matrix multiplications

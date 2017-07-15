@@ -1,3 +1,8 @@
+# helper functions in blas routines
+blas_size(t::Char, A::AbstractMatrix) = t == 'N' ? size(A) : (size(A, 2), size(A, 1))
+blas_bandwidths(t::Char, A::AbstractMatrix) = t == 'N' ? bandwidths(A) : (bandwidth(A, 2), bandwidth(A, 1))
+blas_view(t::Char, A::AbstractMatrix, I1, I2) = t == 'N' ? view(A, I1, I2) : view(A, I2, I1)
+
 # BLAS/linear algebra overrides
 
 @inline dot(x...) = Base.dot(x...)
