@@ -81,6 +81,6 @@ interface consists of the following:
 | --------------- | --------------- |
 | `bandwidth(A, k)` | Returns the sub-diagonal bandwidth (`k==1`) or the super-diagonal bandwidth (`k==2`) |
 | `isbanded(A)`    | Override to return `true` |
-| `inbands_getindex(A, k, j) | Unsafe: return `A[k,j]`, without the need to check if we are inside the bands |
-| `inbands_setindex!(A, v, k, j) | Unsafe: set `A[k,j] = v`, without the need to check if we are inside the bands |
+| `inbands_getindex(A, k, j)` | Unsafe: return `A[k,j]`, without the need to check if we are inside the bands |
+| `inbands_setindex!(A, v, k, j)` | Unsafe: set `A[k,j] = v`, without the need to check if we are inside the bands |
 | -------------- | ------------- |
