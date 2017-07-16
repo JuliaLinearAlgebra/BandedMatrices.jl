@@ -286,10 +286,11 @@ function _positively_banded_matmatmul!{T <: BlasFloat}(C::AbstractMatrix{T}, tA:
     Al,Au = _bandwidths(tA, A)
     Bl,Bu = _bandwidths(tB, B)
     # _banded_generic_matmatmul! is faster for sparse matrix
-    if Al + Au < 100 && Bl + Bu < 100
+    if tA != 'N' || tB != 'N' || (Al + Au < 100 && Bl + Bu < 100)
         _banded_generic_matmatmul!(C, tA, tB, A, B)
     else
-        gbmm!(tA, tB, one(T), A, B, zero(T), C)
+        # TODO: implement gbmm! routines for other flags
+        gbmm!('N', 'N', one(T), A, B, zero(T), C)
     end
 end
 
