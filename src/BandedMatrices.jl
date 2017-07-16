@@ -4,7 +4,7 @@ module BandedMatrices
 using Base, Compat
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
-                >=, /, ^, \, transpose, showerror
+                >=, /, ^, \, transpose, showerror, reindex
 
 import Base: convert, size, view
 

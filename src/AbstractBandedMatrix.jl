@@ -105,8 +105,14 @@ checkbounds(A::AbstractBandedMatrix, k::Integer, j::Colon) =
 
 
 # fallbacks for inbands_getindex and inbands_setindex!
-@inline inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer) = getindex(x, i, j)
-@inline inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer) = setindex!(x, v, i, j)
+@inline function inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer)
+    @inbounds r = getindex(x, i, j)
+    r
+end
+@inline function inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer)
+    @inbounds r = setindex!(x, v, i, j)
+    r
+end
 
 
 ## Show
