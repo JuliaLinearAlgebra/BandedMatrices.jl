@@ -54,27 +54,54 @@ A=brand(1000,1000,200,300)
 B=rand(1000,1000)
 @test A*B ≈ full(A)*B
 @test B*A ≈ B*full(A)
+# gbmm! not yet implemented
+# @test A'*B ≈ full(A)'*B
+# @test A*B' ≈ full(A)*B'
+# @test A'*B' ≈ full(A)'*B'
 
 A=brand(1200,1000,200,300)
 B=rand(1000,1000)
 C=rand(1200,1200)
 @test A*B ≈ full(A)*B
 @test C*A ≈ C*full(A)
-
-A=brand(1000,1200,200,300)
-B=rand(1200,1200)
-C=rand(1000,1000)
-@test A*B ≈ full(A)*B
-@test C*A ≈ C*full(A)
+# gbmm! not yet implemented
+# @test A'*C ≈ full(A)'*C
+# @test A*B' ≈ full(A)*B'
+# @test A'*C' ≈ full(A)'*C'
 
 
 # banded * banded
 
-for n in (1,5,50), ν in (1,5,50), m in (1,5,50), Al in (0,1,2,30), Au in (0,1,2,30), Bl in (0,1,2,30), Bu in (0,1,2,30)
-    A=brand(n,ν,Al,Au)
-    B=brand(ν,m,Bl,Bu)
+
+for n in (1,5), ν in (1,5), m in (1,5), Al in (0,1,3), Au in (0,1,3),
+        Bl in (0,1,3), Bu in (0,1,3)
+    A = brand(n, ν, Al, Au)
+    B = brand(ν, m, Bl, Bu)
+    C = brand(ν, n, Al, Bu)
+    D = brand(m, ν, Al, Bu)
     @test full(A*B) ≈ full(A)*full(B)
+    @test full(C'*B) ≈ full(C)'*full(B)
+    @test full(A*D') ≈ full(A)*full(D)'
+    @test full(C'*D') ≈ full(C)'*full(D)'
 end
+
+A = brand(Complex128, 5, 4, 2, 3)
+B = brand(Complex128, 4, 6, 3, 1)
+C = brand(Complex128, 4, 5, 1, 1)
+D = brand(Complex128, 6, 4, 0, 3)
+@test full(A*B) ≈ full(A)*full(B)
+@test full(C'*B) ≈ full(C)'*full(B)
+@test full(A*D') ≈ full(A)*full(D)'
+@test full(C'*D') ≈ full(C)'*full(D)'
+
+A = brand(Complex128, 5, 4, 2, 3)
+B = brand(4, 6, 3, 1)
+C = brand(4, 5, 1, 1)
+D = brand(Complex128, 6, 4, 0, 3)
+@test full(A*B) ≈ full(A)*full(B)
+@test full(C'*B) ≈ full(C)'*full(B)
+@test full(A*D') ≈ full(A)*full(D)'
+@test full(C'*D') ≈ full(C)'*full(D)'
 
 
 ## BigFloat
@@ -100,14 +127,26 @@ x = BigFloat[1:size(B,1)...]
 for A in (brand(3,4,-1,2),brand(5,4,-1,2),
             brand(3,4,2,-1),brand(5,4,2,-1))
     b = rand(size(A,2))
+    c = rand(size(A,1))
     @test A*b ≈ full(A)*b
+    # @test A'*c ≈ full(A)'*c
 end
 
+C = brand(4, 5, -1, 3)
 D = rand(4, 4)
 for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
-    B in (brand(4,4,1,2),brand(4,4,-1,2),brand(4,4,2,-1))
+    B in (brand(4,5,1,2),brand(4,5,-1,2),brand(4,5,2,-1))
     @test A*B ≈ full(A)*full(B)
+    # @test B*C' ≈ full(B)*full(C)'
+    # @test B'*C ≈ full(B)'*full(C)
+    # @test B'*A' ≈ full(B)'*full(A)'
+end
+
+for A in (brand(5,4,-1,2),brand(5,4,2,-1),brand(3,4,-1,2),brand(3,4,2,-1))
     @test A*D ≈ full(A)*full(D)
+end
+
+for B in (brand(4,3,-1,2),brand(4,3,2,-1),brand(4,5,-1,2),brand(4,5,2,-1))
     @test D*B ≈ full(D)*full(B)
 end
 
