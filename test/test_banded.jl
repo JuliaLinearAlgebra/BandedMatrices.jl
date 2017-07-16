@@ -129,7 +129,7 @@ for A in (brand(3,4,-1,2),brand(5,4,-1,2),
     b = rand(size(A,2))
     c = rand(size(A,1))
     @test A*b ≈ full(A)*b
-    # @test A'*c ≈ full(A)'*c
+    @test A'*c ≈ full(A)'*c
 end
 
 C = brand(4, 5, -1, 3)
@@ -137,9 +137,9 @@ D = rand(4, 4)
 for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
     B in (brand(4,5,1,2),brand(4,5,-1,2),brand(4,5,2,-1))
     @test A*B ≈ full(A)*full(B)
-    # @test B*C' ≈ full(B)*full(C)'
-    # @test B'*C ≈ full(B)'*full(C)
-    # @test B'*A' ≈ full(B)'*full(A)'
+    @test B*C' ≈ full(B)*full(C)'
+    @test B'*C ≈ full(B)'*full(C)
+    @test B'*A' ≈ full(B)'*full(A)'
 end
 
 for A in (brand(5,4,-1,2),brand(5,4,2,-1),brand(3,4,-1,2),brand(3,4,2,-1))

@@ -164,15 +164,15 @@ function generally_banded_matvecmul!{T, U, V}(c::AbstractVector{T}, tA::Char, A:
         throw(DimensionMismatch("*"))
     end
 
-    l, u = bandwidths(A)
+    l, u = _bandwidths(tA, A)
     if -l > u
         # no bands
         c[:] = zero(T)
     elseif l < 0
-        A_mul_B!(c, view(A, :, 1-l:n), view(b, 1-l:n))
+        banded_matvecmul!(c, tA, _view(tA, A, :, 1-l:n), view(b, 1-l:n))
     elseif u < 0
         c[1:-u] = zero(T)
-        A_mul_B!(view(c, 1-u:m), view(A, 1-u:m, :), b)
+        banded_matvecmul!(view(c, 1-u:m), tA, _view(tA, A, 1-u:m, :), b)
     else
         positively_banded_matvecmul!(c, tA, A, b)
     end
@@ -307,23 +307,23 @@ function generally_banded_matmatmul!{T, U, V}(C::AbstractMatrix{T}, tA::Char, tB
     end
     # TODO: checkbandmatch
 
-    Al, Au = bandwidths(A)
-    Bl, Bu = bandwidths(B)
+    Al, Au = _bandwidths(tA, A)
+    Bl, Bu = _bandwidths(tB, B)
 
     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
         C[:,:] = zero(T)
     elseif Al < 0
         C[max(1,Bn+Al-1):Am, :] = zero(T)
-        A_mul_B!(C, view(A, :, 1-Al:An), view(B, 1-Al:An, :))
+        banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Al:An), _view(tB, B, 1-Al:An, :))
     elseif Au < 0
         C[1:-Au,:] = zero(T)
-        A_mul_B!(view(C, 1-Au:Am,:), view(A, 1-Au:Am,:), B)
+        banded_matmatmul!(view(C, 1-Au:Am,:), tA, tB, _view(tA, A, 1-Au:Am,:), B)
     elseif Bl < 0
         C[:, 1:-Bl] = zero(T)
-        A_mul_B!(view(C, :, 1-Bl:Bn), A, view(B, :, 1-Bl:Bn))
+        banded_matmatmul!(view(C, :, 1-Bl:Bn), tA, tB, A, _view(tB, B, :, 1-Bl:Bn))
     elseif Bu < 0
         C[:, max(1,Am+Bu-1):Bn] = zero(T)
-        A_mul_B!(C, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :))
+        banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Bu:Bm), _view(tB, B, 1-Bu:Bm, :))
     else
         positively_banded_matmatmul!(C, tA::Char, tB::Char, A, B)
     end

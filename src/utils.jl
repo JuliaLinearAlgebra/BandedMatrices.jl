@@ -41,6 +41,7 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
 @inline _size(t::Char, A::AbstractMatrix) = t == 'N' ? size(A) : (size(A, 2), size(A, 1))
 @inline _bandwidth(t::Char, A::AbstractMatrix, k::Int) = t == 'N' ? bandwidth(A, k) : bandwidth(A, 3-k)
 @inline _bandwidths(t::Char, A::AbstractMatrix) = t == 'N' ? bandwidths(A) : (bandwidth(A, 2), bandwidth(A, 1))
+@inline _view(t::Char, A::AbstractMatrix, I, J) = t == 'N' ? view(A, I, J) : view(A, J, I)
 
 # return the bandwidths of A*B
 function prodbandwidths(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix)
