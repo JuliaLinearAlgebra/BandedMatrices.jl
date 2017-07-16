@@ -410,8 +410,8 @@ let
     @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
     @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
     @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
-    @test_throws BoundsError a[7, BandRange] = [1, 2, 3]
-    @test_throws BoundsError a[7, BandRange] = 1
+    @test_throws DimensionMismatch a[7, BandRange] = [1, 2, 3]
+    @test_throws BandError a[7, BandRange] = 1
 end
 
 
