@@ -34,7 +34,7 @@ function banded_generic_axpy!{U, V}(a::Number, X::AbstractMatrix{U}, Y::Abstract
     Y
 end
 
-function banded_dense_axpy!(a::Number, X::BLASBandedMatrix ,Y::AbstractMatrix)
+function banded_dense_axpy!(a::Number, X::AbstractMatrix ,Y::AbstractMatrix)
     if size(X) != size(Y)
         throw(DimensionMismatch("+"))
     end
