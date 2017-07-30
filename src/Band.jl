@@ -1,5 +1,5 @@
 # ~~ Type to set\get data along a band
-immutable Band
+struct Band
     i::Int
 end
 
@@ -56,10 +56,10 @@ julia> A[2,BandRange]
 """
 
 # ~~ Indexing on the i-th row/column within band range
-immutable BandRange end
+struct BandRange end
 
 # ~~ Out of band error
-immutable BandError <: Exception
+struct BandError <: Exception
     A::AbstractMatrix
     i::Int
 end
@@ -97,7 +97,7 @@ checkband(A::AbstractMatrix, kr::Range, jr::Range) =
 
 
 # checks if the bands match A
-function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::Integer)
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::Integer) where {T}
     for k = 1:colstart(A,j)-1
         if V[k] ≠ zero(T)
             throw(BandError(A, j-k))
@@ -110,7 +110,7 @@ function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::
     end
 end
 
-function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, kr::Range, j::Integer)
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, kr::Range, j::Integer) where {T}
     a = colstart(A, j)
     b = colstop(A, j)
     i = 0
@@ -122,7 +122,7 @@ function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, kr::Range, j
     end
 end
 
-function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::Colon)
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::Colon) where {T}
     for j = 1:rowstart(A,k)-1
         if V[j] ≠ zero(T)
             throw(BandError(A, j-k))
@@ -135,7 +135,7 @@ function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, 
     end
 end
 
-function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr::Range)
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr::Range) where {T}
     a = rowstart(A, k)
     b = rowstop(A, k)
     i = 0
@@ -147,7 +147,7 @@ function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, 
     end
 end
 
-function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range)
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range) where {T}
     u, l = A.u, A.l
     jj = 1
     for j in jr

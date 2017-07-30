@@ -1,22 +1,22 @@
 # BLAS/linear algebra overrides
 
 @inline dot(x...) = Base.dot(x...)
-@inline dot{T<:Union{Float64,Float32}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+@inline dot(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) where {T<:Union{Float64,Float32}} =
     BLAS.dot(M,a,incx,b,incy)
-@inline dot{T<:Union{Complex128,Complex64}}(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) =
+@inline dot(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) where {T<:Union{Complex128,Complex64}} =
     BLAS.dotc(M,a,incx,b,incy)
 
-dotu{T<:Union{Complex64,Complex128}}(f::StridedVector{T},g::StridedVector{T}) =
+dotu(f::StridedVector{T},g::StridedVector{T}) where {T<:Union{Complex64,Complex128}} =
     BLAS.dotu(f,g)
-dotu{N<:Real}(f::AbstractVector{Complex{Float64}},g::AbstractVector{N}) = dot(conj(f),g)
-dotu{N<:Real,T<:Number}(f::AbstractVector{N},g::AbstractVector{T}) = dot(f,g)
+dotu(f::AbstractVector{Complex{Float64}},g::AbstractVector{N}) where {N<:Real} = dot(conj(f),g)
+dotu(f::AbstractVector{N},g::AbstractVector{T}) where {N<:Real,T<:Number} = dot(f,g)
 
 
 normalize!(w::AbstractVector) = scale!(w,inv(norm(w)))
-normalize!{T<:BlasFloat}(w::Vector{T}) = normalize!(length(w),w)
-normalize!{T<:Union{Float64,Float32}}(n,w::Union{Vector{T},Ptr{T}}) =
+normalize!(w::Vector{T}) where {T<:BlasFloat} = normalize!(length(w),w)
+normalize!(n,w::Union{Vector{T},Ptr{T}}) where {T<:Union{Float64,Float32}} =
     BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
-normalize!{T<:Union{Complex128,Complex64}}(n,w::Union{Vector{T},Ptr{T}}) =
+normalize!(n,w::Union{Vector{T},Ptr{T}}) where {T<:Union{Complex128,Complex64}} =
     BLAS.scal!(n,T(inv(BLAS.nrm2(n,w,1))),w,1)
 
 

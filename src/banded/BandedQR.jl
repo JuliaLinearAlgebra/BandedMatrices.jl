@@ -1,11 +1,11 @@
-immutable BandedQR{T} <: Factorization{T}
+struct BandedQR{T} <: Factorization{T}
     H::Matrix{T}  # Represents the orthogonal matrix Q
     R::BandedMatrix{T}
 end
 
 Base.size(QR::BandedQR,k) = size(QR.R,k)
 
-immutable BandedQ{T} <: AbstractMatrix{T}
+struct BandedQ{T} <: AbstractMatrix{T}
     H::Matrix{T}
     m::Int   # number of rows/cols
 end
@@ -17,19 +17,19 @@ size(A::BandedQ,i::Integer) = i <= 0 ? error("dimension out of range") :
                                 i == 2 ? A.m : 1
 
 
-Base.At_mul_B{T<:Real}(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) = Ac_mul_B(A,B)
-Base.At_mul_B!{T<:Real}(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) = Ac_mul_B!(Y,A,B)
+Base.At_mul_B(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B(A,B)
+Base.At_mul_B!(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B!(Y,A,B)
 
-Base.Ac_mul_B{T<:Real,V<:Complex}(A::BandedQ{T},B::Vector{V}) =
+Base.Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Complex} =
     Ac_mul_B(A,real(B))+im*Ac_mul_B(A,imag(B))
-Base.Ac_mul_B{T<:Real,V<:Real}(A::BandedQ{T},B::Vector{V}) =
+Base.Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Real} =
     Ac_mul_B(A,Vector{T}(B))
-Base.Ac_mul_B{T<:Complex}(A::BandedQ{T},B::Vector) =
+Base.Ac_mul_B(A::BandedQ{T},B::Vector) where {T<:Complex} =
     Ac_mul_B(A,Vector{T}(B))
-Base.Ac_mul_B{T<:Real}(A::BandedQ{T},B::Vector{T}) = Ac_mul_B!(similar(B),A,B)
-Base.Ac_mul_B{T<:Complex}(A::BandedQ{T},B::Vector{T}) = Ac_mul_B!(similar(B),A,B)
+Base.Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Real} = Ac_mul_B!(similar(B),A,B)
+Base.Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Complex} = Ac_mul_B!(similar(B),A,B)
 
-function Base.Ac_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
+function Base.Ac_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -70,7 +70,7 @@ end
 
 
 # Each householder is symmetyric, this just reverses the order of application
-function Base.A_mul_B!{T<:BlasFloat}(Y::Vector{T},A::BandedQ{T},B::Vector{T})
+function Base.A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -126,7 +126,7 @@ end
 
 Base.full(A::BandedQ) = A*eye(eltype(A),size(A,1))
 
-Base.IndexStyle{T}(::Type{BandedQ{T}}) = IndexCartesian()
+Base.IndexStyle(::Type{BandedQ{T}}) where {T} = IndexCartesian()
 Base.getindex(A::BandedQ,k::Int,j::Int) = (A*eltype(A)[zeros(j-1);1.0;zeros(size(A,2)-j)])[k]
 
 
@@ -153,14 +153,14 @@ function Base.qrfact(A::BandedMatrix)
 end
 
 flipsign(x,y) = Base.flipsign(x,y)
-flipsign(x::BigFloat,y::BigFloat) = sign(y)==1?x:(-x)
-flipsign(x,y::Complex) = y==0?x:x*sign(y)
+flipsign(x::BigFloat,y::BigFloat) = sign(y)==1 ? x : (-x)
+flipsign(x,y::Complex) = y==0 ? x : x*sign(y)
 
 function banded_qrfact!(R::BandedMatrix)
     T=eltype(R)
     M=R.l+1   # number of diag+subdiagonal bands
     m,n=size(R)
-    W=Matrix{T}(M,(n<m?n:m-1))
+    W=Matrix{T}(M,(n<m ? n : m-1))
     w=pointer(W)
     r=pointer(R.data)
     sz=sizeof(T)
@@ -181,7 +181,7 @@ function banded_qrfact!(R::BandedMatrix)
         end
     end
 
-    for k=m-R.l+1:(n<m?n:m-1)
+    for k=m-R.l+1:(n<m ? n : m-1)
         p=k-m+R.l
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W

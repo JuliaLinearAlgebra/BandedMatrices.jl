@@ -2,7 +2,7 @@
 srand(0)
 
 # conversion to blas type
-type _foo <: Number end
+struct _foo <: Number end
 let
     typ = Float64
     @test BandedMatrices._promote_to_blas_type(typ, Complex128) == Complex128

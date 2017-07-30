@@ -18,7 +18,7 @@ A = sbrand(Float64, 100, 4)
 
 # generalized eigvals
 
-function An{T}(::Type{T}, N::Int)
+function An(::Type{T}, N::Int) where {T}
     A = sbzeros(T, N, 2)
     for n = 0:N-1
         A.data[3,n+1] = T((n+1)*(n+2))
@@ -26,7 +26,7 @@ function An{T}(::Type{T}, N::Int)
     A
 end
 
-function Bn{T}(::Type{T}, N::Int)
+function Bn(::Type{T}, N::Int) where {T}
     B = sbzeros(T, N, 2)
     for n = 0:N-1
         B.data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
@@ -44,7 +44,7 @@ B = Bn(Float64, 100)
 
 @test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
 
-err = λ*(2/π)^2./(1:length(λ)).^2-1
+err = λ*(2/π)^2 ./ (1:length(λ)).^2-1
 
 @test norm(err[1:40]) < 100eps(Float64)
 
@@ -55,6 +55,6 @@ B = Bn(Float32, 100)
 
 @test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
 
-err = λ*(2.f0/π)^2./(1:length(λ)).^2-1
+err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2-1
 
 @test norm(err[1:40]) < 100eps(Float32)

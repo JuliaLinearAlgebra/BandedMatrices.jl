@@ -1,4 +1,4 @@
-gbmv!{T<:BlasFloat}(trans::Char, α::T, A::AbstractMatrix{T}, x::StridedVector{T}, β::T, y::StridedVector{T}) =
+gbmv!(trans::Char, α::T, A::AbstractMatrix{T}, x::StridedVector{T}, β::T, y::StridedVector{T}) where {T<:BlasFloat} =
     gbmv!(trans, size(A,1), size(A,2), bandwidth(A,1), bandwidth(A,2), α,
           pointer(A), leadingdimension(A), pointer(x), stride(x,1), β, pointer(y), stride(y,1))
 
@@ -190,7 +190,7 @@ end
 #            c+sz*(j-1)*stc)
 # end
 
-function gbmm!{T<:BlasFloat}(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β::T, C::AbstractMatrix{T})
+function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β::T, C::AbstractMatrix{T}) where {T<:BlasFloat}
     if tA ≠ 'N' || tB ≠ 'N'
         error("Only 'N' flag is supported.")
     end
@@ -267,7 +267,7 @@ function gbmm!{T<:BlasFloat}(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B:
     C
 end
 
-function gbmm!{T<:BlasFloat}(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::StridedMatrix{T}, β::T, C::StridedMatrix{T})
+function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::StridedMatrix{T}, β::T, C::StridedMatrix{T}) where {T<:BlasFloat}
     if tA ≠ 'N' || tB ≠ 'N'
         error("Only 'N' flag is supported.")
     end
@@ -293,7 +293,7 @@ function gbmm!{T<:BlasFloat}(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B:
     C
 end
 
-function gbmm!{T<:BlasFloat}(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::AbstractMatrix{T}, β::T, C::StridedMatrix{T})
+function gbmm!(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::AbstractMatrix{T}, β::T, C::StridedMatrix{T}) where {T<:BlasFloat}
     if tA ≠ 'N' || tB ≠ 'N'
         error("Only 'N' flag is supported.")
     end
@@ -317,8 +317,8 @@ function gbmm!{T<:BlasFloat}(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::
     C
 end
 
-αA_mul_B_plus_βC!{T}(α,A::BLASBandedMatrix{T},x,β,y) = gbmv!('N',α,A,x,β,y)
+αA_mul_B_plus_βC!(α,A::BLASBandedMatrix{T},x,β,y) where {T} = gbmv!('N',α,A,x,β,y)
 αA_mul_B_plus_βC!(α,A::StridedMatrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
 αA_mul_B_plus_βC!(α,A,x,β,y) = (y .= α*A*x + β*y)
-αA_mul_B_plus_βC!{T,U,V}(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) = gbmm!(α,A,B,β,C)
+αA_mul_B_plus_βC!(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) where {T,U,V} = gbmm!(α,A,B,β,C)
 αA_mul_B_plus_βC!(α,A::StridedMatrix,B::StridedMatrix,β,C::StridedMatrix) = BLAS.gemm!('N','N',α,A,B,β,C)

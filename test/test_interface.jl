@@ -1,6 +1,6 @@
 import BandedMatrices: banded_axpy!, banded_A_mul_B!
 
-type SimpleBandedMatrix{T} <: AbstractMatrix{T}
+struct SimpleBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
     l::Int
     u::Int

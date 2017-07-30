@@ -9,7 +9,7 @@ Returns a tuple containing the upper and lower bandwidth of `A`.
 """
 bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1):bandwidth(A,2)
+bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
 
 doc"""
@@ -50,7 +50,7 @@ doc"""
 returns true if a matrix implements the banded interface.
 """
 isbanded(::AbstractBandedMatrix) = true
-isbanded(::) = false
+isbanded(_) = false
 
 # override bandwidth(A,k) for each AbstractBandedMatrix
 # override inbands_getindex(A,k,j)
@@ -91,7 +91,7 @@ end
 
 ## Show
 
-type PrintShow
+struct PrintShow
     str
 end
 Base.show(io::IO,N::PrintShow) = print(io,N.str)
