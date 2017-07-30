@@ -1,5 +1,5 @@
 gbmv!{T<:BlasFloat}(trans::Char, α::T, A::AbstractMatrix{T}, x::StridedVector{T}, β::T, y::StridedVector{T}) =
-    gbmv!(trans,size(A,1), size(A,2), bandwidth(A,1), bandwidth(A,2), α,
+    gbmv!(trans, size(A,1), size(A,2), bandwidth(A,1), bandwidth(A,2), α,
           pointer(A), leadingdimension(A), pointer(x), stride(x,1), β, pointer(y), stride(y,1))
 
 

@@ -188,7 +188,8 @@ Ac_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVect
 Ac_mul_B!{T, U<:Real, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'T', A, b)
 At_mul_B!{T, U, V}(c::AbstractVector{T}, A::BLASBandedMatrix{U}, b::AbstractVector{V}) = banded_matvecmul!(c, 'T', A, b)
 
-*{U, V}(A::BLASBandedMatrix{U}, b::StridedVector{V}) = A_mul_B!(Vector{promote_type(U, V)}(size(A, 1)), A, b)
+*{U, V}(A::BLASBandedMatrix{U}, b::StridedVector{V}) =
+    A_mul_B!(Vector{promote_type(U, V)}(size(A, 1)), A, b)
 
 
 # matrix * matrix
