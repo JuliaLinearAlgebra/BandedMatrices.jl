@@ -121,10 +121,10 @@ let
     for (n, m) in zip([7, 5], [5, 7])
         A = brand(m, n, 1, 1)
         b = rand(m)
-        @test_throws ArgumentError A\b
-        @test_throws ArgumentError lufact(A)\b
-        @test_throws ArgumentError A_ldiv_B!(A, b)
-        @test_throws ArgumentError A_ldiv_B!(lufact(A), b)
+        @test_throws DimensionMismatch A\b
+        @test_throws DimensionMismatch lufact(A)\b
+        @test_throws DimensionMismatch A_ldiv_B!(A, b)
+        @test_throws DimensionMismatch A_ldiv_B!(lufact(A), b)
     end
 end
 

@@ -40,7 +40,7 @@ lufact(F::BandedLU) = F # no op
 
 
 checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
-    throw(ArgumentError("Banded matrix must be square")))
+    throw(DimensionMismatch("matrix must be matrix is not square: dimensions are $(size(A))")))
 
 ## Conversion/Promotion
 

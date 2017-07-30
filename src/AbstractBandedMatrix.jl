@@ -78,35 +78,15 @@ function Base.maximum(B::AbstractBandedMatrix)
     m
 end
 
-# check if matrix is square
-checksquare(A::AbstractBandedMatrix) = (size(A, 1) == size(A, 2) ||
-    throw(ArgumentError("Banded matrix must be square")))
-
-
-# ~ bound checking functions ~
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, j::Integer) =
-    (0 < k ≤ size(A, 1) && 0 < j ≤ size(A, 2) || throw(BoundsError(A, (k,j))))
-
-checkbounds(A::AbstractBandedMatrix, kr::Range, j::Integer) =
-    (checkbounds(A, first(kr), j); checkbounds(A,  last(kr), j))
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, jr::Range) =
-    (checkbounds(A, k, first(jr)); checkbounds(A, k,  last(jr)))
-
-checkbounds(A::AbstractBandedMatrix, kr::Range, jr::Range) =
-    (checkbounds(A, kr, first(jr)); checkbounds(A, kr,  last(jr)))
-
-checkbounds(A::AbstractBandedMatrix, k::Colon, j::Integer) =
-    (0 < j ≤ size(A, 2) || throw(BoundsError(A, (size(A,1),j))))
-
-checkbounds(A::AbstractBandedMatrix, k::Integer, j::Colon) =
-    (0 < k ≤ size(A, 1) || throw(BoundsError(A, (k,size(A,2)))))
-
-
 # fallbacks for inbands_getindex and inbands_setindex!
-@inline inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer) = getindex(x, i, j)
-@inline inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer) = setindex!(x, v, i, j)
+@inline function inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer)
+    @inbounds r = getindex(x, i, j)
+    r
+end
+@inline function inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer)
+    @inbounds r = setindex!(x, v, i, j)
+    r
+end
 
 
 ## Show

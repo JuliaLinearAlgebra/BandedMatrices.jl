@@ -60,7 +60,7 @@ immutable BandRange end
 
 # ~~ Out of band error
 immutable BandError <: Exception
-    A::AbstractBandedMatrix
+    A::AbstractMatrix
     i::Int
 end
 
@@ -72,32 +72,32 @@ end
 
 
 # length of diagonal
-@inline diaglength(A::AbstractBandedMatrix, b::Band) = diaglength(A, b.i)
-@inline function diaglength(A::AbstractBandedMatrix, i::Integer)
+@inline diaglength(A::AbstractMatrix, b::Band) = diaglength(A, b.i)
+@inline function diaglength(A::AbstractMatrix, i::Integer)
     max(min(size(A, 2), size(A, 1)+i) - max(0, i), 0)
 end
 
 
 # check indices fall in the band
-checkband(A::AbstractBandedMatrix, i::Integer) =
+checkband(A::AbstractMatrix, i::Integer) =
     (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i)))
 
-checkband(A::AbstractBandedMatrix, b::Band) = checkband(A, b.i)
+checkband(A::AbstractMatrix, b::Band) = checkband(A, b.i)
 
-checkband(A::AbstractBandedMatrix, k::Integer, j::Integer) = checkband(A, j-k)
+checkband(A::AbstractMatrix, k::Integer, j::Integer) = checkband(A, j-k)
 
-checkband(A::AbstractBandedMatrix, kr::Range, j::Integer) =
+checkband(A::AbstractMatrix, kr::Range, j::Integer) =
     (checkband(A, first(kr), j); checkband(A,  last(kr), j))
 
-checkband(A::AbstractBandedMatrix, k::Integer, jr::Range) =
+checkband(A::AbstractMatrix, k::Integer, jr::Range) =
     (checkband(A, k, first(jr)); checkband(A, k,  last(jr)))
 
-checkband(A::AbstractBandedMatrix, kr::Range, jr::Range) =
+checkband(A::AbstractMatrix, kr::Range, jr::Range) =
     (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
 
 
 # checks if the bands match A
-function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, ::Colon, j::Integer)
+function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::Integer)
     for k = 1:colstart(A,j)-1
         if V[k] ≠ zero(T)
             throw(BandError(A, j-k))
@@ -110,7 +110,7 @@ function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, ::Colo
     end
 end
 
-function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, kr::Range, j::Integer)
+function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, kr::Range, j::Integer)
     a = colstart(A, j)
     b = colstop(A, j)
     i = 0
@@ -122,7 +122,7 @@ function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, kr::Ra
     end
 end
 
-function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, k::Integer, ::Colon)
+function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::Colon)
     for j = 1:rowstart(A,k)-1
         if V[j] ≠ zero(T)
             throw(BandError(A, j-k))
@@ -135,7 +135,7 @@ function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, k::Int
     end
 end
 
-function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, k::Integer, jr::Range)
+function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr::Range)
     a = rowstart(A, k)
     b = rowstop(A, k)
     i = 0
@@ -147,7 +147,7 @@ function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractVector, k::Int
     end
 end
 
-function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range)
+function checkbandmatch{T}(A::AbstractMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range)
     u, l = A.u, A.l
     jj = 1
     for j in jr
@@ -163,5 +163,5 @@ function checkbandmatch{T}(A::AbstractBandedMatrix{T}, V::AbstractMatrix, kr::Ra
     end
 end
 
-checkbandmatch(A::AbstractBandedMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
+checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))

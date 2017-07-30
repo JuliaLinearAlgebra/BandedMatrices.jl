@@ -36,14 +36,26 @@ checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
     checkdimensions((length(kr), length(jr)), size(src))
 
 
+# helper functions in matrix multiplication routines
+@inline _size(t::Char, A::AbstractMatrix, k::Int) = t == 'N' ? size(A, k) : size(A, 3-k)
+@inline _size(t::Char, A::AbstractMatrix) = t == 'N' ? size(A) : (size(A, 2), size(A, 1))
+@inline _bandwidth(t::Char, A::AbstractMatrix, k::Int) = t == 'N' ? bandwidth(A, k) : bandwidth(A, 3-k)
+@inline _bandwidths(t::Char, A::AbstractMatrix) = t == 'N' ? bandwidths(A) : (bandwidth(A, 2), bandwidth(A, 1))
+@inline _view(t::Char, A::AbstractMatrix, I, J) = t == 'N' ? view(A, I, J) : view(A, J, I)
+
 # return the bandwidths of A*B
-function prodbandwidths(A::AbstractMatrix, B::AbstractMatrix)
-    m = size(A, 1)
-    n = size(B, 2)
-    bandwidth(A, 1) + bandwidth(B, 1), bandwidth(A, 2) + bandwidth(B, 2)
+function prodbandwidths(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix)
+    Al, Au = _bandwidths(tA, A)
+    Bl, Bu = _bandwidths(tB, B)
+    Al + Bl, Au + Bu
+end
+prodbandwidths(A::AbstractMatrix, B::AbstractMatrix) = prodbandwidths('N', 'N', A, B)
+
+function banded_similar(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix, T::DataType)
+    BandedMatrix(T, _size(tA, A, 1), _size(tB, B, 2), prodbandwidths(tA, tB, A, B)...)
 end
 
-# return the bandwidths of A+B
+# helper functions in matrix addition routines
 function sumbandwidths(A::AbstractMatrix, B::AbstractMatrix)
     max(bandwidth(A, 1), bandwidth(B, 1)), max(bandwidth(A, 2), bandwidth(B, 2))
 end

@@ -4,7 +4,7 @@ module BandedMatrices
 using Base, Compat
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
-                >=, /, ^, \, transpose, showerror
+                >=, /, ^, \, transpose, showerror, reindex, checkbounds
 
 import Base: convert, size, view
 
@@ -18,10 +18,23 @@ import Base.LinAlg: BlasInt,
                     BlasComplex,
                     axpy!,
                     A_mul_B!,
+                    Ac_mul_B,
+                    Ac_mul_B!,
+                    A_mul_Bc,
+                    A_mul_Bc!,
+                    Ac_mul_Bc,
+                    Ac_mul_Bc!,
+                    At_mul_B,
+                    At_mul_B!,
+                    A_mul_Bt,
+                    A_mul_Bt!,
+                    At_mul_Bt,
+                    At_mul_Bt!,
                     A_ldiv_B!,
                     At_ldiv_B!,
                     Ac_ldiv_B!,
-                    copy_oftype
+                    copy_oftype,
+                    checksquare
 
 import Base: lufact, cholfact, cholfact!
 
