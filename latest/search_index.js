@@ -157,7 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Banded matrix interface",
     "category": "section",
-    "text": "Banded matrices go beyond the type BandedMatrix: one can also create matrix types that conform to the _banded matrix interface_, in which case many of the utility functions in this package are available. The banded matrix interface consists of the following: | Required methods | Brief description | | –––––––- | –––––––- | | bandwidth(A, k) | Returns the sub-diagonal bandwidth (k==1) or the super-diagonal bandwidth (k==2) | | isbanded(A)    | Override to return true | | inbands_getindex(A, k, j) | Unsafe: return A[k,j], without the need to check if we are inside the bands | | inbands_setindex!(A, v, k, j) | Unsafe: set A[k,j] = v, without the need to check if we are inside the bands | | ––––––– | ––––––- |"
+    "text": "Banded matrices go beyond the type BandedMatrix: one can also create matrix types that conform to the _banded matrix interface_, in which case many of the utility functions in this package are available. The banded matrix interface consists of the following:Required methods Brief description\nbandwidth(A, k) Returns the sub-diagonal bandwidth (k==1) or the super-diagonal bandwidth (k==2)\nisbanded(A) Override to return true\ninbands_getindex(A, k, j) Unsafe: return A[k,j], without the need to check if we are inside the bands\ninbands_setindex!(A, v, k, j) Unsafe: set A[k,j] = v, without the need to check if we are inside the bandsNote that certain SubArrays of BandedMatrix are also banded matrices. The banded matrix interface is implemented for such SubArrays to take advantage of this."
 },
 
 ]}
