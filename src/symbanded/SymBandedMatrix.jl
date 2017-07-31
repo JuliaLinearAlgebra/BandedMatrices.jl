@@ -11,7 +11,7 @@ export sbrand, sbeye, sbzeros
 #         *      a_12   a_23   a_34
 #         a_11   a_22   a_33   a_44 ]
 ###
-struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
+mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # k+1 x n (# of columns)
     k::Int # bandwidth ≥ 0
     function SymBandedMatrix{T}(data::Matrix{T},k) where {T}

@@ -10,7 +10,7 @@
 #         a_21   a_32   a_43    *
 #         a_31   a_42   *       *       ]
 ###
-struct BandedMatrix{T} <: AbstractBandedMatrix{T}
+mutable struct BandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # l+u+1 x n (# of columns)
     m::Int #Number of rows
     l::Int # lower bandwidth ≥0
