@@ -112,6 +112,29 @@ function gbtrs!(trans::Char, kl::Int, ku::Int, m::Int, AB::StridedMatrix,
 end
 
 
+# All the eigenvalues and, optionally, eigenvectors of a real symmetric band matrix A.
+for (fname, elty) in ((:dsbev_,:Float64),
+                      (:ssbev_,:Float32))
+    @eval begin
+                # SUBROUTINE       SUBROUTINE DSBEV( JOBZ, UPLO, N, KD, AB, LDAB, W, Z, LDZ, WORK,
+                #     $                  INFO )
+                # CHARACTER          JOBZ, UPLO
+                # INTEGER            INFO, KD, LDAB, LDZ, N
+                # DOUBLE PRECISION   AB( LDAB, * ), W( * ), WORK( * ), Z( LDZ, * )
+
+        function sbev!(jobz::Char, uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int,
+                       w::Ptr{$elty}, Z::Ptr{$elty}, ldz::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &jobz, &uplo, &n, &kd, AB, &ldab, w, Z, &ldz, work, info)
+            w, Z
+        end
+    end
+end
+
+
 # Symmetric/Hermitian Positive Definite banded Cholesky factorization
 for (fname, elty) in ((:dpbtrf_,:Float64),
                       (:spbtrf_,:Float32),

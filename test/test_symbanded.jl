@@ -10,11 +10,21 @@ b=rand(10)
 @test A*b ≈ full(A)*b
 
 
-# eigvals
+# eig and eigvals
 
 srand(0)
-A = sbrand(Float64, 100, 4)
-@test eigvals(A) ≈ eigvals(Symmetric(full(A)))
+for T in (Float32, Float64)
+    A = sbrand(T, 100, 4)
+    @test eigvals(A) ≈ eigvals(Symmetric(full(A)))
+
+    Λ, Q = eig(A)
+    Λf, Qf = eig(Symmetric(full(A)))
+    @test Λ ≈ Λf
+    # They don't necessarily generate the same eigenvectors (with same signs),
+    # so we don't test that. But, since the decomposition requires less work,
+    # it should be more accurate.
+    @test norm(A - Q*Diagonal(Λ)*Q') < norm(A - Qf*Diagonal(Λf)*Qf')
+end
 
 # generalized eigvals
 

@@ -182,6 +182,13 @@ end
     end
 end
 
+# scalar - integer - integer
+@inline function setindex!(A::SymBandedMatrix, v, k::Integer, j::Integer)
+    @boundscheck checkbounds(A, k, j)
+    @inbounds r = symbanded_setindex!(A.data, A.k, v, k, j)
+    r
+end
+
 # scalar - colon - colon
 function setindex!(A::SymBandedMatrix{T}, v, ::Colon, ::Colon) where {T}
     if v == zero(T)
@@ -302,6 +309,30 @@ tridiagonalize(A::SymBandedMatrix) = tridiagonalize!(copy(A))
 
 Base.eigvals!(A::SymBandedMatrix) = eigvals!(tridiagonalize!(A))
 Base.eigvals(A::SymBandedMatrix) = eigvals!(copy(A))
+
+function Base.eigfact!(A::SymBandedMatrix{T}) where T <: BlasReal
+    n = size(A, 1)
+    w = Vector{T}(n)
+    Z = Matrix{T}(n, n)
+    eigfact!(A, Eigen(w, Z))
+end
+
+function Base.eigfact!(A::SymBandedMatrix{T}, E::Eigen{T,T,Matrix{T},Vector{T}}) where T <: BlasReal
+    n = size(A, 1)
+    kd = bandwidth(A, 2)
+    lda = leadingdimension(A)
+    ldz = size(E.vectors, 1)
+    @assert n == ldz == size(E.vectors, 2)
+    work = Vector{T}(max(1, 3*n-2))
+    sbev!('V', 'U', n, kd, pointer(A), lda, pointer(E.values), pointer(E.vectors), ldz, pointer(work))
+    E
+end
+
+function Base.eigfact(A::SymBandedMatrix{T}) where T
+    S = promote_type(Float32, typeof(zero(T)/norm(one(T))))
+    eigfact!(copy_oftype(A, S))
+end
+
 
 function Base.eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
     n = size(A, 1)

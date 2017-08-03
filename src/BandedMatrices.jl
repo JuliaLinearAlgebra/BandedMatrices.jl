@@ -34,7 +34,8 @@ import Base.LinAlg: BlasInt,
                     At_ldiv_B!,
                     Ac_ldiv_B!,
                     copy_oftype,
-                    checksquare
+                    checksquare,
+                    Eigen
 
 import Base: lufact, cholfact, cholfact!
 
