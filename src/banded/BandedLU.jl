@@ -4,7 +4,7 @@
 # if the LAPACK storage was built in the BandedMatrix we could get rid of
 # the last three fields of this type, and have the first point to the parent
 # BandedMatrix, rather then to a generic chunk of memory
-immutable BandedLU{T} <: Factorization{T}
+struct BandedLU{T} <: Factorization{T}
     data::Matrix{T}        # banded matrix plus additional storage
     ipiv::Vector{BlasInt}  # vector of pivots
     l::Int                 # lower bandwidth
@@ -13,7 +13,7 @@ immutable BandedLU{T} <: Factorization{T}
 end
 
 # conversion
-convert{T<:Number, S<:Number}(::Type{BandedLU{T}}, B::BandedLU{S}) =
+convert(::Type{BandedLU{T}}, B::BandedLU{S}) where {T<:Number, S<:Number} =
     BandedLU{T}(convert(Matrix{T}, B.data), B.ipiv, B.l, B.u, B.m)
 
 # size of the parent array
@@ -23,7 +23,7 @@ size(A::BandedLU, k::Integer) = k <= 0 ? error("dimension out of range") :
                                 k == 2 ? size(A.data, 2) : 1
 
 # LU factorisation with pivoting. This makes a copy!
-function lufact{T<:Number}(A::BandedMatrix{T})
+function lufact(A::BandedMatrix{T}) where {T<:Number}
     # copy to a blas type that allows calculation of the factorisation in place.
     S = _promote_to_blas_type(T, T)
     # copy into larger array of size (2l+u*1)×n, i.e. l additional rows
@@ -38,17 +38,14 @@ lufact(F::BandedLU) = F # no op
 
 ## Utilities
 
-# check if matrix is square before solution of linear system or before converting
-checksquare(A::BandedMatrix) = (size(A, 1) == size(A, 2) ||
-    throw(ArgumentError("Banded matrix must be square")))
-checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
-    throw(ArgumentError("Banded matrix must be square")))
 
+checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
+    throw(DimensionMismatch("matrix must be matrix is not square: dimensions are $(size(A))")))
 
 ## Conversion/Promotion
 
 # Returns the narrowest blas type given the eltypes of A and b in A*x=b
-function _promote_to_blas_type{T<:Number, S<:Number}(::Type{T}, ::Type{S})
+function _promote_to_blas_type(::Type{T}, ::Type{S}) where {T<:Number, S<:Number}
     TS = Base.promote_op(/, T, S)
     # promote to narrowest type
     TS <: Complex       && return Base.promote_op(/, TS, Complex64)
@@ -58,10 +55,15 @@ end
 
 # Converts A and b to the narrowest blas type
 for typ in [BandedMatrix, BandedLU]
-    @eval function _convert_to_blas_type{T<:Number}(A::$typ, B::AbstractVecOrMat{T})
+    @eval function _convert_to_blas_type(A::$typ, B::AbstractVecOrMat{T}) where {T<:Number}
         TS = _promote_to_blas_type(eltype(A), eltype(B))
         AA = convert($typ{TS}, A)
         BB = convert(Array{TS, ndims(B)}, B)
         AA, BB # one of these two might make a copy
     end
 end
+
+
+# basic interface
+(\)(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) where {T<:BlasFloat} =
+    A_ldiv_B!(A, copy(B)) # makes a copy

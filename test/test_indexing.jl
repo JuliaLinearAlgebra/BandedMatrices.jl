@@ -7,6 +7,15 @@ import BandedMatrices: rowstart,
                        collength,
                        diaglength
 
+
+let
+    for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
+        A=brand(n,m,Al,Au)
+        kr,jr=3:10,5:12
+        @test full(A[kr,jr]) ≈ full(A)[kr,jr]
+    end
+end
+
 # rowstart/rowstop business
 let
     A = bones(7, 5, 1, 2)
@@ -401,8 +410,8 @@ let
     @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
     @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
     @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
-    @test_throws BoundsError a[7, BandRange] = [1, 2, 3]
-    @test_throws BoundsError a[7, BandRange] = 1
+    @test_throws DimensionMismatch a[7, BandRange] = [1, 2, 3]
+    @test_throws BandError a[7, BandRange] = 1
 end
 
 

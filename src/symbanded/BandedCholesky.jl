@@ -1,11 +1,11 @@
 ## Banded Cholesky decomposition
 
-immutable BandedCholesky{T} <: Factorization{T}
+struct BandedCholesky{T} <: Factorization{T}
     data::SymBandedMatrix{T}  # symmetric banded matrix
 end
 
 # conversion
-convert{T<:Number, S<:Number}(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) =
+convert(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) where {T<:Number, S<:Number} =
     BandedCholesky{T}(convert(SymBandedMatrix{T}, B.data))
 
 # size of the parent array
@@ -14,7 +14,7 @@ convert{T<:Number, S<:Number}(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) =
 @inline bandwidth(A::BandedCholesky, k) = bandwidth(A.data, k)
 
 # Cholesky factorisation.
-function cholfact!{T<:Number}(A::SymBandedMatrix{T})
+function cholfact!(A::SymBandedMatrix{T}) where {T<:Number}
     pbtrf!('U', size(A, 1), bandwidth(A, 2), pointer(A), leadingdimension(A))
     BandedCholesky{T}(A)
 end
@@ -37,7 +37,7 @@ checksquare(A::BandedCholesky) = checksquare(A.data)
 
 # Converts A and b to the narrowest blas type
 for typ in [BandedCholesky]
-    @eval function _convert_to_blas_type{T<:Number}(A::$typ, B::AbstractVecOrMat{T})
+    @eval function _convert_to_blas_type(A::$typ, B::AbstractVecOrMat{T}) where {T<:Number}
         TS = _promote_to_blas_type(eltype(A), eltype(B))
         AA = convert($typ{TS}, A)
         BB = convert(Array{TS, ndims(B)}, B)

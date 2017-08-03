@@ -11,10 +11,10 @@ export sbrand, sbeye, sbzeros
 #         *      a_12   a_23   a_34
 #         a_11   a_22   a_33   a_44 ]
 ###
-type SymBandedMatrix{T} <: AbstractBandedMatrix{T}
+mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # k+1 x n (# of columns)
     k::Int # bandwidth ≥ 0
-    function (::Type{SymBandedMatrix{T}}){T}(data::Matrix{T},k)
+    function SymBandedMatrix{T}(data::Matrix{T},k) where {T}
         if size(data,1) != k+1
             error("Data matrix must have number rows equal to number of superdiagonals")
         else
@@ -33,29 +33,29 @@ returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwid
 """
 
 # Use zeros to avoid unallocated entries for bigfloat
-SymBandedMatrix{T<:BlasFloat}(::Type{T},n::Integer,k::Integer) =
+SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T<:BlasFloat} =
     SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
-SymBandedMatrix{T<:Number}(::Type{T},n::Integer,k::Integer) =
+SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T<:Number} =
     SymBandedMatrix{T}(zeros(T,k+1,n),k)
-SymBandedMatrix{T}(::Type{T},n::Integer,k::Integer) =
+SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T} =
     SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
 
 
 for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
-    @eval Base.convert{V}(::Type{$MAT{V}},M::SymBandedMatrix) =
+    @eval Base.convert(::Type{$MAT{V}},M::SymBandedMatrix) where {V} =
         SymBandedMatrix{V}(convert(Matrix{V},M.data),M.k)
 end
 
 Base.copy(B::SymBandedMatrix) = SymBandedMatrix(copy(B.data),B.k)
 
-Base.promote_rule{T,V}(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) =
+Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {T,V} =
     SymBandedMatrix{promote_type(T,V)}
 
 
 
 for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.zeros),:sbzeros),(:(Base.ones),:sbones))
     @eval begin
-        $bop{T}(::Type{T},n::Integer,a::Integer) = SymBandedMatrix($op(T,a+1,n),a)
+        $bop(::Type{T},n::Integer,a::Integer) where {T} = SymBandedMatrix($op(T,a+1,n),a)
         $bop(n::Integer,a::Integer) = $bop(Float64,n,a)
 
         $bop(B::AbstractMatrix) = $bop(eltype(B),size(B,1),bandwidth(B,2))
@@ -89,13 +89,16 @@ sbrand
 
 `n×n` banded identity matrix of type `T` with bandwidths `(l,u)`
 """
-function sbeye{T}(::Type{T},n::Integer,a=0)
+function sbeye(::Type{T},n::Integer,a=0) where {T}
     ret=sbzeros(T,n,a)
     ret[band(0)] = one(T)
     ret
 end
 sbeye(n::Integer,a...) = sbeye(Float64,n,a...)
 
+
+Base.similar(B::SymBandedMatrix) =
+    SymBandedMatrix(eltype(B),size(B,1),bandwidth(B,1))
 
 
 ## Abstract Array Interface
@@ -108,9 +111,9 @@ function size(A::SymBandedMatrix)
     n,n
 end
 
-bandwidth(A::SymBandedMatrix,k) = A.k
+bandwidth(A::SymBandedMatrix, k::Integer) = A.k
 
-@compat Base.IndexStyle{T}(::Type{SymBandedMatrix{T}}) = IndexCartesian()
+Base.IndexStyle(::Type{SymBandedMatrix{T}}) where {T} = IndexCartesian()
 
 
 @inline inbands_getindex(A::SymBandedMatrix, k::Integer, j::Integer) =
@@ -143,12 +146,12 @@ end
 # ~ indexing along a band
 
 # scalar - band - colon
-@inline function getindex{T}(A::SymBandedMatrix{T}, b::Band)
+@inline function getindex(A::SymBandedMatrix{T}, b::Band) where {T}
     @boundscheck checkband(A, b)
     vec(A.data[A.k - abs(b.i) + 1, b.i+1:end])
 end
 
-@inline function view{T}(A::SymBandedMatrix{T}, b::Band)
+@inline function view(A::SymBandedMatrix{T}, b::Band) where {T}
     @boundscheck checkband(A, b)
     view(A.data,A.k - abs(b.i) + 1, b.i+1:size(A.data,2))
 end
@@ -164,7 +167,7 @@ end
     syminbands_setindex!(A.data, A.k, v, k, j)
 
 # fast method used below
-@inline function syminbands_setindex!{T}(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer)
+@inline function syminbands_setindex!(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) where {T}
     @inbounds data[u - abs(k-j) + 1, max(k,j)] = convert(T, v)::T
     v
 end
@@ -180,7 +183,7 @@ end
 end
 
 # scalar - colon - colon
-function setindex!{T}(A::SymBandedMatrix{T}, v, ::Colon, ::Colon)
+function setindex!(A::SymBandedMatrix{T}, v, ::Colon, ::Colon) where {T}
     if v == zero(T)
         @inbounds A.data[:] = convert(T, v)::T
     else
@@ -201,34 +204,34 @@ Base.full(A::SymBandedMatrix) = convert(Matrix,A)
 
 
 # algebra
-function +{T,V}(A::SymBandedMatrix{T},B::SymBandedMatrix{V})
+function +(A::SymBandedMatrix{T},B::SymBandedMatrix{V}) where {T,V}
     if size(A) != size(B)
         throw(DimensionMismatch("+"))
     end
     n,m=size(A)
 
     ret = sbzeros(promote_type(T,V),n,max(A.k,B.k))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(1.,B,ret)
+    Base.axpy!(1.,A,ret)
+    Base.axpy!(1.,B,ret)
 
     ret
 end
 
-function -{T,V}(A::SymBandedMatrix{T}, B::SymBandedMatrix{V})
+function -(A::SymBandedMatrix{T}, B::SymBandedMatrix{V}) where {T,V}
     if size(A) != size(B)
         throw(DimensionMismatch("+"))
     end
     n,m=size(A)
 
     ret = sbzeros(promote_type(T,V),n,max(A.k,B.k))
-    BLAS.axpy!(1.,A,ret)
-    BLAS.axpy!(-1.,B,ret)
+    Base.axpy!(1.,A,ret)
+    Base.axpy!(-1.,B,ret)
 
     ret
 end
 
 
-function *{T<:Number,V<:Number}(A::SymBandedMatrix{T},B::SymBandedMatrix{V})
+function *(A::SymBandedMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Number}
     if size(A,2) != size(B,1)
         throw(DimensionMismatch("*"))
     end
@@ -239,7 +242,7 @@ function *{T<:Number,V<:Number}(A::SymBandedMatrix{T},B::SymBandedMatrix{V})
     A_mul_B!(Y,A,B)
 end
 
-function *{T<:Number,V<:Number}(A::SymBandedMatrix{T},B::StridedMatrix{V})
+function *(A::SymBandedMatrix{T},B::StridedMatrix{V}) where {T<:Number,V<:Number}
     if size(A,2)!=size(B,1)
         throw(DimensionMismatch("*"))
     end
@@ -248,13 +251,13 @@ function *{T<:Number,V<:Number}(A::SymBandedMatrix{T},B::StridedMatrix{V})
     A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
-*{T<:Number,V<:Number}(A::StridedMatrix{T},B::SymBandedMatrix{V}) =
+*(A::StridedMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Number} =
     A*Array(B)
 
-*{T<:BlasFloat}(A::SymBandedMatrix{T},b::StridedVector{T}) =
+*(A::SymBandedMatrix{T},b::StridedVector{T}) where {T<:BlasFloat} =
     A_mul_B!(Vector{T}(size(A,1)),A,b)
 
-function *{T}(A::SymBandedMatrix{T},b::StridedVector{T})
+function *(A::SymBandedMatrix{T},b::StridedVector{T}) where {T}
     ret = zeros(T,size(A,1))
     for j = 1:size(A,2), k = colrange(A,j)
         @inbounds ret[k]+=A[k,j]*b[j]
@@ -263,55 +266,24 @@ function *{T}(A::SymBandedMatrix{T},b::StridedVector{T})
 end
 
 
-function *{TT}(A::SymBandedMatrix{TT},b::StridedVector)
+function *(A::SymBandedMatrix{TT},b::StridedVector) where {TT}
     T=promote_type(eltype(A),eltype(b))
     convert(BandedMatrix{T},A)*convert(AbstractVector{T},b)
 end
 
 Base.transpose(B::SymBandedMatrix) = copy(B)
 
-Base.ctranspose{T<:Real}(B::SymBandedMatrix{T}) = copy(B)
+Base.ctranspose(B::SymBandedMatrix{T}) where {T<:Real} = copy(B)
 
 
 
-Base.diag{T}(A::SymBandedMatrix{T}) = vec(A.data[A.k+1,:])
-
-
-
-## A_***_B routines
-
-@inline leadingdimension(B::SymBandedMatrix) = stride(B.data,2)
-@inline Base.pointer(B::SymBandedMatrix) = pointer(B.data)
-
-sbmv!{T<:BlasFloat}(α::T,A::SymBandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) =
-  sbmv!('U',A.k,α,A.data,x,β,y)
-
-
-
-function symbanded_A_mul_B!{T<:BlasFloat}(c::AbstractVector{T},A::AbstractMatrix{T},b::StridedVector{T})
-    n = size(A,1)
-
-    @boundscheck if length(c) ≠ n || length(b) ≠ n
-        throw(DimensionMismatch())
-    end
-
-    k = bandwidth(A,2)
-    sbmv!('U',n,k,one(T),
-            pointer(A),leadingdimension(A),pointer(b),stride(b,1),zero(T),pointer(c),stride(c,1))
-    c
-end
-
-
-Base.A_mul_B!{T}(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) =
-    symbanded_A_mul_B!(c,A,b)
-
-
+Base.diag(A::SymBandedMatrix{T}) where {T} = vec(A.data[A.k+1,:])
 
 
 ## eigvals routine
 
 
-function tridiagonalize!{T}(A::SymBandedMatrix{T})
+function tridiagonalize!(A::SymBandedMatrix{T}) where {T}
     n=size(A, 1)
     d = Vector{T}(n)
     e = Vector{T}(n-1)
@@ -331,7 +303,7 @@ tridiagonalize(A::SymBandedMatrix) = tridiagonalize!(copy(A))
 Base.eigvals!(A::SymBandedMatrix) = eigvals!(tridiagonalize!(A))
 Base.eigvals(A::SymBandedMatrix) = eigvals!(copy(A))
 
-function Base.eigvals!{T}(A::SymBandedMatrix{T}, B::SymBandedMatrix{T})
+function Base.eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
     n = size(A, 1)
     @assert n == size(B, 1)
     # compute split-Cholesky factorization of B.
@@ -350,3 +322,9 @@ function Base.eigvals!{T}(A::SymBandedMatrix{T}, B::SymBandedMatrix{T})
 end
 
 Base.eigvals(A::SymBandedMatrix, B::SymBandedMatrix) = eigvals!(copy(A), copy(B))
+
+
+## These routines give access to the necessary information to call BLAS
+
+@inline leadingdimension(B::SymBandedMatrix) = stride(B.data,2)
+@inline Base.pointer(B::SymBandedMatrix) = pointer(B.data)

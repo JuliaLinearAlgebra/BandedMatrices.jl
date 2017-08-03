@@ -46,24 +46,3 @@ A=brand(Complex128,10,10,3,2)
 b=rand(10)
 Q,R=qr(A)
 @test R\(Q'*b) ≈ full(A)\b
-
-
-
-println("Large dimension QR solve")
-A=brand(100000,100000,3,4)
-b=rand(size(A,1))
-@time Q,R=qr(A)
-@time R\(Q'*b)
-
-println("Time should be   0.030149 seconds (23 allocations: 17.548 MB)")
-println("Time should be   0.008210 seconds (29 allocations: 8.012 MB)")
-
-
-A=brand(2000,2000,400,400)
-b=rand(size(A,1))
-@time Q,R=qr(A)
-@time R\(Q'*b)
-
-
-println("Time should be   0.401671 seconds (24 allocations: 36.665 MB)")
-println("Time should be   0.009276 seconds (30 allocations: 12.262 MB)")
