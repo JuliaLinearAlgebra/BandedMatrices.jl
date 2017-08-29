@@ -333,6 +333,32 @@ function Base.eigfact(A::SymBandedMatrix{T}) where T
     eigfact!(copy_oftype(A, S))
 end
 
+function Base.eigfact!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where T <: BlasReal
+    @assert size(A) == size(B)
+    n = size(A, 1)
+    w = Vector{T}(n)
+    Z = Matrix{T}(n, n)
+    eigfact!(A, B, Eigen(w, Z))
+end
+
+function Base.eigfact!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}, E::Eigen{T,T,Matrix{T},Vector{T}}) where T <: BlasReal
+    n = size(A, 1)
+    ka = bandwidth(A, 2)
+    lda = leadingdimension(A)
+    kb = bandwidth(B, 2)
+    ldb = leadingdimension(B)
+    ldz = size(E.vectors, 1)
+    @assert n == ldz == size(E.vectors, 2)
+    work = Vector{T}(3*n)
+    sbgv!('V', 'U', n, ka, kb, pointer(A), lda, pointer(B), ldb, pointer(E.values), pointer(E.vectors), ldz, pointer(work))
+    E
+end
+
+function Base.eigfact(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where T
+    S = promote_type(Float32, typeof(zero(T)/norm(one(T))))
+    eigfact!(copy_oftype(A, S), copy_oftype(B, S))
+end
+
 
 function Base.eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
     n = size(A, 1)

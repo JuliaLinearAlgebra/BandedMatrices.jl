@@ -20,10 +20,18 @@ for T in (Float32, Float64)
     Λ, Q = eig(A)
     Λf, Qf = eig(Symmetric(full(A)))
     @test Λ ≈ Λf
-    # They don't necessarily generate the same eigenvectors (with same signs),
-    # so we don't test that. But, since the decomposition requires less work,
-    # it should be more accurate.
-    @test norm(A - Q*Diagonal(Λ)*Q') < norm(A - Qf*Diagonal(Λf)*Qf')
+    @test A ≈ Q*Diagonal(Λ)*Q'
+
+    B = sbrand(T, 100, 2)
+    [B[i,i] += 2 for i = 1:100] # make it positive definite
+    @test eigvals(A, B) ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
+
+    Λ, Q = eig(A, B)
+    Λf, Qf = eig(Symmetric(full(A)), Symmetric(full(B)))
+    @test Λ ≈ Λf
+
+    @test Q'A*Q ≈ Diagonal(Λ)
+    @test Q'B*Q ≈ eye(T, 100)
 end
 
 # generalized eigvals

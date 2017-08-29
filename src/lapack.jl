@@ -134,6 +134,29 @@ for (fname, elty) in ((:dsbev_,:Float64),
     end
 end
 
+# All the generalized eigenvalues and, optionally, eigenvectors of a real symmetric-definite pencil (A,B).
+for (fname, elty) in ((:dsbgv_,:Float64),
+                      (:ssbgv_,:Float32))
+    @eval begin
+                # SUBROUTINE       DSBGV( JOBZ, UPLO, N, KA, KB, AB, LDAB, BB, LDBB, W, Z,
+                #     $                  LDZ, WORK, INFO )
+                # CHARACTER          JOBZ, UPLO
+                # INTEGER            INFO, KA, KB, LDAB, LDBB, LDZ, N
+                # DOUBLE PRECISION   AB( LDAB, * ), BB( LDBB, * ), W( * ), WORK( * ), Z( LDZ, * )
+
+        function sbgv!(jobz::Char, uplo::Char, n::Int, ka::Int, kb::Int, AB::Ptr{$elty}, ldab::Int,
+                       BB::Ptr{$elty}, ldbb::Int, w::Ptr{$elty}, Z::Ptr{$elty}, ldz::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &jobz, &uplo, &n, &ka, &kb, AB, &ldab, BB, &ldbb, w, Z, &ldz, work, info)
+            w, Z
+        end
+    end
+end
+
 
 # Symmetric/Hermitian Positive Definite banded Cholesky factorization
 for (fname, elty) in ((:dpbtrf_,:Float64),
