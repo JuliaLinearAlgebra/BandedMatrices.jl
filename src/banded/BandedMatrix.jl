@@ -546,7 +546,7 @@ function Base.convert(::Type{Matrix},A::BandedMatrix)
     ret
 end
 
-Base.full(A::BandedMatrix) = convert(Matrix,A)
+Base.full(A::BandedMatrix) = convert(Matrix, A)
 
 
 function Base.sparse(B::BandedMatrix)
@@ -568,11 +568,36 @@ end
 
 
 
+function bidiagonalize!(A::BandedMatrix{T}) where T
+    m, n = size(A)
+    mn = min(m, n)
+    d = Vector{T}(mn)
+    e = Vector{T}(mn-1)
+    q = Vector{T}(0)
+    pt = Vector{T}(0)
+    c = Vector{T}(0)
+    work = Vector{T}(2*max(m, n))
+
+    gbbrd!('N', m, n, 0, bandwidth(A, 1), bandwidth(A, 2),
+           pointer(A), leadingdimension(A), pointer(d), pointer(e),
+           pointer(q), max(1, m), pointer(pt), max(1, n), pointer(c),
+           max(1, m), pointer(work))
+
+    Bidiagonal(d, e, true)
+end
+
+bidiagonalize(A::BandedMatrix) = bidiagonalize!(copy(A))
+
+Base.svdvals!(A::AbstractBandedMatrix) = svdvals!(bidiagonalize!(A))
+Base.svdvals(A::AbstractBandedMatrix) = svdvals!(copy(A))
 
 # pass standard routines to full matrix
 
-Base.norm(B::BandedMatrix,opts...) = norm(full(B),opts...)
+Base.eigvals(A::BandedMatrix) = eigvals!(full(A))
+Base.eigvals(A::BandedMatrix, B::BandedMatrix) = eigvals!(full(A), full(B))
 
+Base.eigfact(A::BandedMatrix) = eigfact!(full(A))
+Base.eigfact(A::BandedMatrix, B::BandedMatrix) = eigfact!(full(A), full(B))
 
 # We turn off bound checking to allow nicer syntax without branching
 #setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=((A.l≤j-k≤A.u)&&k≤A.n)?ussetindex!(A,v,k,j):throw(BoundsError())

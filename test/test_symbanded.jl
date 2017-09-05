@@ -9,6 +9,8 @@ A = sbrand(10,2)
 b=rand(10)
 @test A*b ≈ full(A)*b
 
+@test norm(A) ≈ norm(full(A))
+@test cond(A) ≈ cond(full(A))
 
 # eig and eigvals
 

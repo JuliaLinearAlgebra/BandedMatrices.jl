@@ -206,6 +206,14 @@ function Base.convert(::Type{Matrix},A::SymBandedMatrix)
     ret
 end
 
+function Base.convert(::Type{BandedMatrix},A::SymBandedMatrix)
+    ret = bzeros(eltype(A), size(A,1), size(A,2), A.k, A.k)
+    for j = 1:size(ret,2), k = colrange(ret,j)
+        @inbounds ret[k,j] = A[k,j]
+    end
+    ret
+end
+
 Base.full(A::SymBandedMatrix) = convert(Matrix,A)
 
 
@@ -286,6 +294,7 @@ Base.ctranspose(B::SymBandedMatrix{T}) where {T<:Real} = copy(B)
 
 Base.diag(A::SymBandedMatrix{T}) where {T} = vec(A.data[A.k+1,:])
 
+bidiagonalize!(A::SymBandedMatrix) = bidiagonalize!(BandedMatrix(A))
 
 ## eigvals routine
 

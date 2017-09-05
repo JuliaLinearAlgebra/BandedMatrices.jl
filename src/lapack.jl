@@ -19,6 +19,29 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
     end
 end
 
+## Bidiagonalization
+for (fname, elty) in ((:dgbbrd_,:Float64),
+                      (:sgbbrd_,:Float32))
+    @eval begin
+        function gbbrd!(vect::Char, m::Int, n::Int, ncc::Int,
+                        kl::Int, ku::Int, ab::Ptr{$elty}, ldab::Int,
+                        d::Ptr{$elty}, e::Ptr{$elty}, q::Ptr{$elty}, ldq::Int,
+                        pt::Ptr{$elty}, ldpt::Int, c::Ptr{$elty}, ldc::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Void,
+                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &vect, &m, &n, &ncc,
+                 &kl, &ku, ab, &ldab,
+                 d, e, q, &ldq,
+                 pt, &ldpt, c, &ldc, work, info)
+            d, e, q, pt, c
+        end
+    end
+end
+
 # (GB) general banded matrices, LU decomposition
 for (gbtrf, elty) in
     ((:dgbtrf_, :Float64),
