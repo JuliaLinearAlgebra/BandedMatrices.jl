@@ -14,6 +14,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                  &vect, &uplo,
                  &n, &k, ab, &ldab,
                  d, e, q, &ldq, work, info)
+            chklapackerror(info[])
             d, e, q
         end
     end
@@ -37,6 +38,7 @@ for (fname, elty) in ((:dgbbrd_,:Float64),
                  &kl, &ku, ab, &ldab,
                  d, e, q, &ldq,
                  pt, &ldpt, c, &ldc, work, info)
+            chklapackerror(info[])
             d, e, q, pt, c
         end
     end
@@ -62,6 +64,7 @@ for (gbtrf, elty) in
                   (Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
                    Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}),
                   &m, &n, &kl, &ku, AB, &ldab, ipiv, info)
+            chklapackerror(info[])
             AB, ipiv
         end
     end
@@ -110,6 +113,7 @@ for (gbtrs, elty) in
                    Ptr{BlasInt}),
                   &trans, &n, &kl, &ku, &nrhs, AB, &ldab, ipiv,
                   B, &ldb, info)
+            chklapackerror(info[])
             B
         end
     end
@@ -152,6 +156,7 @@ for (fname, elty) in ((:dsbev_,:Float64),
                 (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty},
                  Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
                  &jobz, &uplo, &n, &kd, AB, &ldab, w, Z, &ldz, work, info)
+            chklapackerror(info[])
             w, Z
         end
     end
@@ -175,6 +180,7 @@ for (fname, elty) in ((:dsbgv_,:Float64),
                  Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
                  Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
                  &jobz, &uplo, &n, &ka, &kb, AB, &ldab, BB, &ldbb, w, Z, &ldz, work, info)
+            chklapackerror(info[])
             w, Z
         end
     end
@@ -198,6 +204,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
                 (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
                  Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}),
                  &uplo, &n, &kd, AB, &ldab, info)
+            chklapackerror(info[])
             AB
         end
     end
@@ -220,6 +227,7 @@ for (fname, elty) in ((:dpbstf_,:Float64),
                 (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
                  Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}),
                  &uplo, &n, &kd, AB, &ldab, info)
+            chklapackerror(info[])
             AB
         end
     end
@@ -250,6 +258,7 @@ for (fname, elty) in ((:dsbgst_,:Float64),
                  Ptr{BlasInt}),
                  &vect, &uplo, &n, &ka, &kb, AB, &ldab, BB, &ldbb,
                  X, &ldx, work, info)
+            chklapackerror(info[])
             AB
         end
     end

@@ -25,7 +25,10 @@ for T in (Float32, Float64)
     @test A ≈ Q*Diagonal(Λ)*Q'
 
     B = sbrand(T, 100, 2)
-    [B[i,i] += 2 for i = 1:100] # make it positive definite
+    # Probably, B is symmetric-indefinite
+    @test_throws Base.LinAlg.LAPACKException eigvals(A, B)
+    # Fine, make it positive-definite
+    [B[i,i] += 2 for i = 1:100]
     @test eigvals(A, B) ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
 
     Λ, Q = eig(A, B)

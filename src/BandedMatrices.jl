@@ -9,7 +9,8 @@ import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
 import Base: convert, size, view
 
 import Base.BLAS: libblas
-import Base.LAPACK: liblapack
+import Base.LAPACK: liblapack,
+                    chklapackerror
 
 
 import Base.LinAlg: BlasInt,
