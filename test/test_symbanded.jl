@@ -44,7 +44,7 @@ B = Bn(Float64, 100)
 
 @test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
 
-err = λ*(2/π)^2 ./ (1:length(λ)).^2-1
+err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
 
 @test norm(err[1:40]) < 100eps(Float64)
 
@@ -55,6 +55,6 @@ B = Bn(Float32, 100)
 
 @test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
 
-err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2-1
+err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
 @test norm(err[1:40]) < 100eps(Float32)

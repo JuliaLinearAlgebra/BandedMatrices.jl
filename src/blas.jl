@@ -16,13 +16,13 @@ for (fname, elty) in ((:dgbmv_,:Float64),
                        A::Ptr{$elty}, st::Int,
                        x::Ptr{$elty}, incx::Int, beta::($elty), y::Ptr{$elty}, incy::Int)
             ccall((@blasfunc($fname), libblas), Void,
-                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty},
-                 Ptr{BlasInt}),
-                 &trans, &m, &n, &kl,
-                 &ku, &alpha, A, &st,
-                 x, &incx, &beta, y, &incy)
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{BlasInt}, Ref{$elty}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ref{$elty}, Ptr{$elty},
+                 Ref{BlasInt}),
+                 trans, m, n, kl,
+                 ku, alpha, A, st,
+                 x, incx, beta, y, incy)
             y
         end
     end
@@ -50,14 +50,14 @@ for (fname, elty) in ((:dsbmv_,:Float64),
                        A::Ptr{$elty}, lda::Int,
                        x::Ptr{$elty}, incx::Int, beta::($elty), y::Ptr{$elty}, incy::Int)
             ccall((@blasfunc($fname), libblas), Void,
-                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
-                 Ptr{$elty}, Ptr{BlasInt}),
-                 &uplo, &n, &k,
-                 &alpha, A, &lda,
-                 x, &incx, &beta,
-                 y, &incy)
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{$elty}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ref{$elty},
+                 Ptr{$elty}, Ref{BlasInt}),
+                 uplo, n, k,
+                 alpha, A, lda,
+                 x, incx, beta,
+                 y, incy)
             y
         end
     end
@@ -79,13 +79,14 @@ for (fname, elty) in ((:dtbmv_,:Float64),
                         n::Int, k::Int, A::Ptr{$elty}, lda::Int,
                         x::Ptr{$elty}, incx::Int)
             ccall((@blasfunc($fname), libblas), Void,
-                (Ptr{UInt8}, Ptr{UInt8}, Ptr{UInt8},
-                 Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt}),
-                 &uplo, &trans, &diag,
-                 &n, &k, A, &lda,
-                 x, &incx)
+                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8},
+                 Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}),
+                 uplo, trans, diag,
+                 n, k,
+                 A, lda,
+                 x, incx)
             x
         end
     end
@@ -102,13 +103,14 @@ for (fname, elty) in ((:dtbsv_,:Float64),
                         n::Int, k::Int, A::Ptr{$elty}, lda::Int,
                         x::Ptr{$elty}, incx::Int)
             ccall((@blasfunc($fname), libblas), Void,
-                (Ptr{UInt8}, Ptr{UInt8}, Ptr{UInt8},
-                 Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt}),
-                 &uplo, &trans, &diag,
-                 &n, &k, A, &lda,
-                 x, &incx)
+                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8},
+                 Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}),
+                 uplo, trans, diag,
+                 n, k,
+                 A, lda,
+                 x, incx)
             x
         end
     end

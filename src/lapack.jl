@@ -8,12 +8,13 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                         work::Ptr{$elty})
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Void,
-                (Ptr{UInt8}, Ptr{UInt8},
-                 Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
-                 &vect, &uplo,
-                 &n, &k, ab, &ldab,
-                 d, e, q, &ldq, work, info)
+                (Ref{UInt8}, Ref{UInt8},
+                 Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 vect, uplo,
+                 n, k, ab, ldab,
+                 d, e, q, ldq, work, info)
+            Base.LAPACK.chklapackerror(info[])
             d, e, q
         end
     end
@@ -36,9 +37,11 @@ for (gbtrf, elty) in
                         ipiv::Ptr{BlasInt})
             info = Ref{BlasInt}()
             ccall((@blasfunc($gbtrf), liblapack), Void,
-                  (Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
-                   Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}),
-                  &m, &n, &kl, &ku, AB, &ldab, ipiv, info)
+                  (Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                   Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}),
+                  m, n, kl, ku,
+                  AB, ldab, ipiv, info)
+            Base.LAPACK.chklapackerror(info[])
             AB, ipiv
         end
     end
@@ -82,11 +85,13 @@ for (gbtrs, elty) in
             info = Ref{BlasInt}()
 
             ccall((@blasfunc($gbtrs), liblapack), Void,
-                  (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
-                   Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty},   Ptr{BlasInt},
-                   Ptr{BlasInt}),
-                  &trans, &n, &kl, &ku, &nrhs, AB, &ldab, ipiv,
-                  B, &ldb, info)
+                  (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                   Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt},
+                   Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
+                  trans, n, kl, ku, nrhs,
+                  AB, ldab, ipiv,
+                  B, ldb, info)
+            Base.LAPACK.chklapackerror(info[])
             B
         end
     end
@@ -126,9 +131,11 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
         function pbtrf!(uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int)
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Void,
-                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}),
-                 &uplo, &n, &kd, AB, &ldab, info)
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
+                 uplo, n, kd,
+                 AB, ldab, info)
+            Base.LAPACK.chklapackerror(info[])
             AB
         end
     end
@@ -148,9 +155,11 @@ for (fname, elty) in ((:dpbstf_,:Float64),
         function pbstf!(uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int)
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Void,
-                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{$elty}, Ptr{BlasInt}, Ptr{BlasInt}),
-                 &uplo, &n, &kd, AB, &ldab, info)
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
+                 uplo, n, kd,
+                 AB, ldab, info)
+            Base.LAPACK.chklapackerror(info[])
             AB
         end
     end
@@ -175,12 +184,15 @@ for (fname, elty) in ((:dsbgst_,:Float64),
                          X::Ptr{$elty}, ldx::Int, work::Ptr{$elty})
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Void,
-                (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt},
-                 Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
-                 Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
+                (Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty},
+                 Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty},
                  Ptr{BlasInt}),
-                 &vect, &uplo, &n, &ka, &kb, AB, &ldab, BB, &ldbb,
-                 X, &ldx, work, info)
+                 vect, uplo, n, ka,
+                 kb, AB, ldab, BB,
+                 ldbb, X, ldx, work,
+                 info)
+            Base.LAPACK.chklapackerror(info[])
             AB
         end
     end

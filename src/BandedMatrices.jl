@@ -1,7 +1,7 @@
 __precompile__()
 
 module BandedMatrices
-using Base
+using Base, Compat
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds

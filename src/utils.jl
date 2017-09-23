@@ -32,7 +32,7 @@ checkdimensions(dest::AbstractVector, src::AbstractVector) =
 checkdimensions(ldest::Int, src::AbstractVector) =
     checkdimensions((ldest, ), size(src))
 
-checkdimensions(kr::Range, jr::Range, src::AbstractMatrix) =
+checkdimensions(kr::AbstractRange, jr::AbstractRange, src::AbstractMatrix) =
     checkdimensions((length(kr), length(jr)), size(src))
 
 

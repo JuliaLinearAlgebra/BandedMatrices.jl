@@ -52,7 +52,7 @@ let
         @test full(A)\copy(b)             ≈ A_ldiv_B!(lufact(A), copy(b))
         @test transpose(full(A))\copy(b)  ≈ Base.LinAlg.At_ldiv_B!(lufact(A), copy(b))
         @test transpose(full(A))\copy(b)  ≈ Base.LinAlg.A_ldiv_B!(lufact(transpose(A)), copy(b))
-        @test ctranspose(full(A))\copy(b) ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
+        @test adjoint(full(A))\copy(b) ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
     end
 end
 
@@ -164,8 +164,8 @@ let
     @test Af\bf  ≈ Base.LinAlg.A_ldiv_B!(lufact(A),  copy(b))
     @test Af'\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(A'), copy(b))
     @test transpose(Af)\bf ≈ Base.LinAlg.At_ldiv_B!(lufact(A),  copy(b))
-    @test ctranspose(Af)\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(ctranspose(A)), copy(b))
-    @test ctranspose(Af)\bf ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
+    @test adjoint(Af)\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(adjoint(A)), copy(b))
+    @test adjoint(Af)\bf ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
 end
 
 # test with multiple rhs
