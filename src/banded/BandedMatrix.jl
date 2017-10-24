@@ -273,7 +273,7 @@ end
     if -l ≤ j-k ≤ u
         inbands_setindex!(data, u, v, k, j)
     elseif v ≠ 0  # allow setting outside bands to zero
-        throw(BandError(BandedMatrix(data,size(data,2)+l,l,u),j-k))
+        throw(BandError(data,j-k))
     else # v == 0
         v
     end
