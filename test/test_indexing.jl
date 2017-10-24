@@ -659,6 +659,25 @@ end
 let
     # tests bug
     a = bzeros(1,1,3,-1)
-    a[band(-2)] .+= 2
-    @test isempty(a[band(-2)])
+    @test_throws ArgumentError a[band(-2)]
+end
+
+
+# test band views
+let
+    for A in (rand(11,10), brand(11,10,2,3), brand(Float32, 11,10,2,3),
+                 brand(Complex128, 11,10,2,3))
+        for k = -5:5
+            V = view(A, band(k))
+            bs = parentindexes(V)[1] # a bandslice
+            @test bs.indices == diagind(A, k)
+            @test bs.band == Band(k)
+            @test collect(bs) == collect(diagind(A, k))
+            @test Vector{eltype(A)}(V) == collect(V) == A[diagind(A,k)] == A[band(k)]
+            @test Vector{Complex128}(V) == Vector{Complex128}(A[diagind(A,k)]) ==
+                    convert(AbstractVector{Complex128}, V) == convert(AbstractArray{Complex128}, V)
+            @test V ≡ convert(AbstractArray, V) ≡ convert(AbstractArray{eltype(A)}, V) ≡
+                    convert(AbstractArray, V) ≡ convert(AbstractVector, V)
+        end
+    end
 end

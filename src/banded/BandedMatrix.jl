@@ -207,35 +207,53 @@ end
 @inline getindex(A::BandedMatrix, kr::Colon, jr::Colon) = copy(A)
 
 # ~ indexing along a band
+# we reduce it to converting a View
 
 # scalar - band - colon
-@inline function getindex(A::BandedMatrix{T}, b::Band) where {T}
-    @boundscheck checkband(A, b)
-    if b.i > 0
-        vec(A.data[A.u - b.i + 1, b.i+1:min(size(A,2),size(A,1)+b.i)])
-    elseif b.i == 0
-        vec(A.data[A.u - b.i + 1, 1:min(size(A,2),size(A,1))])
-    else # b.i < 0
-        vec(A.data[A.u - b.i + 1, 1:min(size(A,2),size(A,1)+b.i)])
+@inline getindex(A::BandedMatrix{T}, b::Band) where {T} = Vector{T}(view(A, b))
+
+# type to represent a view of a band
+const BandedMatrixBand{T} = SubArray{T, 1, Base.ReshapedArray{T,1,BandedMatrix{T},
+                                Tuple{Base.MultiplicativeInverses.SignedMultiplicativeInverse{Int}}}, Tuple{BandSlice}, false}
+
+function convert(::Type{Vector{T}}, V::BandedMatrixBand) where T
+    A = parent(parent(V))
+    bs = parentindexes(V)[1] #BandSlice
+    b = bs.band.i
+    if -A.l ≤ b ≤ A.u
+        m,n = size(A)
+        if b > 0
+            Vector{T}(view(A.data, A.u - b + 1, b+1:min(n,m+b)))
+        elseif b == 0
+            Vector{T}(view(A.data, A.u - b + 1, 1:min(n,m)))
+        else # b < 0
+            Vector{T}(view(A.data, A.u - b + 1, 1:min(n,m+b)))
+        end
+    else
+        zeros(T, length(bs))
     end
 end
 
-@inline function view(A::BandedMatrix{T}, b::Band) where {T}
-    @boundscheck checkband(A, b)
-    if b.i > 0
-        view(A.data,A.u - b.i + 1, b.i+1:min(size(A,2),size(A,1)+b.i))
-    elseif b.i == 0
-        view(A.data,A.u - b.i + 1, 1:min(size(A,2),size(A,1)))
-    else # b.i < 0
-        view(A.data,A.u - b.i + 1, 1:min(size(A,2),size(A,1)+b.i))
-    end
-end
+convert(::Type{Array{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
+convert(::Type{Array}, A::BandedMatrixBand) = convert(Vector{eltype(A)}, A)
+convert(::Type{Vector}, A::BandedMatrixBand)= convert(Vector{eltype(A)}, A)
+
+
+convert(::Type{AbstractArray{T}}, A::BandedMatrixBand{T}) where T = A
+convert(::Type{AbstractVector{T}}, A::BandedMatrixBand{T}) where T = A
+convert(::Type{AbstractArray}, A::BandedMatrixBand{T}) where T = A
+convert(::Type{AbstractVector}, A::BandedMatrixBand{T}) where T = A
+
+convert(::Type{AbstractArray{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
+convert(::Type{AbstractVector{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
+
 
 # scalar - BandRange - integer -- A[1, BandRange]
 @inline getindex(A::AbstractMatrix, ::Type{BandRange}, j::Integer) = A[colrange(A, j), j]
 
 # scalar - integer - BandRange -- A[1, BandRange]
 @inline getindex(A::AbstractMatrix, k::Integer, ::Type{BandRange}) = A[k, rowrange(A, k)]
+
 
 
 # ~ indexing along a row

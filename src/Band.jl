@@ -3,6 +3,8 @@ struct Band
     i::Int
 end
 
+show(io::IO, r::Band) = print(io, "Band(", r.i, ")")
+
 doc"""
     band(i)
 
@@ -165,3 +167,34 @@ end
 
 checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
+
+"""
+    BandSlice(band, indices)
+
+Represent an AbstractUnitRange of indices corresponding to a band.
+
+Upon calling `to_indices()`, Bands are converted to BandSlice objects to represent
+the indices over which the Band spans.
+
+This mimics the relationship between `Colon` and `Base.Slice`.
+"""
+
+
+struct BandSlice <: OrdinalRange{Int,Int}
+    band::Band
+    indices::StepRange{Int,Int}
+end
+
+for f in (:indices, :unsafe_indices, :indices1, :first, :last, :size, :length,
+          :unsafe_length, :start, :step)
+    @eval $f(S::BandSlice) = $f(S.indices)
+end
+
+getindex(S::BandSlice, i::Int) = getindex(S.indices, i)
+show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ",", r.indices, ")")
+next(S::BandSlice, s) = next(S.indices, s)
+done(S::BandSlice, s) = done(S.indices, s)
+
+to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
+
+@inline to_indices(A, I::Tuple{Band}) = (BandSlice(I[1], diagind(A, I[1].i)),)

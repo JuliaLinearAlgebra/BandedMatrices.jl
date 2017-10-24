@@ -6,7 +6,9 @@ using Base, Compat
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds
 
-import Base: convert, size, view
+import Base: convert, size, view, indices, unsafe_indices, indices1,
+                first, last, size, length, unsafe_length, start, next, done, step,
+                to_indices, to_index, indices, show
 
 import Base.BLAS: libblas
 import Base.LAPACK: liblapack
@@ -48,6 +50,7 @@ export BandedMatrix,
        bandwidth,
        BandError,
        band,
+       Band,
        BandRange,
        bandwidths,
        colrange,
