@@ -54,7 +54,8 @@ export BandedMatrix,
        BandRange,
        bandwidths,
        colrange,
-       rowrange
+       rowrange,
+       isbanded
 
 
 
