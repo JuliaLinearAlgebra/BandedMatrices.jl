@@ -4,7 +4,7 @@ module BandedMatrices
 using Base, Compat
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
-                >=, /, ^, \, transpose, showerror, reindex, checkbounds
+                >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
 import Base: convert, size, view, indices, unsafe_indices, indices1,
                 first, last, size, length, unsafe_length, start, next, done, step,
@@ -62,9 +62,10 @@ export BandedMatrix,
 include("blas.jl")
 include("lapack.jl")
 
-include("AbstractBandedMatrix.jl")
-include("Band.jl")
-include("utils.jl")
+include("generic/AbstractBandedMatrix.jl")
+include("generic/Band.jl")
+include("generic/utils.jl")
+include("generic/linalg.jl")
 
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
@@ -76,7 +77,7 @@ include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
 
-include("interface.jl")
+include("generic/interface.jl")
 include("deprecate.jl")
 
 

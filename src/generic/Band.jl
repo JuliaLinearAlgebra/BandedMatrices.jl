@@ -66,6 +66,9 @@ struct BandError <: Exception
     i::Int
 end
 
+# shorthand to specify k and j without calculating band
+BandError(A::AbstractMatrix, kj::Tuple{Int,Int}) = BandError(A, kj[2]-kj[1])
+
 function showerror(io::IO, e::BandError)
     A, i = e.A, e.i
     print(io, "attempt to access $(typeof(A)) with bandwidths " *
@@ -102,12 +105,12 @@ checkband(A::AbstractMatrix, kr::AbstractRange, jr::AbstractRange) =
 function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::Integer) where {T}
     for k = 1:colstart(A,j)-1
         if V[k] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
     for k = colstop(A,j)+1:size(A,1)
         if V[k] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -119,7 +122,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, kr::AbstractRan
     for v in V
         k = kr[i+=1]
         if (k < a || k > b) && v ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -127,12 +130,12 @@ end
 function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::Colon) where {T}
     for j = 1:rowstart(A,k)-1
         if V[j] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
     for j = rowstop(A,j)+1:size(A,2)
         if V[j] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -144,7 +147,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr:
     for v in V
         j = jr[i+=1]
         if (j < a || j > b) && v ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -157,7 +160,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::AbstractRan
         for k in kr
             if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
                 # we index V manually in column-major order
-                throw(BandError(A, j-k))
+                throw(BandError(A, (k,j)))
             end
             kk += 1
         end

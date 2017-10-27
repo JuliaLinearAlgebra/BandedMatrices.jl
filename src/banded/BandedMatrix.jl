@@ -216,21 +216,29 @@ end
 const BandedMatrixBand{T} = SubArray{T, 1, Base.ReshapedArray{T,1,BandedMatrix{T},
                                 Tuple{Base.MultiplicativeInverses.SignedMultiplicativeInverse{Int}}}, Tuple{BandSlice}, false}
 
+
+band(V::BandedMatrixBand) = first(parentindexes(V)).band.i
+
+# gives a view of the parent's data matrix
+function dataview(V::BandedMatrixBand)
+    A = parent(parent(V))
+    b = band(V)
+    m,n = size(A)
+    if b > 0
+        view(A.data, A.u - b + 1, b+1:min(n,m+b))
+    elseif b == 0
+        view(A.data, A.u - b + 1, 1:min(n,m))
+    else # b < 0
+        view(A.data, A.u - b + 1, 1:min(n,m+b))
+    end
+end
+
 function convert(::Type{Vector{T}}, V::BandedMatrixBand) where T
     A = parent(parent(V))
-    bs = parentindexes(V)[1] #BandSlice
-    b = bs.band.i
-    if -A.l ≤ b ≤ A.u
-        m,n = size(A)
-        if b > 0
-            Vector{T}(view(A.data, A.u - b + 1, b+1:min(n,m+b)))
-        elseif b == 0
-            Vector{T}(view(A.data, A.u - b + 1, 1:min(n,m)))
-        else # b < 0
-            Vector{T}(view(A.data, A.u - b + 1, 1:min(n,m+b)))
-        end
+    if -A.l ≤ band(V) ≤ A.u
+        Vector{T}(dataview(V))
     else
-        zeros(T, length(bs))
+        zeros(T, length(V))
     end
 end
 
