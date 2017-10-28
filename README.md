@@ -44,7 +44,7 @@ Currently, only column-major ordering is supported: a banded matrix `B`
 is represented as a `BandedMatrix` with a field `B.data` representing the matrix as
 ```julia
 [ *     a_12   a_23    a_34
- a_11   a_22   a_33    a_43
+ a_11   a_22   a_33    a_44
  a_21   a_32   a_43    *
  a_31   a_42   *       *       ]
 ```        
