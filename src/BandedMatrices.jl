@@ -1,7 +1,7 @@
 __precompile__()
 
 module BandedMatrices
-using Base
+using Base, Compat
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds
@@ -78,7 +78,7 @@ include("interface.jl")
 include("deprecate.jl")
 
 
-include("precompile.jl")
-_precompile_()
+# include("precompile.jl")
+# _precompile_()
 
 end #module

@@ -1,4 +1,4 @@
-using BandedMatrices, Base.Test
+using BandedMatrices, Base.Test, Compat
 
 println("Banded matrix tests")
 include("test_banded.jl")

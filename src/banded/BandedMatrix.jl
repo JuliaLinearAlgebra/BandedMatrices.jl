@@ -243,8 +243,9 @@ end
 
 
 # give range of data matrix corresponding to colrange/rowrange
-data_colrange(A::BandedMatrix{T}, i::Integer) where {T} = (max(1,A.u+2-i):min(size(A,1)+A.u-i+1,size(A.data,1))) +
-                                (i-1)*size(A.data,1)
+data_colrange(A::BandedMatrix{T}, i::Integer) where {T} =
+    (max(1,A.u+2-i):min(size(A,1)+A.u-i+1,size(A.data,1))) .+
+                                ((i-1)*size(A.data,1))
 
 data_rowrange(A::BandedMatrix{T}, i::Integer) where {T} = range((i ≤ 1+A.l ? A.u+i : (i-A.l)*size(A.data,1)) ,
                                 size(A.data,1)-1 ,  # step size
@@ -272,7 +273,7 @@ end
     if -l ≤ j-k ≤ u
         inbands_setindex!(data, u, v, k, j)
     elseif v ≠ 0  # allow setting outside bands to zero
-        throw(BandError(BandedMatrix(data,size(data,2)+l,l,u),j-k))
+        throw(BandError(data,j-k))
     else # v == 0
         v
     end
@@ -373,7 +374,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, ::Type{BandRange}, j::Integer) =
     (A[colrange(A, j), j] = V) # call range method
 
 # scalar - range - integer -- A[1:2, 1] = 2
-@inline function setindex!(A::BandedMatrix, v, kr::Range, j::Integer)
+@inline function setindex!(A::BandedMatrix, v, kr::AbstractRange, j::Integer)
     @boundscheck checkbounds(A, kr, j)
 
     if v ≠ zero(eltype(A))
@@ -391,7 +392,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, ::Type{BandRange}, j::Integer) =
 end
 
 # vector - range - integer -- A[1:3, 1] = [1, 2, 3]
-@inline function setindex!(A::BandedMatrix, V::AbstractVector, kr::Range, j::Integer)
+@inline function setindex!(A::BandedMatrix, V::AbstractVector, kr::AbstractRange, j::Integer)
     @boundscheck checkbounds(A, kr, j)
     @boundscheck checkdimensions(kr, V)
     @boundscheck checkbandmatch(A, V, kr, j)
@@ -457,7 +458,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::Type{BandRange}) =
     (A[k, rowstart(A, k):rowstop(A, k)] = V) # call range method
 
 # scalar - integer - range -- A[1, 2:3] = 3
-@inline function setindex!(A::BandedMatrix{T}, v, k::Integer, jr::Range) where {T}
+@inline function setindex!(A::BandedMatrix{T}, v, k::Integer, jr::AbstractRange) where {T}
     @boundscheck checkbounds(A, k, jr)
     if v == zero(T)
         data, u = A.data, A.u
@@ -477,7 +478,7 @@ setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::Type{BandRange}) =
 end
 
 # vector - integer - range -- A[1, 2:3] = [3, 4]
-@inline function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::Range)
+@inline function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::AbstractRange)
     @boundscheck checkbounds(A, k, jr)
     @boundscheck checkdimensions(jr, V)
     @boundscheck checkbandmatch(A, V, k, jr)
@@ -498,7 +499,7 @@ end
 # ~ indexing over a rectangular block
 
 # scalar - range - range
-@inline function setindex!(A::BandedMatrix, v, kr::Range, jr::Range)
+@inline function setindex!(A::BandedMatrix, v, kr::AbstractRange, jr::AbstractRange)
     @boundscheck checkbounds(A, kr, jr)
     @boundscheck checkband(A, kr, jr)
     data, u = A.data, A.u
@@ -509,7 +510,7 @@ end
 end
 
 # matrix - range - range
-@inline function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::Range, jr::Range)
+@inline function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange)
     @boundscheck checkbounds(A, kr, jr)
     @boundscheck checkdimensions(kr, jr, V)
     @boundscheck checkbandmatch(A, V, kr, jr)
@@ -601,7 +602,7 @@ Base.eigfact(A::BandedMatrix, B::BandedMatrix) = eigfact!(full(A), full(B))
 
 # We turn off bound checking to allow nicer syntax without branching
 #setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=((A.l≤j-k≤A.u)&&k≤A.n)?ussetindex!(A,v,k,j):throw(BoundsError())
-#setindex!(A::BandedMatrix,v,kr::Range,j::Integer)=(A.l≤j-kr[end]≤j-kr[1]≤A.u&&kr[end]≤A.n)?ussetindex!(A,v,kr,j):throw(BoundsError())
+#setindex!(A::BandedMatrix,v,kr::AbstractRange,j::Integer)=(A.l≤j-kr[end]≤j-kr[1]≤A.u&&kr[end]≤A.n)?ussetindex!(A,v,kr,j):throw(BoundsError())
 
 
 ## ALgebra and other functions
@@ -696,9 +697,9 @@ end
 
 ## BandedSubBandedMatrix routines
 # gives the band which is diagonal for the parent
-bandshift(a::Range,b::Range) = first(a)-first(b)
-bandshift(::Base.Slice{Base.OneTo{Int}},b::Range) = 1-first(b)
-bandshift(a::Range,::Base.Slice{Base.OneTo{Int}}) = first(a)-1
+bandshift(a::AbstractRange,b::AbstractRange) = first(a)-first(b)
+bandshift(::Base.Slice{Base.OneTo{Int}},b::AbstractRange) = 1-first(b)
+bandshift(a::AbstractRange,::Base.Slice{Base.OneTo{Int}}) = first(a)-1
 bandshift(::Base.Slice{Base.OneTo{Int}},b::Base.Slice{Base.OneTo{Int}}) = 0
 bandshift(S) = bandshift(parentindexes(S)[1],parentindexes(S)[2])
 

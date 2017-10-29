@@ -659,6 +659,6 @@ end
 let
     # tests bug
     a = bzeros(1,1,3,-1)
-    a[band(-2)] += 2
+    a[band(-2)] .+= 2
     @test isempty(a[band(-2)])
 end

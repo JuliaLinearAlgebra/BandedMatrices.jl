@@ -86,13 +86,13 @@ checkband(A::AbstractMatrix, b::Band) = checkband(A, b.i)
 
 checkband(A::AbstractMatrix, k::Integer, j::Integer) = checkband(A, j-k)
 
-checkband(A::AbstractMatrix, kr::Range, j::Integer) =
+checkband(A::AbstractMatrix, kr::AbstractRange, j::Integer) =
     (checkband(A, first(kr), j); checkband(A,  last(kr), j))
 
-checkband(A::AbstractMatrix, k::Integer, jr::Range) =
+checkband(A::AbstractMatrix, k::Integer, jr::AbstractRange) =
     (checkband(A, k, first(jr)); checkband(A, k,  last(jr)))
 
-checkband(A::AbstractMatrix, kr::Range, jr::Range) =
+checkband(A::AbstractMatrix, kr::AbstractRange, jr::AbstractRange) =
     (checkband(A, kr, first(jr)); checkband(A, kr,  last(jr)))
 
 
@@ -110,7 +110,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::Int
     end
 end
 
-function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, kr::Range, j::Integer) where {T}
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, kr::AbstractRange, j::Integer) where {T}
     a = colstart(A, j)
     b = colstop(A, j)
     i = 0
@@ -135,7 +135,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::C
     end
 end
 
-function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr::Range) where {T}
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr::AbstractRange) where {T}
     a = rowstart(A, k)
     b = rowstop(A, k)
     i = 0
@@ -147,7 +147,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr:
     end
 end
 
-function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::Range, jr::Range) where {T}
+function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange) where {T}
     u, l = A.u, A.l
     jj = 1
     for j in jr
