@@ -24,20 +24,17 @@ mutable struct BandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
+blasstructure(::Type{BandedMatrix{<:BlasFloat}}) = BlasStrided()
+
 
 # BandedMatrix with unit range indexes is also banded
 const BandedSubBandedMatrix{T} =
     SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
-
-# these are the banded matrices that are ameniable to BLAS routines
-const BLASBandedMatrix{T} = Union{
-        BandedMatrix{T},
-        BandedSubBandedMatrix{T}
-    }
-
+@banded_linalg BandedSubBandedMatrix
 
 isbanded(::BandedSubBandedMatrix{T}) where {T} = true
+blasstructure(::Type{BandedSubBandedMatrix{<:BlasFloat}}) = BlasStrided()
 
 ## Constructors
 
@@ -50,11 +47,11 @@ returns an unitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)
 """
 
 # Use zeros to avoid unallocated entries for bigfloat
-BandedMatrix(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) where {T<:BlasFloat} =
+BandedMatrix(::Type{T}, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
     BandedMatrix{T}(Matrix{T}(max(0,b+a+1),m),n,a,b)
-BandedMatrix(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer)  where {T<:Number} =
+BandedMatrix(::Type{T}, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number} =
     BandedMatrix{T}(zeros(T,max(0,b+a+1),m),n,a,b)
-BandedMatrix(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer)  where {T} =
+BandedMatrix(::Type{T}, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
     BandedMatrix{T}(Matrix{T}(max(0,b+a+1),m),n,a,b)
 
 

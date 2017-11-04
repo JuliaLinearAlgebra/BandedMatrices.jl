@@ -317,8 +317,20 @@ function gbmm!(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::AbstractMatrix
     C
 end
 
-αA_mul_B_plus_βC!(α,A::BLASBandedMatrix{T},x,β,y) where {T} = gbmv!('N',α,A,x,β,y)
-αA_mul_B_plus_βC!(α,A::StridedMatrix,x,β,y) = BLAS.gemv!('N',α,A,x,β,y)
-αA_mul_B_plus_βC!(α,A,x,β,y) = (y .= α*A*x + β*y)
-αA_mul_B_plus_βC!(α,A::BLASBandedMatrix{T},B::BLASBandedMatrix{U},β,C::BLASBandedMatrix{V}) where {T,U,V} = gbmm!(α,A,B,β,C)
-αA_mul_B_plus_βC!(α,A::StridedMatrix,B::StridedMatrix,β,C::StridedMatrix) = BLAS.gemm!('N','N',α,A,B,β,C)
+αA_mul_B_plus_βC!(α, A, x, β, y) =
+    _αA_mul_B_plus_βC!(α, A, x, β, y,
+                       blasstructure(A), blasstructure(x), blasstructure(y))
+_αA_mul_B_plus_βC!(α, A, x, β, y, blasA, blasx, blasy) = (y .= α*A*x + β*y)
+_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
+                   ::BlasStrided, ::BlasBanded, ::BlasStrided) where {T<:BlasFloat} =
+    gbmv!('N', α, A, x, β, y)
+_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
+                   ::BlasStrided, ::BlasStrided, ::BlasStrided) where {T<:BlasFloat} =
+    BLAS.gemv!('N', α, A, x, β, y)
+
+_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
+                   ::BlasBanded, ::BlasBanded, ::BlasBanded) where {T<:BlasFloat} =
+    gbmm!(α, A, B, β, C)
+_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
+                   ::BlasStrided, ::BlasStrided, ::BlasStrided) where {T<:BlasFloat} =
+    BLAS.gemm!('N', 'N', α, A, B, β, C)

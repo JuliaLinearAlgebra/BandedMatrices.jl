@@ -23,6 +23,7 @@ mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
+blasstructure(::Type{SymBandedMatrix{<:BlasFloat}}) = BlasSymBanded()
 
 SymBandedMatrix(data::Matrix,k::Integer) = SymBandedMatrix{eltype(data)}(data,k)
 
@@ -42,8 +43,8 @@ SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T} =
 
 
 for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
-    @eval Base.convert(::Type{$MAT{V}},M::SymBandedMatrix) where {V} =
-        SymBandedMatrix{V}(convert(Matrix{V},M.data),M.k)
+    @eval Base.convert(::Type{$MAT{V}}, M::SymBandedMatrix) where {V} =
+        SymBandedMatrix{V}(convert(Matrix{V},M.data), M.k)
 end
 
 Base.copy(B::SymBandedMatrix) = SymBandedMatrix(copy(B.data),B.k)

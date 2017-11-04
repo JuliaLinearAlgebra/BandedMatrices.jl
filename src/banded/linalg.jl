@@ -1,8 +1,4 @@
-@banded_linalg AbstractBandedMatrix
-@banded_linalg BLASBandedMatrix # this supports views of banded matrices
-
-
-
+@_banded_linalg AbstractBandedMatrix
 
 ## Method definitions for generic eltypes - will make copies
 
@@ -16,11 +12,11 @@ for typ in [BandedMatrix, BandedLU]
         end
     end
     # \ is different because it needs a copy, but we have to avoid ambiguity
-    @eval function (\)(A::$typ{T}, B::VecOrMat{Complex{T}}) where {T<:BlasReal}
+    @eval function \(A::$typ{T}, B::VecOrMat{Complex{T}}) where {T<:BlasReal}
         checksquare(A)
         A_ldiv_B!(convert($typ{Complex{T}}, A), copy(B)) # goes to BlasFloat call
     end
-    @eval function (\)(A::$typ{T}, B::StridedVecOrMat{S}) where {T<:Number, S<:Number}
+    @eval function \(A::$typ{T}, B::StridedVecOrMat{S}) where {T<:Number, S<:Number}
         checksquare(A)
         TS = _promote_to_blas_type(T, S)
         A_ldiv_B!(convert($typ{TS}, A), copy_oftype(B, TS)) # goes to BlasFloat call

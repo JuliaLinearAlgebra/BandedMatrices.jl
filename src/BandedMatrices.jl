@@ -65,7 +65,7 @@ include("lapack.jl")
 include("generic/AbstractBandedMatrix.jl")
 include("generic/Band.jl")
 include("generic/utils.jl")
-include("generic/linalg.jl")
+include("generic/interface.jl")
 
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
@@ -77,7 +77,6 @@ include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
 
-include("generic/interface.jl")
 include("deprecate.jl")
 
 
