@@ -20,6 +20,30 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
     end
 end
 
+## Bidiagonalization
+for (fname, elty) in ((:dgbbrd_,:Float64),
+                      (:sgbbrd_,:Float32))
+    @eval begin
+        function gbbrd!(vect::Char, m::Int, n::Int, ncc::Int,
+                        kl::Int, ku::Int, ab::Ptr{$elty}, ldab::Int,
+                        d::Ptr{$elty}, e::Ptr{$elty}, q::Ptr{$elty}, ldq::Int,
+                        pt::Ptr{$elty}, ldpt::Int, c::Ptr{$elty}, ldc::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Void,
+                (Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &vect, &m, &n, &ncc,
+                 &kl, &ku, ab, &ldab,
+                 d, e, q, &ldq,
+                 pt, &ldpt, c, &ldc, work, info)
+            chklapackerror(info[])
+            d, e, q, pt, c
+        end
+    end
+end
+
 # (GB) general banded matrices, LU decomposition
 for (gbtrf, elty) in
     ((:dgbtrf_, :Float64),
@@ -114,6 +138,54 @@ function gbtrs!(trans::Char, kl::Int, ku::Int, m::Int, AB::StridedMatrix,
     gbtrs!(trans, n, kl, ku, size(B,2), m, pointer(AB), max(1,stride(AB, 2)),
            pointer(ipiv), pointer(B), max(1,stride(B, 2)))
     B
+end
+
+
+# All the eigenvalues and, optionally, eigenvectors of a real symmetric band matrix A.
+for (fname, elty) in ((:dsbev_,:Float64),
+                      (:ssbev_,:Float32))
+    @eval begin
+                # SUBROUTINE       SUBROUTINE DSBEV( JOBZ, UPLO, N, KD, AB, LDAB, W, Z, LDZ, WORK,
+                #     $                  INFO )
+                # CHARACTER          JOBZ, UPLO
+                # INTEGER            INFO, KD, LDAB, LDZ, N
+                # DOUBLE PRECISION   AB( LDAB, * ), W( * ), WORK( * ), Z( LDZ, * )
+
+        function sbev!(jobz::Char, uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int,
+                       w::Ptr{$elty}, Z::Ptr{$elty}, ldz::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &jobz, &uplo, &n, &kd, AB, &ldab, w, Z, &ldz, work, info)
+            chklapackerror(info[])
+            w, Z
+        end
+    end
+end
+
+# All the generalized eigenvalues and, optionally, eigenvectors of a real symmetric-definite pencil (A,B).
+for (fname, elty) in ((:dsbgv_,:Float64),
+                      (:ssbgv_,:Float32))
+    @eval begin
+                # SUBROUTINE       DSBGV( JOBZ, UPLO, N, KA, KB, AB, LDAB, BB, LDBB, W, Z,
+                #     $                  LDZ, WORK, INFO )
+                # CHARACTER          JOBZ, UPLO
+                # INTEGER            INFO, KA, KB, LDAB, LDBB, LDZ, N
+                # DOUBLE PRECISION   AB( LDAB, * ), BB( LDBB, * ), W( * ), WORK( * ), Z( LDZ, * )
+
+        function sbgv!(jobz::Char, uplo::Char, n::Int, ka::Int, kb::Int, AB::Ptr{$elty}, ldab::Int,
+                       BB::Ptr{$elty}, ldbb::Int, w::Ptr{$elty}, Z::Ptr{$elty}, ldz::Int, work::Ptr{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Void,
+                (Ptr{UInt8}, Ptr{UInt8}, Ptr{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty},
+                 Ptr{$elty}, Ptr{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 &jobz, &uplo, &n, &ka, &kb, AB, &ldab, BB, &ldbb, w, Z, &ldz, work, info)
+            chklapackerror(info[])
+            w, Z
+        end
+    end
 end
 
 

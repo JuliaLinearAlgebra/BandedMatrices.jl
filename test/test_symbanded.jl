@@ -9,12 +9,35 @@ A = sbrand(10,2)
 b=rand(10)
 @test A*b ≈ full(A)*b
 
+@test norm(A) ≈ norm(full(A))
+@test cond(A) ≈ cond(full(A))
 
-# eigvals
+# eig and eigvals
 
 srand(0)
-A = sbrand(Float64, 100, 4)
-@test eigvals(A) ≈ eigvals(Symmetric(full(A)))
+for T in (Float32, Float64)
+    A = sbrand(T, 100, 4)
+    @test eigvals(A) ≈ eigvals(Symmetric(full(A)))
+
+    Λ, Q = eig(A)
+    Λf, Qf = eig(Symmetric(full(A)))
+    @test Λ ≈ Λf
+    @test A ≈ Q*Diagonal(Λ)*Q'
+
+    B = sbrand(T, 100, 2)
+    # Probably, B is symmetric-indefinite
+    @test_throws Base.LinAlg.LAPACKException eigvals(A, B)
+    # Fine, make it positive-definite
+    [B[i,i] += 2 for i = 1:100]
+    @test eigvals(A, B) ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
+
+    Λ, Q = eig(A, B)
+    Λf, Qf = eig(Symmetric(full(A)), Symmetric(full(B)))
+    @test Λ ≈ Λf
+
+    @test Q'A*Q ≈ Diagonal(Λ)
+    @test Q'B*Q ≈ eye(T, 100)
+end
 
 # generalized eigvals
 

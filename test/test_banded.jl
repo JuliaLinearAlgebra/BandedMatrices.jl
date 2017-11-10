@@ -178,4 +178,20 @@ end
 
 let B=brand(10,10,0,4)
     @test B*[collect(1.0:10) collect(1.0:10)] ≈ full(B)*[collect(1.0:10) collect(1.0:10)]
+    A = brand(100, 100, 4, 6)
+
+    @test norm(A) ≈ norm(full(A))
+    @test cond(A) ≈ cond(full(A))
+
+    B = brand(100, 100, 4, 6)
+
+    @test eigvals(A) == eigvals(full(A))
+    @test eigvals(A, B) == eigvals(full(A), full(B))
+
+    Λ, V = eig(A)
+    @test A*V ≈ V*Diagonal(Λ)
+
+    Λ, V = eig(A, B)
+    @test A*V ≈ B*V*Diagonal(Λ)
 end
+

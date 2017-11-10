@@ -9,7 +9,8 @@ import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
 import Base: convert, size, view
 
 import Base.BLAS: libblas
-import Base.LAPACK: liblapack
+import Base.LAPACK: liblapack,
+                    chklapackerror
 
 
 import Base.LinAlg: BlasInt,
@@ -34,7 +35,8 @@ import Base.LinAlg: BlasInt,
                     At_ldiv_B!,
                     Ac_ldiv_B!,
                     copy_oftype,
-                    checksquare
+                    checksquare,
+                    Eigen
 
 import Base: lufact, cholfact, cholfact!
 
