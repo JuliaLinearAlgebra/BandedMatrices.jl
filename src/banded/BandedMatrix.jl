@@ -547,7 +547,7 @@ function Base.convert(::Type{Matrix},A::BandedMatrix)
     ret
 end
 
-Base.full(A::BandedMatrix) = convert(Matrix,A)
+Base.full(A::BandedMatrix) = convert(Matrix, A)
 
 
 function Base.sparse(B::BandedMatrix)
@@ -570,9 +570,9 @@ end
 
 
 
-# pass standard routines to full matrix
+# pass standard routines to Matrix
 
-Base.norm(B::BandedMatrix,opts...) = norm(full(B),opts...)
+Base.norm(B::BandedMatrix,opts...) = norm(Matrix(B),opts...)
 
 
 # We turn off bound checking to allow nicer syntax without branching

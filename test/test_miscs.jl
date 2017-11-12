@@ -55,4 +55,4 @@ end, "1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0")
 # Issue #27
 A=brand(1,10,0,9)
 B=brand(10,10,255,255)
-@test full(A*B)  ≈ full(A)*full(B)
+@test Matrix(A*B)  ≈ Matrix(A)*Matrix(B)

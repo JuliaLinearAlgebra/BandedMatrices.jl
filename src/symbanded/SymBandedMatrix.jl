@@ -199,7 +199,7 @@ function Base.convert(::Type{Matrix},A::SymBandedMatrix)
     ret
 end
 
-Base.full(A::SymBandedMatrix) = convert(Matrix,A)
+Base.full(A::SymBandedMatrix) = convert(Matrix, A)
 
 
 

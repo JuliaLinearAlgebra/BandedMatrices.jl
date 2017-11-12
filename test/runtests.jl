@@ -1,4 +1,10 @@
-using BandedMatrices, Base.Test, Compat
+using BandedMatrices, Compat
+
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+end
 
 println("Banded matrix tests")
 include("test_banded.jl")
