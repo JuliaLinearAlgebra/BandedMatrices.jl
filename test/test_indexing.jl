@@ -1,4 +1,10 @@
-using Base.Test, BandedMatrices
+using BandedMatrices
+if VERSION < v"0.7-"
+    using Base.Test
+else
+    using Test
+end
+
 import BandedMatrices: rowstart,
                        rowstop,
                        colstart,
