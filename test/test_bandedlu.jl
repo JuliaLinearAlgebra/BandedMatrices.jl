@@ -46,13 +46,13 @@ let
         AA,   bb   = BandedMatrices._convert_to_blas_type(A,         b)
         AAlu, bblu = BandedMatrices._convert_to_blas_type(lufact(A), b)
         @test eltype(AA) == eltype(bb) == eltype(AAlu) == eltype(bblu) == typ
-        @test full(A)\copy(b)             ≈ A\copy(b)
-        @test full(A)\copy(b)             ≈ lufact(A)\copy(b)
-        @test full(A)\copy(b)             ≈ A_ldiv_B!(A, copy(b))
-        @test full(A)\copy(b)             ≈ A_ldiv_B!(lufact(A), copy(b))
-        @test transpose(full(A))\copy(b)  ≈ Base.LinAlg.At_ldiv_B!(lufact(A), copy(b))
-        @test transpose(full(A))\copy(b)  ≈ Base.LinAlg.A_ldiv_B!(lufact(transpose(A)), copy(b))
-        @test adjoint(full(A))\copy(b) ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
+        @test Matrix(A)\copy(b)             ≈ A\copy(b)
+        @test Matrix(A)\copy(b)             ≈ lufact(A)\copy(b)
+        @test Matrix(A)\copy(b)             ≈ A_ldiv_B!(A, copy(b))
+        @test Matrix(A)\copy(b)             ≈ A_ldiv_B!(lufact(A), copy(b))
+        @test transpose(Matrix(A))\copy(b)  ≈ Base.LinAlg.At_ldiv_B!(lufact(A), copy(b))
+        @test transpose(Matrix(A))\copy(b)  ≈ Base.LinAlg.A_ldiv_B!(lufact(transpose(A)), copy(b))
+        @test adjoint(Matrix(A))\copy(b) ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
     end
 end
 
@@ -63,7 +63,7 @@ let
     b = Float64[1, 2, 3, 4, 5]
 
     # dense storage
-    Af = full(A)
+    Af = Matrix(A)
     bf = copy(b)
 
     @test Af\bf ≈ A\b
@@ -79,7 +79,7 @@ let
     b = rand(5)
 
     # dense storage
-    Af = full(A)
+    Af = Matrix(A)
     bf = copy(b)
 
     # note lufact makes copies; these need revision
@@ -104,10 +104,10 @@ let
     bi = collect(1:5)
     @test eltype(Ai\bi) == Float64
     # this code                     ≈ julia base
-    @test Ai\bi                     ≈ full(Ai)\copy(bi)
-    @test lufact(Ai)\bi             ≈ full(Ai)\copy(bi)
-    @test A_ldiv_B!(Ai, bi)         ≈ full(Ai)\copy(bi)
-    @test A_ldiv_B!(lufact(Ai), bi) ≈ full(Ai)\copy(bi)
+    @test Ai\bi                     ≈ Matrix(Ai)\copy(bi)
+    @test lufact(Ai)\bi             ≈ Matrix(Ai)\copy(bi)
+    @test A_ldiv_B!(Ai, bi)         ≈ Matrix(Ai)\copy(bi)
+    @test A_ldiv_B!(lufact(Ai), bi) ≈ Matrix(Ai)\copy(bi)
 
     # check A\b makes a copy of b
     Ai = BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
@@ -135,7 +135,7 @@ let
     b = rand(5)
 
     # dense storage
-    Af = full(A)
+    Af = Matrix(A)
     bf = copy(b)
 
     # note lufact makes copies; these need revision
@@ -152,7 +152,7 @@ let
     b = rand(5) + rand(5)*im
 
     # dense storage
-    Af = full(A)
+    Af = Matrix(A)
     bf = copy(b)
 
     # note lufact makes copies; these need revision
@@ -175,7 +175,7 @@ let
     b = rand(5, 10)
 
     # dense storage
-    Af = full(A)
+    Af = Matrix(A)
     bf = copy(b)
 
     # note lufact makes copies; these need revision

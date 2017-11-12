@@ -12,7 +12,7 @@ let
     for n in (10,50), m in (12,50), Al in (0,1,2,30), Au in (0,1,2,30)
         A=brand(n,m,Al,Au)
         kr,jr=3:10,5:12
-        @test full(A[kr,jr]) ≈ full(A)[kr,jr]
+        @test Matrix(A[kr,jr]) ≈ Matrix(A)[kr,jr]
     end
 end
 
@@ -257,7 +257,7 @@ let
     # 1.0  1.0  1.0  0.0
     # 1.0  1.0  1.0  1.0
 
-    # full column span
+    # Matrix column span
     a[1:3, 1] = 1
     a[1:3, 2] = 2
     a[2:3, 3] = 3
@@ -298,7 +298,7 @@ let
     # 0.0  1.0  1.0  1.0
     # 0.0  0.0  1.0  1.0
     # 0.0  0.0  0.0  1.0
-    # full column span
+    # Matrix column span
     a[1:2, 1] = 1:2
     a[1:3, 2] = 3:5
     a[1:4, 3] = 6:9
@@ -513,7 +513,7 @@ let
     a[band( 0)] = 2
     a[band( 1)] = 3
 
-    @test full(a) == [ 2  3  0  0;
+    @test Matrix(a) == [ 2  3  0  0;
                        1  2  3  0;
                        5  1  2  3;
                        0  5  1  2;
@@ -526,7 +526,7 @@ let
     a[band( 0)] = [5, 6, 7, 8]
     a[band( 1)] = [9, 10, 11]
 
-    @test full(a) == [ 5  9   0   0;
+    @test Matrix(a) == [ 5  9   0   0;
                        1  6  10   0;
                        4  2   7  11;
                        0  4   3   8;
@@ -556,7 +556,7 @@ let
     a[band( 1)] = 3
     a[band( 2)] = 4
 
-    @test full(a) == [ 2  3  4  0;
+    @test Matrix(a) == [ 2  3  4  0;
                        1  2  3  4;
                        5  1  2  3;
                        0  5  1  2;
@@ -570,7 +570,7 @@ let
     a[band( 1)] = [9,  10, 11]
     a[band( 2)] = [12, 13]
 
-    @test full(a) == [ 5  9   12  0;
+    @test Matrix(a) == [ 5  9   12  0;
                        1  6  10  13;
                        4  2   7  11;
                        0  4   3   8;
@@ -631,7 +631,7 @@ let
     a[3:5, 3:4] = [1 2;
                    3 4;
                    5 6]
-    @test full(a) == [2  2  0 0;
+    @test Matrix(a) == [2  2  0 0;
                       2  2  0 0;
                       2  2  1 2;
                       0  0  3 4;
@@ -653,7 +653,7 @@ let
 
     s = BandedMatrix(view(a,1:3,1:2))
     @test isa(s,BandedMatrix)
-    @test full(s) == a[1:3,1:2]
+    @test Matrix(s) == a[1:3,1:2]
 end
 
 let

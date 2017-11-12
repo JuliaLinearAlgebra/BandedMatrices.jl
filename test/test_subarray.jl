@@ -58,12 +58,12 @@ end
 
 
 let A=brand(10,10,1,2), v=rand(20)
-    @test A*view(v,1:10) ≈ full(A)*v[1:10]
-    @test A*view(v,1:2:20) ≈ full(A)*v[1:2:20]
+    @test A*view(v,1:10) ≈ Matrix(A)*v[1:10]
+    @test A*view(v,1:2:20) ≈ Matrix(A)*v[1:2:20]
 
     M=rand(20,20)
-    @test A*view(M,1:10,1:10) ≈ full(A)*M[1:10,1:10]
-    @test A*view(M,1:2:20,1:2:20) ≈ full(A)*M[1:2:20,1:2:20]
+    @test A*view(M,1:10,1:10) ≈ Matrix(A)*M[1:10,1:10]
+    @test A*view(M,1:2:20,1:2:20) ≈ Matrix(A)*M[1:2:20,1:2:20]
 end
 
 let A=brand(10,10,1,2), B=brand(20,10,1,2), C=brand(10,20,1,2),
@@ -72,14 +72,14 @@ let A=brand(10,10,1,2), B=brand(20,10,1,2), C=brand(10,20,1,2),
 
     for S in (view(A,:,:),view(B,1:10,:),view(C,:,1:10),view(D,1:10,1:10),
                 view(D,2:11,1:10),view(D,1:10,2:11),view(D,11:20,11:20))
-        @test A*S ≈ full(A)*full(S)
-        @test S*A ≈ full(S)*full(A)
-        @test S*S ≈ full(S)*full(S)
+        @test A*S ≈ Matrix(A)*Matrix(S)
+        @test S*A ≈ Matrix(S)*Matrix(A)
+        @test S*S ≈ Matrix(S)*Matrix(S)
 
-        @test M*S ≈ M*full(S)
-        @test S*M ≈ full(S)*M
+        @test M*S ≈ M*Matrix(S)
+        @test S*M ≈ Matrix(S)*M
 
-        @test V*S ≈ full(V)*full(S)
-        @test S*V ≈ full(S)*full(V)
+        @test V*S ≈ Matrix(V)*Matrix(S)
+        @test S*V ≈ Matrix(S)*Matrix(V)
     end
 end

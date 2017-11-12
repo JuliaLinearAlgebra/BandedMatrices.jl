@@ -34,19 +34,19 @@ A = SimpleBandedMatrix(rand(5, 4), 2, 2)
 B = rand(5, 4)
 C = copy(B)
 
-@test full(banded_axpy!(2.0, A, B)) ≈ 2*full(A) + C
+@test Matrix(banded_axpy!(2.0, A, B)) ≈ 2*Matrix(A) + C
 
 
 A = SimpleBandedMatrix(rand(5, 4), 1, 2)
 B = SimpleBandedMatrix(rand(5, 4), 2, 3)
 C = deepcopy(B)
 
-@test full(banded_axpy!(2.0, A, C)) ≈ 2*full(A) + B ≈ 2*A + full(B) ≈ 2*full(A) + full(B) ≈ 2*A + B
+@test Matrix(banded_axpy!(2.0, A, C)) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
 
 y = rand(4)
 z = zeros(5)
 
-@test banded_A_mul_B!(z, A, y) ≈ A*y ≈ full(A)*y
+@test banded_A_mul_B!(z, A, y) ≈ A*y ≈ Matrix(A)*y
 
 B = SimpleBandedMatrix(rand(4, 4), 2, 3)
 C = SimpleBandedMatrix(zeros(5, 4), 3, 4)

@@ -7,14 +7,14 @@ A = sbrand(10,2)
 
 
 b=rand(10)
-@test A*b ≈ full(A)*b
+@test A*b ≈ Matrix(A)*b
 
 
 # eigvals
 
 srand(0)
 A = sbrand(Float64, 100, 4)
-@test eigvals(A) ≈ eigvals(Symmetric(full(A)))
+@test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
 # generalized eigvals
 
@@ -42,7 +42,7 @@ B = Bn(Float64, 100)
 
 λ = eigvals(A, B)
 
-@test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
+@test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
 err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
 
@@ -53,7 +53,7 @@ B = Bn(Float32, 100)
 
 λ = eigvals(A, B)
 
-@test λ ≈ eigvals(Symmetric(full(A)), Symmetric(full(B)))
+@test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
 err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
