@@ -31,9 +31,8 @@ blasstructure(::Type{BandedMatrix{<:BlasFloat}}) = BlasStrided()
 const BandedSubBandedMatrix{T} =
     SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
-@banded_linalg BandedSubBandedMatrix
+@banded BandedSubBandedMatrix
 
-isbanded(::BandedSubBandedMatrix{T}) where {T} = true
 blasstructure(::Type{BandedSubBandedMatrix{<:BlasFloat}}) = BlasStrided()
 
 ## Constructors

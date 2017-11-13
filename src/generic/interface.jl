@@ -542,3 +542,20 @@ macro banded_linalg(Typ)
     end
     esc(ret)
 end
+
+# add routines for banded interface
+macro banded_interface(Typ)
+    ret = quote
+        BandedMatrices.bandedinterface(::$Typ) = BandedMatrices.BandedInterface{true}()
+        BandedMatrices.isbanded(::$Typ) = true
+    end
+    esc(ret)
+end
+
+macro banded(Typ)
+    ret = quote
+        BandedMatrices.@banded_interface($Typ)
+        BandedMatrices.@banded_linalg($Typ)
+    end
+    esc(ret)
+end
