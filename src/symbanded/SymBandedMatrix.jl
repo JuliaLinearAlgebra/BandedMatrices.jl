@@ -43,7 +43,7 @@ for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :Abstract
         SymBandedMatrix{V}(convert(Matrix{V},M.data),M.k)
 end
 
-Base.copy(B::SymBandedMatrix) = SymBandedMatrix(copy(B.data),B.k)
+Base.copy(B::SymBandedMatrix{T}) where T = SymBandedMatrix{T}(copy(B.data),B.k)
 
 Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {T,V} =
     SymBandedMatrix{promote_type(T,V)}
@@ -52,7 +52,7 @@ Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {
 
 for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.ones),:sbones))
     @eval begin
-        $bop(::Type{T},n::Integer,a::Integer) where {T} = SymBandedMatrix($op(T,a+1,n),a)
+        $bop(::Type{T},n::Integer,a::Integer) where {T} = SymBandedMatrix{T}($op(T,a+1,n),a)
         $bop(n::Integer,a::Integer) = $bop(Float64,n,a)
 
         $bop(B::AbstractMatrix) = $bop(eltype(B),size(B,1),bandwidth(B,2))

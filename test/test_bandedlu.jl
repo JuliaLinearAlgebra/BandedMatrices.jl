@@ -30,7 +30,7 @@ end
 
 # conversion of inputs to appropriate blas type
 let
-    As   = Any[BandedMatrix{Float64}(rand(1:10, 3, 5), 5, 1, 1),
+    As   = Any[BandedMatrix{Int}(rand(1:10, 3, 5), 5, 1, 1),
                BandedMatrix{Complex128}(rand(3, 5)*im,    5, 1, 1),
                BandedMatrix{Float64}(rand(3, 5),       5, 1, 1)
               ]
@@ -92,7 +92,7 @@ end
 # conversion of inputs if needed
 let
     # factorisation performs conversion
-    Ai = BandedMatrix{Float64}(rand(1:10, 3, 5), 5, 1, 1)
+    Ai = BandedMatrix{Int}(rand(1:10, 3, 5), 5, 1, 1)
     @test eltype(lufact(Ai)) == Float64
 
     # no op
@@ -110,7 +110,7 @@ let
     @test A_ldiv_B!(lufact(Ai), bi) ≈ Matrix(Ai)\copy(bi)
 
     # check A\b makes a copy of b
-    Ai = BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
+    Ai = BandedMatrix{Int}(rand(1:10, 3, 5), 5, 1, 1)
     bi = collect(1:5)
     Ai\bi
     @test bi == [1, 2, 3, 4, 5]

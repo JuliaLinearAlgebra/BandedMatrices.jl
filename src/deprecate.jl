@@ -12,10 +12,6 @@
 @deprecate BandedMatrix(::Type{T},n::Integer,a::Integer,b::Integer) where {T} BandedMatrix{T}(n,a,b)
 @deprecate BandedMatrix(::Type{T},n::Integer,::Colon,a::Integer,b::Integer)  where {T} BandedMatrix{T}(n,:,a,b)
 
-@deprecate BandedMatrix(::Type{T},n::Integer,m::Integer,a) where {T} BandedMatrix{T}(T,n,m,-a[1],a[end])
-@deprecate BandedMatrix(::Type{T},n::Integer,::Colon,a) where {T} BandedMatrix{T}(n,:,-a[1],a[end])
-@deprecate BandedMatrix(::Type{T},n::Integer,a) where {T} BandedMatrix{T}(T,n,-a[1],a[end])
-
 
 
 @deprecate bzeros(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) where {T} BandedMatrix(Zeros{T}(n,m), (a,b))
