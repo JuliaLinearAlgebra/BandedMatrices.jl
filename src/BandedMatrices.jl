@@ -36,7 +36,7 @@ import Base.LinAlg: BlasInt,
                     copy_oftype,
                     checksquare
 
-import Base: lufact, cholfact, cholfact!
+import Base: lufact, cholfact, cholfact!, promote_op
 
 export BandedMatrix,
        SymBandedMatrix,
@@ -54,7 +54,8 @@ export BandedMatrix,
        rowrange,
        Zeros,
        Fill,
-       Ones
+       Ones,
+       Eye
 
 
 

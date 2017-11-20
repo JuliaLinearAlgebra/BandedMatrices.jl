@@ -30,9 +30,9 @@ end
 
 # conversion of inputs to appropriate blas type
 let
-    As   = Any[BandedMatrix(rand(1:10, 3, 5), 5, 1, 1),
-               BandedMatrix(rand(3, 5)*im,    5, 1, 1),
-               BandedMatrix(rand(3, 5),       5, 1, 1)
+    As   = Any[BandedMatrix{Float64}(rand(1:10, 3, 5), 5, 1, 1),
+               BandedMatrix{Complex128}(rand(3, 5)*im,    5, 1, 1),
+               BandedMatrix{Float64}(rand(3, 5),       5, 1, 1)
               ]
     bs   = Any[rand(1:10,   5),
                rand(1:10,   5),
@@ -92,15 +92,15 @@ end
 # conversion of inputs if needed
 let
     # factorisation performs conversion
-    Ai = BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
+    Ai = BandedMatrix{Float64}(rand(1:10, 3, 5), 5, 1, 1)
     @test eltype(lufact(Ai)) == Float64
 
     # no op
-    Af = BandedMatrix(rand(Float32, 3, 5), 5, 1, 1)
+    Af = BandedMatrix{Float32}(rand(Float32, 3, 5), 5, 1, 1)
     @test eltype(lufact(Af)) == Float32
 
     # linear systems of integer data imply promotion
-    Ai = BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
+    Ai = BandedMatrix{Int}(rand(1:10, 3, 5), 5, 1, 1)
     bi = collect(1:5)
     @test eltype(Ai\bi) == Float64
     # this code                     ≈ julia base

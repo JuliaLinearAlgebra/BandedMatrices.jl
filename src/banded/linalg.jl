@@ -378,7 +378,7 @@ Ac_mul_Bc!(C::AbstractMatrix{T} ,A::AbstractMatrix{U}, B::BLASBandedMatrix{V}) w
 
 function *(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V}) where {T, V}
     n, m = size(A,1), size(B,2)
-    Y = BandedMatrix(promote_type(T,V), n, m, prodbandwidths(A, B)...)
+    Y = BandedMatrix{promote_type(T,V)}(n, m, prodbandwidths(A, B)...)
     A_mul_B!(Y,A,B)
 end
 

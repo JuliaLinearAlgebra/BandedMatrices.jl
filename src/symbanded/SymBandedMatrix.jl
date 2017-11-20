@@ -30,11 +30,11 @@ returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwid
 """
 
 # Use zeros to avoid unallocated entries for bigfloat
-SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T<:BlasFloat} =
+SymBandedMatrix{T}(n::Integer,k::Integer) where {T<:BlasFloat} =
     SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
-SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T<:Number} =
+SymBandedMatrix{T}(n::Integer,k::Integer) where {T<:Number} =
     SymBandedMatrix{T}(zeros(T,k+1,n),k)
-SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T} =
+SymBandedMatrix{T}(n::Integer,k::Integer) where {T} =
     SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
 
 
@@ -50,7 +50,7 @@ Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {
 
 
 
-for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.zeros),:sbzeros),(:(Base.ones),:sbones))
+for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.ones),:sbones))
     @eval begin
         $bop(::Type{T},n::Integer,a::Integer) where {T} = SymBandedMatrix($op(T,a+1,n),a)
         $bop(n::Integer,a::Integer) = $bop(Float64,n,a)
@@ -79,12 +79,6 @@ end
 SymBandedMatrix(Z::Eye{T}, a::Int) where T = SymBandedMatrix{T}(Z, a)
 SymBandedMatrix(Z::Eye) = SymBandedMatrix(Z, 0)
 
-doc"""
-    sbzeros(T,n,k)
-
-Creates an `n×n` symmetric banded matrix  of all zeros of type `T` with bandwidths `(k,k)`
-"""
-sbzeros
 
 doc"""
     sbones(T,n,k)
@@ -100,18 +94,6 @@ Creates an `n×n` symmetric banded matrix  with random numbers in the bandwidth 
 """
 sbrand
 
-
-"""
-    sbeye(T,n,l,u)
-
-`n×n` banded identity matrix of type `T` with bandwidths `(l,u)`
-"""
-function sbeye(::Type{T},n::Integer,a=0) where {T}
-    ret=sbzeros(T,n,a)
-    ret[band(0)] = one(T)
-    ret
-end
-sbeye(n::Integer,a...) = sbeye(Float64,n,a...)
 
 
 Base.similar(B::SymBandedMatrix) =
