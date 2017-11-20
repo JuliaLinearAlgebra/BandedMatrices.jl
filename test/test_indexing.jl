@@ -501,7 +501,7 @@ end
 
 # indexing along a band
 let
-    a = bzeros(5, 4, 2, 1)
+    a = BandedMatrix(Zeros(5, 4), (2, 1))
     # 5x4 BandedMatrices.BandedMatrix{Float64}:
     #  0.0  0.0
     #  0.0  0.0  0.0
@@ -543,7 +543,7 @@ end
 
 
 let
-    a = bzeros(5, 4, 2, 2)
+    a = BandedMatrix(Zeros(5, 4), (2, 2))
     # 5x4 BandedMatrices.BandedMatrix{Float64}:
     #  0.0  0.0  0.0
     #  0.0  0.0  0.0  0.0
@@ -620,7 +620,7 @@ end
 
 # replace a block in the band
 let
-    a = bzeros(5, 4, 2, 1)
+    a = BandedMatrix(Zeros(5, 4), (2, 1))
     # 5x4 BandedMatrices.BandedMatrix{Float64}:
     #  0.0  0.0
     #  0.0  0.0  0.0
@@ -658,7 +658,7 @@ end
 
 let
     # tests bug
-    a = bzeros(1,1,3,-1)
+    a = BandedMatrix(Zeros(1,1), (3,-1))
     a[band(-2)] .+= 2
     @test isempty(a[band(-2)])
 end

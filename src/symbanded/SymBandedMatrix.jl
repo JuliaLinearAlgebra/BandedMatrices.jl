@@ -23,9 +23,6 @@ mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
-
-SymBandedMatrix(data::Matrix,k::Integer) = SymBandedMatrix{eltype(data)}(data,k)
-
 doc"""
     SymBandedMatrix(T, n, k)
 
@@ -61,6 +58,26 @@ for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.zeros),:sbzeros),(:(Base.ones),:
         $bop(B::AbstractMatrix) = $bop(eltype(B),size(B,1),bandwidth(B,2))
     end
 end
+
+function SymBandedMatrix{V}(Z::Zeros{T,2}, a::Int) where {T,V}
+    n,m = size(Z)
+    @boundscheck n == m || throw(BoundsError())
+    SymBandedMatrix{V}(zeros(V,a+1,n),a)
+end
+
+SymBandedMatrix(Z::Zeros{T,2}, a::Int) where T = SymBandedMatrix{T}(Z, a)
+
+
+function SymBandedMatrix{T}(E::Eye, a::Int) where T
+    n,m = size(E)
+    @boundscheck n == m || throw(BoundsError())
+    ret = SymBandedMatrix(Zeros{T}(E), a)
+    ret[band(0)] = one(T)
+    ret
+end
+
+SymBandedMatrix(Z::Eye{T}, a::Int) where T = SymBandedMatrix{T}(Z, a)
+SymBandedMatrix(Z::Eye) = SymBandedMatrix(Z, 0)
 
 doc"""
     sbzeros(T,n,k)

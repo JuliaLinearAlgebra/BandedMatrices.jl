@@ -147,7 +147,7 @@ function Base.qr(A::BandedMatrix)
 end
 
 function Base.qrfact(A::BandedMatrix)
-    R=bzeros(eltype(A),size(A,1),size(A,2),A.l,A.l+A.u)
+    R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
     R.data[A.l+1:end,:]=A.data
     banded_qrfact!(R)
 end

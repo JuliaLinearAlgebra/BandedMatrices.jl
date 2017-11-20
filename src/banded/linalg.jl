@@ -53,7 +53,7 @@ axpy!(a::Number, X::BLASBandedMatrix, Y::AbstractMatrix) = banded_axpy!(a, X, Y)
 
 function +(A::BLASBandedMatrix{T},B::BLASBandedMatrix{V}) where {T,V}
     n, m=size(A)
-    ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
+    ret = BandedMatrix(Zeros{promote_type(T,V)}(n,m), sumbandwidths(A, B))
     axpy!(1.,A,ret)
     axpy!(1.,B,ret)
     ret
@@ -78,7 +78,7 @@ end
 
 function -(A::BLASBandedMatrix{T}, B::BLASBandedMatrix{V}) where {T,V}
     n, m=size(A)
-    ret = bzeros(promote_type(T,V),n,m,sumbandwidths(A, B)...)
+    ret = BandedMatrix(Zeros{promote_type(T,V)}(n,m), sumbandwidths(A, B))
     axpy!(one(T),A,ret)
     axpy!(-one(V),B,ret)
     ret

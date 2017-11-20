@@ -1,7 +1,7 @@
 __precompile__()
 
 module BandedMatrices
-using Base, Compat
+using Base, Compat, FillArrays
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds
@@ -51,7 +51,10 @@ export BandedMatrix,
        BandRange,
        bandwidths,
        colrange,
-       rowrange
+       rowrange,
+       Zeros,
+       Fill,
+       Ones
 
 
 

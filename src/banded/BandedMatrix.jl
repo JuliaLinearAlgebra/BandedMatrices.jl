@@ -89,10 +89,9 @@ Base.promote_rule(::Type{BandedMatrix{T}},::Type{BandedMatrix{V}}) where {T,V} =
 
 
 for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bones))
-    name_str = "bzeros"
     @eval begin
         $bop(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) where {T} =
-            BandedMatrix($op(T,max(0,b+a+1),m),n,a,b)
+            BandedMatrix{T}($op(T,max(0,b+a+1),m),n,a,b)
         $bop(::Type{T},n::Integer,a::Integer,b::Integer) where {T} = $bop(T,n,n,a,b)
         $bop(::Type{T},n::Integer,::Colon,a::Integer,b::Integer) where {T} = $bop(T,n,n+b,a,b)
         $bop(::Type{T},::Colon,m::Integer,a::Integer,b::Integer) where {T} = $bop(T,m+a,m,a,b)
@@ -110,6 +109,26 @@ for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bo
             $bop(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
     end
 end
+
+
+## Conversions from FillArrays
+
+BandedMatrix{V}(Z::Zeros{T,2}, lu::NTuple{2,Int}) where {T,V} =
+    BandedMatrix{V}(zeros(V,max(0,sum(lu)+1),size(Z,2)),size(Z,1),lu...)
+
+BandedMatrix(Z::Zeros{T,2}, lu::NTuple{2,Int}) where T = BandedMatrix{T}(Z, lu)
+
+
+BandedMatrix(E::Eye{T}, lu::NTuple{2,Int}) where T = BandedMatrix{T}(E, lu)
+function BandedMatrix{T}(E::Eye, lu::NTuple{2,Int}) where T
+    ret=BandedMatrix(Zeros{T}(E), lu)
+    ret[band(0)] = one(T)
+    ret
+end
+
+BandedMatrix(E::Eye) = BandedMatrix(E, (0,0))
+
+
 
 doc"""
     bzeros(T,n,m,l,u)
@@ -133,6 +152,7 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 brand
 
 
+
 """
     beye(T,n,l,u)
 
@@ -145,6 +165,8 @@ function beye(::Type{T},n::Integer,a...) where {T}
     end
     ret
 end
+
+
 beye(::Type{T},n::Integer) where {T} = beye(T,n,0,0)
 beye(n::Integer) = beye(n,0,0)
 beye(n::Integer,a...) = beye(Float64,n,a...)
@@ -593,7 +615,7 @@ function Base.scale!(A::BandedMatrix, α::Number)
 end
 
 function Base.transpose(B::BandedMatrix)
-    Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
+    Bt = BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
     for j = 1:size(B,2), k = colrange(B,j)
        Bt[j,k]=B[k,j]
     end
@@ -601,7 +623,7 @@ function Base.transpose(B::BandedMatrix)
 end
 
 function Base.ctranspose(B::BandedMatrix)
-    Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
+    Bt=BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
     for j = 1:size(B,2), k = colrange(B,j)
        Bt[j,k]=conj(B[k,j])
     end

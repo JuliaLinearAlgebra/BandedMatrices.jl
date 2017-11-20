@@ -8,19 +8,11 @@ BandedMatrix
 ```
 
 ```@docs
-beye
-```
-
-```@docs
 bones
 ```
 
 ```@docs
 brand
-```
-
-```@docs
-bzeros
 ```
 
 
@@ -54,9 +46,6 @@ BandRange
 SymBandedMatrix
 ```
 
-```@docs
-sbeye
-```
 
 ```@docs
 sbones
@@ -64,10 +53,6 @@ sbones
 
 ```@docs
 sbrand
-```
-
-```@docs
-sbzeros
 ```
 
 
