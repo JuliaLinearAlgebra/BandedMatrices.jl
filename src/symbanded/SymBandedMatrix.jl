@@ -64,7 +64,7 @@ end
 function SymBandedMatrix{V}(Z::Zeros{T,2}, a::Int) where {T,V}
     n,m = size(Z)
     @boundscheck n == m || throw(BoundsError())
-    SymBandedMatrix{V}(zeros(V,a+1,n),a)
+    _SymBandedMatrix(zeros(V,a+1,n),a)
 end
 
 SymBandedMatrix(Z::Zeros{T,2}, a::Int) where T = SymBandedMatrix{T}(Z, a)

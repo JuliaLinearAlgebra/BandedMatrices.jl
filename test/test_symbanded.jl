@@ -1,4 +1,5 @@
-using BandedMatrices, Base.Test
+using Compat
+using BandedMatrices, Compat.Test
 
 
 A = sbrand(10,2)

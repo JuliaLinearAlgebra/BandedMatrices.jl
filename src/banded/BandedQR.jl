@@ -195,5 +195,5 @@ function banded_qrfact!(R::BandedMatrix{T}) where T
         end
     end
 
-    BandedQR(W,BandedMatrix{T}(R.data[1:R.u+1,:],m,0,R.u))
+    BandedQR(W, _BandedMatrix(R.data[1:R.u+1,:],m,0,R.u))
 end

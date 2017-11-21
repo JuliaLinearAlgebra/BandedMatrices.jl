@@ -44,8 +44,12 @@
 @deprecate beye(n::Integer,a) BandedMatrix(Eye(n),(-a[1],a[2]))
 
 
-@deprecate BandedMatrix(data::Matrix,n::Integer,l::Integer,u::Integer) BandedMatrix{eltype(data)}(data,n,l,u)
-@deprecate SymBandedMatrix(data::Matrix,k::Integer) SymBandedMatrix{eltype(data)}(data,k)
+
+@deprecate BandedMatrix{T}(data::Matrix{T},m::Integer,l::Int,u::Int) where T BandedMatrices._BandedMatrix(data,m,l,u)
+@deprecate BandedMatrix(data::Matrix,m::Integer,l::Int,u::Int) BandedMatrices._BandedMatrix(data,m,l,u)
+
+@deprecate SymBandedMatrix{T}(data::Matrix{T},k::Integer) where T BandedMatrices._SymBandedMatrix(data,k)
+@deprecate SymBandedMatrix(data::Matrix,k::Integer) BandedMatrices._SymBandedMatrix(data,k)
 
 @deprecate SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T} SymBandedMatrix{T}(n,k)
 
