@@ -1,8 +1,10 @@
+import BandedMatrices: _BandedMatrix
+
 # some basic operations
 
-@test BandedMatrix(Zeros(5,5), (1,1)) == BandedMatrix{Float64}(zeros(3,5), 5, 1, 1)
-@test BandedMatrix(Zeros{Int}(5,5), (1,1)) == BandedMatrix{Int}(zeros(Int,3,5), 5, 1, 1)
-@test BandedMatrix{Int}(Zeros(5,5), (1,1)) == BandedMatrix{Int}(zeros(Int,3,5), 5, 1, 1)
+@test BandedMatrix(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(3,5), 5, 1, 1)
+@test BandedMatrix(Zeros{Int}(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
+@test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
 
 
 let A = brand(10,12,2,3),B = brand(10,12,3,4)

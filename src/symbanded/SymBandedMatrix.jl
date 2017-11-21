@@ -11,10 +11,12 @@ export sbrand, sbeye, sbzeros
 #         *      a_12   a_23   a_34
 #         a_11   a_22   a_33   a_44 ]
 ###
+function _SymBandedMatrix end
+
 mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # k+1 x n (# of columns)
     k::Int # bandwidth ≥ 0
-    function SymBandedMatrix{T}(data::Matrix{T},k) where {T}
+    global function _SymBandedMatrix(data::Matrix{T},k) where {T}
         if size(data,1) != k+1
             error("Data matrix must have number rows equal to number of superdiagonals")
         else
@@ -31,11 +33,11 @@ returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwid
 
 # Use zeros to avoid unallocated entries for bigfloat
 SymBandedMatrix{T}(n::Integer,k::Integer) where {T<:BlasFloat} =
-    SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
+    _SymBandedMatrix(Matrix{T}(k+1,n),k)
 SymBandedMatrix{T}(n::Integer,k::Integer) where {T<:Number} =
-    SymBandedMatrix{T}(zeros(T,k+1,n),k)
+    _SymBandedMatrix(zeros(T,k+1,n),k)
 SymBandedMatrix{T}(n::Integer,k::Integer) where {T} =
-    SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
+    _SymBandedMatrix(Matrix{T}(k+1,n),k)
 
 
 for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
@@ -43,7 +45,7 @@ for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :Abstract
         SymBandedMatrix{V}(convert(Matrix{V},M.data),M.k)
 end
 
-Base.copy(B::SymBandedMatrix{T}) where T = SymBandedMatrix{T}(copy(B.data),B.k)
+Base.copy(B::SymBandedMatrix{T}) where T = _SymBandedMatrix(copy(B.data),B.k)
 
 Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {T,V} =
     SymBandedMatrix{promote_type(T,V)}
@@ -52,7 +54,7 @@ Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {
 
 for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.ones),:sbones))
     @eval begin
-        $bop(::Type{T},n::Integer,a::Integer) where {T} = SymBandedMatrix{T}($op(T,a+1,n),a)
+        $bop(::Type{T},n::Integer,a::Integer) where {T} = _SymBandedMatrix($op(T,a+1,n),a)
         $bop(n::Integer,a::Integer) = $bop(Float64,n,a)
 
         $bop(B::AbstractMatrix) = $bop(eltype(B),size(B,1),bandwidth(B,2))
