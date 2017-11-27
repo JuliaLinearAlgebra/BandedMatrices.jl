@@ -1,4 +1,33 @@
-import BandedMatrices: banded_axpy!, banded_A_mul_B!
+using BandedMatrices, Compat.Test
+
+import BandedMatrices: banded_axpy!, banded_A_mul_B!, isbanded
+
+
+
+## test intervface
+@test isbanded(Zeros(5,6))
+@test bandwidths(Zeros(5,6)) == (0,0)
+@test BandedMatrices.inbands_getindex(Zeros(5,6), 1,2) == 0
+
+@test isbanded(Eye(5))
+@test bandwidths(Eye(5)) == (0,0)
+@test BandedMatrices.inbands_getindex(Eye(5), 1,1) == 1
+
+A = Diagonal(ones(5,5))
+@test isbanded(A)
+@test bandwidths(A) == (0,0)
+@test BandedMatrices.inbands_getindex(A, 1,1) == 1
+BandedMatrices.inbands_setindex!(A, 2, 1,1)
+@test A[1,1] == 2
+
+A = SymTridiagonal([1,2,3],[4,5])
+@test isbanded(A)
+@test bandwidths(A) == (1,1)
+@test BandedMatrices.inbands_getindex(A, 1,1) == 1
+BandedMatrices.inbands_setindex!(A, 2, 1,1)
+@test A[1,1] == 2
+
+
 
 struct SimpleBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}

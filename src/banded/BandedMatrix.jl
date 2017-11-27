@@ -4,7 +4,7 @@
 #   a_21 a_22 a_23
 #   a_31 a_32 a_33 a_34
 #        a_42 a_43 a_44  ]
-# ordering the data like  (columns first)
+# ordering the data like  (cobbndsmns first)
 #       [ *      a_12   a_23    a_34
 #         a_11   a_22   a_33    a_44
 #         a_21   a_32   a_43    *
@@ -122,24 +122,35 @@ brand
 
 
 
-## Conversions from FillArrays
+## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
+function BandedMatrix{T}(A::AbstractMatrix, bnds::Tuple{Int,Int}) where T
+    (n,m) = size(A)
+    (l,u) = bnds
+    ret = BandedMatrix{T}((n,m), bnds)
+    @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
+        ret[k,j] = A[k,j]
+    end
+    ret
+end
 
-BandedMatrix{V}(Z::Zeros{T,2}, lu::NTuple{2,Int}) where {T,V} =
-    _BandedMatrix(zeros(V,max(0,sum(lu)+1),size(Z,2)),size(Z,1),lu...)
+BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
+    BandedMatrix{T}(A, bnds)
 
-BandedMatrix(Z::Zeros{T,2}, lu::NTuple{2,Int}) where T = BandedMatrix{T}(Z, lu)
+BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
+    _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
+
+BandedMatrix(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(Z, bnds)
 
 
-BandedMatrix(E::Eye{T}, lu::NTuple{2,Int}) where T = BandedMatrix{T}(E, lu)
-function BandedMatrix{T}(E::Eye, lu::NTuple{2,Int}) where T
-    ret=BandedMatrix(Zeros{T}(E), lu)
+BandedMatrix(E::Eye{T}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(E, bnds)
+function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Int}) where T
+    ret=BandedMatrix(Zeros{T}(E), bnds)
     ret[band(0)] = one(T)
     ret
 end
 
-BandedMatrix(E::Eye) = BandedMatrix(E, (0,0))
-
-
+BandedMatrix(A::AbstractMatrix) =
+    BandedMatrix(A, bandwidths(A))
 
 Base.similar(B::BandedMatrix) =
     BandedMatrix{eltype(B)}(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
