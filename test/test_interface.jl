@@ -29,6 +29,7 @@ BandedMatrices.inbands_setindex!(A, 2, 1,1)
 
 
 
+
 struct SimpleBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
     l::Int

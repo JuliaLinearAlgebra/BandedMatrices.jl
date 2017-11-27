@@ -107,13 +107,6 @@ end
 
 
 doc"""
-    bones(T,n,m,l,u)
-
-Creates an `n×m` banded matrix  with ones in the bandwidth of type `T` with bandwidths `(l,u)`
-"""
-bones
-
-doc"""
     brand(T,n,m,l,u)
 
 Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(l,u)`
@@ -126,7 +119,7 @@ brand
 function BandedMatrix{T}(A::AbstractMatrix, bnds::Tuple{Int,Int}) where T
     (n,m) = size(A)
     (l,u) = bnds
-    ret = BandedMatrix{T}((n,m), bnds)
+    ret = BandedMatrix{T}(n,m, bnds...)
     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
         ret[k,j] = A[k,j]
     end
