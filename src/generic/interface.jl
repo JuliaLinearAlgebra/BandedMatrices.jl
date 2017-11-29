@@ -340,7 +340,7 @@ macro _banded_banded_linalg(Typ1, Typ2)
 
         function Base.:+(A::$Typ1{T}, B::$Typ2{V}) where {T,V}
             n, m = size(A)
-            ret = BandedMatrices.bzeros(promote_type(T,V), n, m, BandedMatrices.sumbandwidths(A, B)...)
+            ret = BandedMatrices.BandedMatrix(BandedMatrices.Zeros{promote_type(T,V)}(n, m), BandedMatrices.sumbandwidths(A, B))
             axpy!(one(T), A, ret)
             axpy!(one(V), B, ret)
             ret
@@ -348,7 +348,7 @@ macro _banded_banded_linalg(Typ1, Typ2)
 
         function Base.:-(A::$Typ1{T}, B::$Typ2{V}) where {T,V}
             n, m=size(A)
-            ret = BandedMatrices.bzeros(promote_type(T,V), n, m, BandedMatrices.sumbandwidths(A, B)...)
+            ret = BandedMatrices.BandedMatrix(BandedMatrices.Zeros{promote_type(T,V)}(n, m), BandedMatrices.sumbandwidths(A, B))
             axpy!(one(T),  A, ret)
             axpy!(-one(V), B, ret)
             ret
@@ -372,7 +372,7 @@ macro _banded_banded_linalg(Typ1, Typ2)
 
         function Base.:*(A::$Typ1{T}, B::$Typ2{V}) where {T, V}
             n, m = size(A,1), size(B,2)
-            Y = BandedMatrix(promote_type(T,V), n, m, prodbandwidths(A, B)...)
+            Y = BandedMatrix{promote_type(T,V)}(n, m, prodbandwidths(A, B)...)
             A_mul_B!(Y, A, B)
         end
 

@@ -1,4 +1,11 @@
+import BandedMatrices: _BandedMatrix
+
 # some basic operations
+
+@test BandedMatrix(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(3,5), 5, 1, 1)
+@test BandedMatrix(Zeros{Int}(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
+@test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
+
 
 let A = brand(10,12,2,3),B = brand(10,12,3,4)
     @test Matrix(sparse(A)) ≈ Matrix(A)
@@ -94,7 +101,7 @@ end
 
 ## BigFloat
 
-let A = brand(5, 5, 1, 2), B = bzeros(BigFloat,5,5,2,3), D = rand(5, 5)
+let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
     for j = 1:size(B,2), k = colrange(B,j)
         B[k,j]=randn()
     end

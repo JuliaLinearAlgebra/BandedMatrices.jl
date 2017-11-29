@@ -147,7 +147,7 @@ function Base.qr(A::BandedMatrix)
 end
 
 function Base.qrfact(A::BandedMatrix)
-    R=bzeros(eltype(A),size(A,1),size(A,2),A.l,A.l+A.u)
+    R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
     R.data[A.l+1:end,:]=A.data
     banded_qrfact!(R)
 end
@@ -156,8 +156,7 @@ flipsign(x,y) = Base.flipsign(x,y)
 flipsign(x::BigFloat,y::BigFloat) = sign(y)==1 ? x : (-x)
 flipsign(x,y::Complex) = y==0 ? x : x*sign(y)
 
-function banded_qrfact!(R::BandedMatrix)
-    T=eltype(R)
+function banded_qrfact!(R::BandedMatrix{T}) where T
     M=R.l+1   # number of diag+subdiagonal bands
     m,n=size(R)
     W=Matrix{T}(M,(n<m ? n : m-1))
@@ -196,5 +195,5 @@ function banded_qrfact!(R::BandedMatrix)
         end
     end
 
-    BandedQR(W,BandedMatrix(R.data[1:R.u+1,:],m,0,R.u))
+    BandedQR(W, _BandedMatrix(R.data[1:R.u+1,:],m,0,R.u))
 end

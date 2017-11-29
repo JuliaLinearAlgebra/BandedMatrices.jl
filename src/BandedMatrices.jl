@@ -1,7 +1,7 @@
 __precompile__()
 
 module BandedMatrices
-using Base, Compat
+using Base, Compat, FillArrays
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
@@ -38,7 +38,7 @@ import Base.LinAlg: BlasInt,
                     copy_oftype,
                     checksquare
 
-import Base: lufact, cholfact, cholfact!
+import Base: lufact, cholfact, cholfact!, promote_op
 
 export BandedMatrix,
        SymBandedMatrix,
@@ -55,7 +55,12 @@ export BandedMatrix,
        bandwidths,
        colrange,
        rowrange,
-       isbanded
+       isbanded,
+       Zeros,
+       Fill,
+       Ones,
+       Eye
+
 
 
 
@@ -76,6 +81,8 @@ include("banded/linalg.jl")
 include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
+
+include("interfaceimpl.jl")
 
 include("deprecate.jl")
 

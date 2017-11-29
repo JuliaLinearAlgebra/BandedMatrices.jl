@@ -11,10 +11,12 @@ export sbrand, sbeye, sbzeros
 #         *      a_12   a_23   a_34
 #         a_11   a_22   a_33   a_44 ]
 ###
+function _SymBandedMatrix end
+
 mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # k+1 x n (# of columns)
     k::Int # bandwidth ≥ 0
-    function SymBandedMatrix{T}(data::Matrix{T},k) where {T}
+    global function _SymBandedMatrix(data::Matrix{T},k) where {T}
         if size(data,1) != k+1
             error("Data matrix must have number rows equal to number of superdiagonals")
         else
@@ -23,9 +25,9 @@ mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
+
 blasstructure(::Type{SymBandedMatrix{<:BlasFloat}}) = BlasSymBanded()
 
-SymBandedMatrix(data::Matrix,k::Integer) = SymBandedMatrix{eltype(data)}(data,k)
 
 doc"""
     SymBandedMatrix(T, n, k)
@@ -34,12 +36,12 @@ returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwid
 """
 
 # Use zeros to avoid unallocated entries for bigfloat
-SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T<:BlasFloat} =
-    SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
-SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T<:Number} =
-    SymBandedMatrix{T}(zeros(T,k+1,n),k)
-SymBandedMatrix(::Type{T},n::Integer,k::Integer) where {T} =
-    SymBandedMatrix{T}(Matrix{T}(k+1,n),k)
+SymBandedMatrix{T}(n::Integer,k::Integer) where {T<:BlasFloat} =
+    _SymBandedMatrix(Matrix{T}(k+1,n),k)
+SymBandedMatrix{T}(n::Integer,k::Integer) where {T<:Number} =
+    _SymBandedMatrix(zeros(T,k+1,n),k)
+SymBandedMatrix{T}(n::Integer,k::Integer) where {T} =
+    _SymBandedMatrix(Matrix{T}(k+1,n),k)
 
 
 for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
@@ -47,28 +49,42 @@ for MAT in (:SymBandedMatrix,  :AbstractBandedMatrix, :AbstractMatrix, :Abstract
         SymBandedMatrix{V}(convert(Matrix{V},M.data), M.k)
 end
 
-Base.copy(B::SymBandedMatrix) = SymBandedMatrix(copy(B.data),B.k)
+Base.copy(B::SymBandedMatrix{T}) where T = _SymBandedMatrix(copy(B.data),B.k)
 
 Base.promote_rule(::Type{SymBandedMatrix{T}},::Type{SymBandedMatrix{V}}) where {T,V} =
     SymBandedMatrix{promote_type(T,V)}
 
 
 
-for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.zeros),:sbzeros),(:(Base.ones),:sbones))
+for (op,bop) in ((:(Base.rand),:sbrand),(:(Base.ones),:sbones))
     @eval begin
-        $bop(::Type{T},n::Integer,a::Integer) where {T} = SymBandedMatrix($op(T,a+1,n),a)
+        $bop(::Type{T},n::Integer,a::Integer) where {T} = _SymBandedMatrix($op(T,a+1,n),a)
         $bop(n::Integer,a::Integer) = $bop(Float64,n,a)
 
         $bop(B::AbstractMatrix) = $bop(eltype(B),size(B,1),bandwidth(B,2))
     end
 end
 
-doc"""
-    sbzeros(T,n,k)
+function SymBandedMatrix{V}(Z::Zeros{T,2}, a::Int) where {T,V}
+    n,m = size(Z)
+    @boundscheck n == m || throw(BoundsError())
+    _SymBandedMatrix(zeros(V,a+1,n),a)
+end
 
-Creates an `n×n` symmetric banded matrix  of all zeros of type `T` with bandwidths `(k,k)`
-"""
-sbzeros
+SymBandedMatrix(Z::Zeros{T,2}, a::Int) where T = SymBandedMatrix{T}(Z, a)
+
+
+function SymBandedMatrix{T}(E::Eye, a::Int) where T
+    n,m = size(E)
+    @boundscheck n == m || throw(BoundsError())
+    ret = SymBandedMatrix(Zeros{T}(E), a)
+    ret[band(0)] = one(T)
+    ret
+end
+
+SymBandedMatrix(Z::Eye{T}, a::Int) where T = SymBandedMatrix{T}(Z, a)
+SymBandedMatrix(Z::Eye) = SymBandedMatrix(Z, 0)
+
 
 doc"""
     sbones(T,n,k)
@@ -84,18 +100,6 @@ Creates an `n×n` symmetric banded matrix  with random numbers in the bandwidth 
 """
 sbrand
 
-
-"""
-    sbeye(T,n,l,u)
-
-`n×n` banded identity matrix of type `T` with bandwidths `(l,u)`
-"""
-function sbeye(::Type{T},n::Integer,a=0) where {T}
-    ret=sbzeros(T,n,a)
-    ret[band(0)] = one(T)
-    ret
-end
-sbeye(n::Integer,a...) = sbeye(Float64,n,a...)
 
 
 Base.similar(B::SymBandedMatrix) =

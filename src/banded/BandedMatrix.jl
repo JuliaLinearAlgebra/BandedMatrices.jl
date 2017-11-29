@@ -4,18 +4,21 @@
 #   a_21 a_22 a_23
 #   a_31 a_32 a_33 a_34
 #        a_42 a_43 a_44  ]
-# ordering the data like  (columns first)
+# ordering the data like  (cobbndsmns first)
 #       [ *      a_12   a_23    a_34
 #         a_11   a_22   a_33    a_44
 #         a_21   a_32   a_43    *
 #         a_31   a_42   *       *       ]
 ###
+
+function _BandedMatrix end
+
 mutable struct BandedMatrix{T} <: AbstractBandedMatrix{T}
     data::Matrix{T}  # l+u+1 x n (# of columns)
     m::Int #Number of rows
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
-    function BandedMatrix{T}(data::Matrix{T},m,l,u) where {T}
+    global function _BandedMatrix(data::Matrix{T},m,l,u) where {T}
         if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
             error("Data matrix must have number rows equal to number of bands")
         else
@@ -37,37 +40,28 @@ blasstructure(::Type{BandedSubBandedMatrix{<:BlasFloat}}) = BlasStrided()
 
 ## Constructors
 
-BandedMatrix(data::Matrix,m::Integer,a::Integer,b::Integer) = BandedMatrix{eltype(data)}(data,m,a,b)
-
 doc"""
-    BandedMatrix(T, n, m, l, u)
+    BandedMatrix{T}(n, m, l, u)
 
 returns an unitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
 """
 
-# Use zeros to avoid unallocated entries for bigfloat
-BandedMatrix(::Type{T}, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
-    BandedMatrix{T}(Matrix{T}(max(0,b+a+1),m),n,a,b)
-BandedMatrix(::Type{T}, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number} =
-    BandedMatrix{T}(zeros(T,max(0,b+a+1),m),n,a,b)
-BandedMatrix(::Type{T}, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
-    BandedMatrix{T}(Matrix{T}(max(0,b+a+1),m),n,a,b)
+
+BandedMatrix{T}(n::Integer,m::Integer,a::Integer,b::Integer) where {T<:BlasFloat} =
+    _BandedMatrix(Matrix{T}(max(0,b+a+1),m),n,a,b)
+BandedMatrix{T}(n::Integer,m::Integer,a::Integer,b::Integer)  where {T<:Number} =
+    _BandedMatrix(zeros(T,max(0,b+a+1),m),n,a,b)
+BandedMatrix{T}(n::Integer,m::Integer,a::Integer,b::Integer)  where {T} =
+    _BandedMatrix(Matrix{T}(max(0,b+a+1),m),n,a,b)
 
 
 
-BandedMatrix(::Type{T},n::Integer,a::Integer,b::Integer)  where {T} = BandedMatrix(T,n,n,a,b)
-BandedMatrix(::Type{T},n::Integer,::Colon,a::Integer,b::Integer)  where {T} = BandedMatrix(T,n,n+b,a,b)
-
-
-BandedMatrix(data::Matrix,m::Integer,a) = BandedMatrix(data,m,-a[1],a[end])
-BandedMatrix(::Type{T},n::Integer,m::Integer,a) where {T} = BandedMatrix(T,n,m,-a[1],a[end])
-BandedMatrix(::Type{T},n::Integer,::Colon,a) where {T} = BandedMatrix(T,n,:,-a[1],a[end])
-BandedMatrix(::Type{T},n::Integer,a) where {T} = BandedMatrix(T,n,-a[1],a[end])
-
+BandedMatrix{T}(n::Integer,a::Integer,b::Integer)  where {T} = BandedMatrix{T}(n,n,a,b)
+BandedMatrix{T}(n::Integer,::Colon,a::Integer,b::Integer)  where {T} = BandedMatrix{T}(n,n+b,a,b)
 
 for MAT in (:BandedMatrix, :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval Base.convert(::Type{$MAT{V}},M::BandedMatrix) where {V} =
-        BandedMatrix{V}(convert(Matrix{V},M.data),M.m,M.l,M.u)
+        _BandedMatrix(convert(Matrix{V},M.data),M.m,M.l,M.u)
 end
 function Base.convert(::Type{BM},M::Matrix) where {BM<:BandedMatrix}
     ret = BandedMatrix(eltype(BM)==Any ? eltype(M) :
@@ -78,17 +72,16 @@ function Base.convert(::Type{BM},M::Matrix) where {BM<:BandedMatrix}
     ret
 end
 
-Base.copy(B::BandedMatrix) = BandedMatrix(copy(B.data),B.m,B.l,B.u)
+Base.copy(B::BandedMatrix) = _BandedMatrix(copy(B.data),B.m,B.l,B.u)
 
 Base.promote_rule(::Type{BandedMatrix{T}},::Type{BandedMatrix{V}}) where {T,V} = BandedMatrix{promote_type(T,V)}
 
 
 
-for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bones))
-    name_str = "bzeros"
+for (op,bop) in ((:(Base.rand),:brand),(:(Base.ones),:bones))
     @eval begin
         $bop(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) where {T} =
-            BandedMatrix($op(T,max(0,b+a+1),m),n,a,b)
+            _BandedMatrix($op(T,max(0,b+a+1),m),n,a,b)
         $bop(::Type{T},n::Integer,a::Integer,b::Integer) where {T} = $bop(T,n,n,a,b)
         $bop(::Type{T},n::Integer,::Colon,a::Integer,b::Integer) where {T} = $bop(T,n,n+b,a,b)
         $bop(::Type{T},::Colon,m::Integer,a::Integer,b::Integer) where {T} = $bop(T,m+a,m,a,b)
@@ -107,19 +100,6 @@ for (op,bop) in ((:(Base.rand),:brand),(:(Base.zeros),:bzeros),(:(Base.ones),:bo
     end
 end
 
-doc"""
-    bzeros(T,n,m,l,u)
-
-Creates an `n×m` banded matrix  of all zeros of type `T` with bandwidths `(l,u)`
-"""
-bzeros
-
-doc"""
-    bones(T,n,m,l,u)
-
-Creates an `n×m` banded matrix  with ones in the bandwidth of type `T` with bandwidths `(l,u)`
-"""
-bones
 
 doc"""
     brand(T,n,m,l,u)
@@ -129,24 +109,39 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 brand
 
 
-"""
-    beye(T,n,l,u)
 
-`n×n` banded identity matrix of type `T` with bandwidths `(l,u)`
-"""
-function beye(::Type{T},n::Integer,a...) where {T}
-    ret=bzeros(T,n,a...)
-    for k=1:n
-         ret[k,k]=one(T)
+## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
+function BandedMatrix{T}(A::AbstractMatrix, bnds::Tuple{Int,Int}) where T
+    (n,m) = size(A)
+    (l,u) = bnds
+    ret = BandedMatrix{T}(n,m, bnds...)
+    @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
+        ret[k,j] = A[k,j]
     end
     ret
 end
-beye(::Type{T},n::Integer) where {T} = beye(T,n,0,0)
-beye(n::Integer) = beye(n,0,0)
-beye(n::Integer,a...) = beye(Float64,n,a...)
+
+BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
+    BandedMatrix{T}(A, bnds)
+
+BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
+    _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
+
+BandedMatrix(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(Z, bnds)
+
+
+BandedMatrix(E::Eye{T}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(E, bnds)
+function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Int}) where T
+    ret=BandedMatrix(Zeros{T}(E), bnds)
+    ret[band(0)] = one(T)
+    ret
+end
+
+BandedMatrix(A::AbstractMatrix) =
+    BandedMatrix(A, bandwidths(A))
 
 Base.similar(B::BandedMatrix) =
-    BandedMatrix(eltype(B),size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
+    BandedMatrix{eltype(B)}(size(B,1),size(B,2),bandwidth(B,1),bandwidth(B,2))
 
 
 ## Abstract Array Interface
@@ -615,7 +610,7 @@ function Base.scale!(A::BandedMatrix, α::Number)
 end
 
 function Base.transpose(B::BandedMatrix)
-    Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
+    Bt = BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
     for j = 1:size(B,2), k = colrange(B,j)
        Bt[j,k]=B[k,j]
     end
@@ -623,7 +618,7 @@ function Base.transpose(B::BandedMatrix)
 end
 
 function Base.ctranspose(B::BandedMatrix)
-    Bt=bzeros(eltype(B),size(B,2),size(B,1),B.u,B.l)
+    Bt=BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
     for j = 1:size(B,2), k = colrange(B,j)
        Bt[j,k]=conj(B[k,j])
     end
@@ -661,16 +656,21 @@ end
 ## numbers
 for OP in (:*,:/)
     @eval begin
-        $OP(A::BandedMatrix, b::Number) = BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
+        $OP(A::BandedMatrix, b::Number) =
+            _BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
         broadcast(::typeof($OP), A::BandedMatrix, b::Number) =
-            BandedMatrix($OP.(A.data,b),A.m,A.l,A.u)
+            _BandedMatrix($OP.(A.data,b),A.m,A.l,A.u)
     end
 end
 
-
-*(a::Number,B::BandedMatrix) = BandedMatrix(a*B.data,B.m,B.l,B.u)
-broadcast(::typeof(*), a::Number, B::BandedMatrix) = BandedMatrix(a.*B.data,B.m,B.l,B.u)
-
+for OP in (:*,:\)
+    @eval begin
+        $OP(a::Number, B::BandedMatrix) =
+            _BandedMatrix($OP(a,B.data),B.m,B.l,B.u)
+        broadcast(::typeof($OP), a::Number, B::BandedMatrix) =
+            _BandedMatrix($OP.(a,B.data),B.m,B.l,B.u)
+    end
+end
 
 
 #implements fliplr(flipud(A))
@@ -719,17 +719,17 @@ function Base.convert(::Type{BandedMatrix},S::BandedSubBandedMatrix{T}) where {T
     shft=kr[1]-jr[1]
     l,u=bandwidths(A)
     if -u ≤ shft ≤ l
-        BandedMatrix(A.data[:,jr],length(kr),l-shft,u+shft)
+        _BandedMatrix(A.data[:,jr],length(kr),l-shft,u+shft)
     elseif shft > l
         # need to add extra zeros at top since negative bandwidths not supported
         # new bandwidths = (0,u+shft)
         dat = zeros(T,u+shft+1,length(jr))
         dat[1:l+u+1,:] = A.data[:,jr]
-        BandedMatrix(dat,length(kr),0,u+shft)
+        _BandedMatrix(dat,length(kr),0,u+shft)
     else  # shft < -u
         dat = zeros(T,l-shft+1,length(jr))
         dat[-shft-u+1:end,:] = A.data[:,jr]  # l-shft+1 - (-shft-u) == l+u+1
-        BandedMatrix(dat,length(kr),l-shft,0)
+        _BandedMatrix(dat,length(kr),l-shft,0)
     end
 end
 
