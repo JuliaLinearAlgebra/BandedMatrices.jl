@@ -54,6 +54,8 @@ BandedMatrix{T}(n::Integer,m::Integer,a::Integer,b::Integer)  where {T<:Number} 
 BandedMatrix{T}(n::Integer,m::Integer,a::Integer,b::Integer)  where {T} =
     _BandedMatrix(Matrix{T}(max(0,b+a+1),m),n,a,b)
 
+BandedMatrix{T}(nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
+    BandedMatrix{T}(nm..., ab...)
 
 
 BandedMatrix{T}(n::Integer,a::Integer,b::Integer)  where {T} = BandedMatrix{T}(n,n,a,b)
