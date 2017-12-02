@@ -55,7 +55,7 @@ BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer)
 BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
     _BandedMatrix(Matrix{T}(max(0,b+a+1),m),n,a,b)
 BandedMatrix{T}(::Uninitialized, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
-    BandedMatrix{T}(nm..., ab...)
+    BandedMatrix{T}(uninitialized, nm..., ab...)
 BandedMatrix{T}(::Uninitialized, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
     BandedMatrix{T}(uninitialized,n,n+b,a,b)
 

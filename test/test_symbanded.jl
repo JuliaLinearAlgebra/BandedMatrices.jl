@@ -1,6 +1,8 @@
 using Compat
 using BandedMatrices, Compat.Test
 
+@test_throws UndefRefError SymBandedMatrix{Vector{Float64}}(uninitialized, 5, 1)[1,1]
+
 
 A = sbrand(10,2)
 

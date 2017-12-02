@@ -6,6 +6,8 @@ import BandedMatrices: _BandedMatrix
 @test BandedMatrix(Zeros{Int}(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
 @test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
 
+@test_throws UndefRefError BandedMatrix{Vector{Float64}}(uninitialized, (5,5), (1,1))[1,1]
+
 
 let A = brand(10,12,2,3),B = brand(10,12,3,4)
     @test Matrix(sparse(A)) ≈ Matrix(A)
