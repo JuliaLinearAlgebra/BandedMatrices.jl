@@ -18,7 +18,7 @@ end
 
 # rowstart/rowstop business
 let
-    A = bones(7, 5, 1, 2)
+    A = BandedMatrix(Ones(7, 5), (1, 2))
     # 1.0  1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0
     # 0.0  1.0  1.0  1.0  1.0
@@ -39,7 +39,7 @@ let
     @test (colstart(A, 4), colstop(A, 4), collength(A, 4)) == (2, 5, 4)
     @test (colstart(A, 5), colstop(A, 5), collength(A, 5)) == (3, 6, 4)
 
-    A = bones(3, 6, 1, 2)
+    A = BandedMatrix(Ones(3, 6), (1, 2))
     # 1.0  1.0  1.0  0.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0  0.0
     # 0.0  1.0  1.0  1.0  1.0  0.0
@@ -53,7 +53,7 @@ let
     @test (colstart(A, 5), colstop(A, 5), collength(A, 5)) == (3, 3, 1)
     @test (colstart(A, 6), colstop(A, 6), collength(A, 6)) == (4, 3, 0) # zero length
 
-    A = bones(3, 4, -1, 2)
+    A = BandedMatrix(Ones(3, 4), (-1, 2))
     # 0.0  1.0  1.0  0.0
     # 0.0  0.0  1.0  1.0
     # 0.0  0.0  0.0  1.0
@@ -68,7 +68,7 @@ end
 
 # test length of diagonal
 let
-    A = bones(4, 6, 2, 3)
+    A = BandedMatrix(Ones(4, 6), (2, 3))
     # 4x6 BandedMatrices.BandedMatrix{Float64}:
     #  1.0  1.0  1.0  1.0
     #  1.0  1.0  1.0  1.0  1.0
@@ -81,7 +81,7 @@ let
     @test diaglength(A,  2) == 4
     @test diaglength(A,  3) == 3
 
-    A = bones(6, 5, 2, 1)
+    A = BandedMatrix(Ones(6, 5), (2, 1))
     # 6x5 BandedMatrices.BandedMatrix{Float64}:
     #  1.0  1.0
     #  1.0  1.0  1.0
@@ -94,7 +94,7 @@ let
     @test diaglength(A,  0) == 5
     @test diaglength(A,  1) == 4
 
-    A = bones(4, 4, 1, 1)
+    A = BandedMatrix(Ones(4, 4), (1, 1))
     # 4x4 BandedMatrices.BandedMatrix{Float64}:
     #  1.0  1.0
     #  1.0  1.0  1.0
@@ -110,7 +110,7 @@ end
 
 # _firstdiagrow/_firstdiagcol
 let
-    A = bones(6, 5, 2, 1)
+    A = BandedMatrix(Ones(6, 5), (2, 1))
     # 6x5 BandedMatrices.BandedMatrix{Float64}:
     #  1.0  1.0
     #  1.0  1.0  1.0
@@ -135,7 +135,7 @@ end
 
 # scalar - integer - integer
 let
-    a = bones(5, 5, 1, 1)
+    a = BandedMatrix(Ones(5, 5), (1, 1))
     # 1.0  1.0  0.0  0.0  0.0
     # 1.0  1.0  1.0  0.0  0.0
     # 0.0  1.0  1.0  1.0  0.0
@@ -157,7 +157,7 @@ let
     @test_throws BoundsError a[6, 5] = 1
     @test_throws BoundsError a[6, 6] = 1
 
-    a = bones(5, 5, -1, 1)
+    a = BandedMatrix(Ones(5, 5), (-1, 1))
     a[1, 2] = 2
     @test a[1, 2] == 2
     @test_throws BandError a[1, 1] = 1
@@ -168,7 +168,7 @@ end
 
 # scalar - BandRange/Colon - integer
 let
-    a = bones(5, 5, 1, 1)
+    a = BandedMatrix(Ones(5, 5), (1, 1))
     # 1.0  1.0  0.0  0.0  0.0
     # 1.0  1.0  1.0  0.0  0.0
     # 0.0  1.0  1.0  1.0  0.0
@@ -198,7 +198,7 @@ let
     @test_throws BoundsError a[BandRange, 0] = 1
     @test_throws BoundsError a[BandRange, 6] = 1
 
-    a = bones(3, 5, -1, 2)
+    a = BandedMatrix(Ones(3, 5), (-1, 2))
     @test isempty(a[BandRange,1])
     a[BandRange,2] = [1]
     a[BandRange,3] = [2, 2]
@@ -213,7 +213,7 @@ end
 
 # vector - BandRange/Colon - integer
 let
-    a = bones(Int, 5, 7, 2, 1)
+    a = BandedMatrix(Ones{Int}(5, 7), (2, 1))
     # 5x7 BandedMatrices.BandedMatrix{Float64}:
     #  1.0  1.0    0    0    0    0   0   0
     #  1.0  1.0  1.0    0    0    0   0   0
@@ -252,7 +252,7 @@ end
 
 # scalar - range - integer
 let
-    a = bones(3, 4, 2, 1)
+    a = BandedMatrix(Ones(3, 4), (2, 1))
     # 1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  0.0
     # 1.0  1.0  1.0  1.0
@@ -292,7 +292,7 @@ end
 
 # vector - range - integer
 let
-    a = bones(5, 4, 1, 2)
+    a = BandedMatrix(Ones(5, 4), (1, 2))
     # 1.0  1.0  1.0  0.0
     # 1.0  1.0  1.0  1.0
     # 0.0  1.0  1.0  1.0
@@ -345,7 +345,7 @@ end
 
 # scalar - integer - BandRange/colon
 let
-    a = bones(5, 5, 1, 1)
+    a = BandedMatrix(Ones(5, 5), (1, 1))
     # 1.0  1.0  0.0  0.0  0.0
     # 1.0  1.0  1.0  0.0  0.0
     # 0.0  1.0  1.0  1.0  0.0
@@ -379,7 +379,7 @@ end
 
 # vector - integer - BandRange/colon
 let
-    a = bones(7, 5, 1, 2)
+    a = BandedMatrix(Ones(7, 5), (1, 2))
     # 7x5 BandedMatrices.BandedMatrix{Float64}:
     # 1.0  1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0
@@ -417,7 +417,7 @@ end
 
 # scalar - integer - range
 let
-    a = bones(7, 5, 1, 2)
+    a = BandedMatrix(Ones(7, 5), (1, 2))
     # 7x5 BandedMatrices.BandedMatrix{Float64}:
     # 1.0  1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0
@@ -463,7 +463,7 @@ end
 
 # vector - integer - range
 let
-    a = bones(7, 5, 1, 2)
+    a = BandedMatrix(Ones(7, 5), (1, 2))
     # 7x5 BandedMatrices.BandedMatrix{Float64}:
     # 1.0  1.0  1.0  0.0  0.0
     # 1.0  1.0  1.0  1.0  0.0
@@ -592,7 +592,7 @@ end
 # other special methods
 let
     # all elements
-    a = bones(3, 3, 1, 1)
+    a = BandedMatrix(Ones(3, 3), (1, 1))
     a[:] = 0
     @test a == [0 0 0;
                 0 0 0;

@@ -52,7 +52,7 @@ end
 prodbandwidths(A::AbstractMatrix, B::AbstractMatrix) = prodbandwidths('N', 'N', A, B)
 
 function banded_similar(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix, T::DataType)
-    BandedMatrix{T}(_size(tA, A, 1), _size(tB, B, 2), prodbandwidths(tA, tB, A, B)...)
+    BandedMatrix{T}(uninitialized, _size(tA, A, 1), _size(tB, B, 2), prodbandwidths(tA, tB, A, B)...)
 end
 
 # helper functions in matrix addition routines

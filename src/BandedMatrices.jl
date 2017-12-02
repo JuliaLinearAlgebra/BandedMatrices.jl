@@ -38,6 +38,8 @@ import Base.LinAlg: BlasInt,
 
 import Base: lufact, cholfact, cholfact!, promote_op
 
+import FillArrays: AbstractFill
+
 export BandedMatrix,
        SymBandedMatrix,
        bandrange,
