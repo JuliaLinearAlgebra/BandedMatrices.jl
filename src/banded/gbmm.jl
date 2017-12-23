@@ -319,7 +319,7 @@ end
 
 αA_mul_B_plus_βC!(α, A, x, β, y) =
     _αA_mul_B_plus_βC!(α, A, x, β, y,
-                       blasstructure(A), blasstructure(x), blasstructure(y))
+                       memorylayout(A), memorylayout(x), memorylayout(y))
 _αA_mul_B_plus_βC!(α, A, x, β, y, blasA, blasx, blasy) = (y .= α*A*x + β*y)
 _αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
                    ::BlasStrided, ::BlasBanded, ::BlasStrided) where {T<:BlasFloat} =
