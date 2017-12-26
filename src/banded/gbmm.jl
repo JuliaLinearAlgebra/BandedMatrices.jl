@@ -317,20 +317,18 @@ function gbmm!(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::AbstractMatrix
     C
 end
 
-αA_mul_B_plus_βC!(α, A, x, β, y) =
-    _αA_mul_B_plus_βC!(α, A, x, β, y,
-                       memorylayout(A), memorylayout(x), memorylayout(y))
-_αA_mul_B_plus_βC!(α, A, x, β, y, blasA, blasx, blasy) = (y .= α*A*x + β*y)
-_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
-                   ::BlasStrided, ::BlasBanded, ::BlasStrided) where {T<:BlasFloat} =
+scalemul!(α, A, x, β, y) = _scalemul!(α, A, x, β, y, memorylayout(A), memorylayout(x), memorylayout(y))
+_scalemul!(α, A, x, β, y, blasA, blasx, blasy) = (y .= α .* A*x .+ β.*y)
+_scalemul!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
+                   ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T<:BlasFloat} =
     gbmv!('N', α, A, x, β, y)
-_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
-                   ::BlasStrided, ::BlasStrided, ::BlasStrided) where {T<:BlasFloat} =
+_scalemul!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
+                   ::StridedLayout{T}, ::StridedLayout{T}, ::StridedLayout{T}) where {T<:BlasFloat} =
     BLAS.gemv!('N', α, A, x, β, y)
 
-_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
-                   ::BlasBanded, ::BlasBanded, ::BlasBanded) where {T<:BlasFloat} =
-    gbmm!(α, A, B, β, C)
-_αA_mul_B_plus_βC!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
-                   ::BlasStrided, ::BlasStrided, ::BlasStrided) where {T<:BlasFloat} =
+_scalemul!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
+                   ::BandedLayout{T}, ::BandedLayout{T}, ::BandedLayout{T}) where {T<:BlasFloat} =
+    gbmm!('N', 'N', α, A, B, β, C)
+_scalemul!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
+                   ::StridedLayout{T}, ::StridedLayout{T}, ::StridedLayout{T}) where {T<:BlasFloat} =
     BLAS.gemm!('N', 'N', α, A, B, β, C)

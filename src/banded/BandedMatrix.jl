@@ -27,7 +27,7 @@ mutable struct BandedMatrix{T} <: AbstractBandedMatrix{T}
     end
 end
 
-memorylayout(::Type{BandedMatrix{<:BlasFloat}}) = BlasStrided()
+memorylayout(::Type{BandedMatrix{T}}) where T = BandedLayout{T}()
 
 
 # BandedMatrix with unit range indexes is also banded
@@ -36,7 +36,7 @@ const BandedSubBandedMatrix{T} =
 
 @banded BandedSubBandedMatrix
 
-memorylayout(::Type{BandedSubBandedMatrix{<:BlasFloat}}) = BlasStrided()
+memorylayout(::Type{BandedSubBandedMatrix{<:BlasFloat}}) = BandedLayout{T}()
 
 ## Constructors
 

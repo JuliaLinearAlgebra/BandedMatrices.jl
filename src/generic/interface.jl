@@ -9,22 +9,23 @@ bandedinterface(::AbstractBandedMatrix) = BandedInterface{true}()
 
 
 ####
-# BLAS Banded traits
+# Matrix memory layout traits
 #
-# if memorylayout(A) returns BlasBanded, you must override
+# if memorylayout(A) returns BandedLayout, you must override
 # pointer and leadingdimension
 # in addition to the banded matrix interface
 ####
 
-struct NotBlas end
-struct BlasStrided end
-struct BlasBanded end
-struct BlasSymBanded end
+struct UnknownLayout{T} end
+struct StridedLayout{T} end
+struct BandedLayout{T} end
+struct SymBandedLayout{T} end
 
 
-memorylayout(::Type{<:AbstractArray}) = NotBlas()
-memorylayout(::Type{SM}) where SM <: StridedMatrix{T} where T <: BlasFloat = BlasStrided()
+memorylayout(::Type{A}) where A <: AbstractArray{T} where T = UnknownLayout{T}()
+memorylayout(::Type{SM}) where SM <: StridedMatrix{T} where T = StridedLayout{T}()
 memorylayout(A::AbstractArray) = memorylayout(typeof(A))
+
 
 
 
@@ -40,7 +41,7 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
 banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector) =
     _banded_matvecmul!(c, tA, A, b, memorylayout(c), memorylayout(A), memorylayout(b))
 _banded_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{T}, b::AbstractVector{T},
-                   ::BlasStrided, ::BlasBanded, ::BlasStrided) where {T <: BlasFloat} =
+                   ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T <: BlasFloat} =
     generally_banded_matvecmul!(c, tA, A, b)
 _banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector,
                    notblasc, notblasA, notblasb) =
@@ -59,7 +60,7 @@ banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::A
                   notblasA, notblasB) =
     banded_generic_matmatmul!(C, tA, tB, A, B)
 banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix,
-                  ::BlasBanded, ::BlasBanded) =
+                  ::BandedLayout, ::BandedLayout) =
     generally_banded_matmatmul!(C, tA, tB, A, B)
 
 
@@ -155,7 +156,7 @@ _positively_banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b:
 
 # use BLAS routine for positively banded BlasBanded
 _positively_banded_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{T}, b::AbstractVector{T},
-                                ::BlasStrided, ::BlasBanded, ::BlasStrided) where {T <: BlasFloat} =
+                                ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T <: BlasFloat} =
     gbmv!(tA, one(T), A, b, zero(T), c)
 
 positively_banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix) =
@@ -282,7 +283,7 @@ end
 
 # use BLAS routine for positively banded BlasBandedMatrices
 function _positively_banded_matmatmul!(C::AbstractMatrix{T}, tA::Char, tB::Char, A::AbstractMatrix{T}, B::AbstractMatrix{T},
-                                       ::BlasBanded, ::BlasBanded, ::BlasBanded) where {T}
+                                       ::BandedLayout{T}, ::BandedLayout{T}, ::BandedLayout{T}) where {T}
     Al, Au = _bandwidths(tA, A)
     Bl, Bu = _bandwidths(tB, B)
     # _banded_generic_matmatmul! is faster for sparse matrix
