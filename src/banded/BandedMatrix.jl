@@ -601,6 +601,12 @@ Base.norm(B::BandedMatrix,opts...) = norm(Matrix(B),opts...)
 
 ## ALgebra and other functions
 
+function fill!(A::BandedMatrix{T}, x) where T
+    x == zero(T) || throw(BandError(A))
+    fill!(A.data, x)
+    A
+end
+
 function Base.scale!(α::Number, A::BandedMatrix)
     Base.scale!(α, A.data)
     A

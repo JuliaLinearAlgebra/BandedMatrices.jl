@@ -1,3 +1,4 @@
+using BandedMatrices
 import BandedMatrices: _BandedMatrix
 
 # some basic operations
@@ -185,6 +186,15 @@ end
 
  # Test for errors in collect
 
-let B=brand(10,10,0,4)
+let B = brand(10,10,0,4)
     @test B*[collect(1.0:10) collect(1.0:10)] ≈ Matrix(B)*[collect(1.0:10) collect(1.0:10)]
+end
+
+# Test fill!
+
+let B = brand(10,10,1,4)
+    @test_throws BandError fill!(B, 1.0)
+    @test_throws BandError fill!(B, 1)
+    fill!(B, 0)
+    @test Matrix(B) == zeros(10,10)
 end

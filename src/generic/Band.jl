@@ -68,6 +68,7 @@ end
 
 # shorthand to specify k and j without calculating band
 BandError(A::AbstractMatrix, kj::Tuple{Int,Int}) = BandError(A, kj[2]-kj[1])
+BandError(A::AbstractMatrix) = BandError(A, max(size(A)...)-1)
 
 function showerror(io::IO, e::BandError)
     A, i = e.A, e.i
