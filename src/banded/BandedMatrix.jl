@@ -721,7 +721,7 @@ end
 end
 
 
-function Base.convert(::Type{BandedMatrix},S::BandedSubBandedMatrix{T}) where {T}
+function Base.convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix{T}) where {T}
     A=parent(S)
     kr,jr=parentindexes(S)
     shft=kr[1]-jr[1]

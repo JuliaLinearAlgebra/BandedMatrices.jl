@@ -28,6 +28,28 @@ memorylayout(A::AbstractArray) = memorylayout(typeof(A))
 
 
 
+# copy!
+
+function banded_copy!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
+    m,n = size(dest)
+    (m,n) == size(src) || throw(DimensionMismatch())
+
+    d_l, d_u = bandwidths(dest)
+    s_l, s_u = bandwidths(src)
+    (d_l ≥ s_l && d_u ≥ s_u) || throw(BandError(dest))
+    for j=1:n
+        for k = max(1,j-d_u):min(j-s_u-1,m)
+            inbands_setindex!(dest, zero(T), k, j)
+        end
+        for k = max(1,j-s_u):min(j+s_l,m)
+            inbands_setindex!(dest, inbands_getindex(src, k, j), k, j)
+        end
+        for k = max(1,j+s_l+1):min(j+d_l,m)
+            inbands_setindex!(dest, zero(T), k, j)
+        end
+    end
+    dest
+end
 
 # these are the routines of the banded interface of other AbstractMatrices
 banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, bandedinterface(X), bandedinterface(Y))
@@ -337,6 +359,7 @@ banded_generic_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatr
 # the BandedMatrix interface
 macro _banded_banded_linalg(Typ1, Typ2)
     ret = quote
+        Base.copy!(dest::$Typ1, src::$Typ2) = BandedMatrices.banded_copy!(dest,src)
         Base.BLAS.axpy!(a::Number, X::$Typ1, Y::$Typ2) = BandedMatrices.banded_axpy!(a, X, Y)
 
         function Base.:+(A::$Typ1{T}, B::$Typ2{V}) where {T,V}

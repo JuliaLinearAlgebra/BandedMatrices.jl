@@ -8,7 +8,7 @@ import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
 
 import Base: convert, size, view, indices, unsafe_indices, indices1,
                 first, last, size, length, unsafe_length, start, next, done, step,
-                to_indices, to_index, indices, show, fill!
+                to_indices, to_index, indices, show, fill!, copy!
 
 import Base.BLAS: libblas
 import Base.LAPACK: liblapack
