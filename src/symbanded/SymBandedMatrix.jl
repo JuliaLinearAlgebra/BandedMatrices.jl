@@ -26,7 +26,7 @@ mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 
-memorylayout(::Type{SymBandedMatrix{<:BlasFloat}}) = BlasSymBanded()
+MemoryLayout(::SymBandedMatrix{T}) where T = BlasSymBanded{T}()
 
 
 doc"""

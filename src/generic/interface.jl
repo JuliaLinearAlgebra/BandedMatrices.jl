@@ -1,30 +1,59 @@
-####
-# BandedMatrix traiut
-# an abstract matrix returns IsBanded if it is banded
-####
-
-struct BandedInterface{truefalse} end
-bandedinterface(_) = BandedInterface{false}()
-bandedinterface(::AbstractBandedMatrix) = BandedInterface{true}()
-
 
 ####
 # Matrix memory layout traits
 #
-# if memorylayout(A) returns BandedLayout, you must override
+# if MemoryLayout(A) returns BandedLayout, you must override
 # pointer and leadingdimension
 # in addition to the banded matrix interface
 ####
 
-struct UnknownLayout{T} end
-struct StridedLayout{T} end
-struct BandedLayout{T} end
-struct SymBandedLayout{T} end
+abstract type MemoryLayout{T} end
+struct UnknownLayout{T} <: MemoryLayout{T} end
+abstract type AbstractStridedLayout{T} <: MemoryLayout{T} end
+abstract type AbstractColumnMajor{T} <: AbstractStridedLayout{T} end
+struct DenseColumnMajor{T} <: AbstractColumnMajor{T} end
+struct ColumnMajor{T} <: AbstractColumnMajor{T} end
+abstract type AbstractRowMajor{T} <: AbstractStridedLayout{T} end
+struct DenseRowMajor{T} <: AbstractRowMajor{T} end
+struct RowMajor{T} <: AbstractRowMajor{T} end
+struct StridedLayout{T} <: AbstractStridedLayout{T} end
 
 
-memorylayout(::Type{A}) where A <: AbstractArray{T} where T = UnknownLayout{T}()
-memorylayout(::Type{SM}) where SM <: StridedMatrix{T} where T = StridedLayout{T}()
-memorylayout(A::AbstractArray) = memorylayout(typeof(A))
+struct BandedLayout{T} <: MemoryLayout{T} end
+struct SymBandedLayout{T} <: MemoryLayout{T} end
+
+MemoryLayout(A::AbstractArray{T}) where T = UnknownLayout{T}()
+MemoryLayout(A::Vector{T}) where T = DenseColumnMajor{T}()
+MemoryLayout(A::Matrix{T}) where T = DenseColumnMajor{T}()
+
+import Base: AbstractCartesianIndex, Slice
+
+MemoryLayout(A::SubArray) = submemorylayout(MemoryLayout(parent(A)), parentindexes(A))
+submemorylayout(::MemoryLayout{T}, _) where T = UnknownLayout{T}()
+submemorylayout(::AbstractColumnMajor{T}, ::Tuple{I}) where {T,I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex}} =
+    DenseColumnMajor{T}()
+submemorylayout(::AbstractStridedLayout{T}, ::Tuple{I}) where {T,I<:Union{RangeIndex,AbstractCartesianIndex}} =
+    StridedLayout{T}()
+submemorylayout(::AbstractColumnMajor{T}, ::Tuple{I,Int}) where {T,I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex}} =
+    DenseColumnMajor{T}()
+submemorylayout(::AbstractColumnMajor{T}, ::Tuple{I,Int}) where {T,I<:Slice} =
+    DenseColumnMajor{T}()
+submemorylayout(::AbstractRowMajor{T}, ::Tuple{Int,I}) where {T,I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex}} =
+    DenseColumnMajor{T}()
+submemorylayout(::AbstractRowMajor{T}, ::Tuple{Int,I}) where {T,I<:Slice} =
+    DenseColumnMajor{T}()
+submemorylayout(::DenseColumnMajor{T}, ::Tuple{I1,I2}) where {T,I1<:Slice,I2<:AbstractUnitRange{Int}} =
+    DenseColumnMajor{T}()
+submemorylayout(::DenseColumnMajor{T}, ::Tuple{I1,I2}) where {T,I1<:AbstractUnitRange{Int},I2<:AbstractUnitRange{Int}} =
+    ColumnMajor{T}()
+submemorylayout(::AbstractColumnMajor{T}, ::Tuple{I1,I2}) where {T,I1<:AbstractUnitRange{Int},I2<:AbstractUnitRange{Int}} =
+    ColumnMajor{T}()
+submemorylayout(::AbstractRowMajor{T}, ::Tuple{I1,I2}) where {T,I1<:AbstractUnitRange{Int},I2<:Slice} =
+    DenseRowMajor{T}()
+submemorylayout(::AbstractRowMajor{T}, ::Tuple{I1,I2}) where {T,I1<:AbstractUnitRange{Int},I2<:AbstractUnitRange{Int}} =
+    RowMajor{T}()
+submemorylayout(::AbstractStridedLayout{T}, ::Tuple{I1,I2}) where {T,I1<:Union{RangeIndex,AbstractCartesianIndex},I2<:Union{RangeIndex,AbstractCartesianIndex}} =
+    StridedLayout{T}()
 
 
 
@@ -52,8 +81,8 @@ function banded_copy!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
 end
 
 # these are the routines of the banded interface of other AbstractMatrices
-banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, bandedinterface(X), bandedinterface(Y))
-_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedInterface{true}, ::BandedInterface{true}) =
+banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(X), MemoryLayout(Y))
+_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedLayout, ::BandedLayout) =
     banded_generic_axpy!(a, X, Y)
 _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notbandedY) =
     banded_dense_axpy!(a, X, Y)
@@ -61,7 +90,7 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
 
 # matrix * vector
 banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector) =
-    _banded_matvecmul!(c, tA, A, b, memorylayout(c), memorylayout(A), memorylayout(b))
+    _banded_matvecmul!(c, tA, A, b, MemoryLayout(c), MemoryLayout(A), MemoryLayout(b))
 _banded_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{T}, b::AbstractVector{T},
                    ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T <: BlasFloat} =
     generally_banded_matvecmul!(c, tA, A, b)
@@ -77,7 +106,7 @@ banded_At_mul_B!(c::AbstractVector, A::AbstractMatrix, b::AbstractVector) = band
 
 # matrix * matrix
 banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix) =
-    banded_matmatmul!(C, tA, tB, A, B, memorylayout(A), memorylayout(B))
+    banded_matmatmul!(C, tA, tB, A, B, MemoryLayout(A), MemoryLayout(B))
 banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix,
                   notblasA, notblasB) =
     banded_generic_matmatmul!(C, tA, tB, A, B)
@@ -171,7 +200,7 @@ end
 
 
 positively_banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector) =
-    _positively_banded_matvecmul!(c, tA, A, b, memorylayout(c), memorylayout(A), memorylayout(b))
+    _positively_banded_matvecmul!(c, tA, A, b, MemoryLayout(c), MemoryLayout(A), MemoryLayout(b))
 _positively_banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector,
                               notblasc, notblasA, notblasb) =
     _banded_generic_matvecmul!(c, tA, A, b)
@@ -182,7 +211,7 @@ _positively_banded_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{
     gbmv!(tA, one(T), A, b, zero(T), c)
 
 positively_banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix) =
-    _positively_banded_matmatmul!(C, tA, tB, A, B, memorylayout(C), memorylayout(A), memorylayout(B))
+    _positively_banded_matmatmul!(C, tA, tB, A, B, MemoryLayout(C), MemoryLayout(A), MemoryLayout(B))
 _positively_banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix,
                               notblasC, notblasA, notblasb) =
     _banded_generic_matmatmul!(C, tA, tB, A, B)
@@ -570,7 +599,7 @@ end
 # add routines for banded interface
 macro banded_interface(Typ)
     ret = quote
-        BandedMatrices.bandedinterface(::$Typ) = BandedMatrices.BandedInterface{true}()
+        BandedMatrices.MemoryLayout(A::$Typ) = BandedMatrices.BandedLayout{eltype(A)}()
         BandedMatrices.isbanded(::$Typ) = true
     end
     esc(ret)
