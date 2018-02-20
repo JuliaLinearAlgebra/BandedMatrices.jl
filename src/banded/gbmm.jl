@@ -317,18 +317,18 @@ function gbmm!(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::AbstractMatrix
     C
 end
 
-mul!(α, A, x, β, y) = _mul!(α, A, x, β, y, memorylayout(A), memorylayout(x), memorylayout(y))
-_mul!(α, A, x, β, y, blasA, blasx, blasy) = (y .= α .* A*x .+ β.*y)
-_mul!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
+mul!(y, A, x, α, β) = _mul!(y, A, x, α, β, memorylayout(A), memorylayout(x), memorylayout(y))
+_mul!(y, A, x, α, β, blasA, blasx, blasy) = (y .= α .* A*x .+ β.*y)
+_mul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
                    ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T<:BlasFloat} =
     gbmv!('N', α, A, x, β, y)
-_mul!(α, A::AbstractMatrix{T}, x::AbstractVector{T}, β, y::AbstractVector{T},
+_mul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
                    ::StridedLayout{T}, ::StridedLayout{T}, ::StridedLayout{T}) where {T<:BlasFloat} =
     BLAS.gemv!('N', α, A, x, β, y)
 
-_mul!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
+_mul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{T}, α, β,
                    ::BandedLayout{T}, ::BandedLayout{T}, ::BandedLayout{T}) where {T<:BlasFloat} =
     gbmm!('N', 'N', α, A, B, β, C)
-_mul!(α, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β, C::AbstractMatrix{T},
+_mul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{T}, α, β,
                    ::StridedLayout{T}, ::StridedLayout{T}, ::StridedLayout{T}) where {T<:BlasFloat} =
     BLAS.gemm!('N', 'N', α, A, B, β, C)
