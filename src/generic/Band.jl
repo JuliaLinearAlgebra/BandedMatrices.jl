@@ -3,6 +3,8 @@ struct Band
     i::Int
 end
 
+show(io::IO, r::Band) = print(io, "Band(", r.i, ")")
+
 doc"""
     band(i)
 
@@ -64,6 +66,10 @@ struct BandError <: Exception
     i::Int
 end
 
+# shorthand to specify k and j without calculating band
+BandError(A::AbstractMatrix, kj::Tuple{Int,Int}) = BandError(A, kj[2]-kj[1])
+BandError(A::AbstractMatrix) = BandError(A, max(size(A)...)-1)
+
 function showerror(io::IO, e::BandError)
     A, i = e.A, e.i
     print(io, "attempt to access $(typeof(A)) with bandwidths " *
@@ -100,12 +106,12 @@ checkband(A::AbstractMatrix, kr::AbstractRange, jr::AbstractRange) =
 function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, ::Colon, j::Integer) where {T}
     for k = 1:colstart(A,j)-1
         if V[k] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
     for k = colstop(A,j)+1:size(A,1)
         if V[k] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -117,7 +123,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, kr::AbstractRan
     for v in V
         k = kr[i+=1]
         if (k < a || k > b) && v ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -125,12 +131,12 @@ end
 function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::Colon) where {T}
     for j = 1:rowstart(A,k)-1
         if V[j] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
     for j = rowstop(A,j)+1:size(A,2)
         if V[j] ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -142,7 +148,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr:
     for v in V
         j = jr[i+=1]
         if (j < a || j > b) && v ≠ zero(T)
-            throw(BandError(A, j-k))
+            throw(BandError(A, (k,j)))
         end
     end
 end
@@ -155,7 +161,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::AbstractRan
         for k in kr
             if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
                 # we index V manually in column-major order
-                throw(BandError(A, j-k))
+                throw(BandError(A, (k,j)))
             end
             kk += 1
         end
@@ -165,3 +171,34 @@ end
 
 checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
+
+"""
+    BandSlice(band, indices)
+
+Represent an AbstractUnitRange of indices corresponding to a band.
+
+Upon calling `to_indices()`, Bands are converted to BandSlice objects to represent
+the indices over which the Band spans.
+
+This mimics the relationship between `Colon` and `Base.Slice`.
+"""
+
+
+struct BandSlice <: OrdinalRange{Int,Int}
+    band::Band
+    indices::StepRange{Int,Int}
+end
+
+for f in (:indices, :unsafe_indices, :indices1, :first, :last, :size, :length,
+          :unsafe_length, :start, :step)
+    @eval $f(S::BandSlice) = $f(S.indices)
+end
+
+getindex(S::BandSlice, i::Int) = getindex(S.indices, i)
+show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ",", r.indices, ")")
+next(S::BandSlice, s) = next(S.indices, s)
+done(S::BandSlice, s) = done(S.indices, s)
+
+to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
+
+@inline to_indices(A, I::Tuple{Band}) = (BandSlice(I[1], diagind(A, I[1].i)),)

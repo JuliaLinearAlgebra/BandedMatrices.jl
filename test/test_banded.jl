@@ -1,4 +1,14 @@
+using BandedMatrices
+import BandedMatrices: _BandedMatrix
+
 # some basic operations
+
+@test BandedMatrix(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(3,5), 5, 1, 1)
+@test BandedMatrix(Zeros{Int}(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
+@test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
+
+@test_throws UndefRefError BandedMatrix{Vector{Float64}}(uninitialized, (5,5), (1,1))[1,1]
+
 
 let A = brand(10,12,2,3),B = brand(10,12,3,4)
     @test Matrix(sparse(A)) ≈ Matrix(A)
@@ -94,7 +104,7 @@ end
 
 ## BigFloat
 
-let A = brand(5, 5, 1, 2), B = bzeros(BigFloat,5,5,2,3), D = rand(5, 5)
+let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
     for j = 1:size(B,2), k = colrange(B,j)
         B[k,j]=randn()
     end
@@ -176,6 +186,15 @@ end
 
  # Test for errors in collect
 
-let B=brand(10,10,0,4)
+let B = brand(10,10,0,4)
     @test B*[collect(1.0:10) collect(1.0:10)] ≈ Matrix(B)*[collect(1.0:10) collect(1.0:10)]
+end
+
+# Test fill!
+
+let B = brand(10,10,1,4)
+    @test_throws BandError fill!(B, 1.0)
+    @test_throws BandError fill!(B, 1)
+    fill!(B, 0)
+    @test Matrix(B) == zeros(10,10)
 end

@@ -1,12 +1,14 @@
 __precompile__()
 
 module BandedMatrices
-using Base, Compat
+using Base, Compat, FillArrays
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
-                >=, /, ^, \, transpose, showerror, reindex, checkbounds
+                >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
-import Base: convert, size, view
+import Base: convert, size, view, indices, unsafe_indices, indices1,
+                first, last, size, length, unsafe_length, start, next, done, step,
+                to_indices, to_index, indices, show, fill!, copy!
 
 import Base.BLAS: libblas
 import Base.LAPACK: liblapack
@@ -36,31 +38,38 @@ import Base.LinAlg: BlasInt,
                     copy_oftype,
                     checksquare
 
-import Base: lufact, cholfact, cholfact!
+import Base: lufact, cholfact, cholfact!, promote_op
+
+import FillArrays: AbstractFill
 
 export BandedMatrix,
        SymBandedMatrix,
        bandrange,
-       bzeros,
-       beye,
        brand,
-       bones,
        bandwidth,
        BandError,
        band,
+       Band,
        BandRange,
        bandwidths,
        colrange,
-       rowrange
+       rowrange,
+       isbanded,
+       Zeros,
+       Fill,
+       Ones,
+       Eye
+
 
 
 
 include("blas.jl")
 include("lapack.jl")
 
-include("AbstractBandedMatrix.jl")
-include("Band.jl")
-include("utils.jl")
+include("generic/AbstractBandedMatrix.jl")
+include("generic/Band.jl")
+include("generic/utils.jl")
+include("generic/interface.jl")
 
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
@@ -72,7 +81,8 @@ include("symbanded/SymBandedMatrix.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/linalg.jl")
 
-include("interface.jl")
+include("interfaceimpl.jl")
+
 include("deprecate.jl")
 
 

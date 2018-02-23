@@ -4,14 +4,14 @@ BandedMatrixWithZero = Union{BandedMatrix{Float64}, UniformScaling}
 # need to define the concept of zero
 Base.zero(::Type{BandedMatrixWithZero}) = 0*I
 
-A=BandedMatrix(BandedMatrixWithZero,1,2,0,1)
-A[1,1]=beye(1,1,0,1)
-A[1,2]=bzeros(1,2,0,1)
+A=BandedMatrix{BandedMatrixWithZero}(uninitialized, 1, 2, 0, 1)
+A[1,1]=BandedMatrix(Eye(1),(0,1))
+A[1,2]=BandedMatrix(Zeros(1,2),(0,1))
 A[1,2][1,1]=-1/3
 A[1,2][1,2]=1/3
-B=BandedMatrix(BandedMatrixWithZero,2,1,1,1)
-B[1,1]=0.2beye(1,1,0,1)
-B[2,1]=bzeros(2,1,1,0)
+B=BandedMatrix{BandedMatrixWithZero}(uninitialized, 2, 1, 1, 1)
+B[1,1]=0.2BandedMatrix(Eye(1),(0,1))
+B[2,1]=BandedMatrix(Zeros(2,1), (1,0))
 B[2,1][1,1]=-2/30
 B[2,1][2,1]=1/3
 
@@ -48,7 +48,7 @@ A = brand(3,4,1,2)
 end, "10×10 BandedMatrices.BandedMatrix{Float64}")
 
 @test contains(sprint() do io
-   show(io, beye(3, 1, 1))
+   show(io, BandedMatrix(Eye(3),(1,1)))
 end, "1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0")
 
 

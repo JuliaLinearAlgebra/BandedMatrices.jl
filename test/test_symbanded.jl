@@ -1,4 +1,7 @@
-using BandedMatrices, Base.Test
+using Compat
+using BandedMatrices, Compat.Test
+
+@test_throws UndefRefError SymBandedMatrix{Vector{Float64}}(uninitialized, 5, 1)[1,1]
 
 
 A = sbrand(10,2)
@@ -19,7 +22,7 @@ A = sbrand(Float64, 100, 4)
 # generalized eigvals
 
 function An(::Type{T}, N::Int) where {T}
-    A = sbzeros(T, N, 2)
+    A = SymBandedMatrix(Zeros{T}(N,N), 2)
     for n = 0:N-1
         A.data[3,n+1] = T((n+1)*(n+2))
     end
@@ -27,7 +30,7 @@ function An(::Type{T}, N::Int) where {T}
 end
 
 function Bn(::Type{T}, N::Int) where {T}
-    B = sbzeros(T, N, 2)
+    B = SymBandedMatrix(Zeros{T}(N,N), 2)
     for n = 0:N-1
         B.data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
     end

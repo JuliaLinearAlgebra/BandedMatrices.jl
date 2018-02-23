@@ -1,10 +1,6 @@
 using BandedMatrices, Compat
+using Compat.Test
 
-if VERSION < v"0.7-"
-    using Base.Test
-else
-    using Test
-end
 
 println("Banded matrix tests")
 include("test_banded.jl")
@@ -18,7 +14,7 @@ println("LU tests")
 include("test_bandedlu.jl")
 println("QR tests")
 include("test_bandedqr.jl")
-println("Symetrix banded matrix tests")
+println("Symmetric banded matrix tests")
 include("test_symbanded.jl")
 println("Banded matrix interface tests")
 include("test_interface.jl")
