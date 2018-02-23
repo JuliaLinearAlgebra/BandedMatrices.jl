@@ -15,6 +15,35 @@ bones
 brand
 ```
 
+To create a banded matrix of all zeros, identity matrix, or with a constant value
+use the following constructors:
+```jldoctest
+julia> BandedMatrix(Zeros(5,5), (1,2))
+5×5 BandedMatrices.BandedMatrix{Float64}:
+ 0.0  0.0  0.0          
+ 0.0  0.0  0.0  0.0     
+      0.0  0.0  0.0  0.0
+           0.0  0.0  0.0
+                0.0  0.0
+
+julia> BandedMatrix(Eye(5), (1,2))
+5×5 BandedMatrices.BandedMatrix{Float64}:
+ 1.0  0.0  0.0          
+ 0.0  1.0  0.0  0.0     
+      0.0  1.0  0.0  0.0
+           0.0  1.0  0.0
+                0.0  1.0
+
+julia> BandedMatrix(Ones(5,5), (1,2))
+5×5 BandedMatrices.BandedMatrix{Float64}:
+ 1.0  1.0  1.0          
+ 1.0  1.0  1.0  1.0     
+      1.0  1.0  1.0  1.0
+           1.0  1.0  1.0
+                1.0  1.0
+```
+
+
 
 ## Accessing banded matrices
 
@@ -72,3 +101,22 @@ interface consists of the following:
 
 Note that certain `SubArray`s of `BandedMatrix` are also banded matrices.
 The banded matrix interface is implemented for such `SubArray`s to take advantage of this.
+
+
+## Implementation
+
+Currently, only column-major ordering is supported: a banded matrix `B`
+```julia
+[ a_11 a_12
+  a_21 a_22 a_23
+  a_31 a_32 a_33 a_34
+       a_42 a_43 a_44  ]
+```
+is represented as a `BandedMatrix` with a field `B.data` representing the matrix as
+```julia
+[ *     a_12   a_23    a_34
+ a_11   a_22   a_33    a_44
+ a_21   a_32   a_43    *
+ a_31   a_42   *       *       ]
+```        
+`B.l` gives the number of subdiagonals (2) and `B.u` gives the number of super-diagonals (1).  Both `B.l` and `B.u` must be non-negative at the moment.

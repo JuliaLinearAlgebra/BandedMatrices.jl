@@ -14,10 +14,10 @@ bands.
 One can create banded matrices of type `BandedMatrix` as follows:
 
 ```julia
-BandedMatrix(Zeros(m,n), l, u)    # creates a banded matrix of zeros, with l sub-diagonals and u super-diagonals
+BandedMatrix(Zeros(m,n), (l,u))    # creates a banded matrix of zeros, with l sub-diagonals and u super-diagonals
 brand(m,n,l,u)     # creates a random banded matrix, with l sub-diagonals and u super-diagonals
-BandedMatrix(Ones(m,n), l, u)     # creates a banded matrix of ones, with l sub-diagonals and u super-diagonals
-BandedMatrix(Eye(n),l,u)        # creates a banded  n x n identity matrix, with l sub-diagonals and u super-diagonals
+BandedMatrix(Ones(m,n), (l,u))     # creates a banded matrix of ones, with l sub-diagonals and u super-diagonals
+BandedMatrix(Eye(n), (l,u))        # creates a banded  n x n identity matrix, with l sub-diagonals and u super-diagonals
 ```
 
 Specialized algebra routines are overriden, include `*` and `\`:
@@ -30,22 +30,3 @@ A*b  #   Calls optimized matrix*vector routine
 A*A  #   Calls optimized matrix*matrix routine
 A\b  #   Calls optimized matrix\vector routine
 ```
-
-
-## Implementation
-
-Currently, only column-major ordering is supported: a banded matrix `B`
-```julia
-[ a_11 a_12
-  a_21 a_22 a_23
-  a_31 a_32 a_33 a_34
-       a_42 a_43 a_44  ]
-```
-is represented as a `BandedMatrix` with a field `B.data` representing the matrix as
-```julia
-[ *     a_12   a_23    a_34
- a_11   a_22   a_33    a_44
- a_21   a_32   a_43    *
- a_31   a_42   *       *       ]
-```        
-`B.l` gives the number of subdiagonals (2) and `B.u` gives the number of super-diagonals (1).  Both `B.l` and `B.u` must be non-negative at the moment.
