@@ -21,23 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "BandedMatrices.BandedMatrix",
     "category": "Type",
-    "text": "BandedMatrix(T, n, m, l, u)\n\nreturns an unitialized n×m banded matrix of type T with bandwidths (l,u).\n\n\n\n"
-},
-
-{
-    "location": "index.html#BandedMatrices.beye",
-    "page": "Home",
-    "title": "BandedMatrices.beye",
-    "category": "Function",
-    "text": "beye(T,n,l,u)\n\nn×n banded identity matrix of type T with bandwidths (l,u)\n\n\n\n"
-},
-
-{
-    "location": "index.html#BandedMatrices.bones",
-    "page": "Home",
-    "title": "BandedMatrices.bones",
-    "category": "Function",
-    "text": "bones(T,n,m,l,u)\n\nCreates an n×m banded matrix  with ones in the bandwidth of type T with bandwidths (l,u)\n\n\n\n"
+    "text": "BandedMatrix{T}(n, m, l, u)\n\nreturns an unitialized n×m banded matrix of type T with bandwidths (l,u).\n\n\n\n"
 },
 
 {
@@ -49,19 +33,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#BandedMatrices.bzeros",
-    "page": "Home",
-    "title": "BandedMatrices.bzeros",
-    "category": "Function",
-    "text": "bzeros(T,n,m,l,u)\n\nCreates an n×m banded matrix  of all zeros of type T with bandwidths (l,u)\n\n\n\n"
-},
-
-{
     "location": "index.html#Creating-banded-matrices-1",
     "page": "Home",
     "title": "Creating banded matrices",
     "category": "section",
-    "text": "BandedMatrixbeyebonesbrandbzeros"
+    "text": "BandedMatrixbonesbrand"
 },
 
 {
@@ -121,14 +97,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#BandedMatrices.sbeye",
-    "page": "Home",
-    "title": "BandedMatrices.sbeye",
-    "category": "Function",
-    "text": "sbeye(T,n,l,u)\n\nn×n banded identity matrix of type T with bandwidths (l,u)\n\n\n\n"
-},
-
-{
     "location": "index.html#BandedMatrices.sbrand",
     "page": "Home",
     "title": "BandedMatrices.sbrand",
@@ -137,19 +105,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "index.html#BandedMatrices.sbzeros",
-    "page": "Home",
-    "title": "BandedMatrices.sbzeros",
-    "category": "Function",
-    "text": "sbzeros(T,n,k)\n\nCreates an n×n symmetric banded matrix  of all zeros of type T with bandwidths (k,k)\n\n\n\n"
-},
-
-{
     "location": "index.html#Creating-symmetric-banded-matrices-1",
     "page": "Home",
     "title": "Creating symmetric banded matrices",
     "category": "section",
-    "text": "SymBandedMatrixsbeyesbonessbrandsbzeros"
+    "text": "SymBandedMatrixsbonessbrand"
 },
 
 {
