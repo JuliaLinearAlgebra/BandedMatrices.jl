@@ -1,2 +1,10 @@
 docs/build/
 docs/site/
+
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+deps/deps.jl
+
+*~
+.DS_Store
