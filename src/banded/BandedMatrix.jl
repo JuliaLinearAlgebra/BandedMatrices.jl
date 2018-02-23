@@ -38,20 +38,17 @@ const BandedSubBandedMatrix{T} =
 
 ## Constructors
 
-doc"""
+@doc """
     BandedMatrix{T}(n, m, l, u)
 
 returns an unitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
 """
-
-
-
 BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
-    _BandedMatrix(Matrix{T}(max(0,b+a+1),m), n, a, b)
+    _BandedMatrix(Matrix{T}(uninitialized,max(0,b+a+1),m), n, a, b)
 BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number} =
     _BandedMatrix(zeros(T,max(0,b+a+1),m),n,a,b)
 BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
-    _BandedMatrix(Matrix{T}(max(0,b+a+1),m),n,a,b)
+    _BandedMatrix(Matrix{T}(uninitialized,max(0,b+a+1),m),n,a,b)
 BandedMatrix{T}(::Uninitialized, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
     BandedMatrix{T}(uninitialized, nm..., ab...)
 BandedMatrix{T}(::Uninitialized, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
@@ -101,14 +98,12 @@ for (op,bop) in ((:(Base.rand),:brand),)
 end
 
 
-doc"""
+@doc """
     brand(T,n,m,l,u)
 
 Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(l,u)`
 """
 brand
-
-
 
 ## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
 function BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T
@@ -556,7 +551,7 @@ setindex!(A::BandedMatrix{T}, v, ::Type{BandRange}) where {T} =
 
 
 
-function Base.convert(::Type{Matrix},A::BandedMatrix)
+function Base.convert(::Type{Matrix}, A::BandedMatrix)
     ret=zeros(eltype(A),size(A,1),size(A,2))
     for j = 1:size(ret,2), k = colrange(ret,j)
         @inbounds ret[k,j] = A[k,j]
@@ -567,8 +562,8 @@ end
 Base.full(A::BandedMatrix) = convert(Matrix, A)
 
 
-function Base.sparse(B::BandedMatrix)
-    i=Vector{Int}(length(B.data));j=Vector{Int}(length(B.data))
+function sparse(B::BandedMatrix)
+    i=Vector{Int}(uninitialized,length(B.data)); j=Vector{Int}(uninitialized,length(B.data))
     n,m=size(B.data)
     Bn=size(B,1)
     vb=copy(vec(B.data))
@@ -589,7 +584,7 @@ end
 
 # pass standard routines to Matrix
 
-Base.norm(B::BandedMatrix,opts...) = norm(Matrix(B),opts...)
+norm(B::BandedMatrix,opts...) = norm(Matrix(B),opts...)
 
 
 # We turn off bound checking to allow nicer syntax without branching
@@ -605,14 +600,26 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-function Base.scale!(α::Number, A::BandedMatrix)
-    Base.scale!(α, A.data)
-    A
-end
+if VERSION < v"0.7-"
+    function Base.scale!(α::Number, A::BandedMatrix)
+        Base.scale!(α, A.data)
+        A
+    end
 
-function Base.scale!(A::BandedMatrix, α::Number)
-    Base.scale!(A.data, α)
-    A
+    function Base.scale!(A::BandedMatrix, α::Number)
+        Base.scale!(A.data, α)
+        A
+    end
+else
+    function LinearAlgebra.lmul!(α::Number, A::BandedMatrix)
+        Base.scale!(α, A.data)
+        A
+    end
+
+    function LinearAlgebra.rmul!(A::BandedMatrix, α::Number)
+        Base.scale!(A.data, α)
+        A
+    end
 end
 
 function Base.transpose(B::BandedMatrix)
@@ -633,7 +640,7 @@ end
 
 
 
-function Base.diag(A::BandedMatrix{T}) where {T}
+function diag(A::BandedMatrix{T}) where {T}
     n=size(A,1)
     @assert n==size(A,2)
 

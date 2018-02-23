@@ -1,7 +1,7 @@
 using BandedMatrices, Compat.Test
 
 @testset "QR tests" begin
-    for T in (Float64,Complex128,Float32,Complex64)
+    for T in (Float64,ComplexF64,Float32,ComplexF32)
         A=brand(T,10,10,3,2)
         Q,R=qr(A)
         @test Matrix(Q)*Matrix(R) ≈ A
@@ -39,11 +39,11 @@ using BandedMatrices, Compat.Test
 
 
     A=brand(10,10,3,2)
-    b=rand(Complex128,10)
+    b=rand(ComplexF64,10)
     Q,R=qr(A)
     @test R\(Q'*b) ≈ Matrix(A)\b
 
-    A=brand(Complex128,10,10,3,2)
+    A=brand(ComplexF64,10,10,3,2)
     b=rand(10)
     Q,R=qr(A)
     @test R\(Q'*b) ≈ Matrix(A)\b

@@ -8,8 +8,8 @@ struct _foo <: Number end
 @testset "Conversion to blas type" begin
     let
         typ = Float64
-        @test BandedMatrices._promote_to_blas_type(typ, Complex128) == Complex128
-        @test BandedMatrices._promote_to_blas_type(typ, Complex64)  == Complex128
+        @test BandedMatrices._promote_to_blas_type(typ, ComplexF64) == ComplexF64
+        @test BandedMatrices._promote_to_blas_type(typ, ComplexF32)  == ComplexF64
         @test BandedMatrices._promote_to_blas_type(typ, Float64)    == typ
         @test BandedMatrices._promote_to_blas_type(typ, Float32)    == typ
         @test BandedMatrices._promote_to_blas_type(typ, Int64)      == typ
@@ -18,8 +18,8 @@ struct _foo <: Number end
         @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
 
         typ = Float32
-        @test BandedMatrices._promote_to_blas_type(typ, Complex128) == Complex128
-        @test BandedMatrices._promote_to_blas_type(typ, Complex64)  == Complex64
+        @test BandedMatrices._promote_to_blas_type(typ, ComplexF64) == ComplexF64
+        @test BandedMatrices._promote_to_blas_type(typ, ComplexF32)  == ComplexF32
         @test BandedMatrices._promote_to_blas_type(typ, Float64)    == Float64
         @test BandedMatrices._promote_to_blas_type(typ, Float32)    == typ
         @test BandedMatrices._promote_to_blas_type(typ, Int64)      == typ
@@ -42,8 +42,8 @@ struct _foo <: Number end
                    rand(1:10.0, 5)*im,
                   ]
         typs = Any[Float64,
-                   Complex128,
-                   Complex128]
+                   ComplexF64,
+                   ComplexF64]
 
         for (A, b, typ) in zip(As, bs, typs)
             AA,   bb   = BandedMatrices._convert_to_blas_type(A,         b)

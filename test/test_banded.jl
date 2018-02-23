@@ -17,9 +17,9 @@ end
         @test Matrix(sparse(A)) ≈ Matrix(A)
 
         @test Matrix(A') ≈ Matrix(A)'
-        @test Matrix(A.') ≈ Matrix(A).'
+        @test Matrix(transpose(A)) ≈ transpose(Matrix(A))
         @test Matrix((A+im*A)') ≈ (Matrix(A)+im*Matrix(A))'
-        @test Matrix((A+im*A).') ≈ (Matrix(A)+im*Matrix(A)).'
+        @test Matrix(transpose(A+im*A)) ≈ transpose(Matrix(A)+im*Matrix(A))
 
         @test Matrix(A+B) ≈ (Matrix(A)+Matrix(B))
         @test Matrix(A-B) ≈ (Matrix(A)-Matrix(B))
@@ -46,17 +46,17 @@ end
         @test A'*w ≈ Matrix(A)'*w
     end
 
-    let A=brand(Float64,5,3,2,2), v=rand(Complex128,3), w=rand(Complex128,5)
+    let A=brand(Float64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
         @test A*v ≈ Matrix(A)*v
         @test A'*w ≈ Matrix(A)'*w
     end
 
-    let A=brand(Complex128,5,3,2,2), v=rand(Complex128,3), w=rand(Complex128,5)
+    let A=brand(ComplexF64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
         @test A*v ≈ Matrix(A)*v
         @test A'*w ≈ Matrix(A)'*w
     end
 
-    let A=brand(Complex128,5,3,2,2), v=rand(Float64,3), w=rand(Float64,5)
+    let A=brand(ComplexF64,5,3,2,2), v=rand(Float64,3), w=rand(Float64,5)
         @test A*v ≈ Matrix(A)*v
         @test A'*w ≈ Matrix(A)'*w
     end
@@ -98,16 +98,16 @@ end
         end
     end
 
-    let A = brand(Complex128, 5, 4, 2, 3), B = brand(Complex128, 4, 6, 3, 1),
-        C = brand(Complex128, 4, 5, 1, 1), D = brand(Complex128, 6, 4, 0, 3)
+    let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(ComplexF64, 4, 6, 3, 1),
+        C = brand(ComplexF64, 4, 5, 1, 1), D = brand(ComplexF64, 6, 4, 0, 3)
         @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
         @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
         @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
         @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
     end
 
-    let A = brand(Complex128, 5, 4, 2, 3), B = brand(4, 6, 3, 1), C = brand(4, 5, 1, 1),
-            D = brand(Complex128, 6, 4, 0, 3)
+    let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(4, 6, 3, 1), C = brand(4, 5, 1, 1),
+            D = brand(ComplexF64, 6, 4, 0, 3)
         @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
         @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
         @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'

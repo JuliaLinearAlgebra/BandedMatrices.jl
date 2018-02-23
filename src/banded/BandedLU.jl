@@ -48,7 +48,7 @@ checksquare(A::BandedLU) = (A.m == size(A.data, 2) ||
 function _promote_to_blas_type(::Type{T}, ::Type{S}) where {T<:Number, S<:Number}
     TS = Base.promote_op(/, T, S)
     # promote to narrowest type
-    TS <: Complex       && return Base.promote_op(/, TS, Complex64)
+    TS <: Complex       && return Base.promote_op(/, TS, ComplexF32)
     TS <: AbstractFloat && return Base.promote_op(/, TS, Float32)
     error("Cannot convert objects of element type $(T), $(S) to a `BlasFloat` type")
 end

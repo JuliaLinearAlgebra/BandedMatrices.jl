@@ -29,7 +29,7 @@ end
 MemoryLayout(::SymBandedMatrix{T}) where T = BlasSymBanded{T}()
 
 
-doc"""
+@doc """
     SymBandedMatrix(T, n, k)
 
 returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwidths `(-k,k)`.
@@ -106,7 +106,7 @@ SymBandedMatrix(Z::Eye{T}, a::Int) where T = SymBandedMatrix{T}(Z, a)
 SymBandedMatrix(Z::Eye) = SymBandedMatrix(Z, 0)
 
 
-doc"""
+@doc """
     sbrand(T,n,k)
 
 Creates an `n×n` symmetric banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(k,k)`
@@ -295,7 +295,7 @@ Base.ctranspose(B::SymBandedMatrix{T}) where {T<:Real} = copy(B)
 
 
 
-Base.diag(A::SymBandedMatrix{T}) where {T} = vec(A.data[A.k+1,:])
+diag(A::SymBandedMatrix{T}) where {T} = vec(A.data[A.k+1,:])
 
 
 ## eigvals routine
@@ -318,10 +318,10 @@ end
 
 tridiagonalize(A::SymBandedMatrix) = tridiagonalize!(copy(A))
 
-Base.eigvals!(A::SymBandedMatrix) = eigvals!(tridiagonalize!(A))
-Base.eigvals(A::SymBandedMatrix) = eigvals!(copy(A))
+eigvals!(A::SymBandedMatrix) = eigvals!(tridiagonalize!(A))
+eigvals(A::SymBandedMatrix) = eigvals!(copy(A))
 
-function Base.eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
+function eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
     n = size(A, 1)
     @assert n == size(B, 1)
     # compute split-Cholesky factorization of B.
@@ -339,7 +339,7 @@ function Base.eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
     eigvals!(A)
 end
 
-Base.eigvals(A::SymBandedMatrix, B::SymBandedMatrix) = eigvals!(copy(A), copy(B))
+eigvals(A::SymBandedMatrix, B::SymBandedMatrix) = eigvals!(copy(A), copy(B))
 
 
 ## These routines give access to the necessary information to call BLAS

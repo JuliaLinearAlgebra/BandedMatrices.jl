@@ -7,7 +7,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                         d::Ptr{$elty}, e::Ptr{$elty}, q::Ptr{$elty}, ldq::Int,
                         work::Ptr{$elty})
             info  = Ref{BlasInt}()
-            ccall((@blasfunc($fname), liblapack), Void,
+            ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{UInt8},
                  Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
                  Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
@@ -24,8 +24,8 @@ end
 for (gbtrf, elty) in
     ((:dgbtrf_, :Float64),
      (:sgbtrf_, :Float32),
-     (:zgbtrf_, :Complex128),
-     (:cgbtrf_, :Complex64))
+     (:zgbtrf_, :ComplexF64),
+     (:cgbtrf_, :ComplexF32))
     @eval begin
         # SUBROUTINE DGBTRF( M, N, KL, KU, AB, LDAB, IPIV, INFO )
         # *     .. Scalar Arguments ..
@@ -36,7 +36,7 @@ for (gbtrf, elty) in
         function gbtrf!(m::Int, n::Int, kl::Int, ku::Int, AB::Ptr{$elty}, ldab::Int,
                         ipiv::Ptr{BlasInt})
             info = Ref{BlasInt}()
-            ccall((@blasfunc($gbtrf), liblapack), Void,
+            ccall((@blasfunc($gbtrf), liblapack), Nothing,
                   (Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
                    Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}),
                   m, n, kl, ku,
@@ -68,8 +68,8 @@ end
 for (gbtrs, elty) in
     ((:dgbtrs_,:Float64),
      (:sgbtrs_,:Float32),
-     (:zgbtrs_,:Complex128),
-     (:cgbtrs_,:Complex64))
+     (:zgbtrs_,:ComplexF64),
+     (:cgbtrs_,:ComplexF32))
     @eval begin
 
         # SUBROUTINE DGBTRS( TRANS, N, KL, KU, NRHS, AB, LDAB, IPIV, B, LDB, INFO)
@@ -84,7 +84,7 @@ for (gbtrs, elty) in
                         B::Ptr{$elty}, ldb::Int)
             info = Ref{BlasInt}()
 
-            ccall((@blasfunc($gbtrs), liblapack), Void,
+            ccall((@blasfunc($gbtrs), liblapack), Nothing,
                   (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
                    Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt},
                    Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
@@ -120,8 +120,8 @@ end
 # Symmetric/Hermitian Positive Definite banded Cholesky factorization
 for (fname, elty) in ((:dpbtrf_,:Float64),
                       (:spbtrf_,:Float32),
-                      (:zpbtrf_,:Complex128),
-                      (:cpbtrf_,:Complex64))
+                      (:zpbtrf_,:ComplexF64),
+                      (:cpbtrf_,:ComplexF32))
     @eval begin
                 # SUBROUTINE DPBTRF( UPLO, N, KD, AB, LDAB, INFO )
                 # CHARACTER          UPLO
@@ -130,7 +130,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
 
         function pbtrf!(uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int)
             info  = Ref{BlasInt}()
-            ccall((@blasfunc($fname), liblapack), Void,
+            ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
                  Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
                  uplo, n, kd,
@@ -144,8 +144,8 @@ end
 # Symmetric/Hermitian Positive Definite split-Cholesky factorization
 for (fname, elty) in ((:dpbstf_,:Float64),
                       (:spbstf_,:Float32),
-                      (:zpbstf_,:Complex128),
-                      (:cpbstf_,:Complex64))
+                      (:zpbstf_,:ComplexF64),
+                      (:cpbstf_,:ComplexF32))
     @eval begin
                 # SUBROUTINE DPBSTF( UPLO, N, KD, AB, LDAB, INFO )
                 # CHARACTER          UPLO
@@ -154,7 +154,7 @@ for (fname, elty) in ((:dpbstf_,:Float64),
 
         function pbstf!(uplo::Char, n::Int, kd::Int, AB::Ptr{$elty}, ldab::Int)
             info  = Ref{BlasInt}()
-            ccall((@blasfunc($fname), liblapack), Void,
+            ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
                  Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
                  uplo, n, kd,
@@ -183,7 +183,7 @@ for (fname, elty) in ((:dsbgst_,:Float64),
                          AB::Ptr{$elty}, ldab::Int, BB::Ptr{$elty}, ldbb::Int,
                          X::Ptr{$elty}, ldx::Int, work::Ptr{$elty})
             info  = Ref{BlasInt}()
-            ccall((@blasfunc($fname), liblapack), Void,
+            ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
                  Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty},
                  Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty},

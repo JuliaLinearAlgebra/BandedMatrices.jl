@@ -17,19 +17,19 @@ size(A::BandedQ,i::Integer) = i <= 0 ? error("dimension out of range") :
                                 i == 2 ? A.m : 1
 
 
-Base.At_mul_B(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B(A,B)
-Base.At_mul_B!(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B!(Y,A,B)
+At_mul_B(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B(A,B)
+At_mul_B!(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B!(Y,A,B)
 
-Base.Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Complex} =
+Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Complex} =
     Ac_mul_B(A,real(B))+im*Ac_mul_B(A,imag(B))
-Base.Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Real} =
+Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Real} =
     Ac_mul_B(A,Vector{T}(B))
-Base.Ac_mul_B(A::BandedQ{T},B::Vector) where {T<:Complex} =
+Ac_mul_B(A::BandedQ{T},B::Vector) where {T<:Complex} =
     Ac_mul_B(A,Vector{T}(B))
-Base.Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Real} = Ac_mul_B!(similar(B),A,B)
-Base.Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Complex} = Ac_mul_B!(similar(B),A,B)
+Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Real} = Ac_mul_B!(similar(B),A,B)
+Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Complex} = Ac_mul_B!(similar(B),A,B)
 
-function Base.Ac_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
+function Ac_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -70,7 +70,7 @@ end
 
 
 # Each householder is symmetyric, this just reverses the order of application
-function Base.A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
+function A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -110,14 +110,14 @@ function Base.A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFl
     Y
 end
 
-function Base.A_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
+function A_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
     for j=1:size(A,2)
         Y[:,j]=A*B[:,j]
     end
     Y
 end
 
-function Base.Ac_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
+function Ac_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
     for j=1:size(A,2)
         Y[:,j]=A'*B[:,j]
     end
@@ -141,12 +141,12 @@ end
 
 
 
-function Base.qr(A::BandedMatrix)
+function qr(A::BandedMatrix)
     QR = qrfact(A)
     QR[:Q],QR[:R]
 end
 
-function Base.qrfact(A::BandedMatrix)
+function qrfact(A::BandedMatrix)
     R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
     R.data[A.l+1:end,:]=A.data
     banded_qrfact!(R)

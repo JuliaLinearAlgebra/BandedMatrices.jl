@@ -664,7 +664,7 @@ end
     # test band views
     let
         for A in (rand(11,10), brand(11,10,2,3), brand(Float32, 11,10,2,3),
-                     brand(Complex128, 11,10,2,3))
+                     brand(ComplexF64, 11,10,2,3))
             for k = -5:5
                 V = view(A, band(k))
                 bs = parentindexes(V)[1] # a bandslice
@@ -672,8 +672,8 @@ end
                 @test bs.band == Band(k)
                 @test collect(bs) == collect(diagind(A, k))
                 @test Vector{eltype(A)}(V) == collect(V) == A[diagind(A,k)] == A[band(k)]
-                @test Vector{Complex128}(V) == Vector{Complex128}(A[diagind(A,k)]) ==
-                        convert(AbstractVector{Complex128}, V) == convert(AbstractArray{Complex128}, V)
+                @test Vector{ComplexF64}(V) == Vector{ComplexF64}(A[diagind(A,k)]) ==
+                        convert(AbstractVector{ComplexF64}, V) == convert(AbstractArray{ComplexF64}, V)
                 @test V ≡ convert(AbstractArray, V) ≡ convert(AbstractArray{eltype(A)}, V) ≡
                         convert(AbstractArray, V) ≡ convert(AbstractVector, V)
             end

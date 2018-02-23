@@ -2,43 +2,79 @@ __precompile__()
 
 module BandedMatrices
 using Base, Compat, FillArrays
+if VERSION ≥ v"0.7-"
+    using LinearAlgebra, SparseArrays
+
+    import LinearAlgebra: BlasInt,
+                        BlasReal,
+                        BlasFloat,
+                        BlasComplex,
+                        axpy!,
+                        A_mul_B!,
+                        Ac_mul_B,
+                        Ac_mul_B!,
+                        A_mul_Bc,
+                        A_mul_Bc!,
+                        Ac_mul_Bc,
+                        Ac_mul_Bc!,
+                        At_mul_B,
+                        At_mul_B!,
+                        A_mul_Bt,
+                        A_mul_Bt!,
+                        At_mul_Bt,
+                        At_mul_Bt!,
+                        A_ldiv_B!,
+                        At_ldiv_B!,
+                        Ac_ldiv_B!,
+                        copy_oftype,
+                        checksquare
+   import LinearAlgebra.BLAS: libblas
+   import LinearAlgebra.LAPACK: liblapack
+   import LinearAlgebra: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
+                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact
+   import SparseArrays: sparse
+else
+    import Base.LinAlg: BlasInt,
+                        BlasReal,
+                        BlasFloat,
+                        BlasComplex,
+                        axpy!,
+                        A_mul_B!,
+                        Ac_mul_B,
+                        Ac_mul_B!,
+                        A_mul_Bc,
+                        A_mul_Bc!,
+                        Ac_mul_Bc,
+                        Ac_mul_Bc!,
+                        At_mul_B,
+                        At_mul_B!,
+                        A_mul_Bt,
+                        A_mul_Bt!,
+                        At_mul_Bt,
+                        At_mul_Bt!,
+                        A_ldiv_B!,
+                        At_ldiv_B!,
+                        Ac_ldiv_B!,
+                        copy_oftype,
+                        checksquare
+
+   import Base.BLAS: libblas
+   import Base.LAPACK: liblapack
+   import Base: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
+                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact
+   import Base: sparse
+end
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
 import Base: convert, size, view, indices, unsafe_indices, indices1,
                 first, last, size, length, unsafe_length, start, next, done, step,
-                to_indices, to_index, indices, show, fill!, copy!
-
-import Base.BLAS: libblas
-import Base.LAPACK: liblapack
+                to_indices, to_index, indices, show, fill!, copy!, promote_op
 
 
-import Base.LinAlg: BlasInt,
-                    BlasReal,
-                    BlasFloat,
-                    BlasComplex,
-                    axpy!,
-                    A_mul_B!,
-                    Ac_mul_B,
-                    Ac_mul_B!,
-                    A_mul_Bc,
-                    A_mul_Bc!,
-                    Ac_mul_Bc,
-                    Ac_mul_Bc!,
-                    At_mul_B,
-                    At_mul_B!,
-                    A_mul_Bt,
-                    A_mul_Bt!,
-                    At_mul_Bt,
-                    At_mul_Bt!,
-                    A_ldiv_B!,
-                    At_ldiv_B!,
-                    Ac_ldiv_B!,
-                    copy_oftype,
-                    checksquare
 
-import Base: lufact, cholfact, cholfact!, promote_op
+
 
 import FillArrays: AbstractFill
 

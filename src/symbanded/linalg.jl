@@ -17,7 +17,7 @@ function symbanded_A_mul_B!(c::AbstractVector{T},A::AbstractMatrix{T},b::Strided
 end
 
 
-Base.A_mul_B!(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) where {T} =
+A_mul_B!(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) where {T} =
     symbanded_A_mul_B!(c,A,b)
 
 ## TODO

@@ -2,7 +2,7 @@
 
 abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
 
-doc"""
+@doc """
     bandwidths(A)
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
@@ -12,14 +12,14 @@ bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
 
-doc"""
+@doc """
     bandwidth(A,i)
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
 bandwidth(A::AbstractVecOrMat, k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
 
-doc"""
+@doc """
     bandrange(A)
 
 Returns the range `-bandwidth(A,1):bandwidth(A,2)`.
@@ -44,7 +44,7 @@ bandrange(A::AbstractVecOrMat) = -bandwidth(A,1):bandwidth(A,2)
 @inline rowlength(A::AbstractVecOrMat, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
 
-doc"""
+@doc """
     isbanded(A)
 
 returns true if a matrix implements the banded interface.
@@ -96,19 +96,20 @@ struct PrintShow
 end
 Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
+if VERSION < v"0.7-"
+    showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
+    function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
+        header && print(io,summary(B))
 
-showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
-function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
-    header && print(io,summary(B))
+        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
+            header && println(io,":")
+            M=Array{Any}(size(B)...)
+            fill!(M,PrintShow(""))
+            for j = 1:size(B,2), k = colrange(B,j)
+                M[k,j]=B[k,j]
+            end
 
-    if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-        header && println(io,":")
-        M=Array{Any}(size(B)...)
-        fill!(M,PrintShow(""))
-        for j = 1:size(B,2), k = colrange(B,j)
-            M[k,j]=B[k,j]
+            showarray(io,M;header=false)
         end
-
-        showarray(io,M;header=false)
     end
 end
