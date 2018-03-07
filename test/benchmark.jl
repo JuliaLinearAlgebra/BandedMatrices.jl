@@ -1,3 +1,5 @@
+using Compat
+
 versioninfo()
 
 #gc_enable(false)
@@ -108,9 +110,9 @@ end
 # Banded * Banded
 
 julia(A) = BandedMatrices._banded_generic_matmatmul!(
-    BandedMatrix(Float64, size(A, 1), size(A, 2), 2*bandwidth(A, 1), 2*bandwidth(A, 2)), 'N', 'N', A, A)
+    BandedMatrix{Float64}(uninitialized, size(A), (2*bandwidth(A, 1), 2*bandwidth(A, 2))), 'N', 'N', A, A)
 blas(A) = BandedMatrices.gbmm!(
-    'N', 'N', one(Float64), A, A, zero(Float64), BandedMatrix(Float64, size(A, 1), size(A, 2), 2*bandwidth(A, 1), 2*bandwidth(A, 2)))
+    'N', 'N', one(Float64), A, A, zero(Float64), BandedMatrix{Float64}(uninitialized, size(A), (2*bandwidth(A, 1), 2*bandwidth(A, 2))))
 dense(A) = (B=Array(A); B*B)
 
 for n in [100, 1000, 10000]
