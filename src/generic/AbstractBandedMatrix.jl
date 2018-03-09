@@ -2,7 +2,7 @@
 
 abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
 
-@doc """
+"""
     bandwidths(A)
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
@@ -12,14 +12,14 @@ bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
 
-@doc """
+"""
     bandwidth(A,i)
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
 bandwidth(A::AbstractVecOrMat, k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
 
-@doc """
+"""
     bandrange(A)
 
 Returns the range `-bandwidth(A,1):bandwidth(A,2)`.
@@ -44,7 +44,7 @@ bandrange(A::AbstractVecOrMat) = -bandwidth(A,1):bandwidth(A,2)
 @inline rowlength(A::AbstractVecOrMat, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
 
-@doc """
+"""
     isbanded(A)
 
 returns true if a matrix implements the banded interface.

@@ -29,7 +29,7 @@ end
 MemoryLayout(::SymBandedMatrix{T}) where T = BlasSymBanded{T}()
 
 
-@doc """
+"""
     SymBandedMatrix(T, n, k)
 
 returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwidths `(-k,k)`.
@@ -106,7 +106,7 @@ SymBandedMatrix(Z::Eye{T}, a::Int) where T = SymBandedMatrix{T}(Z, a)
 SymBandedMatrix(Z::Eye) = SymBandedMatrix(Z, 0)
 
 
-@doc """
+"""
     sbrand(T,n,k)
 
 Creates an `n×n` symmetric banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(k,k)`

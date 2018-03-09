@@ -38,10 +38,10 @@ const BandedSubBandedMatrix{T} =
 
 ## Constructors
 
-@doc """
-    BandedMatrix{T}(n, m, l, u)
+"""
+    BandedMatrix{T}(uninitialized, (n, m), (l, u))
 
-returns an unitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
+returns an uninitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
 """
 BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
     _BandedMatrix(Matrix{T}(uninitialized,max(0,b+a+1),m), n, a, b)
@@ -98,7 +98,7 @@ for (op,bop) in ((:(Base.rand),:brand),)
 end
 
 
-@doc """
+"""
     brand(T,n,m,l,u)
 
 Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(l,u)`

@@ -5,7 +5,7 @@ end
 
 show(io::IO, r::Band) = print(io, "Band(", r.i, ")")
 
-@doc """
+"""
     band(i)
 
 Represents the `i`-th band of a banded matrix.
@@ -33,7 +33,7 @@ julia> A[band(1)]
 band(i::Int) = Band(i)
 
 
-@doc """
+"""
     BandRange
 
 Represents the entries in a row/column inside the bands.
@@ -172,7 +172,7 @@ end
 checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
 
-@doc """
+"""
     BandSlice(band, indices)
 
 Represent an AbstractUnitRange of indices corresponding to a band.
