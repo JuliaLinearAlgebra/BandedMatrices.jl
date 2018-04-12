@@ -113,3 +113,31 @@ if VERSION < v"0.7-"
         end
     end
 end
+
+
+## @inbands
+
+function inbands_process_args!(e)
+    if e.head == :ref
+        e.head = :call
+        unshift!(e.args, :(BandedMatrices.inbands_getindex))
+    elseif e.head == :call && e.args[1] == :getindex
+        e.args[1] = :(BandedMatrices.inbands_getindex)
+    end
+    e
+end
+
+
+function inbands_process_args_recursive!(expr)
+    for (i,e) in enumerate(expr.args)
+        if e isa Expr
+            inbands_process_args_recursive!(e)
+        end
+    end
+    inbands_process_args!(expr)
+    expr
+end
+
+macro inbands(expr)
+    esc(inbands_process_args!(expr))
+end
