@@ -135,49 +135,39 @@ end
 BandedMatrix(A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
 
 
+function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
+                         mn::NTuple{2,Int},
+                         lu::NTuple{2,Int}) where T
+    m,n = mn
+    l,u = lu
+    data = zeros(T, u+l+1, n)
+    for (k,v) in kv
+        p = length(v)
+        if k ≤ 0
+            data[u-k+1,1:p] = v
+        else
+            data[u-k+1,k+1:k+p] = v
+        end
+    end
+
+    return _BandedMatrix(data, m, l, u)
+end
+
+function BandedMatrix{T}(kv::Pair{<:Integer,<:AbstractVector}...) where T
+    n = mapreduce(x -> length(x.second) + abs(x.first), max, kv)
+    u = mapreduce(x -> x.first, max, kv)
+    l = -mapreduce(x -> x.first, min, kv)
+    BandedMatrix{T}(kv, (n,n), (l,u))
+end
+
 """
     BandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...)
 
 Construct a square matrix from `Pair`s of diagonals and vectors.
 Vector `kv.second` will be placed on the `kv.first` diagonal.
-`diagm` constructs a full matrix; if you want storage-efficient
-versions with fast arithmetic, see [`Diagonal`](@ref), [`Bidiagonal`](@ref)
-[`Tridiagonal`](@ref) and [`SymTridiagonal`](@ref).
-
-# Examples
-```jldoctest
-julia> BandedMatrix(1 => [1,2,3])
-4×4 Array{Int64,2}:
- 0  1  0  0
- 0  0  2  0
- 0  0  0  3
- 0  0  0  0
-
-julia> diagm(1 => [1,2,3], -1 => [4,5])
-4×4 Array{Int64,2}:
- 0  1  0  0
- 4  0  2  0
- 0  5  0  3
- 0  0  0  0
-```
 """
-function BandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...)
-    T = promote_type(map(x -> eltype(x.second), kv)...)
-    n = mapreduce(x -> length(x.second) + abs(x.first), max, kv)
-    u = mapreduce(x -> x.first, max, kv)
-    l = -mapreduce(x -> x.first, min, kv)
-    data = zeros(T, u+l+1, n)
-    for (k,v) in kv
-        m = length(v)
-        if k ≤ 0
-            data[u-k+1,1:m] = v
-        else
-            data[u-k+1,k+1:k+m] = v
-        end
-    end
-
-    return _BandedMatrix(data, n, l, u)
-end
+BandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...) =
+    BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv...)
 
 
 Base.similar(B::BandedMatrix) =
