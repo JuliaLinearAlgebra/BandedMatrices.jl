@@ -8,6 +8,7 @@ import BandedMatrices: _BandedMatrix
     @test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
     @test Matrix(BandedMatrix(Ones(5,5), (1,1))) == Matrix(BandedMatrix(Fill(1.0,(5,5)), (1,1))) ==
                                                     Matrix(SymTridiagonal(ones(5), ones(4)))
+    @test Matrix(BandedMatrix(0 => 1:5, 2=> 2:3, -3=> 1:7)) == diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)
 
     @test_throws UndefRefError BandedMatrix{Vector{Float64}}(uninitialized, (5,5), (1,1))[1,1]
 end
