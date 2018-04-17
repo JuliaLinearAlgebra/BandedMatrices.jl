@@ -5,12 +5,12 @@ BandedMatrixWithZero = Union{BandedMatrix{Float64}, UniformScaling}
 Base.zero(::Type{BandedMatrixWithZero}) = 0*I
 
 @testset "misc tests" begin
-   A = BandedMatrix{BandedMatrixWithZero}(uninitialized, 1, 2, 0, 1)
+   A = BandedMatrix{BandedMatrixWithZero}(undef, 1, 2, 0, 1)
    A[1,1] = BandedMatrix(Eye(1),(0,1))
    A[1,2] = BandedMatrix(Zeros(1,2),(0,1))
    A[1,2][1,1] = -1/3
    A[1,2][1,2] = 1/3
-   B = BandedMatrix{BandedMatrixWithZero}(uninitialized, 2, 1, 1, 1)
+   B = BandedMatrix{BandedMatrixWithZero}(undef, 2, 1, 1, 1)
    B[1,1] = 0.2BandedMatrix(Eye(1),(0,1))
    B[2,1] = BandedMatrix(Zeros(2,1), (1,0))
    B[2,1][1,1] = -2/30

@@ -34,18 +34,17 @@ MemoryLayout(::SymBandedMatrix{T}) where T = BlasSymBanded{T}()
 
 returns an unitialized `n`×`n` symmetric banded matrix of type `T` with bandwidths `(-k,k)`.
 """
-
+SymBandedMatrix{T}(::UndefInitializer, n::Integer, k::Integer) where {T<:BlasFloat} =
+    _SymBandedMatrix(Matrix{T}(undef, k+1, n), k)
 # Use zeros to avoid unallocated entries for bigfloat
-SymBandedMatrix{T}(::Uninitialized, n::Integer, k::Integer) where {T<:BlasFloat} =
-    _SymBandedMatrix(Matrix{T}(uninitialized, k+1, n), k)
-SymBandedMatrix{T}(::Uninitialized, n::Integer, k::Integer) where {T<:Number} =
+SymBandedMatrix{T}(::UndefInitializer, n::Integer, k::Integer) where {T<:Number} =
     _SymBandedMatrix(zeros(T, k+1, n), k)
-SymBandedMatrix{T}(::Uninitialized, n::Integer, k::Integer) where {T} =
-    _SymBandedMatrix(Matrix{T}(uninitialized, k+1, n), k)
+SymBandedMatrix{T}(::UndefInitializer, n::Integer, k::Integer) where {T} =
+    _SymBandedMatrix(Matrix{T}(undef, k+1, n), k)
 
 for MAT in (:SymBandedMatrix, :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval Base.convert(::Type{$MAT{V}}, M::SymBandedMatrix) where {V} =
-        SymBandedMatrix{V}(uninitialized, convert(Matrix{V}, M.data), M.k)
+        SymBandedMatrix{V}(undef, convert(Matrix{V}, M.data), M.k)
 end
 
 Base.copy(B::SymBandedMatrix{T}) where T = _SymBandedMatrix(copy(B.data),B.k)
@@ -72,7 +71,7 @@ end
 # function BandedMatrix{T}(A::AbstractMatrix, a::Int) where T
 #     (n,m) = size(A)
 #     @boundscheck n == m || throw(BoundsError())
-#     ret = SymBandedMatrix{T}(uninitialized, n, a)
+#     ret = SymBandedMatrix{T}(undef, n, a)
 #     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
 #         syminbands_setindex!(ret, A[k,j], k, j)
 #     end

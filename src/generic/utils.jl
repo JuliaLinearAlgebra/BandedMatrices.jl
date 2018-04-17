@@ -12,7 +12,7 @@ dotu(f::AbstractVector{Complex{Float64}},g::AbstractVector{N}) where {N<:Real} =
 dotu(f::AbstractVector{N},g::AbstractVector{T}) where {N<:Real,T<:Number} = dot(f,g)
 
 
-normalize!(w::AbstractVector) = scale!(w,inv(norm(w)))
+normalize!(w::AbstractVector) = rmul!(w,inv(norm(w)))
 normalize!(w::Vector{T}) where {T<:BlasFloat} = normalize!(length(w),w)
 normalize!(n,w::Union{Vector{T},Ptr{T}}) where {T<:Union{Float64,Float32}} =
     BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
@@ -52,7 +52,7 @@ end
 prodbandwidths(A::AbstractMatrix, B::AbstractMatrix) = prodbandwidths('N', 'N', A, B)
 
 function banded_similar(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix, T::DataType)
-    BandedMatrix{T}(uninitialized, _size(tA, A, 1), _size(tB, B, 2), prodbandwidths(tA, tB, A, B)...)
+    BandedMatrix{T}(undef, _size(tA, A, 1), _size(tB, B, 2), prodbandwidths(tA, tB, A, B)...)
 end
 
 # helper functions in matrix addition routines

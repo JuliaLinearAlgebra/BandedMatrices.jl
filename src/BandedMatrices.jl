@@ -63,6 +63,10 @@ else
    import Base: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
                 At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact
    import Base: sparse
+
+   rmul!(A::AbstractArray, b::Number) = scale!(A, b)
+   lmul!(a::Number, B::AbstractArray) = scale!(a, B)
+   parentindices(A) = parentindexes(A)
 end
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,

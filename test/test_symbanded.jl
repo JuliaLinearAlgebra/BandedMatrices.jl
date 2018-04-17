@@ -1,7 +1,7 @@
 using Compat
 using BandedMatrices, Compat.Test
 @testset "SymBandedMatrix tests" begin
-    @test_throws UndefRefError SymBandedMatrix{Vector{Float64}}(uninitialized, 5, 1)[1,1]
+    @test_throws UndefRefError SymBandedMatrix{Vector{Float64}}(undef, 5, 1)[1,1]
 
 
     A = sbrand(10,2)

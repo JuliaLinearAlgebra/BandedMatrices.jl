@@ -1,9 +1,6 @@
 using BandedMatrices, Compat
+using Compat.LinearAlgebra
 using Compat.Test
-
-if VERSION ≥ v"0.7-"
-    using LinearAlgebra
-end
 
 include("test_banded.jl")
 include("test_subarray.jl")

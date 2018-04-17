@@ -28,7 +28,6 @@ julia> A[band(1)]
  1.0
  1.0
 ```
-
 """
 band(i::Int) = Band(i)
 
@@ -56,8 +55,6 @@ julia> A[2,BandRange]
  1.0
 ```
 """
-
-# ~~ Indexing on the i-th row/column within band range
 struct BandRange end
 
 # ~~ Out of band error
@@ -182,7 +179,6 @@ the indices over which the Band spans.
 
 This mimics the relationship between `Colon` and `Base.Slice`.
 """
-
 struct BandSlice <: OrdinalRange{Int,Int}
     band::Band
     indices::StepRange{Int,Int}

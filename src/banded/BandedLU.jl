@@ -28,7 +28,7 @@ function lufact(A::BandedMatrix{T}) where {T<:Number}
     S = _promote_to_blas_type(T, T)
     # copy into larger array of size (2l+u*1)×n, i.e. l additional rows
     m, n = size(A)
-    data = Array{S}(2*A.l+A.u+1, n)
+    data = Array{S}(undef, 2*A.l+A.u+1, n)
     data[(A.l+1):end, :] = A.data
     data, ipiv = gbtrf!(A.l, A.u, m, data)
     BandedLU{S}(data, ipiv, A.l, A.u, m)

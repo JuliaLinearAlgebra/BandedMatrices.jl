@@ -28,7 +28,7 @@ MemoryLayout(A::Matrix{T}) where T = DenseColumnMajor{T}()
 
 import Base: AbstractCartesianIndex, Slice, RangeIndex
 
-MemoryLayout(A::SubArray) = submemorylayout(MemoryLayout(parent(A)), parentindexes(A))
+MemoryLayout(A::SubArray) = submemorylayout(MemoryLayout(parent(A)), parentindices(A))
 submemorylayout(::MemoryLayout{T}, _) where T = UnknownLayout{T}()
 submemorylayout(::AbstractColumnMajor{T}, ::Tuple{I}) where {T,I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex}} =
     DenseColumnMajor{T}()
@@ -426,7 +426,7 @@ if VERSION < v"0.7-"
 
             function Base.:*(A::$Typ1{T}, B::$Typ2{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
-                Y = BandedMatrix{promote_type(T,V)}(uninitialized, n, m, prodbandwidths(A, B)...)
+                Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
                 A_mul_B!(Y, A, B)
             end
 
@@ -480,7 +480,7 @@ else
 
             function Base.:*(A::$Typ1{T}, B::$Typ2{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
-                Y = BandedMatrix{promote_type(T,V)}(uninitialized, n, m, prodbandwidths(A, B)...)
+                Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
                 A_mul_B!(Y, A, B)
             end
 
@@ -533,7 +533,7 @@ if VERSION < v"0.7-"
 
             function Base.:-(A::$Typ{T}, B::AbstractMatrix{T}) where {T}
                 ret = deepcopy(B)
-                Base.scale!(ret, -one(T))
+                BandedMatrices.rmul!(ret, -one(T))
                 Base.BLAS.axpy!(one(T), A, ret)
                 ret
             end
@@ -544,7 +544,7 @@ if VERSION < v"0.7-"
                 Base.BLAS.axpy!(-one(V), B, ret)
                 ret
             end
-            Base.:-(A::AbstractMatrix{T}, B::$Typ{V}) where {T,V} = Base.scale!(B - A, -1)
+            Base.:-(A::AbstractMatrix{T}, B::$Typ{V}) where {T,V} = BandedMatrices.rmul!(B - A, -1)
 
 
 
@@ -573,7 +573,7 @@ if VERSION < v"0.7-"
 
             function Base.:-(A::UniformScaling, B::$Typ)
                 ret = deepcopy(B)
-                Base.scale!(ret, -1)
+                BandedMatrices.rmul!(ret, -1)
                 axpy!(1, A, ret)
             end
 
@@ -587,7 +587,7 @@ if VERSION < v"0.7-"
                 BandedMatrices.banded_matvecmul!(c, 'T', A, b)
 
             Base.:*(A::$Typ{U}, b::StridedVector{V}) where {U, V} =
-                Base.LinAlg.A_mul_B!(Vector{promote_type(U, V)}(uninitialized, size(A, 1)), A, b)
+                Base.LinAlg.A_mul_B!(Vector{promote_type(U, V)}(undef, size(A, 1)), A, b)
 
 
             Base.LinAlg.A_mul_B!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)
@@ -667,7 +667,7 @@ else
 
             function Base.:-(A::$Typ{T}, B::AbstractMatrix{T}) where {T}
                 ret = deepcopy(B)
-                Base.scale!(ret, -one(T))
+                BandedMatrices.rmul!(ret, -one(T))
                 LinearAlgebra.BLAS.axpy!(one(T), A, ret)
                 ret
             end
@@ -678,7 +678,7 @@ else
                 LinearAlgebra.BLAS.axpy!(-one(V), B, ret)
                 ret
             end
-            Base.:-(A::AbstractMatrix{T}, B::$Typ{V}) where {T,V} = Base.scale!(B - A, -1)
+            Base.:-(A::AbstractMatrix{T}, B::$Typ{V}) where {T,V} = BandedMatrices.rmul!(B - A, -1)
 
 
 
@@ -707,7 +707,7 @@ else
 
             function Base.:-(A::UniformScaling, B::$Typ)
                 ret = deepcopy(B)
-                Base.scale!(ret, -1)
+                BandedMatrices.rmul!(ret, -1)
                 axpy!(1, A, ret)
             end
 
@@ -721,7 +721,7 @@ else
                 BandedMatrices.banded_matvecmul!(c, 'T', A, b)
 
             Base.:*(A::$Typ{U}, b::StridedVector{V}) where {U, V} =
-                LinearAlgebra.A_mul_B!(Vector{promote_type(U, V)}(uninitialized,size(A, 1)), A, b)
+                LinearAlgebra.A_mul_B!(Vector{promote_type(U, V)}(undef,size(A, 1)), A, b)
 
 
             LinearAlgebra.A_mul_B!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)
@@ -754,12 +754,12 @@ else
 
             function Base.:*(A::$Typ{T}, B::StridedMatrix{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
-                A_mul_B!(Matrix{promote_type(T,V)}(uninitialized,n,m), A, B)
+                A_mul_B!(Matrix{promote_type(T,V)}(undef,n,m), A, B)
             end
 
             function Base.:*(A::StridedMatrix{T}, B::$Typ{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
-                A_mul_B!(Matrix{promote_type(T,V)}(uninitialized,n,m), A, B)
+                A_mul_B!(Matrix{promote_type(T,V)}(undef,n,m), A, B)
             end
 
             LinearAlgebra.Ac_mul_B(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = Ac_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 2)), A, B)

@@ -1,4 +1,4 @@
-##
+undef##
 # Represent a banded matrix
 # [ a_11 a_12
 #   a_21 a_22 a_23
@@ -39,20 +39,20 @@ const BandedSubBandedMatrix{T} =
 ## Constructors
 
 """
-    BandedMatrix{T}(uninitialized, (n, m), (l, u))
+    BandedMatrix{T}(undef, (n, m), (l, u))
 
 returns an uninitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
 """
-BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
-    _BandedMatrix(Matrix{T}(uninitialized,max(0,b+a+1),m), n, a, b)
-BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number} =
+BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
+    _BandedMatrix(Matrix{T}(undef,max(0,b+a+1),m), n, a, b)
+BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number} =
     _BandedMatrix(zeros(T,max(0,b+a+1),m),n,a,b)
-BandedMatrix{T}(::Uninitialized, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
-    _BandedMatrix(Matrix{T}(uninitialized,max(0,b+a+1),m),n,a,b)
-BandedMatrix{T}(::Uninitialized, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
-    BandedMatrix{T}(uninitialized, nm..., ab...)
-BandedMatrix{T}(::Uninitialized, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
-    BandedMatrix{T}(uninitialized,n,n+b,a,b)
+BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
+    _BandedMatrix(Matrix{T}(undef,max(0,b+a+1),m),n,a,b)
+BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
+    BandedMatrix{T}(undef, nm..., ab...)
+BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
+    BandedMatrix{T}(undef,n,n+b,a,b)
 
 for MAT in (:BandedMatrix, :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval Base.convert(::Type{$MAT{V}}, M::BandedMatrix) where {V} =
@@ -62,7 +62,7 @@ end
 #TODO: Add test
 function Base.convert(::Type{BM}, M::Matrix) where {BM<:BandedMatrix}
     ret = BandedMatrix{eltype(BM) == Any ? eltype(M) :
-                        promote_type(eltype(BM),eltype(M))}(uninitialized, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+                        promote_type(eltype(BM),eltype(M))}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = M[k,j]
     end
@@ -109,7 +109,7 @@ brand
 function BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T
     (n,m) = size(A)
     (l,u) = bnds
-    ret = BandedMatrix{T}(uninitialized, n, m, bnds...)
+    ret = BandedMatrix{T}(undef, n, m, bnds...)
     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
         inbands_setindex!(ret, A[k,j], k, j)
     end
@@ -238,7 +238,7 @@ const BandedMatrixBand{T} = SubArray{T, 1, Base.ReshapedArray{T,1,BandedMatrix{T
                                 Tuple{Base.MultiplicativeInverses.SignedMultiplicativeInverse{Int}}}, Tuple{BandSlice}, false}
 
 
-band(V::BandedMatrixBand) = first(parentindexes(V)).band.i
+band(V::BandedMatrixBand) = first(parentindices(V)).band.i
 
 # gives a view of the parent's data matrix
 function dataview(V::BandedMatrixBand)
@@ -598,7 +598,7 @@ Base.full(A::BandedMatrix) = convert(Matrix, A)
 
 
 function sparse(B::BandedMatrix)
-    i=Vector{Int}(uninitialized,length(B.data)); j=Vector{Int}(uninitialized,length(B.data))
+    i=Vector{Int}(undef,length(B.data)); j=Vector{Int}(undef,length(B.data))
     n,m=size(B.data)
     Bn=size(B,1)
     vb=copy(vec(B.data))
@@ -647,12 +647,12 @@ if VERSION < v"0.7-"
     end
 else
     function LinearAlgebra.lmul!(α::Number, A::BandedMatrix)
-        Base.scale!(α, A.data)
+        LinearAlgebra.lmul!(α, A.data)
         A
     end
 
     function LinearAlgebra.rmul!(A::BandedMatrix, α::Number)
-        Base.scale!(A.data, α)
+        LinearAlgebra.rmul!(A.data, α)
         A
     end
 end
@@ -746,24 +746,24 @@ bandshift(a::AbstractRange,b::AbstractRange) = first(a)-first(b)
 bandshift(::Base.Slice{Base.OneTo{Int}},b::AbstractRange) = 1-first(b)
 bandshift(a::AbstractRange,::Base.Slice{Base.OneTo{Int}}) = first(a)-1
 bandshift(::Base.Slice{Base.OneTo{Int}},b::Base.Slice{Base.OneTo{Int}}) = 0
-bandshift(S) = bandshift(parentindexes(S)[1],parentindexes(S)[2])
+bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
 
 bandwidth(S::BandedSubBandedMatrix{T}, k::Integer) where {T} = bandwidth(parent(S),k) + (k==1 ? -1 : 1)*bandshift(S)
 
 @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
-    @inbounds r = inbands_getindex(S.parent, reindex(S, S.indexes, (k, j))...)
+    @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)
     r
 end
 
 @inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
-    @inbounds r = inbands_setindex!(S.parent, v, reindex(S, S.indexes, (k, j))...)
+    @inbounds r = inbands_setindex!(parent(S), v, reindex(S, parentindices(S), (k, j))...)
     r
 end
 
 
 function Base.convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix{T}) where {T}
     A=parent(S)
-    kr,jr=parentindexes(S)
+    kr,jr=parentindices(S)
     shft=kr[1]-jr[1]
     l,u=bandwidths(A)
     if -u ≤ shft ≤ l
@@ -789,4 +789,4 @@ end
 
 @inline Base.pointer(B::BandedMatrix) = pointer(B.data)
 @inline Base.pointer(B::BandedSubBandedMatrix{T}) where {T} =
-    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindexes(B)[2])-1)*sizeof(T)
+    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindices(B)[2])-1)*sizeof(T)
