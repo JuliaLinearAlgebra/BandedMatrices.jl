@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "BandedMatrices.BandedMatrix",
     "category": "type",
-    "text": "BandedMatrix{T}(uninitialized, (n, m), (l, u))\n\nreturns an uninitialized n×m banded matrix of type T with bandwidths (l,u).\n\n\n\nBandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...)\n\nConstruct a square matrix from Pairs of diagonals and vectors. Vector kv.second will be placed on the kv.first diagonal.\n\n\n\n"
+    "text": "BandedMatrix{T}(undef, (n, m), (l, u))\n\nreturns an uninitialized n×m banded matrix of type T with bandwidths (l,u).\n\n\n\nBandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...)\n\nConstruct a square matrix from Pairs of diagonals and vectors. Vector kv.second will be placed on the kv.first diagonal.\n\n\n\n"
 },
 
 {
