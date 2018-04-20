@@ -667,7 +667,7 @@ end
                      brand(ComplexF64, 11,10,2,3))
             for k = -5:5
                 V = view(A, band(k))
-                bs = parentindexes(V)[1] # a bandslice
+                bs = BandedMatrices.parentindices(V)[1] # a bandslice
                 @test bs.indices == diagind(A, k)
                 @test bs.band == Band(k)
                 @test collect(bs) == collect(diagind(A, k))

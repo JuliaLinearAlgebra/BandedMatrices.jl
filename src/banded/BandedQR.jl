@@ -53,7 +53,7 @@ function Ac_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
         yp=y+sz*(k-1)
 
         dt=dot(M,wp,1,yp,1)
-        Base.axpy!(M,-2*dt,wp,1,yp,1)
+        axpy!(M,-2*dt,wp,1,yp,1)
     end
 
     for k=m-M+2:size(H,2)
@@ -63,7 +63,7 @@ function Ac_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
         yp=y+sz*(k-1)
 
         dt=dot(M-p,wp,1,yp,1)
-        Base.axpy!(M-p,-2*dt,wp,1,yp,1)
+        axpy!(M-p,-2*dt,wp,1,yp,1)
     end
     Y
 end
@@ -95,7 +95,7 @@ function A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
         yp=y+sz*(k-1)
 
         dt=dot(M-p,wp,1,yp,1)
-        Base.axpy!(M-p,-2*dt,wp,1,yp,1)
+        axpy!(M-p,-2*dt,wp,1,yp,1)
     end
 
 
@@ -104,7 +104,7 @@ function A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
         yp=y+sz*(k-1)
 
         dt=dot(M,wp,1,yp,1)
-        Base.axpy!(M,-2*dt,wp,1,yp,1)
+        axpy!(M,-2*dt,wp,1,yp,1)
     end
 
     Y
@@ -122,6 +122,11 @@ function Ac_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
         Y[:,j]=A'*B[:,j]
     end
     Y
+end
+
+function (*)(A::BandedQ{T}, x::AbstractVector{S}) where {T,S}
+    TS = promote_type(T, S)
+    A_mul_B!(similar(x,TS,size(A,1)),A,x)
 end
 
 Base.full(A::BandedQ) = A*eye(eltype(A),size(A,1))
@@ -159,7 +164,7 @@ flipsign(x,y::Complex) = y==0 ? x : x*sign(y)
 function banded_qrfact!(R::BandedMatrix{T}) where T
     M=R.l+1   # number of diag+subdiagonal bands
     m,n=size(R)
-    W=Matrix{T}(M,(n<m ? n : m-1))
+    W=Matrix{T}(undef, M, (n<m ? n : m-1))
     w=pointer(W)
     r=pointer(R.data)
     sz=sizeof(T)
@@ -176,7 +181,7 @@ function banded_qrfact!(R::BandedMatrix{T}) where T
         for j=k:min(k+R.u,n)
             v=r+sz*(R.u + (k-1)*st + (j-k)*(st-1))
             dt=dot(M,wp,1,v,1)
-            Base.axpy!(M,-2*dt,wp,1,v,1)
+            axpy!(M,-2*dt,wp,1,v,1)
         end
     end
 
@@ -191,7 +196,7 @@ function banded_qrfact!(R::BandedMatrix{T}) where T
         for j=k:min(k+R.u,n)
             v=r+sz*(R.u + (k-1)*st + (j-k)*(st-1))
             dt=dot(M-p,wp,1,v,1)
-            Base.axpy!(M-p,-2*dt,wp,1,v,1)
+            axpy!(M-p,-2*dt,wp,1,v,1)
         end
     end
 

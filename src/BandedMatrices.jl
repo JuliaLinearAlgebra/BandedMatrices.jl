@@ -3,8 +3,8 @@ __precompile__()
 module BandedMatrices
 using Base, Compat, FillArrays
 if VERSION ≥ v"0.7-"
-    using LinearAlgebra, SparseArrays
-
+    using LinearAlgebra, SparseArrays, Random
+    using LinearAlgebra.LAPACK
     import LinearAlgebra: BlasInt,
                         BlasReal,
                         BlasFloat,
@@ -31,7 +31,7 @@ if VERSION ≥ v"0.7-"
    import LinearAlgebra.BLAS: libblas
    import LinearAlgebra.LAPACK: liblapack
    import LinearAlgebra: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
-                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact
+                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact, axpy!
    import SparseArrays: sparse
 else
     import Base.LinAlg: BlasInt,
@@ -57,11 +57,11 @@ else
                         Ac_ldiv_B!,
                         copy_oftype,
                         checksquare
-
+   using Base.LAPACK
    import Base.BLAS: libblas
    import Base.LAPACK: liblapack
    import Base: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
-                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact
+                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact, axpy!
    import Base: sparse
 
    rmul!(A::AbstractArray, b::Number) = scale!(A, b)

@@ -228,8 +228,8 @@ function +(A::SymBandedMatrix{T}, B::SymBandedMatrix{V}) where {T,V}
     n,m=size(A)
 
     ret = sbzeros(promote_type(T,V),n,max(A.k,B.k))
-    Base.axpy!(1.,A,ret)
-    Base.axpy!(1.,B,ret)
+    axpy!(1.,A,ret)
+    axpy!(1.,B,ret)
 
     ret
 end
@@ -241,8 +241,8 @@ function -(A::SymBandedMatrix{T}, B::SymBandedMatrix{V}) where {T,V}
     n,m=size(A)
 
     ret = sbzeros(promote_type(T,V),n,max(A.k,B.k))
-    Base.axpy!(1.,A,ret)
-    Base.axpy!(-1.,B,ret)
+    axpy!(1.,A,ret)
+    axpy!(-1.,B,ret)
 
     ret
 end
@@ -272,7 +272,7 @@ end
     A*Array(B)
 
 *(A::SymBandedMatrix{T},b::StridedVector{T}) where {T<:BlasFloat} =
-    A_mul_B!(Vector{T}(size(A,1)),A,b)
+    A_mul_B!(Vector{T}(undef,size(A,1)),A,b)
 
 function *(A::SymBandedMatrix{T},b::StridedVector{T}) where {T}
     ret = zeros(T,size(A,1))
@@ -302,10 +302,10 @@ diag(A::SymBandedMatrix{T}) where {T} = vec(A.data[A.k+1,:])
 
 function tridiagonalize!(A::SymBandedMatrix{T}) where {T}
     n=size(A, 1)
-    d = Vector{T}(n)
-    e = Vector{T}(n-1)
-    q = Vector{T}(0)
-    work = Vector{T}(n)
+    d = Vector{T}(undef,n)
+    e = Vector{T}(undef,n-1)
+    q = Vector{T}(undef,0)
+    work = Vector{T}(undef,n)
 
     sbtrd!('N','U',
                 size(A,1),A.k,pointer(A),leadingdimension(A),
@@ -330,8 +330,8 @@ function eigvals!(A::SymBandedMatrix{T}, B::SymBandedMatrix{T}) where {T}
     # convert to a regular symmetric eigenvalue problem.
     ka = bandwidth(A, 2)
     lda = leadingdimension(A)
-    X = Array{T}(0,0)
-    work = Vector{T}(2n)
+    X = Array{T}(undef,0,0)
+    work = Vector{T}(undef,2n)
     sbgst!('N', 'U', n, ka, kb, pointer(A), lda, pointer(B), ldb,
            pointer(X), max(1, n), pointer(work))
     # compute eigenvalues of symmetric eigenvalue problem.

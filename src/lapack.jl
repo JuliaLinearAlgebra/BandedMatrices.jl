@@ -14,7 +14,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                  vect, uplo,
                  n, k, ab, ldab,
                  d, e, q, ldq, work, info)
-            Base.LAPACK.chklapackerror(info[])
+            LAPACK.chklapackerror(info[])
             d, e, q
         end
     end
@@ -41,7 +41,7 @@ for (gbtrf, elty) in
                    Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}, Ptr{BlasInt}),
                   m, n, kl, ku,
                   AB, ldab, ipiv, info)
-            Base.LAPACK.chklapackerror(info[])
+            LAPACK.chklapackerror(info[])
             AB, ipiv
         end
     end
@@ -91,7 +91,7 @@ for (gbtrs, elty) in
                   trans, n, kl, ku, nrhs,
                   AB, ldab, ipiv,
                   B, ldb, info)
-            Base.LAPACK.chklapackerror(info[])
+            LAPACK.chklapackerror(info[])
             B
         end
     end
@@ -135,7 +135,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
                  Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
                  uplo, n, kd,
                  AB, ldab, info)
-            Base.LAPACK.chklapackerror(info[])
+            LAPACK.chklapackerror(info[])
             AB
         end
     end
@@ -159,7 +159,7 @@ for (fname, elty) in ((:dpbstf_,:Float64),
                  Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
                  uplo, n, kd,
                  AB, ldab, info)
-            Base.LAPACK.chklapackerror(info[])
+            LAPACK.chklapackerror(info[])
             AB
         end
     end
@@ -192,7 +192,7 @@ for (fname, elty) in ((:dsbgst_,:Float64),
                  kb, AB, ldab, BB,
                  ldbb, X, ldx, work,
                  info)
-            Base.LAPACK.chklapackerror(info[])
+            LAPACK.chklapackerror(info[])
             AB
         end
     end

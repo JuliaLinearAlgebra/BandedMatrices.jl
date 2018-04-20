@@ -1,4 +1,4 @@
-using BandedMatrices, Compat.Test
+using BandedMatrices, Compat.Test, Compat.Random
 import BandedMatrices: _BandedMatrix
 
 # set prng to some value that avoids test failure
@@ -53,9 +53,9 @@ struct _foo <: Number end
             @test Matrix(A)\copy(b)             ≈ lufact(A)\copy(b)
             @test Matrix(A)\copy(b)             ≈ A_ldiv_B!(A, copy(b))
             @test Matrix(A)\copy(b)             ≈ A_ldiv_B!(lufact(A), copy(b))
-            @test transpose(Matrix(A))\copy(b)  ≈ Base.LinAlg.At_ldiv_B!(lufact(A), copy(b))
-            @test transpose(Matrix(A))\copy(b)  ≈ Base.LinAlg.A_ldiv_B!(lufact(transpose(A)), copy(b))
-            @test adjoint(Matrix(A))\copy(b) ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
+            @test transpose(Matrix(A))\copy(b)  ≈ Compat.LinearAlgebra.At_ldiv_B!(lufact(A), copy(b))
+            @test transpose(Matrix(A))\copy(b)  ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(transpose(A)), copy(b))
+            @test adjoint(Matrix(A))\copy(b) ≈ Compat.LinearAlgebra.Ac_ldiv_B!(lufact(A), copy(b))
         end
     end
 end
@@ -144,8 +144,8 @@ end
 
         # note lufact makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
-        @test Af'\bf ≈ Base.LinAlg.At_ldiv_B!(lufact(A),  copy(b))
-        @test Af'\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(A'), copy(b))
+        @test Af'\bf ≈ Compat.LinearAlgebra.At_ldiv_B!(lufact(A),  copy(b))
+        @test Af'\bf ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(A'), copy(b))
     end
 
 
@@ -165,11 +165,11 @@ end
         @test Af\bf  ≈ lufact(A)\copy(b)
         @test Af'\bf ≈ A'\copy(b)
         @test Af'\bf ≈ lufact(A')\copy(b)
-        @test Af\bf  ≈ Base.LinAlg.A_ldiv_B!(lufact(A),  copy(b))
-        @test Af'\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(A'), copy(b))
-        @test transpose(Af)\bf ≈ Base.LinAlg.At_ldiv_B!(lufact(A),  copy(b))
-        @test adjoint(Af)\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(adjoint(A)), copy(b))
-        @test adjoint(Af)\bf ≈ Base.LinAlg.Ac_ldiv_B!(lufact(A), copy(b))
+        @test Af\bf  ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(A),  copy(b))
+        @test Af'\bf ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(A'), copy(b))
+        @test transpose(Af)\bf ≈ Compat.LinearAlgebra.At_ldiv_B!(lufact(A),  copy(b))
+        @test adjoint(Af)\bf ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(adjoint(A)), copy(b))
+        @test adjoint(Af)\bf ≈ Compat.LinearAlgebra.Ac_ldiv_B!(lufact(A), copy(b))
     end
 
     # test with multiple rhs
@@ -188,10 +188,10 @@ end
         @test Af\bf  ≈ lufact(A)\copy(b)
         @test Af'\bf ≈ A'\copy(b)
         @test Af'\bf ≈ lufact(A')\copy(b)
-        @test Af\bf  ≈ Base.LinAlg.A_ldiv_B!(lufact(A),  copy(b))
-        @test Af'\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(A'), copy(b))
-        @test Af'\bf ≈ Base.LinAlg.At_ldiv_B!(lufact(A),  copy(b))
-        @test Af'\bf ≈ Base.LinAlg.A_ldiv_B!(lufact(A'), copy(b))
+        @test Af\bf  ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(A),  copy(b))
+        @test Af'\bf ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(A'), copy(b))
+        @test Af'\bf ≈ Compat.LinearAlgebra.At_ldiv_B!(lufact(A),  copy(b))
+        @test Af'\bf ≈ Compat.LinearAlgebra.A_ldiv_B!(lufact(A'), copy(b))
     end
 
     # test properties of factorisation

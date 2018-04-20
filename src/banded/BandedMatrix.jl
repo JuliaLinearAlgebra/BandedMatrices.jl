@@ -54,10 +54,24 @@ BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}
 BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
     BandedMatrix{T}(undef,n,n+b,a,b)
 
-for MAT in (:BandedMatrix, :AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
-    @eval Base.convert(::Type{$MAT{V}}, M::BandedMatrix) where {V} =
-        _BandedMatrix(convert(Matrix{V}, M.data), M.m, M.l, M.u)
+
+BandedMatrix{V}(M::BandedMatrix) where {V} =
+        _BandedMatrix(AbstractMatrix{V}(M.data), M.m, M.l, M.u)
+BandedMatrix(M::BandedMatrix{V}) where {V} =
+        _BandedMatrix(AbstractMatrix{V}(M.data), M.m, M.l, M.u)
+
+convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
+convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
+        _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.m, M.l, M.u)
+convert(::Type{BandedMatrix}, M::BandedMatrix{V}) where {V} = M
+
+for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
+    @eval begin
+        Base.convert(::Type{$MAT{V}}, M::BandedMatrix) where {V} = convert(BandedMatrix{V}, M)
+        $MAT{V}(M::BandedMatrix) where {V} = BandedMatrix{V}(M)
+    end
 end
+
 
 #TODO: Add test
 function Base.convert(::Type{BM}, M::Matrix) where {BM<:BandedMatrix}
@@ -70,6 +84,8 @@ function Base.convert(::Type{BM}, M::Matrix) where {BM<:BandedMatrix}
 end
 
 Base.copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.m, B.l, B.u)
+
+# Base.similar(a::BandedMatrix, ::Type{T}, dims::Dims{2}) where {T}    = BandedMatrix{T}(undef, dims, bandwidths(a))
 
 Base.promote_rule(::Type{BandedMatrix{T}}, ::Type{BandedMatrix{V}}) where {T,V} = BandedMatrix{promote_type(T,V)}
 

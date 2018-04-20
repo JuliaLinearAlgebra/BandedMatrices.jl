@@ -47,6 +47,8 @@ BandedMatrices.inbands_setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int) = set
     @test BandedMatrices.inbands_getindex(A, 1,1) == 1
     BandedMatrices.inbands_setindex!(A, 2, 1,1)
     @test A[1,1] == 2
+    @test A[1,2] == 0
+    @test BandedMatrices.@inbands(A[1,2]) == 2
 
     A = SymTridiagonal([1,2,3],[4,5])
     @test isbanded(A)

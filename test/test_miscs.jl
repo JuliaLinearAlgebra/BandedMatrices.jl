@@ -1,3 +1,5 @@
+using BandedMatrices, Compat.Test
+
 ## Banded Matrix of Banded Matrix
 
 BandedMatrixWithZero = Union{BandedMatrix{Float64}, UniformScaling}
@@ -30,26 +32,24 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
    # test trivial convert routines
 
    A = brand(3,4,1,2)
-
-   @test isa(BandedMatrix{Float64}(A),BandedMatrix{Float64})
-   @test isa(AbstractMatrix{Float64}(A),BandedMatrix{Float64})
-   @test isa(AbstractArray{Float64}(A),BandedMatrix{Float64})
-   @test isa(BandedMatrix(A),BandedMatrix{Float64})
-   @test isa(AbstractMatrix(A),BandedMatrix{Float64})
-   @test isa(AbstractArray(A),BandedMatrix{Float64})
-   @test isa(BandedMatrix{Complex32}(A),BandedMatrix{Complex32})
-   @test isa(AbstractMatrix{Complex32}(A),BandedMatrix{Complex32})
-   @test isa(AbstractArray{Complex32}(A),BandedMatrix{Complex32})
-
+   @test isa(BandedMatrix{Float64}(A), BandedMatrix{Float64})
+   @test isa(AbstractMatrix{Float64}(A), BandedMatrix{Float64})
+   @test isa(AbstractArray{Float64}(A), BandedMatrix{Float64})
+   @test isa(BandedMatrix(A), BandedMatrix{Float64})
+   @test isa(AbstractMatrix(A), BandedMatrix{Float64})
+   @test isa(AbstractArray(A), BandedMatrix{Float64})
+   @test isa(BandedMatrix{ComplexF16}(A), BandedMatrix{ComplexF16})
+   @test isa(AbstractMatrix{ComplexF16}(A), BandedMatrix{ComplexF16})
+   @test isa(AbstractArray{ComplexF16}(A), BandedMatrix{ComplexF16})
 
    # Test show funciton
 
-   @test contains(sprint() do io
-      show(io, brand(10, 10, 3, 3))
+   @test occursin(sprint() do io
+      show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
    end, "10×10 BandedMatrices.BandedMatrix{Float64}")
 
-   @test contains(sprint() do io
-      show(io, BandedMatrix(Eye(3),(1,1)))
+   @test occursin(sprint() do io
+      show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
    end, "1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0")
 
 
