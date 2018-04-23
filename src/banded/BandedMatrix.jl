@@ -67,8 +67,10 @@ convert(::Type{BandedMatrix}, M::BandedMatrix{V}) where {V} = M
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin
-        Base.convert(::Type{$MAT{V}}, M::BandedMatrix) where {V} = convert(BandedMatrix{V}, M)
-        $MAT{V}(M::BandedMatrix) where {V} = BandedMatrix{V}(M)
+        Base.convert(::Type{$MAT{T}}, M::BandedMatrix) where {T} = convert(BandedMatrix{T}, M)
+        Base.convert(::Type{$MAT}, M::BandedMatrix{T}) where {T} = convert(BandedMatrix{T}, M)
+        $MAT{T}(M::BandedMatrix) where {T} = BandedMatrix{T}(M)
+        $MAT(M::BandedMatrix{T}) where T = BandedMatrix{T}(M)
     end
 end
 

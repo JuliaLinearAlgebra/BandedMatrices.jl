@@ -43,14 +43,24 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
    @test isa(AbstractArray{ComplexF16}(A), BandedMatrix{ComplexF16})
 
    # Test show funciton
+   if VERSION < v"0.7-"
+      @test occursin("10×10 BandedMatrices.BandedMatrix{Float64}", sprint() do io
+         show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
+      end)
 
-   @test occursin(sprint() do io
-      show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
-   end, "10×10 BandedMatrices.BandedMatrix{Float64}")
+      @test occursin("1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0", sprint() do io
+         show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
+      end)
+   else
+      @test occursin("10×10 BandedMatrix{Float64}", sprint() do io
+         show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
+      end)
 
-   @test occursin(sprint() do io
-      show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
-   end, "1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0")
+      @test occursin( "1.0  0.0  0.0\n 0.0  1.0  0.0\n 0.0  0.0  1.0",
+                     sprint() do io
+                        show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
+                     end)
+   end
 
 
    # Issue #27
