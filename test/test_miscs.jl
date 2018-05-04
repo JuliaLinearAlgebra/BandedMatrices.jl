@@ -42,26 +42,20 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
    @test isa(AbstractMatrix{ComplexF16}(A), BandedMatrix{ComplexF16})
    @test isa(AbstractArray{ComplexF16}(A), BandedMatrix{ComplexF16})
 
-   # Test show funciton
-   if VERSION < v"0.7-"
-      @test occursin("10×10 BandedMatrices.BandedMatrix{Float64}", sprint() do io
-         show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
+   # Test show function
+   @test occursin("10×10 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}",
+      sprint() do io
+          show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
       end)
 
-      @test occursin("1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0", sprint() do io
+   if VERSION < v"0.7-"
+      needle = "1.0  0.0     \n 0.0  1.0  0.0\n      0.0  1.0"
+   else
+      needle = "1.0  0.0  0.0\n 0.0  1.0  0.0\n 0.0  0.0  1.0"
+   end
+   @test occursin(needle, sprint() do io
          show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
       end)
-   else
-      @test occursin("10×10 BandedMatrix{Float64}", sprint() do io
-         show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
-      end)
-
-      @test occursin( "1.0  0.0  0.0\n 0.0  1.0  0.0\n 0.0  0.0  1.0",
-                     sprint() do io
-                        show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
-                     end)
-   end
-
 
    # Issue #27
    A=brand(1,10,0,9)
