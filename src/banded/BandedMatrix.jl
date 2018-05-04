@@ -125,10 +125,10 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 brand
 
 ## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
-function BandedMatrix{T}(C::Type{<:AbstractMatrix{T}}, A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T
+function BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T
     (n,m) = size(A)
     (l,u) = bnds
-    ret = BandedMatrix{T, C}(undef, n, m, bnds...)
+    ret = _BandedMatrix(similar(A, T, (max(0,l+u+1),m)), n, l, u)
     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
         inbands_setindex!(ret, A[k,j], k, j)
     end
@@ -136,10 +136,7 @@ function BandedMatrix{T}(C::Type{<:AbstractMatrix{T}}, A::AbstractMatrix{T}, bnd
 end
 
 BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
-    BandedMatrix{T}(typeof(A), A, bnds)
-
-BandedMatrix(A::AbstractFill{T}, bnds::NTuple{2,Int}) where T =
-    BandedMatrix{T}(Matrix{T}, A, bnds)
+    BandedMatrix{T}(A, bnds)
 
 BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
