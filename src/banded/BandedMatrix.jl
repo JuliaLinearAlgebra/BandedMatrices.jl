@@ -89,9 +89,8 @@ end
 
 Base.copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.m, B.l, B.u)
 
-Base.promote_rule(::Type{BandedMatrix{T, Matrix{T}}}, ::Type{BandedMatrix{V, Matrix{V}}}) where {T,V} =
-    BandedMatrix{promote_type(T,V), Matrix{promote_type(T, V)}}
-
+Base.promote_rule(::Type{BandedMatrix{T1, C1}}, ::Type{BandedMatrix{T2, C2}}) where {T1,C1, T2,C2} =
+    BandedMatrix{promote_type(T1,T2), promote_type(C1, C2)}
 
 
 for (op,bop) in ((:(Base.rand),:brand),)
