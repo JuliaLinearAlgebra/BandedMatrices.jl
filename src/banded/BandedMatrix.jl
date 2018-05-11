@@ -20,7 +20,7 @@ mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
     u::Int # upper bandwidth ≥0
     global function _BandedMatrix(data::AbstractMatrix{T},m,l,u) where {T}
         if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
-            error("Data matrix must have number rows equal to number of bands")
+           error("Data matrix must have number rows equal to number of bands")
         else
             new{T, typeof(data)}(data,m,l,u)
         end
@@ -124,10 +124,12 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 brand
 
 ## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
-function BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T
+BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T =
+    BandedMatrix{T, Matrix{T}}(A, bnds)
+function BandedMatrix{T, C}(A::AbstractMatrix, bnds::NTuple{2,Int}) where {T, C <: AbstractMatrix{T}}
     (n,m) = size(A)
     (l,u) = bnds
-    ret = _BandedMatrix(similar(A, T, (max(0,l+u+1),m)), n, l, u)
+    ret = BandedMatrix{T, C}(undef, n, m, l, u)
     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
         inbands_setindex!(ret, A[k,j], k, j)
     end
