@@ -2,7 +2,7 @@ using BandedMatrices, Compat
 import Compat.LinearAlgebra: axpy!
 
 # SubArray
-@testset "BandedMatrix SubArray airthmetic" begin
+@testset "BandedMatrix SubArray arithmetic" begin
     let A = brand(10,10,1,2), B = brand(20,20,1,2)
         @test isa(view(B,1:10,1:10),BandedMatrices.BandedSubBandedMatrix{Float64})
 

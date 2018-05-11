@@ -1,9 +1,11 @@
 using BandedMatrices, Compat.Test, Compat.LinearAlgebra, Compat.SparseArrays
+using GPUArrays: JLArray
 import BandedMatrices: _BandedMatrix
 
 # some basic operations
 @testset "Creating BandedMatrix" begin
     @test BandedMatrix(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(3,5), 5, 1, 1)
+    @test BandedMatrix(Zeros{Int32}(5,5), (1,1)) isa BandedMatrix{Int32, Matrix{Int32}}
     @test BandedMatrix(Zeros{Int}(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
     @test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
     @test Matrix(BandedMatrix(Ones(5,5), (1,1))) == Matrix(BandedMatrix(Fill(1.0,(5,5)), (1,1))) ==
@@ -12,6 +14,12 @@ import BandedMatrices: _BandedMatrix
     @test all(BandedMatrix{Float64}(0 => 1:5, 2=> 2:3, -3=> 1:7) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
     @test all(BandedMatrix{Float64}((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10),(4,3)) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
 
+    matrix = JLArray(Zeros{Int64}(5, 5))
+    @test !(matrix isa Matrix)
+    @test BandedMatrix(matrix) isa BandedMatrix{Int64, Matrix{Int64}}
+    @test BandedMatrix(matrix).data isa Matrix{Int64}
+    @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)) isa BandedMatrix{Int64, typeof(matrix)}
+    @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)).data isa JLArray
     @test_throws UndefRefError BandedMatrix{Vector{Float64}}(undef, (5,5), (1,1))[1,1]
 end
 

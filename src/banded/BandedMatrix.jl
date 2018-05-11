@@ -13,16 +13,16 @@ undef##
 
 function _BandedMatrix end
 
-mutable struct BandedMatrix{T} <: AbstractBandedMatrix{T}
-    data::Matrix{T}  # l+u+1 x n (# of columns)
+mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
+    data::CONTAINER  # l+u+1 x n (# of columns)
     m::Int #Number of rows
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
-    global function _BandedMatrix(data::Matrix{T},m,l,u) where {T}
+    global function _BandedMatrix(data::AbstractMatrix{T},m,l,u) where {T}
         if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
-            error("Data matrix must have number rows equal to number of bands")
+           error("Data matrix must have number rows equal to number of bands")
         else
-            new{T}(data,m,l,u)
+            new{T, typeof(data)}(data,m,l,u)
         end
     end
 end
@@ -31,8 +31,8 @@ MemoryLayout(::BandedMatrix{T}) where T = BandedLayout{T}()
 
 
 # BandedMatrix with unit range indexes is also banded
-const BandedSubBandedMatrix{T} =
-    SubArray{T,2,BandedMatrix{T},I} where I<:Tuple{Vararg{AbstractUnitRange}}
+const BandedSubBandedMatrix{T, C} =
+    SubArray{T,2,BandedMatrix{T, C},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
 @banded BandedSubBandedMatrix
 
@@ -43,12 +43,14 @@ const BandedSubBandedMatrix{T} =
 
 returns an uninitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
 """
-BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat} =
-    _BandedMatrix(Matrix{T}(undef,max(0,b+a+1),m), n, a, b)
-BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number} =
-    _BandedMatrix(zeros(T,max(0,b+a+1),m),n,a,b)
+BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat, C<:AbstractMatrix{T}} =
+    _BandedMatrix(C(undef,max(0,b+a+1),m), n, a, b)
+BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} =
+    _BandedMatrix(C(undef,max(0,b+a+1),m),n,a,b)
+BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number, C<:AbstractMatrix{T}} =
+    _BandedMatrix(fill!(similar(C, max(0,b+a+1),m), zero(T)),n,a,b)
 BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
-    _BandedMatrix(Matrix{T}(undef,max(0,b+a+1),m),n,a,b)
+    BandedMatrix{T, Matrix{T}}(undef,n,m,a,b)
 BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
     BandedMatrix{T}(undef, nm..., ab...)
 BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
@@ -87,10 +89,8 @@ end
 
 Base.copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.m, B.l, B.u)
 
-# Base.similar(a::BandedMatrix, ::Type{T}, dims::Dims{2}) where {T}    = BandedMatrix{T}(undef, dims, bandwidths(a))
-
-Base.promote_rule(::Type{BandedMatrix{T}}, ::Type{BandedMatrix{V}}) where {T,V} = BandedMatrix{promote_type(T,V)}
-
+Base.promote_rule(::Type{BandedMatrix{T1, C1}}, ::Type{BandedMatrix{T2, C2}}) where {T1,C1, T2,C2} =
+    BandedMatrix{promote_type(T1,T2), promote_type(C1, C2)}
 
 
 for (op,bop) in ((:(Base.rand),:brand),)
@@ -124,10 +124,12 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 brand
 
 ## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
-function BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T
+BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T =
+    BandedMatrix{T, Matrix{T}}(A, bnds)
+function BandedMatrix{T, C}(A::AbstractMatrix, bnds::NTuple{2,Int}) where {T, C <: AbstractMatrix{T}}
     (n,m) = size(A)
     (l,u) = bnds
-    ret = BandedMatrix{T}(undef, n, m, bnds...)
+    ret = BandedMatrix{T, C}(undef, n, m, l, u)
     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
         inbands_setindex!(ret, A[k,j], k, j)
     end
@@ -139,9 +141,6 @@ BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
 
 BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
-
-BandedMatrix(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(Z, bnds)
-
 
 BandedMatrix(E::Eye{T}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(E, bnds)
 function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Int}) where T
