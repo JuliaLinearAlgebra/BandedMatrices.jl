@@ -216,3 +216,53 @@ end
         @test Matrix(B) == zeros(10,10)
     end
 end
+
+
+@testset "Convertions" begin
+    @testset "banded -> some matrix" begin
+        banded = brand(Int32, 10,12,2,3)
+
+        matrix = Matrix(banded)
+        @test matrix isa Matrix{Int32}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        matrix = convert(Matrix, banded)
+        @test matrix isa Matrix{Int32}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        matrix = convert(Matrix{Int64}, banded)
+        @test matrix isa Matrix{Int64}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        matrix = convert(BandedMatrix, banded)
+        @test matrix === banded
+
+        matrix = convert(BandedMatrix{Int64}, banded)
+        @test matrix isa BandedMatrix{Int64, Matrix{Int64}}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+    end
+
+    @testset "some matrix -> banded" begin
+        matrix = rand(Int32, 10, 12)
+
+        banded = convert(BandedMatrix, matrix)
+        @test banded isa BandedMatrix{Int32, Matrix{Int32}}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        banded = convert(BandedMatrix{Int64}, matrix)
+        @test banded isa BandedMatrix{Int64, Matrix{Int64}}
+
+        banded = convert(BandedMatrix{Int16}, matrix)
+        @test banded isa BandedMatrix{Int32, Matrix{Int32}}
+    end
+end

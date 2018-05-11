@@ -77,7 +77,6 @@ for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
 end
 
 
-#TODO: Add test
 function Base.convert(::Type{BM}, M::Matrix) where {BM<:BandedMatrix}
     ret = BandedMatrix{eltype(BM) == Any ? eltype(M) :
                         promote_type(eltype(BM),eltype(M))}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
