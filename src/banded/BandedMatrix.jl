@@ -48,7 +48,7 @@ BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::In
 BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} =
     _BandedMatrix(C(undef,max(0,b+a+1),m),n,a,b)
 BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number, C<:AbstractMatrix{T}} =
-    _BandedMatrix(zeros(T,max(0,b+a+1),m),n,a,b)
+    _BandedMatrix(fill!(similar(C, max(0,b+a+1),m), zero(T)),n,a,b)
 BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
     BandedMatrix{T, Matrix{T}}(undef,n,m,a,b)
 BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
