@@ -262,7 +262,7 @@ end
         banded = convert(BandedMatrix{Int64}, matrix)
         @test banded isa BandedMatrix{Int64, Matrix{Int64}}
 
-        banded = convert(BandedMatrix{Int16}, matrix)
-        @test banded isa BandedMatrix{Int32, Matrix{Int32}}
+        banded[5, 5] = typemax(Int32)
+        @test_throws InexactError convert(BandedMatrix{Int16}, matrix)
     end
 end

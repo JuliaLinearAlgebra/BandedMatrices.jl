@@ -77,14 +77,15 @@ for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
 end
 
 
-function Base.convert(::Type{BM}, M::Matrix) where {BM<:BandedMatrix}
-    ret = BandedMatrix{eltype(BM) == Any ? eltype(M) :
-                        promote_type(eltype(BM),eltype(M))}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+function Base.convert(BM::Type{<: BandedMatrix{T}}, M::Matrix) where {T}
+    ret = BandedMatrix{T}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
     for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = M[k,j]
+        ret[k,j] = convert(T, M[k,j])
     end
     ret
 end
+
+Base.convert(BM::Type{BandedMatrix}, M::Matrix) = convert(BM{eltype(M)}, M)
 
 Base.copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.m, B.l, B.u)
 
