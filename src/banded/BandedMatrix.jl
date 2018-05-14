@@ -65,7 +65,7 @@ BandedMatrix(M::BandedMatrix{V}) where {V} =
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.m, M.l, M.u)
-convert(::Type{BandedMatrix}, M::BandedMatrix{V}) where {V} = M
+convert(::Type{BandedMatrix}, M::BandedMatrix) = M
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin
