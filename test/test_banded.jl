@@ -258,11 +258,27 @@ end
         for i in 1:length(matrix)
             @test matrix[i] == banded[i]
         end
+        @test convert(BandedMatrix, banded) === banded
 
         banded = convert(BandedMatrix{Int64}, matrix)
         @test banded isa BandedMatrix{Int64, Matrix{Int64}}
+        @test convert(BandedMatrix{Int32}, banded) isa BandedMatrix{Int32}
 
         banded[5, 5] = typemax(Int32)
         @test_throws InexactError convert(BandedMatrix{Int16}, matrix)
+
+        matrix = convert(JLArray, rand(Int32, 10, 12))
+        banded = @inferred BandedMatrix{eltype(matrix), typeof(matrix)}(matrix, (1, 1))
+        @test matrix isa JLArray
+        @test @inferred(convert(BandedMatrix, banded)) === banded
+        @test convert(BandedMatrix{eltype(matrix)}, banded) === banded
+        @test convert(BandedMatrix{eltype(matrix), typeof(matrix)}, banded) === banded
+        @test @inferred(convert(BandedMatrix{<:, JLArray}, banded)) === banded
+        @test @inferred(convert(BandedMatrix{Int64}, banded)) == banded
+        @test convert(BandedMatrix{Int64}, banded).data isa JLArray{Int64}
+        @test convert(BandedMatrix{Int64, JLArray{Int64, 2}}, banded) == banded
+        @test convert(BandedMatrix{Int64, JLArray{Int64, 2}}, banded).data isa JLArray{Int64, 2}
+        @test @inferred(convert(BandedMatrix{<:, Matrix}, banded)) == banded
+        @test convert(BandedMatrix{<:, Matrix}, banded).data isa Matrix{Int32}
     end
 end

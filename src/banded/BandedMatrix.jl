@@ -66,6 +66,10 @@ convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.m, M.l, M.u)
 convert(::Type{BandedMatrix}, M::BandedMatrix) = M
+function convert(BM::Type{<: BandedMatrix}, M::BandedMatrix)
+    M.data isa fieldtype(BM, :data) && return M
+    _BandedMatrix(convert(fieldtype(BM, :data), M.data), M.m, M.l, M.u)
+end
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin
