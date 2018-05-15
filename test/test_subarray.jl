@@ -1,4 +1,6 @@
+using Base.Test
 using BandedMatrices, Compat
+using GPUArrays: JLArray
 import Compat.LinearAlgebra: axpy!
 
 # SubArray
@@ -86,5 +88,20 @@ end
             @test V*S ≈ Matrix(V)*Matrix(S)
             @test S*V ≈ Matrix(S)*Matrix(V)
         end
+    end
+end
+
+@testset "BandedMatrix SubArray conversion" begin
+    matrix = rand(Int32, 10, 12)
+    banded = @inferred BandedMatrix{eltype(matrix), typeof(matrix)}(matrix, (1, 1))
+
+    indices = 2:8, 3:9, 5:9
+    @testset "view $kr, $jr" for kr in indices, jr in indices
+        bview = @inferred view(banded, kr, jr)
+        @test bview isa BandedMatrices.BandedSubBandedMatrix{Int32}
+        @test bview isa BandedMatrices.BandedSubBandedMatrix{Int32, Matrix{Int32}}
+
+        @test @inferred(convert(BandedMatrix, bview)) isa BandedMatrix{Int32, Matrix{Int32}}
+        @test convert(BandedMatrix, bview) == banded[kr, jr]
     end
 end
