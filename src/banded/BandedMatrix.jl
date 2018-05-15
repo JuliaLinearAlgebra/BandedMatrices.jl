@@ -782,7 +782,7 @@ end
 end
 
 
-function Base.convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix{T}) where {T}
+function Base.convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
     A=parent(S)
     kr,jr=parentindices(S)
     shft=kr[1]-jr[1]
@@ -792,11 +792,11 @@ function Base.convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix{T}) where {
     elseif shft > l
         # need to add extra zeros at top since negative bandwidths not supported
         # new bandwidths = (0,u+shft)
-        dat = zeros(T,u+shft+1,length(jr))
+        dat = zeros(eltype(S),u+shft+1,length(jr))
         dat[1:l+u+1,:] = A.data[:,jr]
         _BandedMatrix(dat,length(kr),0,u+shft)
     else  # shft < -u
-        dat = zeros(T,l-shft+1,length(jr))
+        dat = zeros(eltype(S),l-shft+1,length(jr))
         dat[-shft-u+1:end,:] = A.data[:,jr]  # l-shft+1 - (-shft-u) == l+u+1
         _BandedMatrix(dat,length(kr),l-shft,0)
     end
