@@ -92,16 +92,17 @@ end
 end
 
 @testset "BandedMatrix SubArray conversion" begin
-    matrix = rand(Int32, 10, 12)
-    banded = @inferred BandedMatrix{eltype(matrix), typeof(matrix)}(matrix, (1, 1))
+    @testset "Container $C" for C in (Matrix{Int32}, JLArray{Int32, 2})
+        matrix = convert(C, rand(Int32, 10, 12))
+        T = eltype(matrix)
 
-    indices = 2:8, 3:9, 5:9
-    @testset "view $kr, $jr" for kr in indices, jr in indices
-        bview = @inferred view(banded, kr, jr)
-        @test bview isa BandedMatrices.BandedSubBandedMatrix{Int32}
-        @test bview isa BandedMatrices.BandedSubBandedMatrix{Int32, Matrix{Int32}}
-
-        @test @inferred(convert(BandedMatrix, bview)) isa BandedMatrix{Int32, Matrix{Int32}}
-        @test convert(BandedMatrix, bview) == banded[kr, jr]
+        banded = @inferred BandedMatrix{T, C}(matrix, (1, 1))
+        indices = 2:8, 3:9, 5:9
+        @testset "view $kr, $jr" for kr in indices, jr in indices
+            bview = @inferred view(banded, kr, jr)
+            @test bview isa BandedMatrices.BandedSubBandedMatrix{T, C}
+            @test @inferred(convert(BandedMatrix, bview)) isa BandedMatrix{T, C}
+            @test convert(BandedMatrix, bview) == banded[kr, jr]
+        end
     end
 end

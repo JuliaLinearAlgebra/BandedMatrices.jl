@@ -788,18 +788,17 @@ function Base.convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
     shft=kr[1]-jr[1]
     l,u=bandwidths(A)
     if -u ≤ shft ≤ l
-        _BandedMatrix(A.data[:,jr],length(kr),l-shft,u+shft)
+        data = A.data[:, jr]
     elseif shft > l
         # need to add extra zeros at top since negative bandwidths not supported
         # new bandwidths = (0,u+shft)
-        dat = zeros(eltype(S),u+shft+1,length(jr))
-        dat[1:l+u+1,:] = A.data[:,jr]
-        _BandedMatrix(dat,length(kr),0,u+shft)
+        data = fill!(similar(A.data,u+shft+1,length(jr)), zero(eltype(A.data)))
+        data[1:l+u+1,:] = A.data[:,jr]
     else  # shft < -u
-        dat = zeros(eltype(S),l-shft+1,length(jr))
-        dat[-shft-u+1:end,:] = A.data[:,jr]  # l-shft+1 - (-shft-u) == l+u+1
-        _BandedMatrix(dat,length(kr),l-shft,0)
+        data = fill!(similar(A.data,l-shft+1,length(jr)), zero(eltype(A.data)))
+        data[-shft-u+1:end,:] = A.data[:,jr]  # l-shft+1 - (-shft-u) == l+u+1
     end
+    _BandedMatrix(data,length(kr),max(0, l-shft),max(0, u+shft))
 end
 
 ## These routines give access to the necessary information to call BLAS
