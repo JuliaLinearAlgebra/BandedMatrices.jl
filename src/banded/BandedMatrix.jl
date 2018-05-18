@@ -62,34 +62,51 @@ BandedMatrix{V}(M::BandedMatrix) where {V} =
 BandedMatrix(M::BandedMatrix{V}) where {V} =
         _BandedMatrix(AbstractMatrix{V}(M.data), M.m, M.l, M.u)
 
-convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
-convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
+Base.convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
+Base.convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.m, M.l, M.u)
-convert(::Type{BandedMatrix}, M::BandedMatrix) = M
-function convert(BM::Type{<: BandedMatrix}, M::BandedMatrix)
-    M.data isa fieldtype(BM, :data) && return M
-    _BandedMatrix(convert(fieldtype(BM, :data), M.data), M.m, M.l, M.u)
+Base.convert(::Type{BandedMatrix}, M::BandedMatrix) = M
+function Base.convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C
+    M.data isa C && return M
+    _BandedMatrix(convert(C, M.data), M.m, M.l, M.u)
+end
+function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}}
+    M.data isa C && return M
+    _BandedMatrix(convert(C, M.data), M.m, M.l, M.u)
 end
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin
         Base.convert(::Type{$MAT{T}}, M::BandedMatrix) where {T} = convert(BandedMatrix{T}, M)
-        Base.convert(::Type{$MAT}, M::BandedMatrix{T}) where {T} = convert(BandedMatrix{T}, M)
+        Base.convert(::Type{$MAT}, M::BandedMatrix) = M
         $MAT{T}(M::BandedMatrix) where {T} = BandedMatrix{T}(M)
-        $MAT(M::BandedMatrix{T}) where T = BandedMatrix{T}(M)
+        $MAT(M::BandedMatrix{T}) where {T} = BandedMatrix{T}(M)
     end
 end
 
-
-function Base.convert(BM::Type{<: BandedMatrix{T}}, M::Matrix) where {T}
-    ret = BandedMatrix{T}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+function Base.convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
+    const Container = typeof(convert(C, similar(M, 0, 0)))
+    const T = eltype(Container)
+    ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
     ret
 end
 
-Base.convert(BM::Type{BandedMatrix}, M::Matrix) = convert(BM{eltype(M)}, M)
+function Base.convert(BM::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
+    Container = typeof(convert(C, similar(M, T, 0, 0)))
+    ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+    for k=1:size(M,1),j=1:size(M,2)
+        ret[k,j] = convert(T, M[k,j])
+    end
+    ret
+end
+
+Base.convert(BM::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
+    convert(BandedMatrix{T, typeof(similar(M, T, 0, 0))}, M)
+
+Base.convert(BM::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
 
 Base.copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.m, B.l, B.u)
 
