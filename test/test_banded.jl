@@ -1,5 +1,6 @@
 using BandedMatrices, Compat.Test, Compat.LinearAlgebra, Compat.SparseArrays
 using GPUArrays: JLArray
+using Compat
 import BandedMatrices: _BandedMatrix
 
 # some basic operations
@@ -214,5 +215,103 @@ end
         @test_throws BandError fill!(B, 1)
         fill!(B, 0)
         @test Matrix(B) == zeros(10,10)
+    end
+end
+
+
+@testset "Convertions" begin
+    @testset "banded -> some matrix" begin
+        banded = brand(Int32, 10,12,2,3)
+
+        matrix = Matrix(banded)
+        @test matrix isa Matrix{Int32}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        matrix = convert(Matrix, banded)
+        @test matrix isa Matrix{Int32}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        matrix = convert(Matrix{Int64}, banded)
+        @test matrix isa Matrix{Int64}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+
+        matrix = convert(BandedMatrix, banded)
+        @test matrix === banded
+
+        matrix = convert(BandedMatrix{Int64}, banded)
+        @test matrix isa BandedMatrix{Int64, Matrix{Int64}}
+        for i in 1:length(matrix)
+            @test matrix[i] == banded[i]
+        end
+    end
+
+    @testset "some matrix -> banded" begin
+        matrix = rand(Int32, 10, 12)
+
+        types = Dict(BandedMatrix => Matrix{Int32},
+                     BandedMatrix{Int64} => Matrix{Int64},
+                     BandedMatrix{Int64, JLArray{Int64, 2}} => JLArray{Int64, 2})
+        @testset "Matrix to $Final via $Step" for (Step, Final) in types
+            banded = @inferred convert(Step, matrix)
+            @test banded isa BandedMatrix{eltype(Final), Final}
+            @test banded == matrix
+            @test @inferred(convert(BandedMatrix, banded)) === banded
+        end
+
+        # Note: @inferred convert(JLArray, matrix) throws
+        banded = convert(BandedMatrix{Int64, JLArray}, matrix)
+        @test banded isa BandedMatrix{Int64, JLArray{Int64, 2}}
+        @test banded == matrix
+
+        banded = convert(BandedMatrix{<:, JLArray}, matrix)
+        @test banded isa BandedMatrix{Int32, JLArray{Int32, 2}}
+        @test banded == matrix
+
+        jlarray = convert(JLArray, rand(Int32, 10, 12))
+        types = Dict(BandedMatrix => JLArray{Int32, 2},
+                     BandedMatrix{Int64} => JLArray{Int64, 2},
+                     BandedMatrix{Int64, Matrix} => Matrix{Int64},
+                     BandedMatrix{<:, Matrix} => Matrix{Int32},
+                     BandedMatrix{<:, Matrix{Int32}} => Matrix{Int32},
+                     BandedMatrix{<:, Matrix{Int64}} => Matrix{Int64},
+                     BandedMatrix{Int64, Matrix{Int64}} => Matrix{Int64})
+        @testset "JLArray to $Final via $Step" for (Step, Final) in types
+            banded = @inferred convert(Step, jlarray)
+            @test banded isa BandedMatrix{eltype(Final), Final}
+            @test banded == jlarray
+        end
+
+        banded[5, 5] = typemax(Int32)
+        @test_throws InexactError convert(BandedMatrix{Int16}, matrix)
+        @test_throws InexactError convert(BandedMatrix{Int16, JLArray}, matrix)
+        @test_throws InexactError convert(BandedMatrix{Int16, JLArray{Int16}}, matrix)
+
+        banded = @inferred BandedMatrix{eltype(jlarray), typeof(jlarray)}(jlarray, (1, 1))
+        types = [BandedMatrix, BandedMatrix{Int32},
+                 BandedMatrix{<:, JLArray},
+                 BandedMatrix{<:, JLArray{Int32}},
+                 BandedMatrix{<:, JLArray{Int32, 2}}]
+        @testset "no-op banded to banded via $Step" for Step in types
+            @test @inferred(convert(Step, banded)) === banded
+        end
+
+        types = Dict(BandedMatrix{Int64} => JLArray{Int64, 2},
+                     BandedMatrix{Int64, Matrix} => Matrix{Int64},
+                     BandedMatrix{<:, JLArray{Int64, 2}} => JLArray{Int64, 2},
+                     BandedMatrix{<:, Matrix} => Matrix{Int32},
+                     BandedMatrix{<:, Matrix{Int32}} => Matrix{Int32},
+                     BandedMatrix{<:, Matrix{Int64}} => Matrix{Int64},
+                     BandedMatrix{Int64, Matrix{Int64}} => Matrix{Int64})
+        @testset "banded to banded $Final via $Step" for (Step, Final) in types
+            newbanded = @inferred convert(Step, banded)
+            @test newbanded isa BandedMatrix{eltype(Final), Final}
+            @test newbanded == banded
+        end
     end
 end
