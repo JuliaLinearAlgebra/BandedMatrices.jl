@@ -314,4 +314,45 @@ end
             @test newbanded == banded
         end
     end
+
+    @testset "similar" begin
+        banded = brand(Int32, 10, 12, 1, 2)
+        @test @inferred(similar(banded)) isa BandedMatrix{Int32, Matrix{Int32}}
+        @test size(similar(banded)) == size(banded)
+        @test similar(banded).l == banded.l
+        @test similar(banded).u == banded.u
+
+        banded = convert(BandedMatrix{<:, JLArray}, brand(Int32, 10, 12, 1, 2))
+        @test banded isa BandedMatrix{Int32, JLArray{Int32, 2}}
+        @test @inferred(similar(banded)) isa BandedMatrix{Int32, JLArray{Int32, 2}}
+        @test size(similar(banded)) == size(banded)
+        @test similar(banded).l == banded.l
+        @test similar(banded).u == banded.u
+
+        banded = convert(BandedMatrix{<:, JLArray}, brand(Int32, 10, 12, 1, 2))
+        @test @inferred(similar(banded, Int64)) isa BandedMatrix{Int64, JLArray{Int64, 2}}
+        @test size(similar(banded, Int64)) == size(banded)
+        @test similar(banded, Int64).l == banded.l
+        @test similar(banded, Int64).u == banded.u
+
+        bview = @view banded[1:5, 1:5]
+        expected = convert(BandedMatrix, bview)
+        @test @inferred(similar(bview)) isa BandedMatrix{Int32, JLArray{Int32, 2}}
+        @test @inferred(similar(bview, Int64)) isa BandedMatrix{Int64, JLArray{Int64, 2}}
+        @test size(similar(bview, Int64)) == size(expected)
+        @test bandwidth(similar(bview, Int64), 1) == bandwidth(expected, 1)
+        @test bandwidth(similar(bview, Int64), 2) == bandwidth(expected, 2)
+
+        bview = @view banded[1:5, 6:8]
+        expected = convert(BandedMatrix, bview)
+        @test size(similar(bview, Int64)) == size(expected)
+        @test bandwidth(similar(bview, Int64), 1) == bandwidth(expected, 1)
+        @test bandwidth(similar(bview, Int64), 2) == bandwidth(expected, 2)
+
+        bview = @view banded[6:8, 1:5]
+        expected = convert(BandedMatrix, bview)
+        @test size(similar(bview, Int64)) == size(expected)
+        @test bandwidth(similar(bview, Int64), 1) == bandwidth(expected, 1)
+        @test bandwidth(similar(bview, Int64), 2) == bandwidth(expected, 2)
+    end
 end
