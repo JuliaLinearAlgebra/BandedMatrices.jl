@@ -208,8 +208,37 @@ BandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...) =
     BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv...)
 
 
-Base.similar(B::BandedMatrix) =
-    BandedMatrix{eltype(B)}(size(B,1), size(B,2), bandwidth(B,1), bandwidth(B,2))
+"""
+    similar(bm::BandedMatrix, [T::Type], [n::Integer, m::Integer, [l::Integer, u::Integer]])
+    similar(bm::BandedSubBandedMatrix, [T::Type], [n::Integer, m::Integer, [l::Integer, u::Integer]])
+
+Creates a banded matrix similar in type to the input. Where the eltype `T`, the
+sizes `n`, and `m`, the band limits `l`, and `u` are not provided, they default
+to the values in the input banded matrix.
+"""
+function Base.similar(bm::BandedMatrix, T::Type=eltype(bm),
+                      n::Integer=size(bm, 1), m::Integer=size(bm, 2),
+                      l::Integer=bandwidth(bm, 1), u::Integer=bandwidth(bm, 2))
+    data = similar(bm.data, T, max(0, u+l+1), m)
+    _BandedMatrix(data, n, l, u)
+end
+
+Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), m, n)
+Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
+    similar(bm, eltype(bm), m, n, l, u)
+
+
+function _shift(bm::BandedSubBandedMatrix)
+    kr,jr=parentindices(bm)
+    kr[1]-jr[1]
+end
+
+function Base.similar(bm::BandedSubBandedMatrix, T::Type=eltype(bm),
+                      n::Integer=size(bm, 1), m::Integer=size(bm, 2),
+                      l::Integer=max(0, bandwidth(parent(bm), 1) - _shift(bm)),
+                      u::Integer=max(0, bandwidth(parent(bm), 2) + _shift(bm)))
+    similar(bm.parent, T, n, m, l, u)
+end
 
 
 ## Abstract Array Interface
