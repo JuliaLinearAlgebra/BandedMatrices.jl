@@ -32,10 +32,7 @@ for (fname, elty) in ((:dgbmv_,:Float64),
     end
 end
 
-gbmv!(trans::Char, m::Int, kl::Int, ku::Int, alpha::T,
-               A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
-    gbmv!(trans,m,size(A,2),kl,ku,alpha,
-          pointer(A),max(1,stride(A,2)),pointer(x),stride(x,1),beta,y,stride(y,1))
+
 
 
 for (fname, elty) in ((:dsbmv_,:Float64),
