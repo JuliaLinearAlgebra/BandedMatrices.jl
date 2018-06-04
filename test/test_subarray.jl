@@ -1,6 +1,4 @@
-using Base.Test
-using BandedMatrices, Compat
-using GPUArrays: JLArray
+using BandedMatrices, FillArrays, Compat, Compat.Test
 import Compat.LinearAlgebra: axpy!
 
 # SubArray
@@ -92,7 +90,7 @@ end
 end
 
 @testset "BandedMatrix SubArray conversion" begin
-    @testset "Container $C" for C in (Matrix{Int32}, JLArray{Int32, 2})
+    @testset "Container $C" for C in (Matrix{Int32}, MyMatrix{Int32})
         matrix = convert(C, rand(Int32, 10, 12))
         T = eltype(matrix)
 

@@ -587,7 +587,7 @@ if VERSION < v"0.7-"
                 BandedMatrices.banded_matvecmul!(c, 'T', A, b)
 
             Base.:*(A::$Typ{U}, b::StridedVector{V}) where {U, V} =
-                Base.LinAlg.A_mul_B!(Vector{promote_type(U, V)}(undef, size(A, 1)), A, b)
+                Base.LinAlg.A_mul_B!(similar(b, promote_type(U, V), size(A, 1)), A, b)
 
 
             Base.LinAlg.A_mul_B!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)

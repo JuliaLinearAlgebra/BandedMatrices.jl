@@ -1,7 +1,30 @@
-using BandedMatrices, Compat.Test, Compat.LinearAlgebra, Compat.SparseArrays
-using GPUArrays: JLArray
+using BandedMatrices, FillArrays, Compat.Test, Compat.LinearAlgebra
 using Compat
 import BandedMatrices: _BandedMatrix
+
+# used to test general matrix backends
+struct MyMatrix{T} <: AbstractMatrix{T}
+    A::Matrix{T}
+end
+
+MyMatrix{T}(::UndefInitializer, n::Int, m::Int) where T = MyMatrix{T}(Array{T}(undef, n, m))
+MyMatrix(A::AbstractMatrix{T}) where T = MyMatrix{T}(Matrix{T}(A))
+Base.convert(::Type{MyMatrix{T}}, A::MyMatrix{T}) where T = A
+Base.convert(::Type{MyMatrix{T}}, A::MyMatrix) where T = MyMatrix(convert(AbstractArray{T}, A.A))
+Base.convert(::Type{MyMatrix}, A::MyMatrix)= A
+Base.convert(::Type{AbstractArray{T}}, A::MyMatrix) where T = MyMatrix(convert(AbstractArray{T}, A.A))
+Base.convert(::Type{AbstractMatrix{T}}, A::MyMatrix) where T = MyMatrix(convert(AbstractArray{T}, A.A))
+Base.convert(::Type{MyMatrix{T}}, A::AbstractArray{T}) where T = MyMatrix{T}(A)
+Base.convert(::Type{MyMatrix{T}}, A::AbstractArray) where T = MyMatrix{T}(convert(AbstractArray{T}, A))
+Base.convert(::Type{MyMatrix}, A::AbstractArray{T}) where T = MyMatrix{T}(A)
+Base.getindex(A::MyMatrix, kj...) = A.A[kj...]
+Base.getindex(A::MyMatrix, ::Colon, j::AbstractVector) = MyMatrix(A.A[:,j])
+Base.setindex!(A::MyMatrix, v, kj...) = setindex!(A.A, v, kj...)
+Base.size(A::MyMatrix) = size(A.A)
+Base.similar(::Type{MyMatrix{T}}, m::Int, n::Int) where T = MyMatrix{T}(undef, m, n)
+Base.similar(::MyMatrix{T}, m::Int, n::Int) where T = MyMatrix{T}(undef, m, n)
+Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef, m, n)
+
 
 # some basic operations
 @testset "Creating BandedMatrix" begin
@@ -15,12 +38,12 @@ import BandedMatrices: _BandedMatrix
     @test all(BandedMatrix{Float64}(0 => 1:5, 2=> 2:3, -3=> 1:7) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
     @test all(BandedMatrix{Float64}((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10),(4,3)) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
 
-    matrix = JLArray(Zeros{Int64}(5, 5))
+    matrix = MyMatrix(ones(Int64,5,5))
     @test !(matrix isa Matrix)
     @test BandedMatrix(matrix) isa BandedMatrix{Int64, Matrix{Int64}}
     @test BandedMatrix(matrix).data isa Matrix{Int64}
     @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)) isa BandedMatrix{Int64, typeof(matrix)}
-    @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)).data isa JLArray
+    @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)).data isa typeof(matrix)
     @test_throws UndefRefError BandedMatrix{Vector{Float64}}(undef, (5,5), (1,1))[1,1]
 end
 
@@ -193,10 +216,6 @@ end
 end
 
 
-
-
-
-
 @testset "BandedMatrix interface" begin
     # check that col/rowstop is ≥ 0
     let A = brand(3,4,-2,2)
@@ -219,7 +238,7 @@ end
 end
 
 
-@testset "Convertions" begin
+@testset "Conversions" begin
     @testset "banded -> some matrix" begin
         banded = brand(Int32, 10,12,2,3)
 
@@ -256,7 +275,7 @@ end
 
         types = Dict(BandedMatrix => Matrix{Int32},
                      BandedMatrix{Int64} => Matrix{Int64},
-                     BandedMatrix{Int64, JLArray{Int64, 2}} => JLArray{Int64, 2})
+                     BandedMatrix{Int64, MyMatrix{Int64}} => MyMatrix{Int64})
         @testset "Matrix to $Final via $Step" for (Step, Final) in types
             banded = @inferred convert(Step, matrix)
             @test banded isa BandedMatrix{eltype(Final), Final}
@@ -264,24 +283,24 @@ end
             @test @inferred(convert(BandedMatrix, banded)) === banded
         end
 
-        # Note: @inferred convert(JLArray, matrix) throws
-        banded = convert(BandedMatrix{Int64, JLArray}, matrix)
-        @test banded isa BandedMatrix{Int64, JLArray{Int64, 2}}
+        # Note: @inferred convert(MyMatrix, matrix) throws
+        banded = convert(BandedMatrix{Int64, MyMatrix}, matrix)
+        @test banded isa BandedMatrix{Int64, MyMatrix{Int64}}
         @test banded == matrix
 
-        banded = convert(BandedMatrix{<:, JLArray}, matrix)
-        @test banded isa BandedMatrix{Int32, JLArray{Int32, 2}}
+        banded = convert(BandedMatrix{<:, MyMatrix}, matrix)
+        @test banded isa BandedMatrix{Int32, MyMatrix{Int32}}
         @test banded == matrix
 
-        jlarray = convert(JLArray, rand(Int32, 10, 12))
-        types = Dict(BandedMatrix => JLArray{Int32, 2},
-                     BandedMatrix{Int64} => JLArray{Int64, 2},
+        jlarray = convert(MyMatrix, rand(Int32, 10, 12))
+        types = Dict(BandedMatrix => MyMatrix{Int32},
+                     BandedMatrix{Int64} => MyMatrix{Int64},
                      BandedMatrix{Int64, Matrix} => Matrix{Int64},
                      BandedMatrix{<:, Matrix} => Matrix{Int32},
                      BandedMatrix{<:, Matrix{Int32}} => Matrix{Int32},
                      BandedMatrix{<:, Matrix{Int64}} => Matrix{Int64},
                      BandedMatrix{Int64, Matrix{Int64}} => Matrix{Int64})
-        @testset "JLArray to $Final via $Step" for (Step, Final) in types
+        @testset "MyMatrix to $Final via $Step" for (Step, Final) in types
             banded = @inferred convert(Step, jlarray)
             @test banded isa BandedMatrix{eltype(Final), Final}
             @test banded == jlarray
@@ -289,21 +308,20 @@ end
 
         banded[5, 5] = typemax(Int32)
         @test_throws InexactError convert(BandedMatrix{Int16}, matrix)
-        @test_throws InexactError convert(BandedMatrix{Int16, JLArray}, matrix)
-        @test_throws InexactError convert(BandedMatrix{Int16, JLArray{Int16}}, matrix)
+        @test_throws InexactError convert(BandedMatrix{Int16, MyMatrix}, matrix)
+        @test_throws InexactError convert(BandedMatrix{Int16, MyMatrix{Int16}}, matrix)
 
         banded = @inferred BandedMatrix{eltype(jlarray), typeof(jlarray)}(jlarray, (1, 1))
         types = [BandedMatrix, BandedMatrix{Int32},
-                 BandedMatrix{<:, JLArray},
-                 BandedMatrix{<:, JLArray{Int32}},
-                 BandedMatrix{<:, JLArray{Int32, 2}}]
+                 BandedMatrix{<:, MyMatrix},
+                 BandedMatrix{<:, MyMatrix{Int32}}]
         @testset "no-op banded to banded via $Step" for Step in types
             @test @inferred(convert(Step, banded)) === banded
         end
 
-        types = Dict(BandedMatrix{Int64} => JLArray{Int64, 2},
+        types = Dict(BandedMatrix{Int64} => MyMatrix{Int64},
                      BandedMatrix{Int64, Matrix} => Matrix{Int64},
-                     BandedMatrix{<:, JLArray{Int64, 2}} => JLArray{Int64, 2},
+                     BandedMatrix{<:, MyMatrix{Int64}} => MyMatrix{Int64},
                      BandedMatrix{<:, Matrix} => Matrix{Int32},
                      BandedMatrix{<:, Matrix{Int32}} => Matrix{Int32},
                      BandedMatrix{<:, Matrix{Int64}} => Matrix{Int64},
@@ -322,23 +340,23 @@ end
         @test similar(banded).l == banded.l
         @test similar(banded).u == banded.u
 
-        banded = convert(BandedMatrix{<:, JLArray}, brand(Int32, 10, 12, 1, 2))
-        @test banded isa BandedMatrix{Int32, JLArray{Int32, 2}}
-        @test @inferred(similar(banded)) isa BandedMatrix{Int32, JLArray{Int32, 2}}
+        banded = convert(BandedMatrix{<:, MyMatrix}, brand(Int32, 10, 12, 1, 2))
+        @test banded isa BandedMatrix{Int32, MyMatrix{Int32}}
+        @test @inferred(similar(banded)) isa BandedMatrix{Int32, MyMatrix{Int32}}
         @test size(similar(banded)) == size(banded)
         @test similar(banded).l == banded.l
         @test similar(banded).u == banded.u
 
-        banded = convert(BandedMatrix{<:, JLArray}, brand(Int32, 10, 12, 1, 2))
-        @test @inferred(similar(banded, Int64)) isa BandedMatrix{Int64, JLArray{Int64, 2}}
+        banded = convert(BandedMatrix{<:, MyMatrix}, brand(Int32, 10, 12, 1, 2))
+        @test @inferred(similar(banded, Int64)) isa BandedMatrix{Int64, MyMatrix{Int64}}
         @test size(similar(banded, Int64)) == size(banded)
         @test similar(banded, Int64).l == banded.l
         @test similar(banded, Int64).u == banded.u
 
         bview = @view banded[1:5, 1:5]
         expected = convert(BandedMatrix, bview)
-        @test @inferred(similar(bview)) isa BandedMatrix{Int32, JLArray{Int32, 2}}
-        @test @inferred(similar(bview, Int64)) isa BandedMatrix{Int64, JLArray{Int64, 2}}
+        @test @inferred(similar(bview)) isa BandedMatrix{Int32, MyMatrix{Int32}}
+        @test @inferred(similar(bview, Int64)) isa BandedMatrix{Int64, MyMatrix{Int64}}
         @test size(similar(bview, Int64)) == size(expected)
         @test bandwidth(similar(bview, Int64), 1) == bandwidth(expected, 1)
         @test bandwidth(similar(bview, Int64), 2) == bandwidth(expected, 2)
