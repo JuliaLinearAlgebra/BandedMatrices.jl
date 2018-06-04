@@ -23,8 +23,8 @@ struct BandedLayout{T} <: MemoryLayout{T} end
 struct SymBandedLayout{T} <: MemoryLayout{T} end
 
 MemoryLayout(A::AbstractArray{T}) where T = UnknownLayout{T}()
-MemoryLayout(A::Vector{T}) where T = DenseColumnMajor{T}()
-MemoryLayout(A::Matrix{T}) where T = DenseColumnMajor{T}()
+MemoryLayout(A::DenseVector{T}) where T = DenseColumnMajor{T}()
+MemoryLayout(A::DenseMatrix{T}) where T = DenseColumnMajor{T}()
 
 import Base: AbstractCartesianIndex, Slice, RangeIndex
 
@@ -92,7 +92,7 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
 banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector) =
     _banded_matvecmul!(c, tA, A, b, MemoryLayout(c), MemoryLayout(A), MemoryLayout(b))
 _banded_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{T}, b::AbstractVector{T},
-                   ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T <: BlasFloat} =
+                   ::AbstractStridedLayout{T}, ::BandedLayout{T}, ::AbstractStridedLayout{T}) where {T <: BlasFloat} =
     generally_banded_matvecmul!(c, tA, A, b)
 _banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b::AbstractVector,
                    notblasc, notblasA, notblasb) =
@@ -207,7 +207,7 @@ _positively_banded_matvecmul!(c::AbstractVector, tA::Char, A::AbstractMatrix, b:
 
 # use BLAS routine for positively banded BlasBanded
 _positively_banded_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{T}, b::AbstractVector{T},
-                                ::StridedLayout{T}, ::BandedLayout{T}, ::StridedLayout{T}) where {T <: BlasFloat} =
+                                ::AbstractStridedLayout{T}, ::BandedLayout{T}, ::AbstractStridedLayout{T}) where {T <: BlasFloat} =
     gbmv!(tA, one(T), A, b, zero(T), c)
 
 positively_banded_matmatmul!(C::AbstractMatrix, tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix) =

@@ -1,6 +1,17 @@
+gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
+   Base.BLAS.gbmv!(trans, m, kl, ku, alpha, A, x, beta, y)
+gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::AbstractMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
+   gbmv!(trans, m, size(A,2), kl, ku, alpha,
+      pointer(A), leadingdimension(A), pointer(x), stride(x,1), beta, pointer(y), stride(y,1))
+gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::BandedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
+   gbmv!(trans, m, kl, ku, alpha, A.data, x, beta, y) # unroll the data
+
+# this supports non-strided matrices
+# TODO: remove in 0.7
 gbmv!(trans::Char, α::T, A::AbstractMatrix{T}, x::StridedVector{T}, β::T, y::StridedVector{T}) where {T<:BlasFloat} =
-    gbmv!(trans, size(A,1), size(A,2), bandwidth(A,1), bandwidth(A,2), α,
-          pointer(A), leadingdimension(A), pointer(x), stride(x,1), β, pointer(y), stride(y,1))
+    gbmv!(trans, size(A,1), bandwidth(A,1), bandwidth(A,2), α, A, x, β, y)
+
+
 
 
 # The following routines multiply
