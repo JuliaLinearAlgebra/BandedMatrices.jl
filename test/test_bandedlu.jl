@@ -1,4 +1,4 @@
-using BandedMatrices, Compat.Test, Compat.Random
+using Compat, BandedMatrices, Compat.Test, Compat.Random
 import BandedMatrices: _BandedMatrix
 
 # set prng to some value that avoids test failure
@@ -7,9 +7,9 @@ struct _foo <: Number end
 
 if VERSION < v"0.7-"
     const luf = lufact
-    const ldiv! = A_ldiv_B!
-    tldiv!(A, b) = At_mul_B!(A, b)
-    cldiv!(A, b) = At_mul_B!(A, b)
+    const ldiv! = Compat.LinearAlgebra.A_ldiv_B!
+    tldiv!(A, b) = Compat.LinearAlgebra.At_ldiv_B!(A, b)
+    cldiv!(A, b) = Compat.LinearAlgebra.Ac_ldiv_B!(A, b)
 else
     const luf = lu
     tldiv!(A, b) = ldiv!(transpose(A), b)
