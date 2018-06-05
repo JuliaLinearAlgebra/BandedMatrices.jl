@@ -23,16 +23,17 @@ if VERSION ≥ v"0.7-"
                         A_mul_Bt!,
                         At_mul_Bt,
                         At_mul_Bt!,
-                        A_ldiv_B!,
-                        At_ldiv_B!,
-                        Ac_ldiv_B!,
                         copy_oftype,
-                        checksquare
+                        checksquare,
+                        adjoint,
+                        transpose
    import LinearAlgebra.BLAS: libblas
    import LinearAlgebra.LAPACK: liblapack
-   import LinearAlgebra: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
-                At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact, axpy!
+   import LinearAlgebra: cholfact, cholfact!, norm, diag, eigvals!, eigvals,
+                qr, qrfact, axpy!, ldiv!
    import SparseArrays: sparse
+
+   const lufact = LinearAlgebra.lu # TODO: Remove once 0.6 is dropped
 else
     import Base.LinAlg: BlasInt,
                         BlasReal,

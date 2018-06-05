@@ -409,7 +409,7 @@ end
 # scalar - colon - colon
 function setindex!(A::BandedMatrix{T}, v, ::Colon, ::Colon) where {T}
     if v == zero(T)
-        A.data[:] = convert(T, v)::T
+        fill!(A.data, zero(T))
     else
         throw(BandError(A, A.u+1))
     end
@@ -418,7 +418,7 @@ end
 # scalar - colon
 function setindex!(A::BandedMatrix{T}, v, ::Colon) where {T}
     if v == zero(T)
-        A.data[:] = convert(T, v)::T
+        fill!(A.data, zero(T))
     else
         throw(BandError(A, A.u+1))
     end
@@ -445,7 +445,7 @@ end
 # scalar - band - colon
 @inline function setindex!(A::BandedMatrix{T}, v, b::Band) where {T}
     @boundscheck checkband(A, b)
-    A.data[A.u - b.i + 1, :] = convert(T, v)::T
+    A.data[A.u - b.i + 1, :] .= convert(T, v)::T
 end
 
 # vector - band - colon
@@ -652,7 +652,7 @@ end
 
 # scalar - BandRange -- A[BandRange] = 2
 setindex!(A::BandedMatrix{T}, v, ::Type{BandRange}) where {T} =
-    A.data[:] = convert(T, v)::T
+    fill!(A.data, convert(T, v)::T)
 
 # ~~ end setindex! ~~
 
