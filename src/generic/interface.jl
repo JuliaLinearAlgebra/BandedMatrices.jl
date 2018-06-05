@@ -181,7 +181,7 @@ end
 # matrix * vector
 
 function _banded_generic_matvecmul!(c::AbstractVector{T}, tA::Char, A::AbstractMatrix{U}, b::AbstractVector{V}) where {T, U, V}
-    @inbounds c[:] = zero(T)
+    fill!(c, zero(T))
     if tA == 'N'
         @inbounds for j = 1:size(A,2), k = colrange(A,j)
             c[k] += inbands_getindex(A,k,j)*b[j]

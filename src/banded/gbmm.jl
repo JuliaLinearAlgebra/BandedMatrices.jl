@@ -1,5 +1,5 @@
 gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
-   Base.BLAS.gbmv!(trans, m, kl, ku, alpha, A, x, beta, y)
+   BLAS.gbmv!(trans, m, kl, ku, alpha, A, x, beta, y)
 gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::AbstractMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
    gbmv!(trans, m, size(A,2), kl, ku, alpha,
       pointer(A), leadingdimension(A), pointer(x), stride(x,1), beta, pointer(y), stride(y,1))

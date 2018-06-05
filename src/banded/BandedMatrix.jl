@@ -90,8 +90,8 @@ for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
 end
 
 function Base.convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
-    const Container = typeof(convert(C, similar(M, 0, 0)))
-    const T = eltype(Container)
+    Container = typeof(convert(C, similar(M, 0, 0)))
+    T = eltype(Container)
     ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
