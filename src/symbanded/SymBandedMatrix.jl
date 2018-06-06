@@ -26,7 +26,7 @@ mutable struct SymBandedMatrix{T} <: AbstractBandedMatrix{T}
 end
 
 
-MemoryLayout(::SymBandedMatrix{T}) where T = BlasSymBanded{T}()
+MemoryLayout(::SymBandedMatrix) = BlasSymBanded()
 
 
 """

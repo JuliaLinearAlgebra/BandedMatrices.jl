@@ -103,7 +103,7 @@ export BandedMatrix,
 
 
 
-
+include("memorylayout.jl")
 include("blas.jl")
 include("lapack.jl")
 

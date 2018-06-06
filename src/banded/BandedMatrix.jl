@@ -27,7 +27,7 @@ mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
     end
 end
 
-MemoryLayout(::BandedMatrix{T}) where T = BandedLayout{T}()
+MemoryLayout(::BandedMatrix) = BandedLayout()
 
 
 # BandedMatrix with unit range indexes is also banded
