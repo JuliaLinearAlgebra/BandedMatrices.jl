@@ -30,7 +30,7 @@ if VERSION ≥ v"0.7-"
    import LinearAlgebra.BLAS: libblas
    import LinearAlgebra.LAPACK: liblapack
    import LinearAlgebra: cholfact, cholfact!, norm, diag, eigvals!, eigvals,
-                qr, qrfact, axpy!, ldiv!
+                qr, qrfact, axpy!, ldiv!, mul!
    import SparseArrays: sparse
 
    const lufact = LinearAlgebra.lu # TODO: Remove once 0.6 is dropped
