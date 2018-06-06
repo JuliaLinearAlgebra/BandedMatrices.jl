@@ -1,4 +1,4 @@
-using BandedMatrices, FillArrays, Compat.Test, Compat.LinearAlgebra
+using BandedMatrices, FillArrays, Compat.Test, Compat.LinearAlgebra, Compat.SparseArrays
 using Compat
 import BandedMatrices: _BandedMatrix
 

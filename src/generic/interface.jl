@@ -463,34 +463,34 @@ else
             end
 
 
-            LinearAlgebra.A_mul_B!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = banded_matmatmul!(C, 'N', 'N', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = banded_matmatmul!(C, 'N', 'N', A, B)
 
-            LinearAlgebra.Ac_mul_B!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'C', 'N', A, B)
-            LinearAlgebra.A_mul_Bc!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'N', 'C', A, B)
-            LinearAlgebra.Ac_mul_Bc!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'C', 'C', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, Ac::Adjoint{<:Any,<:$Typ1}, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'C', 'N', parent(Ac), B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::$Typ1, Bc::Adjoint{<:Any,<:$Typ2}) = BandedMatrices.banded_matmatmul!(C, 'N', 'C', A, parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix, Ac::Adjoint{<:Any,<:$Typ1}, Bc::Adjoint{<:Any,<:$Typ2}) = BandedMatrices.banded_matmatmul!(C, 'C', 'C', parent(Ac), parent(Bc))
 
-            LinearAlgebra.At_mul_B!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'T', 'N', A, B)
-            LinearAlgebra.A_mul_Bt!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, B)
-            LinearAlgebra.At_mul_Bt!(C::AbstractMatrix, A::$Typ1, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'T', 'T', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, At::Transpose{<:Any,<:$Typ1}, B::$Typ2) = BandedMatrices.banded_matmatmul!(C, 'T', 'N', parent(At), B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::$Typ1, Bt::Transpose{<:Any,<:$Typ2}) = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, parent(Bt))
+            LinearAlgebra.mul!(C::AbstractMatrix, At::Transpose{<:Any,<:$Typ1}, Bt::Transpose{<:Any,<:$Typ2}) = BandedMatrices.banded_matmatmul!(C, 'T', 'T', parent(At), parent(Bt))
 
-            # override the Ac_mul_B, A_mul_Bc and Ac_mul_c for real values
-            LinearAlgebra.Ac_mul_B!(C::AbstractMatrix{T}, A::$Typ1{U}, B::$Typ2{V}) where {T, U<:Real, V} = BandedMatrices.banded_matmatmul!(C, 'T', 'N', A, B)
-            LinearAlgebra.A_mul_Bc!(C::AbstractMatrix{T}, A::$Typ1{U}, B::$Typ2{V}) where {T, U, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, B)
-            LinearAlgebra.Ac_mul_Bc!(C::AbstractMatrix{T}, A::$Typ1{U}, B::$Typ2{V}) where {T, U<:Real, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'T', 'T', A, B)
+            # override mul! for real values
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, Ac::Adjoint{U,<:$Typ1{U}}, B::$Typ2{V}) where {T, U<:Real, V} = BandedMatrices.banded_matmatmul!(C, 'T', 'N', parent(Ac), B)
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, A::$Typ1{U}, Bc::Adjoint{V,<:$Typ2{V}}) where {T, U, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, Ac::Adjoint{U,<:$Typ1{U}}, Bc::$Adjoint{V,<:$Typ2{V}}) where {T, U<:Real, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'T', 'T', parent(Ac), parent(Bc))
 
             function Base.:*(A::$Typ1{T}, B::$Typ2{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
                 Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
-                A_mul_B!(Y, A, B)
+                mul!(Y, A, B)
             end
 
-            LinearAlgebra.Ac_mul_B(A::$Typ1{T}, B::$Typ2{V}) where {T, V} = Ac_mul_B!(BandedMatrices.banded_similar('C', 'N', A, B, promote_type(T, V)), A, B)
-            LinearAlgebra.A_mul_Bc(A::$Typ1{T}, B::$Typ2{V}) where {T, V} = A_mul_Bc!(BandedMatrices.banded_similar('N', 'C', A, B, promote_type(T, V)), A, B)
-            LinearAlgebra.Ac_mul_Bc(A::$Typ1{T}, B::$Typ2{V}) where {T, V} = Ac_mul_Bc!(BandedMatrices.banded_similar('C', 'C', A, B, promote_type(T, V)), A, B)
+            Base.:*(Ac::Adjoint{T,<:$Typ1{T}}, B::$Typ2{V}) where {T, V} = mul!(BandedMatrices.banded_similar('C', 'N', parent(Ac), B, promote_type(T, V)), Ac, B)
+            Base.:*(A::$Typ1{T}, Bc::Adjoint{V,<:$Typ2{V}}) where {T, V} = mul!(BandedMatrices.banded_similar('N', 'C', A, parent(Bc), promote_type(T, V)), A, Bc)
+            Base.:*(Ac::Adjoint{T,<:$Typ1{T}}, B::Adjoint{V,<:$Typ2{V}}) where {T, V} = mul!(BandedMatrices.banded_similar('C', 'C', parent(Ac), parent(Bc), promote_type(T, V)), Ac, Bc)
 
-            LinearAlgebra.At_mul_B(A::$Typ1{T}, B::$Typ2{V}) where {T, V} = At_mul_B!(BandedMatrices.banded_similar('T', 'N', A, B, promote_type(T, V)), A, B)
-            LinearAlgebra.A_mul_Bt(A::$Typ1{T}, B::$Typ2{V}) where {T, V} = A_mul_Bt!(BandedMatrices.banded_similar('N', 'T', A, B, promote_type(T, V)), A, B)
-            LinearAlgebra.At_mul_Bt(A::$Typ1{T}, B::$Typ2{V}) where {T, V} = At_mul_B!(BandedMatrices.banded_similar('T', 'T', A, B, promote_type(T, V)), A, B)
+            Base.:*(At::Transpose{T,<:$Typ1{T}}, B::$Typ2{V}) where {T, V} = mul!(BandedMatrices.banded_similar('T', 'N', parent(At), B, promote_type(T, V)), At, B)
+            Base.:*(A::$Typ1{T}, Bt::Transpose{V,<:$Typ2{V}}) where {T, V} = mul!(BandedMatrices.banded_similar('N', 'T', A, parent(Bt), promote_type(T, V)), A, Bt)
+            Base.:*(At::Transpose{T,<:$Typ1{T}}, Bt::Transpose{V,<:$Typ2{V}}) where {T, V} = mul!(BandedMatrices.banded_similar('T', 'T', parent(At), parent(Bt), promote_type(T, V)), At, Bt)
         end
         esc(ret)
     end
@@ -711,70 +711,70 @@ else
                 axpy!(1, A, ret)
             end
 
-            LinearAlgebra.A_mul_B!(c::AbstractVector, A::$Typ, b::AbstractVector) =
+            LinearAlgebra.mul!(c::AbstractVector, A::$Typ, b::AbstractVector) =
                 BandedMatrices.banded_matvecmul!(c, 'N', A, b)
-            LinearAlgebra.Ac_mul_B!(c::AbstractVector, A::$Typ, b::AbstractVector) =
-                BandedMatrices.banded_matvecmul!(c, 'C', A, b)
-            LinearAlgebra.Ac_mul_B!(c::AbstractVector, A::$Typ{<:Real}, b::AbstractVector) =
-                BandedMatrices.banded_matvecmul!(c, 'T', A, b)
-            LinearAlgebra.At_mul_B!(c::AbstractVector, A::$Typ, b::AbstractVector) =
-                BandedMatrices.banded_matvecmul!(c, 'T', A, b)
+            LinearAlgebra.mul!(c::AbstractVector, Ac::Adjoint{<:Any,<:$Typ}, b::AbstractVector) =
+                BandedMatrices.banded_matvecmul!(c, 'C', parent(Ac), b)
+            LinearAlgebra.mul!(c::AbstractVector, Ac::Adjoint{T,<:$Typ{T}}, b::AbstractVector) where T<:Real =
+                BandedMatrices.banded_matvecmul!(c, 'T', parent(Ac), b)
+            LinearAlgebra.mul!(c::AbstractVector, At::Transpose{<:Any,<:$Typ}, b::AbstractVector) =
+                BandedMatrices.banded_matvecmul!(c, 'T', parent(At), b)
 
             Base.:*(A::$Typ{U}, b::StridedVector{V}) where {U, V} =
-                LinearAlgebra.A_mul_B!(Vector{promote_type(U, V)}(undef,size(A, 1)), A, b)
+                LinearAlgebra.mul!(Vector{promote_type(U, V)}(undef,size(A, 1)), A, b)
 
 
-            LinearAlgebra.A_mul_B!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)
-            LinearAlgebra.A_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'N', 'N', A, B)
 
 
 
-            LinearAlgebra.Ac_mul_B!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'C', 'N', A, B)
-            LinearAlgebra.Ac_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'C', 'N', A, B)
-            LinearAlgebra.A_mul_Bc!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'C', A, B)
-            LinearAlgebra.A_mul_Bc!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'N', 'C', A, B)
-            LinearAlgebra.Ac_mul_Bc!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'C', 'C', A, B)
-            LinearAlgebra.Ac_mul_Bc!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'C', 'C', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, Ac::Adjoint{<:Any,<:$Typ}, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'C', 'N', parent(Ac), B)
+            LinearAlgebra.mul!(C::AbstractMatrix, Ac::Adjoint{<:Any,<:AbstractMatrix}, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'C', 'N', parent(Ac), B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::$Typ, Bc::Adjoint{<:Any,<:AbstractMatrix}) = BandedMatrices.banded_matmatmul!(C, 'N', 'C', A, parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix, A::AbstractMatrix, Bc::Adjoint{<:Any,<:$Typ}) = BandedMatrices.banded_matmatmul!(C, 'N', 'C', A, parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix, Ac::Adjoint{<:Any,<:$Typ}, Bc::Adjoint{<:Any,<:AbstractMatrix}) = BandedMatrices.banded_matmatmul!(C, 'C', 'C', parent(Ac), parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix, Ac::Adjoint{<:Any,<:AbstractMatrix}, Bc::Adjoint{<:Any,<:$Typ}) = BandedMatrices.banded_matmatmul!(C, 'C', 'C', parent(Ac), parent(Bc))
 
-            LinearAlgebra.At_mul_B!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'T', 'N', A, B)
-            LinearAlgebra.At_mul_B!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'T', 'N', A, B)
-            LinearAlgebra.A_mul_Bt!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, B)
-            LinearAlgebra.A_mul_Bt!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, B)
-            LinearAlgebra.At_mul_Bt!(C::AbstractMatrix, A::$Typ, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'T', 'T', A, B)
-            LinearAlgebra.At_mul_Bt!(C::AbstractMatrix, A::AbstractMatrix, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'T', 'T', A, B)
+            LinearAlgebra.mul!(C::AbstractMatrix, At::Transpose{<:Any,<:$Typ}, B::AbstractMatrix) = BandedMatrices.banded_matmatmul!(C, 'T', 'N', parent(At), B)
+            LinearAlgebra.mul!(C::AbstractMatrix, At::Transpose{<:Any,<:AbstractMatrix}, B::$Typ) = BandedMatrices.banded_matmatmul!(C, 'T', 'N', parent(At), B)
+            LinearAlgebra.mul!(C::AbstractMatrix, A::$Typ, Bt::Transpose{<:Any,<:AbstractMatrix}) = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, parent(Bt))
+            LinearAlgebra.mul!(C::AbstractMatrix, A::AbstractMatrix, Bt::Transpose{<:Any,<:$Typ}) = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, parent(Bt))
+            LinearAlgebra.mul!(C::AbstractMatrix, At::Transpose{<:Any,<:$Typ}, Bt::Transpose{<:Any,<:AbstractMatrix}) = BandedMatrices.banded_matmatmul!(C, 'T', 'T', parent(At), parent(Bt))
+            LinearAlgebra.mul!(C::AbstractMatrix, At::Transpose{<:Any,<:AbstractMatrix}, Bt::Transpose{<:Any,<:$Typ}) = BandedMatrices.banded_matmatmul!(C, 'T', 'T', parent(At), parent(Bt))
 
-            # override the Ac_mul_B, A_mul_Bc and Ac_mul_c for real values
-            LinearAlgebra.Ac_mul_B!(C::AbstractMatrix{T}, A::$Typ{U}, B::AbstractMatrix{V}) where {T, U<:Real, V} = BandedMatrices.banded_matmatmul!(C, 'T', 'N', A, B)
-            LinearAlgebra.Ac_mul_B!(C::AbstractMatrix{T}, A::AbstractMatrix{U}, B::$Typ{V}) where {T, U<:Real, V} = BandedMatrices.banded_matmatmul!(C, 'T', 'N', A, B)
-            LinearAlgebra.A_mul_Bc!(C::AbstractMatrix{T}, A::$Typ{U}, B::AbstractMatrix{V}) where {T, U, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, B)
-            LinearAlgebra.A_mul_Bc!(C::AbstractMatrix{T}, A::AbstractMatrix{U}, B::$Typ{V}) where {T, U, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, B)
-            LinearAlgebra.Ac_mul_Bc!(C::AbstractMatrix{T}, A::$Typ{U}, B::AbstractMatrix{V}) where {T, U<:Real, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'T', 'T', A, B)
-            LinearAlgebra.Ac_mul_Bc!(C::AbstractMatrix{T}, A::AbstractMatrix{U}, B::$Typ{V}) where {T, U<:Real, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'T', 'T', A, B)
+            # override the mul! for real values
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, Ac::Adjoint{U,<:$Typ{U}}, B::AbstractMatrix{V}) where {T, U<:Real, V} = BandedMatrices.banded_matmatmul!(C, 'T', 'N', parent(Ac), B)
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, Ac::Adjoint{U,<:AbstractMatrix{U}}, B::$Typ{V}) where {T, U<:Real, V} = BandedMatrices.banded_matmatmul!(C, 'T', 'N', parent(Ac), B)
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, A::$Typ{U}, Bc::Adjoint{V,<:AbstractMatrix{V}}) where {T, U, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, A::AbstractMatrix{U}, Bc::Adjoint{V,<:$Typ{V}}) where {T, U, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'N', 'T', A, parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, Ac::Adjoint{U,<:$Typ{U}}, Bc::Adjoint{V,<:AbstractMatrix{V}}) where {T, U<:Real, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'T', 'T', parent(Ac), parent(Bc))
+            LinearAlgebra.mul!(C::AbstractMatrix{T}, Ac::Adjoint{U,<:AbstractMatrix{U}}, Bc::Adjoint{V,<:$Typ{V}}) where {T, U<:Real, V<:Real} = BandedMatrices.banded_matmatmul!(C, 'T', 'T', parent(Ac), parent(Bc))
 
 
             function Base.:*(A::$Typ{T}, B::StridedMatrix{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
-                A_mul_B!(Matrix{promote_type(T,V)}(undef,n,m), A, B)
+                mul!(Matrix{promote_type(T,V)}(undef,n,m), A, B)
             end
 
             function Base.:*(A::StridedMatrix{T}, B::$Typ{V}) where {T, V}
                 n, m = size(A,1), size(B,2)
-                A_mul_B!(Matrix{promote_type(T,V)}(undef,n,m), A, B)
+                mul!(Matrix{promote_type(T,V)}(undef,n,m), A, B)
             end
 
-            LinearAlgebra.Ac_mul_B(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = Ac_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 2)), A, B)
-            LinearAlgebra.Ac_mul_B(A::StridedMatrix{T}, B::$Typ{V}) where {T, V} = Ac_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 2)), A, B)
-            LinearAlgebra.A_mul_Bc(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = A_mul_Bc!(Matrix{promote_type(T,V)}(size(A, 1), size(B, 1)), A, B)
-            LinearAlgebra.A_mul_Bc(A::StridedMatrix{T}, B::$Typ{V}) where {T, V} = A_mul_Bc!(Matrix{promote_type(T,V)}(size(A, 1), size(B, 1)), A, B)
-            LinearAlgebra.Ac_mul_Bc(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = Ac_mul_Bc!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 1)), A, B)
-            LinearAlgebra.Ac_mul_Bc(A::StridedMatrix{T}, B::$Typ{V}) where {T, V} = Ac_mul_Bc!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 1)), A, B)
+            Base.:*(Ac::Adjoint{T,<:$Typ{T}}, B::StridedMatrix{V}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(Ac, 1), size(B, 2)), Ac, B)
+            Base.:*(Ac::Adjoint{T,<:StridedMatrix{T}}, B::$Typ{V}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(Ac, 1), size(B, 2)), Ac, B)
+            Base.:*(A::$Typ{T}, Bc::Adjoint{V,<:StridedMatrix{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(A, 1), size(Bc, 2)), A, Bc)
+            Base.:*(A::StridedMatrix{T}, Bc::Adjoint{V,<:$Typ{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(A, 1), size(Bc, 2)), A, Bc)
+            Base.:*(Ac::Adjoint{T,<:$Typ{T}}, Bc::Adjoint{V,<:StridedMatrix{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(Ac, 1), size(Bc, 2)), Ac, Bc)
+            Base.:*(Ac::Adjoint{T,<:StridedMatrix{T}}, Bc::Adjoint{V,<:$Typ{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(Ac, 1), size(Bc, 2)), Ac, Bc)
 
-            LinearAlgebra.At_mul_B(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = At_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 2)), A, B)
-            LinearAlgebra.At_mul_B(A::StridedMatrix{T}, B::$Typ{V}) where {T, V} = At_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 2)), A, B)
-            LinearAlgebra.A_mul_Bt(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = A_mul_Bt!(Matrix{promote_type(T,V)}(size(A, 1), size(B, 1)), A, B)
-            LinearAlgebra.A_mul_Bt(A::StridedMatrix{T}, B::$Typ{V}) where {T, V} = A_mul_Bt!(Matrix{promote_type(T,V)}(size(A, 1), size(B, 1)), A, B)
-            LinearAlgebra.At_mul_Bt(A::$Typ{T}, B::StridedMatrix{V}) where {T, V} = At_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 1)), A, B)
-            LinearAlgebra.At_mul_Bt(A::StridedMatrix{T}, B::$Typ{V}) where {T, V} = At_mul_B!(Matrix{promote_type(T,V)}(size(A, 2), size(B, 1)), A, B)
+            Base.:*(At::Transpose{T,<:$Typ{T}}, B::StridedMatrix{V}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(At, 1), size(B, 2)), At, B)
+            Base.:*(At::Transpose{T,<:StridedMatrix{T}}, B::$Typ{V}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(At, 1), size(B, 2)), At, B)
+            Base.:*(A::$Typ{T}, Bt::Transpose{T,<:StridedMatrix{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(A, 1), size(Bt, 2)), A, Bt)
+            Base.:*(A::StridedMatrix{T}, Bt::Transpose{T,<:$Typ{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(A, 1), size(Bt, 2)), A, Bt)
+            Base.:*(At::Transpose{T,<:$Typ{T}}, Bt::Transpose{T,<:StridedMatrix{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(At, 1), size(Bt, 2)), At, Bt)
+            Base.:*(At::Transpose{T,<:StridedMatrix{T}}, Bt::Transpose{T,<:$Typ{V}}) where {T, V} = mul!(Matrix{promote_type(T,V)}(size(At, 1), size(Bt, 2)), At, Bt)
         end
         esc(ret)
     end
