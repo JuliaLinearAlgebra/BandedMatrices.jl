@@ -37,21 +37,26 @@ checkdimensions(kr::AbstractRange, jr::AbstractRange, src::AbstractMatrix) =
 
 
 # helper functions in matrix multiplication routines
-@inline _size(t::Char, A::AbstractMatrix, k::Int) = t == 'N' ? size(A, k) : size(A, 3-k)
-@inline _size(t::Char, A::AbstractMatrix) = t == 'N' ? size(A) : (size(A, 2), size(A, 1))
-@inline _bandwidth(t::Char, A::AbstractMatrix, k::Int) = t == 'N' ? bandwidth(A, k) : bandwidth(A, 3-k)
-@inline _bandwidths(t::Char, A::AbstractMatrix) = t == 'N' ? bandwidths(A) : (bandwidth(A, 2), bandwidth(A, 1))
-@inline _view(t::Char, A::AbstractMatrix, I, J) = t == 'N' ? view(A, I, J) : view(A, J, I)
+@inline _size(::Val{'N'}, A::AbstractMatrix, k::Int) = size(A, k)
+@inline _size(::Val, A::AbstractMatrix, k::Int) = size(A, 3-k)
+@inline _size(t::Val{'N'}, A::AbstractMatrix) = size(A)
+@inline _size(t::Val, A::AbstractMatrix) = (size(A, 2), size(A, 1))
+@inline _bandwidth(t::Val{'N'}, A::AbstractMatrix, k::Int) = bandwidth(A, k)
+@inline _bandwidth(t::Val, A::AbstractMatrix, k::Int) = bandwidth(A, 3-k)
+@inline _bandwidths(t::Val{'N'}, A::AbstractMatrix) = bandwidths(A)
+@inline _bandwidths(t::Val, A::AbstractMatrix) = (bandwidth(A, 2), bandwidth(A, 1))
+@inline _view(t::Val{'N'}, A::AbstractMatrix, I, J) = view(A, I, J)
+@inline _view(t::Val, A::AbstractMatrix, I, J) = view(A, J, I)
 
 # return the bandwidths of A*B
-function prodbandwidths(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix)
+function prodbandwidths(tA::Val, tB::Val, A::AbstractMatrix, B::AbstractMatrix)
     Al, Au = _bandwidths(tA, A)
     Bl, Bu = _bandwidths(tB, B)
     Al + Bl, Au + Bu
 end
-prodbandwidths(A::AbstractMatrix, B::AbstractMatrix) = prodbandwidths('N', 'N', A, B)
+prodbandwidths(A::AbstractMatrix, B::AbstractMatrix) = prodbandwidths(Val{'N'}(), Val{'N'}(), A, B)
 
-function banded_similar(tA::Char, tB::Char, A::AbstractMatrix, B::AbstractMatrix, T::DataType)
+function banded_similar(tA::Val, tB::Val, A::AbstractMatrix, B::AbstractMatrix, T::DataType)
     BandedMatrix{T}(undef, _size(tA, A, 1), _size(tB, B, 2), prodbandwidths(tA, tB, A, B)...)
 end
 
