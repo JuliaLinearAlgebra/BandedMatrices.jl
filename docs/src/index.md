@@ -19,7 +19,7 @@ To create a banded matrix of all zeros, identity matrix, or with a constant valu
 use the following constructors:
 ```jldoctest
 julia> BandedMatrix(Zeros(5,5), (1,2))
-5×5 BandedMatrices.BandedMatrix{Float64}:
+5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:
  0.0  0.0  0.0          
  0.0  0.0  0.0  0.0     
       0.0  0.0  0.0  0.0
@@ -27,7 +27,7 @@ julia> BandedMatrix(Zeros(5,5), (1,2))
                 0.0  0.0
 
 julia> BandedMatrix(Eye(5), (1,2))
-5×5 BandedMatrices.BandedMatrix{Float64}:
+5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:
  1.0  0.0  0.0          
  0.0  1.0  0.0  0.0     
       0.0  1.0  0.0  0.0
@@ -35,7 +35,7 @@ julia> BandedMatrix(Eye(5), (1,2))
                 0.0  1.0
 
 julia> BandedMatrix(Ones(5,5), (1,2))
-5×5 BandedMatrices.BandedMatrix{Float64}:
+5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:
  1.0  1.0  1.0          
  1.0  1.0  1.0  1.0     
       1.0  1.0  1.0  1.0
