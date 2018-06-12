@@ -37,7 +37,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Creating banded matrices",
     "category": "section",
-    "text": "BandedMatrixbonesbrandTo create a banded matrix of all zeros, identity matrix, or with a constant value use the following constructors:julia> BandedMatrix(Zeros(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64}:\n 0.0  0.0  0.0          \n 0.0  0.0  0.0  0.0     \n      0.0  0.0  0.0  0.0\n           0.0  0.0  0.0\n                0.0  0.0\n\njulia> BandedMatrix(Eye(5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64}:\n 1.0  0.0  0.0          \n 0.0  1.0  0.0  0.0     \n      0.0  1.0  0.0  0.0\n           0.0  1.0  0.0\n                0.0  1.0\n\njulia> BandedMatrix(Ones(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64}:\n 1.0  1.0  1.0          \n 1.0  1.0  1.0  1.0     \n      1.0  1.0  1.0  1.0\n           1.0  1.0  1.0\n                1.0  1.0"
+    "text": "BandedMatrixbonesbrandTo create a banded matrix of all zeros, identity matrix, or with a constant value use the following constructors:julia> BandedMatrix(Zeros(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 0.0  0.0  0.0          \n 0.0  0.0  0.0  0.0     \n      0.0  0.0  0.0  0.0\n           0.0  0.0  0.0\n                0.0  0.0\n\njulia> BandedMatrix(Eye(5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 1.0  0.0  0.0          \n 0.0  1.0  0.0  0.0     \n      0.0  1.0  0.0  0.0\n           0.0  1.0  0.0\n                0.0  1.0\n\njulia> BandedMatrix(Ones(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 1.0  1.0  1.0          \n 1.0  1.0  1.0  1.0     \n      1.0  1.0  1.0  1.0\n           1.0  1.0  1.0\n                1.0  1.0"
 },
 
 {
