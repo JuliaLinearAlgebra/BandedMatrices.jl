@@ -104,7 +104,7 @@ if VERSION < v"0.7-"
         if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
             header && println(io,":")
             M=Array{Any}(size(B)...)
-            fill!(M,PrintShow(""))
+            fill!(M,PrintShow("⋅"))
             for j = 1:size(B,2), k = colrange(B,j)
                 M[k,j]=B[k,j]
             end
