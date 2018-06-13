@@ -112,6 +112,11 @@ if VERSION < v"0.7-"
             showarray(io,M;header=false)
         end
     end
+else
+    ## structured matrix methods ##
+    function Base.replace_in_print_matrix(A::AbstractBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+        -A.l ≤ j-i ≤ A.u ? s : Base.replace_with_centered_mark(s)
+    end
 end
 
 
