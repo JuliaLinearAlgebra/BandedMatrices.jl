@@ -3,7 +3,7 @@ __precompile__()
 module BandedMatrices
 using Base, Compat, FillArrays
 if VERSION ≥ v"0.7-"
-    using LinearAlgebra, SparseArrays, Random
+    using LinearAlgebra, SparseArrays, Compat.Random
     using LinearAlgebra.LAPACK
     import LinearAlgebra: BlasInt,
                         BlasReal,
