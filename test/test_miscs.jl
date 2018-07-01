@@ -66,4 +66,9 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         B=brand(10,10,255,255)
         @test Matrix(A*B)  ≈ Matrix(A)*Matrix(B)
     end
+
+    @testset "defaultdot" begin
+        A = randn(5)
+        @test BandedMatrices.dot(A,A) ≡ Compat.LinearAlgebra.dot(A,A)
+    end
 end
