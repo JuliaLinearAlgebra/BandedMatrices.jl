@@ -61,4 +61,17 @@ using BandedMatrices, Compat.Test
     err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
     @test norm(err[1:40]) < 100eps(Float32)
+
+
+    if VERSION < v"0.7-"
+      @test occursin("10×10 BandedMatrices.SymBandedMatrix{Float64}",
+         sprint() do io
+             show(io, MIME"text/plain"(), SymBandedMatrix{Float64}(Zeros(10,10), 1))
+         end)
+    else
+      @test occursin("10×10 SymBandedMatrix{Float64}",
+         sprint() do io
+            show(io, MIME"text/plain"(), SymBandedMatrix{Float64}(Zeros(10,10), 1))
+         end)
+    end
 end
