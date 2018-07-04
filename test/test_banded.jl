@@ -51,10 +51,11 @@ end
     let A = brand(10,12,2,3),B = brand(10,12,3,4)
         @test Matrix(sparse(A)) ≈ Matrix(A)
 
+        to_bjl(A) = convert(BandedMatrix{<:, JLArray}, A)
         @test Matrix(A') ≈ Matrix(A)'
-        @test convert(BandedMatrix{<:, JLArray}, A)' ≈  Matrix(A)'
-        @test (convert(BandedMatrix{<:, JLArray}, A)').data isa JLArray
-        @test Matrix(transpose(A)) ≈ transpose(Matrix(A))
+        @test @inferred(transpose(to_bjl(A))) ≈ Matrix(A)'
+        @test (to_bjl(A)').data isa JLArray
+        @test Matrix(@inferred(transpose(A))) ≈ transpose(Matrix(A))
         @test Matrix((A+im*A)') ≈ (Matrix(A)+im*Matrix(A))'
         @test Matrix(transpose(A+im*A)) ≈ transpose(Matrix(A)+im*Matrix(A))
         @test convert(BandedMatrix{<:, JLArray}, A+im*A)' ≈ (Matrix(A)+im*Matrix(A))'

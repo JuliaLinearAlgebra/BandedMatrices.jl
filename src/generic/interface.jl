@@ -440,19 +440,24 @@ if VERSION < v"0.7-"
             Base.copy!(dest::$Typ1, src::$Typ2) = BandedMatrices.banded_copy!(dest,src)
             Base.BLAS.axpy!(a::Number, X::$Typ1, Y::$Typ2) = BandedMatrices.banded_axpy!(a, X, Y)
 
-            function Base.:+(A::$Typ1{T}, B::$Typ2{V}) where {T,V}
+            function Base.:+(A::$Typ1, B::$Typ2)
                 n, m = size(A)
-                ret = BandedMatrices.BandedMatrix(BandedMatrices.Zeros{promote_type(T,V)}(n, m), BandedMatrices.sumbandwidths(A, B))
-                axpy!(one(T), A, ret)
-                axpy!(one(V), B, ret)
+                u, l = sumbandwidths(A, B)
+                T = promote_type(eltype(A), eltype(B))
+                ret = fill!(similar_banded(B, n, m, u, l), zero(eltype(B)))
+                axpy!(one(eltype(A)), A, ret)
+                axpy!(one(eltype(B)), B, ret)
                 ret
             end
 
-            function Base.:-(A::$Typ1{T}, B::$Typ2{V}) where {T,V}
+            function Base.:-(A::$Typ1, B::$Typ2)
                 n, m=size(A)
-                ret = BandedMatrices.BandedMatrix(BandedMatrices.Zeros{promote_type(T,V)}(n, m), BandedMatrices.sumbandwidths(A, B))
-                axpy!(one(T),  A, ret)
-                axpy!(-one(V), B, ret)
+                u, l = sumbandwidths(A, B)
+                T = promote_type(eltype(A), eltype(B))
+                ret = fill!(similar_banded(B, n, m, u, l), zero(eltype(B)))
+                println("$(size(A)) == $(size(ret)) == $(size(similar(B, n, m, u, l)))")
+                axpy!(one(eltype(A)),  A, ret)
+                axpy!(-one(eltype(B)), B, ret)
                 ret
             end
 

@@ -231,7 +231,21 @@ end
 Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), n, m)
 Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
     similar(bm, eltype(bm), n, m, l, u)
+"""
+    similar_banded(bm::AbstractBandedMatrix, [T::Type], [n::Integer, m::Integer, [l::Integer, u::Integer]])
+    similar_banded(bm::AbstractMatrix, [T::Type], [n::Integer, m::Integer, [l::Integer, u::Integer]])
 
+Creates a banded matrix similar to the input. Convenience function that can
+take either a matrix or a banded matrix and return a banded matrix, where the
+underlying container has the same matrix or container type as the input.
+"""
+similar_banded(bm::AbstractBandedMatrix, args...) = similar(bm, args...)
+function similar_banded(mat::AbstractMatrix, args...)
+    C = typeof(similar(mat, 0, 0))
+    n, m = size(mat)
+    u, l = bandwidth(mat)
+    BandedMatrix{eltype(C), C}(undef, n, m, u, l)
+end
 
 function _shift(bm::BandedSubBandedMatrix)
     kr,jr=parentindices(bm)
