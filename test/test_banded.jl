@@ -52,9 +52,13 @@ end
         @test Matrix(sparse(A)) ≈ Matrix(A)
 
         @test Matrix(A') ≈ Matrix(A)'
+        @test convert(BandedMatrix{<:, JLArray}, A)' ≈  Matrix(A)'
+        @test (convert(BandedMatrix{<:, JLArray}, A)').data isa JLArray
         @test Matrix(transpose(A)) ≈ transpose(Matrix(A))
         @test Matrix((A+im*A)') ≈ (Matrix(A)+im*Matrix(A))'
         @test Matrix(transpose(A+im*A)) ≈ transpose(Matrix(A)+im*Matrix(A))
+        @test convert(BandedMatrix{<:, JLArray}, A+im*A)' ≈ (Matrix(A)+im*Matrix(A))'
+        @test (convert(BandedMatrix{<:, JLArray}, A+im*A)').data isa JLArray
 
         @test Matrix(A+B) ≈ (Matrix(A)+Matrix(B))
         @test Matrix(A-B) ≈ (Matrix(A)-Matrix(B))

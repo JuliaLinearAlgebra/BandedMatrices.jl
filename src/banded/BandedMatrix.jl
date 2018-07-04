@@ -228,9 +228,9 @@ function Base.similar(bm::BandedMatrix, T::Type=eltype(bm),
     _BandedMatrix(data, n, l, u)
 end
 
-Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), m, n)
+Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), n, m)
 Base.similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
-    similar(bm, eltype(bm), m, n, l, u)
+    similar(bm, eltype(bm), n, m, l, u)
 
 
 function _shift(bm::BandedSubBandedMatrix)
@@ -730,7 +730,7 @@ else
 end
 
 function Base.transpose(B::BandedMatrix)
-    Bt = BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
+    Bt = similar(B, size(B,2), size(B,1), B.u, B.l)
     for j = 1:size(B,2), k = colrange(B,j)
        Bt[j,k]=B[k,j]
     end
@@ -738,7 +738,7 @@ function Base.transpose(B::BandedMatrix)
 end
 
 function Base.ctranspose(B::BandedMatrix)
-    Bt=BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
+    Bt = similar(B, size(B,2), size(B,1), B.u, B.l)
     for j = 1:size(B,2), k = colrange(B,j)
        Bt[j,k]=conj(B[k,j])
     end
