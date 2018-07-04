@@ -95,8 +95,8 @@ end
 # banded * vec
 @testset "BandedMatrix * Vector" begin
     let A=brand(10,12,2,3), v=rand(12), w=rand(10)
-        @test A*v ≈ Matrix(A)*v
-        @test A'*w ≈ Matrix(A)'*w
+        @test @inferred(A*v) ≈ Matrix(A)*v
+        @test @inferred(A'*w) ≈ Matrix(A)'*w
     end
 
     let A=brand(Float64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
