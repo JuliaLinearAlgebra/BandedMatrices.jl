@@ -444,18 +444,17 @@ if VERSION < v"0.7-"
                 n, m = size(A)
                 u, l = sumbandwidths(A, B)
                 T = promote_type(eltype(A), eltype(B))
-                ret = fill!(similar_banded(B, n, m, u, l), zero(eltype(B)))
+                ret = fill!(similar_banded(B, T, n, m, u, l), zero(eltype(B)))
                 axpy!(one(eltype(A)), A, ret)
                 axpy!(one(eltype(B)), B, ret)
                 ret
             end
 
             function Base.:-(A::$Typ1, B::$Typ2)
-                n, m=size(A)
+                n, m = size(A)
                 u, l = sumbandwidths(A, B)
                 T = promote_type(eltype(A), eltype(B))
-                ret = fill!(similar_banded(B, n, m, u, l), zero(eltype(B)))
-                println("$(size(A)) == $(size(ret)) == $(size(similar(B, n, m, u, l)))")
+                ret = fill!(similar_banded(B, T, n, m, u, l), zero(eltype(B)))
                 axpy!(one(eltype(A)),  A, ret)
                 axpy!(-one(eltype(B)), B, ret)
                 ret

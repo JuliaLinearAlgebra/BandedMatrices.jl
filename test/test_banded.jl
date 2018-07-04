@@ -61,10 +61,23 @@ end
         @test convert(BandedMatrix{<:, JLArray}, A+im*A)' ≈ (Matrix(A)+im*Matrix(A))'
         @test (convert(BandedMatrix{<:, JLArray}, A+im*A)').data isa JLArray
 
-        @test Matrix(A+B) ≈ (Matrix(A)+Matrix(B))
-        @test Matrix(A-B) ≈ (Matrix(A)-Matrix(B))
+        @test Matrix(@inferred(A+B)) ≈ (Matrix(A)+Matrix(B))
+        @test Matrix(@inferred(to_bjl(A)+B)) ≈ (Matrix(A)+Matrix(B))
+        @test Matrix(@inferred(A+to_bjl(B))) ≈ (Matrix(A)+Matrix(B))
+        @test Matrix(@inferred(to_bjl(A)+to_bjl(B))) ≈ (Matrix(A)+Matrix(B))
+        @test (to_bjl(A)+B).data isa Matrix
+        @test (A+to_bjl(B)).data isa JLArray
+        @test (to_bjl(A)+to_bjl(B)).data isa JLArray
+        @test Matrix(@inferred(A-B)) ≈ (Matrix(A)-Matrix(B))
+        @test Matrix(@inferred(to_bjl(A)-B)) ≈ (Matrix(A)-Matrix(B))
+        @test Matrix(@inferred(to_bjl(A)-to_bjl(B))) ≈ (Matrix(A)-Matrix(B))
+        @test Matrix(@inferred(A-to_bjl(B))) ≈ (Matrix(A)-Matrix(B))
+        @test (A-B).data isa Matrix
+        @test (to_bjl(A)-B).data isa Matrix
+        @test (to_bjl(A)-to_bjl(B)).data isa JLArray
+        @test (A-to_bjl(B)).data isa JLArray
 
-        @test Matrix(A.*B) ≈ (Matrix(A).*Matrix(B))
+        @test Matrix(@inferred(A.*B)) ≈ (Matrix(A).*Matrix(B))
     end
 
     ## UniformScaling

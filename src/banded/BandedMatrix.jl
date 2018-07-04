@@ -1,4 +1,4 @@
-undef##
+##
 # Represent a banded matrix
 # [ a_11 a_12
 #   a_21 a_22 a_23
@@ -239,11 +239,23 @@ Creates a banded matrix similar to the input. Convenience function that can
 take either a matrix or a banded matrix and return a banded matrix, where the
 underlying container has the same matrix or container type as the input.
 """
-similar_banded(bm::AbstractBandedMatrix, args...) = similar(bm, args...)
-function similar_banded(mat::AbstractMatrix, args...)
-    C = typeof(similar(mat, 0, 0))
-    n, m = size(mat)
-    u, l = bandwidth(mat)
+function similar_banded(mat::AbstractMatrix, T::Type=eltype(mat), 
+                         n::Integer=size(mat, 1), m::Integer=size(mat, 2),
+                         l::Integer=bandwidth(mat, 1), u::Integer=bandwidth(mat, 2))
+    _similar_banded(mat, T, n, m, l, u)
+end 
+similar_banded(bm::AbstractMatrix, n::Integer, m::Integer) = similar_banded(bm, eltype(bm), n, m)
+similar_banded(bm::AbstractMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
+    similar_banded(bm, eltype(bm), n, m, l, u)
+
+function _similar_banded(mat::Union{BandedMatrix, BandedSubBandedMatrix},
+                        T::Type, n::Integer, m::Integer, l::Integer,
+                        u::Integer)
+    similar(mat, T, n, m, l)
+end
+function _similar_banded(mat::AbstractMatrix, T::Type, n::Integer, m::Integer,
+                         l::Integer, u::Integer)
+    C = typeof(similar(mat, T, 0, 0))
     BandedMatrix{eltype(C), C}(undef, n, m, u, l)
 end
 

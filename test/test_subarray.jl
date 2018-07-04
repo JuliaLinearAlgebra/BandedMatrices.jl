@@ -30,7 +30,6 @@ import Compat.LinearAlgebra: axpy!
         @test (2.0A[:,1:10]+B[:,1:10]) ≈ axpy!(2.0,view(A,:,1:10),view(B2,:,1:10))
         @test (2.0A[:,1:10]+B[:,1:10]) ≈ B2[:,1:10]
 
-
         B2 = copy(B)
         @test (2.0A[:,:]+B[:,:]) ≈ axpy!(2.0,view(A,:,:),view(B2,:,:))
         @test (2.0A[:,:]+B[:,:]) ≈ B2[:,:]
