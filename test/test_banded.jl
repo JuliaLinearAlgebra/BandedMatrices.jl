@@ -51,31 +51,31 @@ end
     let A = brand(10,12,2,3),B = brand(10,12,3,4)
         @test Matrix(sparse(A)) ≈ Matrix(A)
 
-        to_bjl(A) = convert(BandedMatrix{<:, JLArray}, A)
+        to_bjl(A) = convert(BandedMatrix{<:, MyMatrix}, A)
         @test Matrix(A') ≈ Matrix(A)'
         @test @inferred(transpose(to_bjl(A))) ≈ Matrix(A)'
-        @test (to_bjl(A)').data isa JLArray
+        @test (to_bjl(A)').data isa MyMatrix
         @test Matrix(@inferred(transpose(A))) ≈ transpose(Matrix(A))
         @test Matrix((A+im*A)') ≈ (Matrix(A)+im*Matrix(A))'
         @test Matrix(transpose(A+im*A)) ≈ transpose(Matrix(A)+im*Matrix(A))
-        @test convert(BandedMatrix{<:, JLArray}, A+im*A)' ≈ (Matrix(A)+im*Matrix(A))'
-        @test (convert(BandedMatrix{<:, JLArray}, A+im*A)').data isa JLArray
+        @test convert(BandedMatrix{<:, MyMatrix}, A+im*A)' ≈ (Matrix(A)+im*Matrix(A))'
+        @test (convert(BandedMatrix{<:, MyMatrix}, A+im*A)').data isa MyMatrix
 
         @test Matrix(@inferred(A+B)) ≈ (Matrix(A)+Matrix(B))
         @test Matrix(@inferred(to_bjl(A)+B)) ≈ (Matrix(A)+Matrix(B))
         @test Matrix(@inferred(A+to_bjl(B))) ≈ (Matrix(A)+Matrix(B))
         @test Matrix(@inferred(to_bjl(A)+to_bjl(B))) ≈ (Matrix(A)+Matrix(B))
         @test (to_bjl(A)+B).data isa Matrix
-        @test (A+to_bjl(B)).data isa JLArray
-        @test (to_bjl(A)+to_bjl(B)).data isa JLArray
+        @test (A+to_bjl(B)).data isa MyMatrix
+        @test (to_bjl(A)+to_bjl(B)).data isa MyMatrix
         @test Matrix(@inferred(A-B)) ≈ (Matrix(A)-Matrix(B))
         @test Matrix(@inferred(to_bjl(A)-B)) ≈ (Matrix(A)-Matrix(B))
         @test Matrix(@inferred(to_bjl(A)-to_bjl(B))) ≈ (Matrix(A)-Matrix(B))
         @test Matrix(@inferred(A-to_bjl(B))) ≈ (Matrix(A)-Matrix(B))
         @test (A-B).data isa Matrix
         @test (to_bjl(A)-B).data isa Matrix
-        @test (to_bjl(A)-to_bjl(B)).data isa JLArray
-        @test (A-to_bjl(B)).data isa JLArray
+        @test (to_bjl(A)-to_bjl(B)).data isa MyMatrix
+        @test (A-to_bjl(B)).data isa MyMatrix
 
         @test Matrix(@inferred(A.*B)) ≈ (Matrix(A).*Matrix(B))
     end
