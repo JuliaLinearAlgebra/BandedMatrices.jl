@@ -1,6 +1,6 @@
 # BLAS/linear algebra overrides
 
-@inline dot(x...) = LinearAlgebra.dot(x...)
+@inline dot(x...) = Compat.LinearAlgebra.dot(x...)
 @inline dot(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) where {T<:Union{Float64,Float32}} =
     BLAS.dot(M,a,incx,b,incy)
 @inline dot(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) where {T<:Union{ComplexF64,ComplexF32}} =
