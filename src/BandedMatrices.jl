@@ -5,6 +5,7 @@ using Base, Compat, FillArrays
 if VERSION ≥ v"0.7-"
     using LinearAlgebra, SparseArrays, Compat.Random
     using LinearAlgebra.LAPACK
+    import Base: axes1
     import LinearAlgebra: BlasInt,
                         BlasReal,
                         BlasFloat,
@@ -63,17 +64,18 @@ else
    import Base.LAPACK: liblapack
    import Base: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
                 At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact, axpy!
-   import Base: sparse
+   import Base: sparse, indices1
 
    rmul!(A::AbstractArray, b::Number) = scale!(A, b)
    lmul!(a::Number, B::AbstractArray) = scale!(a, B)
    parentindices(A) = parentindexes(A)
+   const axes1 = indices1
 end
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
-import Base: convert, size, view, indices, unsafe_indices, indices1,
+import Base: convert, size, view, indices, unsafe_indices,
                 first, last, size, length, unsafe_length, start, next, done, step,
                 to_indices, to_index, indices, show, fill!, copy!, promote_op
 

@@ -184,7 +184,7 @@ struct BandSlice <: OrdinalRange{Int,Int}
     indices::StepRange{Int,Int}
 end
 
-for f in (:indices, :unsafe_indices, :indices1, :first, :last, :size, :length,
+for f in (:indices, :unsafe_indices, :axes1, :first, :last, :size, :length,
           :unsafe_length, :start, :step)
     @eval $f(S::BandSlice) = $f(S.indices)
 end
