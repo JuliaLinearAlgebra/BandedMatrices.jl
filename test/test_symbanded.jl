@@ -15,7 +15,11 @@ using BandedMatrices, Compat.Test
 
     # eigvals
 
-    srand(0)
+    if VERSION < v"0.7"
+        srand(0)
+    else
+        Random.seed!(0)
+    end
     A = sbrand(Float64, 100, 4)
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 

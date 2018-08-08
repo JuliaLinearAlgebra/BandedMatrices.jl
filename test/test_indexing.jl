@@ -1,4 +1,4 @@
-using BandedMatrices, Compat.Test
+using BandedMatrices, LinearAlgebra, Compat.Test
 
 import BandedMatrices: rowstart,
                        rowstop,
@@ -588,8 +588,7 @@ end
 
 
 @testset "other special indexing" begin
-    let
-        # all elements
+    @testset "all elements" begin
         a = BandedMatrix(Ones(3, 3), (1, 1))
         a[:] = 0
         @test a == [0 0 0;
@@ -616,8 +615,7 @@ end
 
 
 
-    # replace a block in the band
-    let
+    @testset "replace a block in the band" begin
         a = BandedMatrix(Zeros(5, 4), (2, 1))
         # 5x4 BandedMatrices.BandedMatrix{Float64}:
         #  0.0  0.0
@@ -654,15 +652,17 @@ end
         @test Matrix(s) == a[1:3,1:2]
     end
 
-    let
-        # tests bug
+    @testset "tests bug" begin
         a = BandedMatrix(Zeros(1,1), (3,-1))
-        @test_throws ArgumentError a[band(-2)]
+        if VERSION < v"0.7"
+            @test_throws ArgumentError a[band(-2)]
+        else
+            @test a[band(-2)] == Float64[]
+        end
     end
 
 
-    # test band views
-    let
+    @testset "band views" begin
         for A in (rand(11,10), brand(11,10,2,3), brand(Float32, 11,10,2,3),
                      brand(ComplexF64, 11,10,2,3))
             for k = -5:5

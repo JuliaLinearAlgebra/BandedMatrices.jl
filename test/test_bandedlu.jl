@@ -2,7 +2,11 @@ using Compat, BandedMatrices, Compat.Test, Compat.Random
 import BandedMatrices: _BandedMatrix
 
 # set prng to some value that avoids test failure
-srand(0)
+if VERSION < v"0.7"
+    srand(0)
+else
+    Random.seed!(0)
+end
 struct _foo <: Number end
 
 if VERSION < v"0.7-"
