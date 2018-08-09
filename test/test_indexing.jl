@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, Compat.Test
+using BandedMatrices, Compat.LinearAlgebra, Compat.Test
 
 import BandedMatrices: rowstart,
                        rowstop,
