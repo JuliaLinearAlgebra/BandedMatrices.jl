@@ -14,12 +14,12 @@ convert(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) where {T<:Number, S<:Nu
 @inline bandwidth(A::BandedCholesky, k) = bandwidth(A.data, k)
 
 # Cholesky factorisation.
-function cholfact!(A::SymBandedMatrix{T}) where {T<:Number}
+function cholesky!(A::SymBandedMatrix{T}) where {T<:Number}
     pbtrf!('U', size(A, 1), bandwidth(A, 2), pointer(A), leadingdimension(A))
     BandedCholesky{T}(A)
 end
-cholfact(A::SymBandedMatrix) = cholfact!(copy(A))
-cholfact(F::BandedCholesky) = F # no op
+cholesky(A::SymBandedMatrix) = cholesky!(copy(A))
+cholesky(F::BandedCholesky) = F # no op
 
 function getindex(F::BandedCholesky, d::Symbol)
     d == :U && return BandedMatrix(F.data.data, size(F, 1), 0, bandwidth(F, 2)) # UpperTriangular(F.data)

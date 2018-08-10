@@ -5,33 +5,20 @@ using Base, Compat, FillArrays
 if VERSION ≥ v"0.7-"
     using LinearAlgebra, SparseArrays, Compat.Random
     using LinearAlgebra.LAPACK
-    import Base: axes1
+    import Base: axes1, getproperty, iterate
     import LinearAlgebra: BlasInt,
                         BlasReal,
                         BlasFloat,
                         BlasComplex,
                         axpy!,
-                        A_mul_B!,
-                        Ac_mul_B,
-                        Ac_mul_B!,
-                        A_mul_Bc,
-                        A_mul_Bc!,
-                        Ac_mul_Bc,
-                        Ac_mul_Bc!,
-                        At_mul_B,
-                        At_mul_B!,
-                        A_mul_Bt,
-                        A_mul_Bt!,
-                        At_mul_Bt,
-                        At_mul_Bt!,
                         copy_oftype,
                         checksquare,
                         adjoint,
                         transpose
    import LinearAlgebra.BLAS: libblas
    import LinearAlgebra.LAPACK: liblapack
-   import LinearAlgebra: cholfact, cholfact!, norm, diag, eigvals!, eigvals,
-                qr, qrfact, axpy!, ldiv!, mul!
+   import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
+                qr, axpy!, ldiv!, mul!
    import SparseArrays: sparse
 
    const lufact = LinearAlgebra.lu # TODO: Remove once 0.6 is dropped
@@ -64,23 +51,26 @@ else
    import Base.LAPACK: liblapack
    import Base: lufact, cholfact, cholfact!, norm, diag, eigvals!, eigvals,
                 At_mul_B, Ac_mul_B, A_mul_B!, qr, qrfact, axpy!
-   import Base: sparse, indices1
+   import Base: sparse, indices1, indices
 
    rmul!(A::AbstractArray, b::Number) = scale!(A, b)
    lmul!(a::Number, B::AbstractArray) = scale!(a, B)
    parentindices(A) = parentindexes(A)
    const axes1 = indices1
+   const adjoint = Base.ctranspose
+   const cholesky = Base.cholfact
+   const cholesky! = Base.cholfact!
 end
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
-import Base: convert, size, view, indices, unsafe_indices,
-                first, last, size, length, unsafe_length, start, next, done, step,
-                to_indices, to_index, indices, show, fill!, copy!, promote_op
-
-
-
+import Base: convert, size, view, unsafe_indices,
+                first, last, size, length, unsafe_length, step,
+                to_indices, to_index, show, fill!, copy!, promote_op,
+                MultiplicativeInverses, OneTo, ReshapedArray,
+                               similar, copy, convert, promote_rule, rand,
+                            IndexStyle, real, imag, Slice, pointer
 
 
 import FillArrays: AbstractFill

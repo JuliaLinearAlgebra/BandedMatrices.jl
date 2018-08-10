@@ -215,8 +215,9 @@ function Base.convert(::Type{Matrix}, A::SymBandedMatrix)
     end
     ret
 end
-
-Base.full(A::SymBandedMatrix) = convert(Matrix, A)
+if VERSION < v"0.7-"
+    Base.full(A::SymBandedMatrix) = convert(Matrix, A)
+end
 
 
 
@@ -288,9 +289,9 @@ function *(A::SymBandedMatrix{TT},b::StridedVector) where {TT}
     convert(BandedMatrix{T},A)*convert(AbstractVector{T},b)
 end
 
-Base.transpose(B::SymBandedMatrix) = copy(B)
+transpose(B::SymBandedMatrix) = copy(B)
 
-Base.ctranspose(B::SymBandedMatrix{T}) where {T<:Real} = copy(B)
+adjoint(B::SymBandedMatrix{T}) where {T<:Real} = copy(B)
 
 
 
