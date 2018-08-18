@@ -178,6 +178,13 @@ end
 BandedMatrix(A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
 
 
+"""
+    BandedMatrix{T}(kv::Pair, (m,n), (l,u))
+
+Construct a m × n BandedMatrix with bandwidths (l,u)
+from `Pair`s of diagonals and vectors.
+Vector `kv.second` will be placed on the `kv.first` diagonal.
+"""
 function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
                          mn::NTuple{2,Int},
                          lu::NTuple{2,Int}) where T
@@ -196,6 +203,25 @@ function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
     return _BandedMatrix(data, m, l, u)
 end
 
+BandedMatrix(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
+                         mn::NTuple{2,Int},
+                         lu::NTuple{2,Int}) where T =
+    BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv, mn, lu)
+
+
+
+function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
+                         nm::NTuple{2,Int}) where T
+    u = mapreduce(x -> x.first, max, kv)
+    l = -mapreduce(x -> x.first, min, kv)
+    BandedMatrix{T}(kv, nm, (l,u))
+end
+
+BandedMatrix(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}}, nm::NTuple{2,Int}) =
+    BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv, nm)
+
+
+
 function BandedMatrix{T}(kv::Pair{<:Integer,<:AbstractVector}...) where T
     n = mapreduce(x -> length(x.second) + abs(x.first), max, kv)
     u = mapreduce(x -> x.first, max, kv)
@@ -211,6 +237,7 @@ Vector `kv.second` will be placed on the `kv.first` diagonal.
 """
 BandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...) =
     BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv...)
+
 
 
 """
