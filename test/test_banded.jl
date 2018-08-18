@@ -36,6 +36,9 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
                                                     Matrix(SymTridiagonal(ones(5), ones(4)))
     @test all(BandedMatrix(0 => 1:5, 2=> 2:3, -3=> 1:7) .=== diagm(0 => 1:5, 2=> 2:3, -3=> 1:7))
     @test all(BandedMatrix{Float64}(0 => 1:5, 2=> 2:3, -3=> 1:7) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
+    @test all(BandedMatrix((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10)) .=== Matrix{Int}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
+    @test all(BandedMatrix{Float64}((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10)) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
+    @test all(BandedMatrix((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10),(4,3)) .=== Matrix{Int}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
     @test all(BandedMatrix{Float64}((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10),(4,3)) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
 
     matrix = MyMatrix(ones(Int64,5,5))
