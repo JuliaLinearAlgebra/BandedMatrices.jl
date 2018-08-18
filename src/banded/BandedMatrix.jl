@@ -205,7 +205,7 @@ end
 
 BandedMatrix(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
                          mn::NTuple{2,Int},
-                         lu::NTuple{2,Int}) where T =
+                         lu::NTuple{2,Int}) =
     BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv, mn, lu)
 
 
