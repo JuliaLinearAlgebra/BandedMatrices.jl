@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "BandedMatrices.BandedMatrix",
     "category": "type",
-    "text": "BandedMatrix{T}(undef, (n, m), (l, u))\n\nreturns an uninitialized n×m banded matrix of type T with bandwidths (l,u).\n\n\n\nBandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...)\n\nConstruct a square matrix from Pairs of diagonals and vectors. Vector kv.second will be placed on the kv.first diagonal.\n\n\n\n"
+    "text": "BandedMatrix{T}(undef, (n, m), (l, u))\n\nreturns an uninitialized n×m banded matrix of type T with bandwidths (l,u).\n\n\n\nBandedMatrix{T}(kv::Pair, (m,n), (l,u))\n\nConstruct a m × n BandedMatrix with bandwidths (l,u) from Pairs of diagonals and vectors. Vector kv.second will be placed on the kv.first diagonal.\n\n\n\nBandedMatrix(kv::Pair{<:Integer,<:AbstractVector}...)\n\nConstruct a square matrix from Pairs of diagonals and vectors. Vector kv.second will be placed on the kv.first diagonal.\n\n\n\n"
 },
 
 {
@@ -37,7 +37,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Home",
     "title": "Creating banded matrices",
     "category": "section",
-    "text": "BandedMatrixbonesbrandTo create a banded matrix of all zeros, identity matrix, or with a constant value use the following constructors:julia> BandedMatrix(Zeros(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 0.0  0.0  0.0          \n 0.0  0.0  0.0  0.0     \n      0.0  0.0  0.0  0.0\n           0.0  0.0  0.0\n                0.0  0.0\n\njulia> BandedMatrix(Eye(5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 1.0  0.0  0.0          \n 0.0  1.0  0.0  0.0     \n      0.0  1.0  0.0  0.0\n           0.0  1.0  0.0\n                0.0  1.0\n\njulia> BandedMatrix(Ones(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 1.0  1.0  1.0          \n 1.0  1.0  1.0  1.0     \n      1.0  1.0  1.0  1.0\n           1.0  1.0  1.0\n                1.0  1.0"
+    "text": "BandedMatrixbonesbrandTo create a banded matrix of all zeros, identity matrix, or with a constant value use the following constructors:julia> BandedMatrix(Zeros(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 0.0  0.0  0.0          \n 0.0  0.0  0.0  0.0     \n      0.0  0.0  0.0  0.0\n           0.0  0.0  0.0\n                0.0  0.0\n\njulia> BandedMatrix(Eye(5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 1.0  0.0  0.0          \n 0.0  1.0  0.0  0.0     \n      0.0  1.0  0.0  0.0\n           0.0  1.0  0.0\n                0.0  1.0\n\njulia> BandedMatrix(Ones(5,5), (1,2))\n5×5 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}:\n 1.0  1.0  1.0          \n 1.0  1.0  1.0  1.0     \n      1.0  1.0  1.0  1.0\n           1.0  1.0  1.0\n                1.0  1.0To create a banded matrix of a given size with constant bands (such as the classical finite difference approximation of the one-dimensional Laplacian on the unit interval [0,1]), you can use the following:n = 128\nh = 1/n\nA = BandedMatrix{Float64}(undef, (n,n), (1,1))\nA[band(0)] .= -2/h^2\nA[band(1)] .= A[band(-1)] .= 1/h^2"
 },
 
 {
