@@ -1,4 +1,4 @@
-using BandedMatrices, Compat.LinearAlgebra, Compat.Test
+using BandedMatrices, LinearAlgebra, Test
 
 import BandedMatrices: rowstart,
                        rowstop,
@@ -654,11 +654,7 @@ end
 
     @testset "tests bug" begin
         a = BandedMatrix(Zeros(1,1), (3,-1))
-        if VERSION < v"0.7"
-            @test_throws ArgumentError a[band(-2)]
-        else
-            @test a[band(-2)] == Float64[]
-        end
+        @test a[band(-2)] == Float64[]
     end
 
 

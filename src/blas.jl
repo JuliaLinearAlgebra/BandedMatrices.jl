@@ -1,8 +1,5 @@
-if VERSION ≥ v"0.7-"
-    import LinearAlgebra.BLAS.@blasfunc
-else
-    import Base.BLAS.@blasfunc
-end
+import LinearAlgebra.BLAS.@blasfunc
+
 
 for (fname, elty) in ((:dgbmv_,:Float64),
                       (:sgbmv_,:Float32),

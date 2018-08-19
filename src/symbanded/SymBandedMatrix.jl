@@ -215,9 +215,6 @@ function Base.convert(::Type{Matrix}, A::SymBandedMatrix)
     end
     ret
 end
-if VERSION < v"0.7-"
-    Base.full(A::SymBandedMatrix) = convert(Matrix, A)
-end
 
 
 

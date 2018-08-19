@@ -1,6 +1,6 @@
-using BandedMatrices, Compat
-using Compat.LinearAlgebra
-using Compat.Test
+using BandedMatrices
+using LinearAlgebra
+using Test
 
 include("test_banded.jl")
 include("test_subarray.jl")

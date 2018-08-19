@@ -1,4 +1,4 @@
-using BandedMatrices, Compat.Test
+using BandedMatrices, Test
 
 import BandedMatrices: banded_axpy!, banded_A_mul_B!, isbanded
 

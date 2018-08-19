@@ -1,5 +1,5 @@
-using BandedMatrices, FillArrays, Compat, Compat.Test
-import Compat.LinearAlgebra: axpy!
+using BandedMatrices, FillArrays, Test
+import LinearAlgebra: axpy!
 
 # SubArray
 @testset "BandedMatrix SubArray arithmetic" begin

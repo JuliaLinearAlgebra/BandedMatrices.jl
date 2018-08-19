@@ -693,11 +693,6 @@ function convert(::Type{Matrix}, A::BandedMatrix)
     ret
 end
 
-if VERSION < v"0.7-"
-    Base.full(A::BandedMatrix) = convert(Matrix, A)
-end
-
-
 function sparse(B::BandedMatrix)
     i=Vector{Int}(undef,length(B.data)); j=Vector{Int}(undef,length(B.data))
     n,m=size(B.data)
@@ -736,26 +731,14 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-if VERSION < v"0.7-"
-    function Base.scale!(α::Number, A::BandedMatrix)
-        Base.scale!(α, A.data)
-        A
-    end
+function LinearAlgebra.lmul!(α::Number, A::BandedMatrix)
+    LinearAlgebra.lmul!(α, A.data)
+    A
+end
 
-    function Base.scale!(A::BandedMatrix, α::Number)
-        Base.scale!(A.data, α)
-        A
-    end
-else
-    function LinearAlgebra.lmul!(α::Number, A::BandedMatrix)
-        LinearAlgebra.lmul!(α, A.data)
-        A
-    end
-
-    function LinearAlgebra.rmul!(A::BandedMatrix, α::Number)
-        LinearAlgebra.rmul!(A.data, α)
-        A
-    end
+function LinearAlgebra.rmul!(A::BandedMatrix, α::Number)
+    LinearAlgebra.rmul!(A.data, α)
+    A
 end
 
 function transpose(B::BandedMatrix)

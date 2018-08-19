@@ -1,24 +1,12 @@
-using Compat, BandedMatrices, Compat.Test, Compat.Random
+using BandedMatrices, Test, Random
 import BandedMatrices: _BandedMatrix
 
 # set prng to some value that avoids test failure
-if VERSION < v"0.7"
-    srand(0)
-else
-    Random.seed!(0)
-end
+Random.seed!(0)
 struct _foo <: Number end
 
-if VERSION < v"0.7-"
-    const luf = lufact
-    const ldiv! = Compat.LinearAlgebra.A_ldiv_B!
-    tldiv!(A, b) = Compat.LinearAlgebra.At_ldiv_B!(A, b)
-    cldiv!(A, b) = Compat.LinearAlgebra.Ac_ldiv_B!(A, b)
-else
-    const luf = lu
-    tldiv!(A, b) = ldiv!(transpose(A), b)
-    cldiv!(A, b) = ldiv!(adjoint(A), b)
-end
+tldiv!(A, b) = ldiv!(transpose(A), b)
+cldiv!(A, b) = ldiv!(adjoint(A), b)
 
 
 @testset "Conversion to blas type" begin
@@ -62,15 +50,15 @@ end
 
         for (A, b, typ) in zip(As, bs, typs)
             AA,   bb   = BandedMatrices._convert_to_blas_type(A,         b)
-            AAlu, bblu = BandedMatrices._convert_to_blas_type(luf(A), b)
+            AAlu, bblu = BandedMatrices._convert_to_blas_type(lu(A), b)
             @test eltype(AA) == eltype(bb) == eltype(AAlu) == eltype(bblu) == typ
             @test Matrix(A)\copy(b)             ≈ A\copy(b)
-            @test Matrix(A)\copy(b)             ≈ luf(A)\copy(b)
+            @test Matrix(A)\copy(b)             ≈ lu(A)\copy(b)
             @test Matrix(A)\copy(b)             ≈ ldiv!(A, copy(b))
-            @test Matrix(A)\copy(b)             ≈ ldiv!(luf(A), copy(b))
-            @test transpose(Matrix(A))\copy(b)  ≈ tldiv!(luf(A), copy(b))
-            @test transpose(Matrix(A))\copy(b)  ≈ ldiv!(luf(transpose(A)), copy(b))
-            @test adjoint(Matrix(A))\copy(b) ≈ cldiv!(luf(A), copy(b))
+            @test Matrix(A)\copy(b)             ≈ ldiv!(lu(A), copy(b))
+            @test transpose(Matrix(A))\copy(b)  ≈ tldiv!(lu(A), copy(b))
+            @test transpose(Matrix(A))\copy(b)  ≈ ldiv!(lu(transpose(A)), copy(b))
+            @test adjoint(Matrix(A))\copy(b) ≈ cldiv!(lu(A), copy(b))
         end
     end
 end
@@ -101,22 +89,22 @@ end
         Af = Matrix(A)
         bf = copy(b)
 
-        # note luf makes copies; these need revision
+        # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
-        @test Af\bf ≈ luf(A)\copy(b)
+        @test Af\bf ≈ lu(A)\copy(b)
         @test Af\bf ≈ ldiv!(A, copy(b))
-        @test Af\bf ≈ ldiv!(luf(A), copy(b))
+        @test Af\bf ≈ ldiv!(lu(A), copy(b))
     end
 
     # conversion of inputs if needed
     let
         # factorisation performs conversion
         Ai = _BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
-        @test eltype(luf(Ai)) == Float64
+        @test eltype(lu(Ai)) == Float64
 
         # no op
         Af = _BandedMatrix(rand(Float32, 3, 5), 5, 1, 1)
-        @test eltype(luf(Af)) == Float32
+        @test eltype(lu(Af)) == Float32
 
         # linear systems of integer data imply promotion
         Ai = _BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
@@ -124,9 +112,9 @@ end
         @test eltype(Ai\bi) == Float64
         # this code                     ≈ julia base
         @test Ai\bi                     ≈ Matrix(Ai)\copy(bi)
-        @test luf(Ai)\bi             ≈ Matrix(Ai)\copy(bi)
+        @test lu(Ai)\bi             ≈ Matrix(Ai)\copy(bi)
         @test ldiv!(Ai, bi)         ≈ Matrix(Ai)\copy(bi)
-        @test ldiv!(luf(Ai), bi) ≈ Matrix(Ai)\copy(bi)
+        @test ldiv!(lu(Ai), bi) ≈ Matrix(Ai)\copy(bi)
 
         # check A\b makes a copy of b
         Ai = _BandedMatrix(rand(1:10, 3, 5), 5, 1, 1)
@@ -141,9 +129,9 @@ end
             A = brand(m, n, 1, 1)
             b = rand(m)
             @test_throws DimensionMismatch A\b
-            @test_throws DimensionMismatch luf(A)\b
+            @test_throws DimensionMismatch lu(A)\b
             @test_throws DimensionMismatch ldiv!(A, b)
-            @test_throws DimensionMismatch ldiv!(luf(A), b)
+            @test_throws DimensionMismatch ldiv!(lu(A), b)
         end
     end
 
@@ -157,10 +145,10 @@ end
         Af = Matrix(A)
         bf = copy(b)
 
-        # note luf makes copies; these need revision
+        # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
-        @test Af'\bf ≈ tldiv!(luf(A),  copy(b))
-        @test Af'\bf ≈ ldiv!(luf(A'), copy(b))
+        @test Af'\bf ≈ tldiv!(lu(A),  copy(b))
+        @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
     end
 
 
@@ -174,17 +162,17 @@ end
         Af = Matrix(A)
         bf = copy(b)
 
-        # note luf makes copies; these need revision
+        # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
         @test Af\bf  ≈ A\copy(b)
-        @test Af\bf  ≈ luf(A)\copy(b)
+        @test Af\bf  ≈ lu(A)\copy(b)
         @test Af'\bf ≈ A'\copy(b)
-        @test Af'\bf ≈ luf(A')\copy(b)
-        @test Af\bf  ≈ ldiv!(luf(A),  copy(b))
-        @test Af'\bf ≈ ldiv!(luf(A'), copy(b))
-        @test transpose(Af)\bf ≈ tldiv!(luf(A),  copy(b))
-        @test adjoint(Af)\bf ≈ ldiv!(luf(adjoint(A)), copy(b))
-        @test adjoint(Af)\bf ≈ cldiv!(luf(A), copy(b))
+        @test Af'\bf ≈ lu(A')\copy(b)
+        @test Af\bf  ≈ ldiv!(lu(A),  copy(b))
+        @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
+        @test transpose(Af)\bf ≈ tldiv!(lu(A),  copy(b))
+        @test adjoint(Af)\bf ≈ ldiv!(lu(adjoint(A)), copy(b))
+        @test adjoint(Af)\bf ≈ cldiv!(lu(A), copy(b))
     end
 
     # test with multiple rhs
@@ -197,21 +185,21 @@ end
         Af = Matrix(A)
         bf = copy(b)
 
-        # note luf makes copies; these need revision
+        # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
         @test Af\bf  ≈ A\copy(b)
-        @test Af\bf  ≈ luf(A)\copy(b)
+        @test Af\bf  ≈ lu(A)\copy(b)
         @test Af'\bf ≈ A'\copy(b)
-        @test Af'\bf ≈ luf(A')\copy(b)
-        @test Af\bf  ≈ ldiv!(luf(A),  copy(b))
-        @test Af'\bf ≈ ldiv!(luf(A'), copy(b))
-        @test Af'\bf ≈ tldiv!(luf(A),  copy(b))
-        @test Af'\bf ≈ ldiv!(luf(A'), copy(b))
+        @test Af'\bf ≈ lu(A')\copy(b)
+        @test Af\bf  ≈ ldiv!(lu(A),  copy(b))
+        @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
+        @test Af'\bf ≈ tldiv!(lu(A),  copy(b))
+        @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
     end
 
     # test properties of factorisation
     let
-        BLU = luf(brand(5, 4, 1, 1))
+        BLU = lu(brand(5, 4, 1, 1))
         @test size(BLU) == (5, 4)
         @test size(BLU, 1) == 5
         @test size(BLU, 2) == 4
@@ -220,11 +208,3 @@ end
         @test_throws ErrorException size(BLU,  0)
     end
 end
-
-
-# if VERSION ≥ v"0.7-"
-#     @testset "LU properties" begin
-#         A = brand(5,5,4,3); LU = lu(A);
-#
-#     end
-# end

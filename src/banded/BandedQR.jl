@@ -129,10 +129,6 @@ function (*)(A::BandedQ{T}, x::AbstractVector{S}) where {T,S}
     A_mul_B!(similar(x,TS,size(A,1)),A,x)
 end
 
-if VERSION < v"0.7-"
-    Base.full(A::BandedQ) = A*eye(eltype(A),size(A,1))
-end
-
 Base.IndexStyle(::Type{BandedQ{T}}) where {T} = IndexCartesian()
 Base.getindex(A::BandedQ,k::Int,j::Int) = (A*eltype(A)[zeros(j-1);1.0;zeros(size(A,2)-j)])[k]
 
@@ -147,37 +143,25 @@ function Base.getindex(QR::BandedQR,d::Symbol)
 end
 
 
-if VERSION < v"0.7-"
-    function qr(A::BandedMatrix)
-        QR = qrfact(A)
-        QR[:Q],QR[:R]
-    end
 
-    function qrfact(A::BandedMatrix)
-        R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
-        R.data[A.l+1:end,:]=A.data
-        banded_qr!(R)
+function getproperty(QR::BandedQR, d::Symbol)
+    if d == :R
+        return getfield(QR,:R)
+    elseif d == :Q
+        return BandedQ(QR.H,size(QR,1))
+    else
+        getfield(QR, d)
     end
-else
-    function getproperty(QR::BandedQR, d::Symbol)
-        if d == :R
-            return getfield(QR,:R)
-        elseif d == :Q
-            return BandedQ(QR.H,size(QR,1))
-        else
-            getfield(QR, d)
-        end
-    end
-    # iteration for destructuring into components
-    iterate(S::BandedQR) = (S.Q, Val(:R))
-    iterate(S::BandedQR, ::Val{:R}) = (S.R, Val(:done))
-    iterate(S::BandedQR, ::Val{:done}) = nothing
+end
+# iteration for destructuring into components
+iterate(S::BandedQR) = (S.Q, Val(:R))
+iterate(S::BandedQR, ::Val{:R}) = (S.R, Val(:done))
+iterate(S::BandedQR, ::Val{:done}) = nothing
 
-    function qr(A::BandedMatrix)
-        R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
-        R.data[A.l+1:end,:]=A.data
-        banded_qr!(R)
-    end
+function qr(A::BandedMatrix)
+    R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
+    R.data[A.l+1:end,:]=A.data
+    banded_qr!(R)
 end
 
 flipsign(x,y) = Base.flipsign(x,y)

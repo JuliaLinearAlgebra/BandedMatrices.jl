@@ -1,5 +1,4 @@
-using BandedMatrices, FillArrays, Compat.Test, Compat.LinearAlgebra, Compat.SparseArrays
-using Compat
+using BandedMatrices, FillArrays, Test, LinearAlgebra, SparseArrays
 import BandedMatrices: _BandedMatrix
 
 # used to test general matrix backends

@@ -1,5 +1,3 @@
-using Compat
-
 versioninfo()
 
 #gc_enable(false)

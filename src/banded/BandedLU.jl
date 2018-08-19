@@ -23,7 +23,7 @@ size(A::BandedLU, k::Integer) = k <= 0 ? error("dimension out of range") :
                                 k == 2 ? size(A.data, 2) : 1
 
 # LU factorisation with pivoting. This makes a copy!
-function lufact(A::BandedMatrix{T}) where {T<:Number}
+function lu(A::BandedMatrix{T}) where {T<:Number}
     # copy to a blas type that allows calculation of the factorisation in place.
     S = _promote_to_blas_type(T, T)
     # copy into larger array of size (2l+u*1)×n, i.e. l additional rows
@@ -33,38 +33,37 @@ function lufact(A::BandedMatrix{T}) where {T<:Number}
     data, ipiv = gbtrf!(A.l, A.u, m, data)
     BandedLU{S}(data, ipiv, A.l, A.u, m)
 end
-lufact(F::BandedLU) = F # no op
+lu(F::BandedLU) = F # no op
 
-if VERSION ≥ v"0.7-"
-    adjoint(F::BandedLU) = Adjoint(F)
-    transpose(F::BandedLU) = Transpose(F)
 
-    # TODO: Finish. There was something weird about the pivoting
-    # function Base.getproperty(F::BandedLU{T}, d::Symbol) where T
-    #     if d == :L
-    #         m, n = size(F)
-    #         l,u = F.l, F.u
-    #         return _BandedMatrix([Ones{T}(1,n); view(F.data,l+u+2:2l+u+1, :)], m, l,0)
-    #     elseif d == :U
-    #         m, n = size(F)
-    #         l,u = F.l, F.u
-    #         return _BandedMatrix(F.data[l+1:l+u+1, :], n, 0, u)
-    #     elseif d == :p
-    #         return LinearAlgebra.ipiv2perm(getfield(F, :ipiv), m)
-    #     elseif d == :P
-    #         m, n = size(F)
-    #         return Matrix{T}(I, m, m)[:,invperm(F.p)]
-    #     else
-    #         getfield(F, d)
-    #     end
-    # end
-    #
-    # # iteration for destructuring into components
-    # Base.iterate(S::BandedLU) = (S.L, Val(:U))
-    # Base.iterate(S::BandedLU, ::Val{:U}) = (S.U, Val(:p))
-    # Base.iterate(S::BandedLU, ::Val{:p}) = (S.p, Val(:done))
-    # Base.iterate(S::BandedLU, ::Val{:done}) = nothing
-end
+adjoint(F::BandedLU) = Adjoint(F)
+transpose(F::BandedLU) = Transpose(F)
+
+# TODO: Finish. There was something weird about the pivoting
+# function Base.getproperty(F::BandedLU{T}, d::Symbol) where T
+#     if d == :L
+#         m, n = size(F)
+#         l,u = F.l, F.u
+#         return _BandedMatrix([Ones{T}(1,n); view(F.data,l+u+2:2l+u+1, :)], m, l,0)
+#     elseif d == :U
+#         m, n = size(F)
+#         l,u = F.l, F.u
+#         return _BandedMatrix(F.data[l+1:l+u+1, :], n, 0, u)
+#     elseif d == :p
+#         return LinearAlgebra.ipiv2perm(getfield(F, :ipiv), m)
+#     elseif d == :P
+#         m, n = size(F)
+#         return Matrix{T}(I, m, m)[:,invperm(F.p)]
+#     else
+#         getfield(F, d)
+#     end
+# end
+#
+# # iteration for destructuring into components
+# Base.iterate(S::BandedLU) = (S.L, Val(:U))
+# Base.iterate(S::BandedLU, ::Val{:U}) = (S.U, Val(:p))
+# Base.iterate(S::BandedLU, ::Val{:p}) = (S.p, Val(:done))
+# Base.iterate(S::BandedLU, ::Val{:done}) = nothing
 
 ## Utilities
 
@@ -84,32 +83,15 @@ function _promote_to_blas_type(::Type{T}, ::Type{S}) where {T<:Number, S<:Number
 end
 
 # Converts A and b to the narrowest blas type
-if VERSION < v"0.7-"
-    for typ in (BandedMatrix, BandedLU)
-        @eval function _convert_to_blas_type(A::$typ, B::AbstractVecOrMat{T}) where {T<:Number}
-            TS = _promote_to_blas_type(eltype(A), eltype(B))
-            AA = convert($typ{TS}, A)
-            BB = convert(Array{TS, ndims(B)}, B)
-            AA, BB # one of these two might make a copy
-        end
-    end
-else
-    for typ in (BandedMatrix, BandedLU, (Transpose{V,BandedLU{V}} where V), (Adjoint{V,BandedLU{V}} where V))
-        @eval function _convert_to_blas_type(A::$typ, B::AbstractVecOrMat{T}) where {T<:Number}
-            TS = _promote_to_blas_type(eltype(A), eltype(B))
-            AA = convert($typ{TS}, A)
-            BB = convert(Array{TS, ndims(B)}, B)
-            AA, BB # one of these two might make a copy
-        end
+for typ in (BandedMatrix, BandedLU, (Transpose{V,BandedLU{V}} where V), (Adjoint{V,BandedLU{V}} where V))
+    @eval function _convert_to_blas_type(A::$typ, B::AbstractVecOrMat{T}) where {T<:Number}
+        TS = _promote_to_blas_type(eltype(A), eltype(B))
+        AA = convert($typ{TS}, A)
+        BB = convert(Array{TS, ndims(B)}, B)
+        AA, BB # one of these two might make a copy
     end
 end
-
 
 # basic interface
-if VERSION < v"0.7-"
-    (\)(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) where {T<:BlasFloat} =
-        A_ldiv_B!(A, copy(B)) # makes a copy
-else
-    (\)(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) where {T<:BlasFloat} =
-        ldiv!(A, copy(B)) # makes a copy
-end
+(\)(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) where {T<:BlasFloat} =
+    ldiv!(A, copy(B)) # makes a copy

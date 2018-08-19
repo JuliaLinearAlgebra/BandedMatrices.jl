@@ -1,8 +1,5 @@
-using BandedMatrices, Compat.Test
+using BandedMatrices, Test
 
-if VERSION < v"0.7-"
-    const mul! = Base.A_mul_B!
-end
 @testset "QR tests" begin
     for T in (Float64,ComplexF64,Float32,ComplexF32)
         A=brand(T,10,10,3,2)
