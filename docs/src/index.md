@@ -42,8 +42,14 @@ julia> BandedMatrix(Ones(5,5), (1,2))
            1.0  1.0  1.0
                 1.0  1.0
 ```
-
-
+To create a banded matrix of a given size with constant bands (such as the classical finite difference approximation of the one-dimensional Laplacian on the unit interval [0,1]), you can use the following:
+```julia
+n = 128
+h = 1/n
+A = BandedMatrix{Float64}(undef, (n,n), (1,1))
+A[band(0)] .= -2/h^2
+A[band(1)] .= A[band(-1)] .= 1/h^2
+```
 
 ## Accessing banded matrices
 

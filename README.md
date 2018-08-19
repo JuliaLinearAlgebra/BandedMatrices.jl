@@ -22,6 +22,7 @@ BandedMatrix(-1=> 1:5, 2=>1:3)     # creates a 5 x 5 banded matrix version of di
 BandedMatrix((-1=> 1:5, 2=>1:3), (n,m))     # creates an n x m banded matrix with 1 sub-diagonals and u super-diagonals with the specified diagonals
 BandedMatrix((-1=> 1:5, 2=>1:3), (n,m), (l,u))     # creates an n x m banded matrix with l sub-diagonals and u super-diagonals with the specified diagonals
 ```
+For more examples, see [the documentation](http://juliamatrices.github.io/BandedMatrices.jl/latest/#Creating-banded-matrices-1).
 
 Specialized algebra routines are overriden, include `*` and `\`:
 
