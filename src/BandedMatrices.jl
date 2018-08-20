@@ -33,7 +33,7 @@ import Base: convert, size, view, unsafe_indices,
                             IndexStyle, real, imag, Slice, pointer
 
 
-import LazyArrays: MemoryLayout
+import LazyArrays: MemoryLayout, blasmul!
 
 import FillArrays: AbstractFill
 
