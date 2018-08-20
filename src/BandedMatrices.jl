@@ -33,6 +33,8 @@ import Base: convert, size, view, unsafe_indices,
                             IndexStyle, real, imag, Slice, pointer
 
 
+import LazyArrays: MemoryLayout
+
 import FillArrays: AbstractFill
 
 export BandedMatrix,
@@ -54,8 +56,6 @@ export BandedMatrix,
        Eye
 
 
-
-include("memorylayout.jl")
 include("blas.jl")
 include("lapack.jl")
 
