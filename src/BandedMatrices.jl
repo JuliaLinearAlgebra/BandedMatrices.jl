@@ -21,19 +21,19 @@ import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
             qr, axpy!, ldiv!, mul!, lu, lu!
 import SparseArrays: sparse
 
-
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
 import Base: convert, size, view, unsafe_indices,
                 first, last, size, length, unsafe_length, step,
-                to_indices, to_index, show, fill!, copy!, promote_op,
+                to_indices, to_index, show, fill!, promote_op,
                 MultiplicativeInverses, OneTo, ReshapedArray,
                                similar, copy, convert, promote_rule, rand,
-                            IndexStyle, real, imag, Slice, pointer
+                            IndexStyle, real, imag, Slice, pointer, copyto!
 
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted
 
-import LazyArrays: MemoryLayout, blasmul!
+import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat
 
 import FillArrays: AbstractFill
 
@@ -58,6 +58,7 @@ export BandedMatrix,
 
 include("blas.jl")
 include("lapack.jl")
+include("memorylayout.jl")
 
 include("generic/AbstractBandedMatrix.jl")
 include("generic/Band.jl")

@@ -1,6 +1,6 @@
-# copy!
+# copyto!
 
-function banded_copy!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
+function banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     m,n = size(dest)
     (m,n) == size(src) || throw(DimensionMismatch())
 
@@ -436,7 +436,7 @@ banded_generic_matmatmul!(C::AbstractMatrix, tA::Val, tB::Val, A::AbstractMatrix
 # the BandedMatrix interface
 macro _banded_banded_linalg(Typ1, Typ2)
     ret = quote
-        Base.copyto!(dest::$Typ1, src::$Typ2) = BandedMatrices.banded_copy!(dest,src)
+        Base.copyto!(dest::$Typ1, src::$Typ2) = BandedMatrices.banded_copyto!(dest,src)
         LinearAlgebra.BLAS.axpy!(a::Number, X::$Typ1, Y::$Typ2) = BandedMatrices.banded_axpy!(a, X, Y)
 
         function Base.:+(A::$Typ1{T}, B::$Typ2{V}) where {T,V}
