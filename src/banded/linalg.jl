@@ -1,5 +1,3 @@
-@_banded_linalg AbstractBandedMatrix
-
 ## Method definitions for generic eltypes - will make copies
 
 # Direct and transposed algorithms

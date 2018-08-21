@@ -14,7 +14,8 @@ import LinearAlgebra: BlasInt,
                     copy_oftype,
                     checksquare,
                     adjoint,
-                    transpose
+                    transpose,
+                    AdjOrTrans
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
@@ -35,7 +36,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat,
                     AbstractStridedLayout, AbstractColumnMajor,
-                    _copyto!, BMatVec, transposelayout, ConjLayout, conjlayout
+                    _copyto!, BMatVec, BMixedMatVec, BMixedMatMat, transposelayout, ConjLayout, conjlayout
 import FillArrays: AbstractFill
 
 export BandedMatrix,

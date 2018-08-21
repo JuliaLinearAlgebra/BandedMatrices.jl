@@ -6,12 +6,37 @@
 # note only BLAS types have fast `c .= α.*Mul(A,x) .+ β.*b`
 ###
 
+function *(A::AbstractBandedMatrix{T}, B::AbstractBandedMatrix{V}) where {T, V}
+    n, m = size(A,1), size(B,2)
+    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
+    Y .= Mul(A, B)
+end
+function *(A::AbstractBandedMatrix{T}, B::AdjOrTrans{V,<:AbstractBandedMatrix{V}}) where {T, V}
+    n, m = size(A,1), size(B,2)
+    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
+    Y .= Mul(A, B)
+end
+function *(A::AdjOrTrans{T,<:AbstractBandedMatrix{T}}, B::AbstractBandedMatrix{V}) where {T, V}
+    n, m = size(A,1), size(B,2)
+    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
+    Y .= Mul(A, B)
+end
+function *(A::AdjOrTrans{T,<:AbstractBandedMatrix{T}}, B::AdjOrTrans{V,<:AbstractBandedMatrix{V}}) where {T, V}
+    n, m = size(A,1), size(B,2)
+    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
+    Y .= Mul(A, B)
+end
+
+
 mul!(dest::AbstractVector, A::AbstractBandedMatrix, x::AbstractVector) =
     (dest .= Mul(A,x))
 
 mul!(dest::AbstractMatrix, A::AbstractBandedMatrix, x::AbstractMatrix) =
     (dest .= Mul(A,x))
-
+mul!(dest::AbstractMatrix, A::AbstractBandedMatrix, x::AbstractBandedMatrix) =
+    (dest .= Mul(A,x))
+mul!(dest::AbstractMatrix, A::AbstractBandedMatrix, x::Adjoint{<:Any,<:AbstractMatrix}) =
+    (dest .= Mul(A,x))
 
 mul!(dest::AbstractVector, A::Adjoint{<:Any,<:AbstractBandedMatrix}, b::AbstractVector) =
     (dest .= Mul(A, b))
@@ -54,11 +79,13 @@ end
 
 
 ##
-# Non-BLAS
+# Non-BLAS mat vec
 ##
 
-@inline function _copyto!(::AbstractStridedLayout, c::AbstractVector,
-         bc::BMatVec{T, <:BandedColumnMajor, <:AbstractStridedLayout}) where T
+
+
+@inline function _copyto!(_, c::AbstractVector{T},
+         bc::BMixedMatVec{<:Any, <:BandedColumnMajor}) where T
     (M,) = bc.args
     A,b = M.A, M.B
     fill!(c, zero(T))
@@ -69,8 +96,8 @@ end
 end
 
 
-@inline function _copyto!(::AbstractStridedLayout, c::AbstractVector,
-         bc::BMatVec{T, <:BandedRowMajor, <:AbstractStridedLayout}) where T
+@inline function _copyto!(_, c::AbstractVector{T},
+         bc::BMixedMatVec{<:Any, <:BandedRowMajor}) where T
     (M,) = bc.args
     At,b = M.A, M.B
     A = transpose(At)
@@ -81,8 +108,8 @@ end
     c
 end
 
-@inline function _copyto!(::AbstractStridedLayout, c::AbstractVector,
-         bc::BMatVec{T, <:ConjLayout{BandedRowMajor}, <:AbstractStridedLayout}) where T
+@inline function _copyto!(_, c::AbstractVector{T},
+         bc::BMixedMatVec{<:Any, <:ConjLayout{<:BandedRowMajor}}) where T
     (M,) = bc.args
     Ac,b = M.A, M.B
     A = Ac'
@@ -92,6 +119,65 @@ end
     end
     c
 end
+
+
+## Banded * Banded
+function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix) where T
+    Am, An = size(A)
+    Bm, Bn = size(B)
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+    Cl,Cu = prodbandwidths(A, B)
+    size(C) == (Am,Bn) || throw(DimensionMismatch())
+    C̃l,C̃u = bandwidths(C)
+    # set extra bands to zero
+    @inbounds for j = 1:Bn
+        for k = max(j - C̃u,1):max(min(j-Cu-1,Am),0)
+            inbands_setindex!(C,zero(T),k,j)
+        end
+        for k = max(j + Cl+1,1):max(min(j+C̃l,Am),0)
+            inbands_setindex!(C,zero(T),k,j)
+        end
+    end
+
+    @inbounds for j = 1:Bn, k = max(j-Cu, 1):max(min(j+Cl, Am), 0)
+        νmin = max(1,k-Al,j-Bu)
+        νmax = min(An,k+Au,j+Bl)
+
+        tmp = zero(T)
+        for ν=νmin:νmax
+            tmp = tmp + inbands_getindex(A,k,ν) * inbands_getindex(B,ν,j)
+        end
+        inbands_setindex!(C,tmp,k,j)
+    end
+    C
+end
+
+
+const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
+
+@inline function _copyto!(_, C::AbstractMatrix,
+         bc::BMixedMatMat{<:Any,<:ConjOrBandedLayout,<:ConjOrBandedLayout})
+     (M,) = bc.args
+     A, B = M.A, M.B
+     banded_mul!(C, A, B)
+end
+
+@inline function _copyto!(_, C::AbstractMatrix,
+         bc::BMixedMatMat{<:Any,<:ConjOrBandedLayout})
+     (M,) = bc.args
+     A, B = M.A, M.B
+     banded_mul!(C, A, B)
+end
+
+@inline function _copyto!(_, C::AbstractMatrix,
+         bc::BMixedMatMat{<:Any,<:Any,<:ConjOrBandedLayout})
+     (M,) = bc.args
+     A, B = M.A, M.B
+     banded_mul!(C, A, B)
+end
+
+
 
 
 #

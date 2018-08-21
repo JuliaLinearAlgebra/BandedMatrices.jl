@@ -39,7 +39,7 @@ function banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
 
     d_l, d_u = bandwidths(dest)
     s_l, s_u = bandwidths(src)
-    (d_l ≥ s_l && d_u ≥ s_u) || throw(BandError(dest))
+    (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
     for j=1:n
         for k = max(1,j-d_u):min(j-s_u-1,m)
             inbands_setindex!(dest, zero(T), k, j)

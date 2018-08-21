@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, Test
+using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
 @testset "lmul!/rmul!" begin
     A = brand(n,n,1,1)
@@ -118,3 +118,24 @@ end
     y .= Mul(transpose(A),x)
     @test y == Matrix(transpose(A))*x
 end
+
+
+n = 10
+A = brand(n,n,1,1)
+B = brand(n,n,2,2)
+C = brand(n,n,3,3)
+C .= Mul(A,B)
+@test Matrix(C) ≈ Matrix(A)*Matrix(B)
+C = brand(n,n,4,4)
+C .= Mul(A,B)
+@test Matrix(C) ≈ Matrix(A)*Matrix(B)
+B = randn(n,n)
+C = similar(B)
+
+C .= Mul(A,B)
+C .= Mul(B,A)
+
+
+
+
+C

@@ -22,6 +22,9 @@ bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
 
+bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
+bandwidth(A::AdjOrTrans{T,S}, i::Int) where {T,S} = bandwidths(A)[i]
+
 
 """
     bandwidth(A,i)
@@ -99,7 +102,14 @@ end
     r
 end
 
-
+inbands_getindex(x::Adjoint, i::Integer, j::Integer) =
+    inbands_getindex(parent(x), j, i)'
+inbands_getindex(x::Transpose, i::Integer, j::Integer) =
+    transpose(inbands_getindex(parent(x), j, i))
+inbands_setindex!(x::Adjoint, v, i::Integer, j::Integer) =
+    inbands_setindex!(parent(x), v', j, i)
+inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
+    inbands_setindex!(parent(x), transpose(v), j, i)
 ## Show
 
 

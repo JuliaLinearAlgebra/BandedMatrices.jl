@@ -75,11 +75,6 @@ end
     end
 end
 
-A=brand(10,12,2,3)
-v=rand(12)
-w=rand(10)
-A'*w
-
 # banded * vec
 @testset "BandedMatrix * Vector" begin
     let A=brand(10,12,2,3), v=rand(12), w=rand(10)
@@ -126,12 +121,53 @@ end
     # @test A'*C' ≈ Matrix(A)'*C'
 end
 
+@testset "AdjOrTrans banded interface" begin
+    A = brand(10,10,1,2)
+    @test bandwidths(A') == (2,1)
+    @test bandwidth(A',1) == 2
+    @test bandwidth(A',2) == 1
+
+    @test BandedMatrices.inbands_getindex(A',2,3) == A[3,2]
+    BandedMatrices.inbands_setindex!(A',3,2,3)
+    @test A[3,2] == 3
+
+    @test bandwidths(transpose(A)) == (2,1)
+    @test bandwidth(transpose(A),1) == 2
+    @test bandwidth(transpose(A),2) == 1
+end
+
 # banded * banded
 @testset "Banded * Banded" begin
-    for n in (1,5), ν in (1,5), m in (1,5), Al in (0,1,3), Au in (0,1,3),
-            Bl in (0,1,3), Bu in (0,1,3)
-        let A = brand(n, ν, Al, Au), B = brand(ν, m, Bl, Bu),
-                C = brand(ν, n, Al, Bu), D = brand(m, ν, Al, Bu)
+    @testset "Float64" begin
+        for n in (1,5), ν in (1,5), m in (1,5), Al in (0,1,3), Au in (0,1,3),
+                Bl in (0,1,3), Bu in (0,1,3)
+            let A = brand(n, ν, Al, Au), B = brand(ν, m, Bl, Bu),
+                    C = brand(ν, n, Al, Bu), D = brand(m, ν, Al, Bu)
+                @test A*B isa BandedMatrix
+                @test bandwidths(A*B) == (Al+Bl,Au+Bu)
+                @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
+                @test C'*B isa BandedMatrix
+                @test bandwidths(C'*B) == (Bu+Bl,Al+Bu)
+                @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
+                @test A*D' isa BandedMatrix
+                @test bandwidths(A*D') == (Al+Bu,Au+Al)
+                @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
+                @test bandwidths(C'*D') == (2Bu,2Al)
+                @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
+            end
+        end
+    end
+    @testset "ComplexF64" begin
+        let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(ComplexF64, 4, 6, 3, 1),
+            C = brand(ComplexF64, 4, 5, 1, 1), D = brand(ComplexF64, 6, 4, 0, 3)
+            @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
+            @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
+            @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
+            @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
+        end
+
+        let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(4, 6, 3, 1), C = brand(4, 5, 1, 1),
+                D = brand(ComplexF64, 6, 4, 0, 3)
             @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
             @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
             @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
@@ -139,26 +175,10 @@ end
         end
     end
 
-    let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(ComplexF64, 4, 6, 3, 1),
-        C = brand(ComplexF64, 4, 5, 1, 1), D = brand(ComplexF64, 6, 4, 0, 3)
-        @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
-        @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
-        @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
-        @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
-    end
-
-    let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(4, 6, 3, 1), C = brand(4, 5, 1, 1),
-            D = brand(ComplexF64, 6, 4, 0, 3)
-        @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
-        @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
-        @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
-        @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
-    end
-
-
-    ## BigFloat
-
-    let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
+    @testset "BigFloat" begin
+        A = brand(5, 5, 1, 2)
+        B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3))
+        D = rand(5, 5)
         for j = 1:size(B,2), k = colrange(B,j)
             B[k,j]=randn()
         end
@@ -174,38 +194,36 @@ end
     end
 
 
-    ## negative bands
+    @testset "negative bands" begin
+        for A in (brand(3,4,-1,2),brand(5,4,-1,2),
+                    brand(3,4,2,-1),brand(5,4,2,-1))
+            b = rand(size(A,2))
+            c = rand(size(A,1))
+            @test A*b ≈ Matrix(A)*b
+            @test A'*c ≈ Matrix(A)'*c
+        end
 
-    for A in (brand(3,4,-1,2),brand(5,4,-1,2),
-                brand(3,4,2,-1),brand(5,4,2,-1))
-        b = rand(size(A,2))
-        c = rand(size(A,1))
-        @test A*b ≈ Matrix(A)*b
-        @test A'*c ≈ Matrix(A)'*c
+        let C = brand(4, 5, -1, 3), D = rand(4, 4)
+            for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
+                B in (brand(4,5,1,2),brand(4,5,-1,2),brand(4,5,2,-1))
+                @test A*B ≈ Matrix(A)*Matrix(B)
+                @test B*C' ≈ Matrix(B)*Matrix(C)'
+                @test B'*C ≈ Matrix(B)'*Matrix(C)
+                @test B'*A' ≈ Matrix(B)'*Matrix(A)'
+            end
+
+            for A in (brand(5,4,-1,2),brand(5,4,2,-1),brand(3,4,-1,2),brand(3,4,2,-1))
+                @test A*D ≈ Matrix(A)*Matrix(D)
+            end
+
+            for B in (brand(4,3,-1,2),brand(4,3,2,-1),brand(4,5,-1,2),brand(4,5,2,-1))
+                @test D*B ≈ Matrix(D)*Matrix(B)
+            end
+        end
     end
 
-
-    let C = brand(4, 5, -1, 3), D = rand(4, 4)
-        for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
-            B in (brand(4,5,1,2),brand(4,5,-1,2),brand(4,5,2,-1))
-            @test A*B ≈ Matrix(A)*Matrix(B)
-            @test B*C' ≈ Matrix(B)*Matrix(C)'
-            @test B'*C ≈ Matrix(B)'*Matrix(C)
-            @test B'*A' ≈ Matrix(B)'*Matrix(A)'
-        end
-
-        for A in (brand(5,4,-1,2),brand(5,4,2,-1),brand(3,4,-1,2),brand(3,4,2,-1))
-            @test A*D ≈ Matrix(A)*Matrix(D)
-        end
-
-        for B in (brand(4,3,-1,2),brand(4,3,2,-1),brand(4,5,-1,2),brand(4,5,2,-1))
-            @test D*B ≈ Matrix(D)*Matrix(B)
-        end
-    end
-
-    # zero arrays
-
-    let b = rand(4)
+    @testset "zero" begin
+        b = rand(4)
         for A in (brand(3,4,-1,0),brand(3,4,0,-1),brand(3,4,-1,-1)),
             B in (brand(4,3,1,2),brand(4,3,-1,0),brand(4,3,-1,-1))
             @test Matrix(A) == zeros(3,4)
@@ -214,11 +232,10 @@ end
         end
     end
 
-    # Test for errors in collect
-
-   let B = brand(10,10,0,4)
-       @test B*[collect(1.0:10) collect(1.0:10)] ≈ Matrix(B)*[collect(1.0:10) collect(1.0:10)]
-   end
+    @testset "errors in collect" begin
+        B = brand(10,10,0,4)
+        @test B*[collect(1.0:10) collect(1.0:10)] ≈ Matrix(B)*[collect(1.0:10) collect(1.0:10)]
+    end
 end
 
 
