@@ -1,9 +1,9 @@
-sbmv!(α::T,A::SymBandedMatrix{T},x::StridedVector{T},β::T,y::StridedVector{T}) where {T<:BlasFloat} =
+sbmv!(α::T,A::SymBandedMatrix{T},x::AbstractVector{T},β::T,y::AbstractVector{T}) where {T<:BlasFloat} =
   sbmv!('U',A.k,α,A.data,x,β,y)
 
 
 
-function symbanded_A_mul_B!(c::AbstractVector{T},A::AbstractMatrix{T},b::StridedVector{T}) where {T<:BlasFloat}
+function symbanded_A_mul_B!(c::AbstractVector{T},A::AbstractMatrix{T},b::AbstractVector{T}) where {T<:BlasFloat}
     n = size(A,1)
 
     @boundscheck if length(c) ≠ n || length(b) ≠ n

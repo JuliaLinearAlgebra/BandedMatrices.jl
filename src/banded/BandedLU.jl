@@ -93,5 +93,5 @@ for typ in (BandedMatrix, BandedLU, (Transpose{V,BandedLU{V}} where V), (Adjoint
 end
 
 # basic interface
-(\)(A::Union{BandedLU{T}, BandedMatrix{T}}, B::StridedVecOrMat{T}) where {T<:BlasFloat} =
+(\)(A::Union{BandedLU{T}, BandedMatrix{T}}, B::AbstractVecOrMat{T}) where {T<:BlasFloat} =
     ldiv!(A, copy(B)) # makes a copy

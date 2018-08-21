@@ -257,7 +257,7 @@ function *(A::SymBandedMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Numb
     A_mul_B!(Y,A,B)
 end
 
-function *(A::SymBandedMatrix{T},B::StridedMatrix{V}) where {T<:Number,V<:Number}
+function *(A::SymBandedMatrix{T},B::AbstractMatrix{V}) where {T<:Number,V<:Number}
     if size(A,2)!=size(B,1)
         throw(DimensionMismatch("*"))
     end
@@ -266,13 +266,13 @@ function *(A::SymBandedMatrix{T},B::StridedMatrix{V}) where {T<:Number,V<:Number
     A_mul_B!(Array(promote_type(T,V),n,m),A,B)
 end
 
-*(A::StridedMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Number} =
+*(A::AbstractMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Number} =
     A*Array(B)
 
-*(A::SymBandedMatrix{T},b::StridedVector{T}) where {T<:BlasFloat} =
+*(A::SymBandedMatrix{T},b::AbstractVector{T}) where {T<:BlasFloat} =
     A_mul_B!(Vector{T}(undef,size(A,1)),A,b)
 
-function *(A::SymBandedMatrix{T},b::StridedVector{T}) where {T}
+function *(A::SymBandedMatrix{T},b::AbstractVector{T}) where {T}
     ret = zeros(T,size(A,1))
     for j = 1:size(A,2), k = colrange(A,j)
         @inbounds ret[k]+=A[k,j]*b[j]
@@ -281,7 +281,7 @@ function *(A::SymBandedMatrix{T},b::StridedVector{T}) where {T}
 end
 
 
-function *(A::SymBandedMatrix{TT},b::StridedVector) where {TT}
+function *(A::SymBandedMatrix{TT},b::AbstractVector) where {TT}
     T=promote_type(eltype(A),eltype(b))
     convert(BandedMatrix{T},A)*convert(AbstractVector{T},b)
 end
