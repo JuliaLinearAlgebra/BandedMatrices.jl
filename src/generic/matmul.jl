@@ -53,6 +53,38 @@ banded_gbmv!(tA, α, A, x, β, y) =
     BLAS.gbmv!(tA, size(A,1), bandwidth(A,1), bandwidth(A,2),
                 α, bandeddata(A), x, β, y)
 
+
+# function generally_banded_matmatmul!(C::AbstractMatrix{T}, tA::Val, tB::Val, A::AbstractMatrix{U}, B::AbstractMatrix{V}) where {T, U, V}
+#     Am, An = _size(tA, A)
+#     Bm, Bn = _size(tB, B)
+#     if An != Bm || size(C, 1) != Am || size(C, 2) != Bn
+#         throw(DimensionMismatch("*"))
+#     end
+#     # TODO: checkbandmatch
+#
+#     Al, Au = _bandwidths(tA, A)
+#     Bl, Bu = _bandwidths(tB, B)
+#
+#     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
+#         fill!(C, zero(T))
+#     elseif Al < 0
+#         C[max(1,Bn+Al-1):Am, :] .= zero(T)
+#         banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Al:An), _view(tB, B, 1-Al:An, :))
+#     elseif Au < 0
+#         C[1:-Au,:] .= zero(T)
+#         banded_matmatmul!(view(C, 1-Au:Am,:), tA, tB, _view(tA, A, 1-Au:Am,:), B)
+#     elseif Bl < 0
+#         C[:, 1:-Bl] .= zero(T)
+#         banded_matmatmul!(view(C, :, 1-Bl:Bn), tA, tB, A, _view(tB, B, :, 1-Bl:Bn))
+#     elseif Bu < 0
+#         C[:, max(1,Am+Bu-1):Bn] .= zero(T)
+#         banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Bu:Bm), _view(tB, B, 1-Bu:Bm, :))
+#     else
+#         positively_banded_matmatmul!(C, tA, tB, A, B)
+#     end
+#     C
+# end
+
 @inline function _banded_gbmv!(tA, α, A, x, β, y)
     if x ≡ y
         banded_gbmv!(tA, α, A, copy(x), β, y)
@@ -63,9 +95,49 @@ end
 
 @blasmatvec BandedColumnMajor
 
-@inline blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
-              ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout) =
-    _banded_gbmv!('N', α, A, x, β, y)
+@inline function blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
+              ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout)
+    m, n = size(A)
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    l, u = bandwidths(A)
+    if -l > u # no bands
+        lmul!(β, y)
+    elseif l < 0
+        blasmul!(y, view(A, :, 1-l:n), view(x, 1-l:n), α, β)
+    elseif u < 0
+        y[1:-u] .= zero(T)
+        blasmul!(view(y, 1-u:m), view(A, 1-u:m, :), x, α, β)
+        y
+    else
+        _banded_gbmv!('N', α, A, x, β, y)
+    end
+end
+
+
+
+
+#
+# function generally_banded_matvecmul!(c::AbstractVector{T}, tA::Val, A::AbstractMatrix{U}, b::AbstractVector{V}) where {T, U, V}
+#     m, n = _size(tA, A)
+#     if length(c) ≠ m || length(b) ≠ n
+#         throw(DimensionMismatch("*"))
+#     end
+#
+#     l, u = _bandwidths(tA, A)
+#     if -l > u
+#         # no bands
+#         fill!(c, zero(T))
+#     elseif l < 0
+#         banded_matvecmul!(c, tA, _view(tA, A, :, 1-l:n), view(b, 1-l:n))
+#     elseif u < 0
+#         c[1:-u] .= zero(T)
+#         banded_matvecmul!(view(c, 1-u:m), tA, _view(tA, A, 1-u:m, :), b)
+#     else
+#         positively_banded_matvecmul!(c, tA, A, b)
+#     end
+#     c
+# end
+
 
 @blasmatvec BandedRowMajor
 
@@ -176,28 +248,3 @@ end
      A, B = M.A, M.B
      banded_mul!(C, A, B)
 end
-
-
-
-
-#
-# function generally_banded_matvecmul!(c::AbstractVector{T}, tA::Val, A::AbstractMatrix{U}, b::AbstractVector{V}) where {T, U, V}
-#     m, n = _size(tA, A)
-#     if length(c) ≠ m || length(b) ≠ n
-#         throw(DimensionMismatch("*"))
-#     end
-#
-#     l, u = _bandwidths(tA, A)
-#     if -l > u
-#         # no bands
-#         fill!(c, zero(T))
-#     elseif l < 0
-#         banded_matvecmul!(c, tA, _view(tA, A, :, 1-l:n), view(b, 1-l:n))
-#     elseif u < 0
-#         c[1:-u] .= zero(T)
-#         banded_matvecmul!(view(c, 1-u:m), tA, _view(tA, A, 1-u:m, :), b)
-#     else
-#         positively_banded_matvecmul!(c, tA, A, b)
-#     end
-#     c
-# end

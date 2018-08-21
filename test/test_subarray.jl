@@ -1,7 +1,17 @@
 using BandedMatrices, FillArrays, Test
 import LinearAlgebra: axpy!
 
-# SubArray
+
+@testset "BandedMatrix SubArray interface" begin
+    A = brand(10,10,1,2)
+    V = view(A,2:4,3:6)
+    @test isbanded(V)
+    @test bandwidths(V) == (2,1)
+    @test BandedMatrices.MemoryLayout(V) == BandedMatrices.BandedColumnMajor()
+    @test all(Matrix(BandedMatrices._BandedMatrix(BandedMatrices.bandeddata(V), size(V,1), bandwidths(V)...)) .===
+              Matrix(V))
+end
+
 @testset "BandedMatrix SubArray arithmetic" begin
     let A = brand(10,10,1,2), B = brand(20,20,1,2)
         @test isa(view(B,1:10,1:10),BandedMatrices.BandedSubBandedMatrix{Float64})
