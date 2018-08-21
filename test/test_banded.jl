@@ -75,6 +75,10 @@ end
     end
 end
 
+A=brand(10,12,2,3)
+v=rand(12)
+w=rand(10)
+A'*w
 
 # banded * vec
 @testset "BandedMatrix * Vector" begin

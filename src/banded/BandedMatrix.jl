@@ -27,7 +27,7 @@ mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
     end
 end
 
-MemoryLayout(::BandedMatrix) = BandedLayout()
+MemoryLayout(::BandedMatrix) = BandedColumnMajor()
 
 
 # BandedMatrix with unit range indexes is also banded
@@ -281,7 +281,9 @@ size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
                                     k == 2 ? size(A.data, 2) : 1
 
 
-bandwidth(A::BandedMatrix,k::Integer) = k==1 ? A.l : A.u
+## banded matrix interface
+bandeddata(A::BandedMatrix) = A.data
+bandwidth(A::BandedMatrix, k::Integer) = k==1 ? A.l : A.u
 
 IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
 
@@ -731,31 +733,16 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-function LinearAlgebra.lmul!(α::Number, A::BandedMatrix)
-    LinearAlgebra.lmul!(α, A.data)
+function banded_lmul!(α::Number, A::BandedMatrix)
+    lmul!(α, A.data)
     A
 end
 
-function LinearAlgebra.rmul!(A::BandedMatrix, α::Number)
-    LinearAlgebra.rmul!(A.data, α)
+function banded_rmul!(A::BandedMatrix, α::Number)
+    rmul!(A.data, α)
     A
 end
 
-function transpose(B::BandedMatrix)
-    Bt = BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
-    for j = 1:size(B,2), k = colrange(B,j)
-       Bt[j,k]=B[k,j]
-    end
-    Bt
-end
-
-function adjoint(B::BandedMatrix)
-    Bt=BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
-    for j = 1:size(B,2), k = colrange(B,j)
-       Bt[j,k]=conj(B[k,j])
-    end
-    Bt
-end
 
 
 
@@ -869,7 +856,10 @@ end
 @inline leadingdimension(B::BandedMatrix) = stride(B.data,2)
 @inline leadingdimension(B::BandedSubBandedMatrix{T}) where {T} = leadingdimension(parent(B))
 
-
 @inline pointer(B::BandedMatrix) = pointer(B.data)
 @inline pointer(B::BandedSubBandedMatrix{T}) where {T} =
     pointer(parent(B))+leadingdimension(parent(B))*(first(parentindices(B)[2])-1)*sizeof(T)
+
+@inline unsafe_convert(::Type{Ptr{T}}, a::BandedMatrix{T}) where T = unsafe_convert(Ptr{T}, a.data)
+@inline unsafe_convert(::Type{Ptr{T}}, a::BandedSubBandedMatrix{T}) where T =
+    pointer(a)

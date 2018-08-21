@@ -1,7 +1,7 @@
 __precompile__()
 
 module BandedMatrices
-using Base, FillArrays
+using Base, FillArrays, LazyArrays
 
 using LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
@@ -29,12 +29,13 @@ import Base: convert, size, view, unsafe_indices,
                 to_indices, to_index, show, fill!, promote_op,
                 MultiplicativeInverses, OneTo, ReshapedArray,
                                similar, copy, convert, promote_rule, rand,
-                            IndexStyle, real, imag, Slice, pointer, copyto!
+                            IndexStyle, real, imag, Slice, pointer, unsafe_convert, copyto!
 
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
-import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat
-
+import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat,
+                    AbstractStridedLayout, AbstractColumnMajor,
+                    _copyto!, BMatVec, transposelayout, ConjLayout, conjlayout
 import FillArrays: AbstractFill
 
 export BandedMatrix,
@@ -58,12 +59,15 @@ export BandedMatrix,
 
 include("blas.jl")
 include("lapack.jl")
-include("memorylayout.jl")
+
 
 include("generic/AbstractBandedMatrix.jl")
+include("generic/broadcast.jl")
+include("generic/matmul.jl")
 include("generic/Band.jl")
 include("generic/utils.jl")
 include("generic/interface.jl")
+
 
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
@@ -78,9 +82,5 @@ include("symbanded/linalg.jl")
 include("interfaceimpl.jl")
 
 include("deprecate.jl")
-
-
-# include("precompile.jl")
-# _precompile_()
 
 end #module

@@ -2,6 +2,17 @@
 
 abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
 
+
+"""
+    bandeddata(A)
+
+returns a matrix containing the data of a banded matrix, in the
+BLAS format.
+
+This is required for gbmv! support
+"""
+bandeddata(A) = error("Override bandeddata(::$(typeof(A)))")
+
 """
     bandwidths(A)
 

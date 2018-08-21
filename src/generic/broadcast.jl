@@ -1,26 +1,185 @@
+####
+# Matrix memory layout traits
+#
+# if MemoryLayout(A) returns BandedColumnMajor, you must override
+# pointer and leadingdimension
+# in addition to the banded matrix interface
+####
+
+abstract type AbstractBandedLayout <: MemoryLayout end
+struct BandedColumnMajor <: AbstractBandedLayout end
+struct BandedRowMajor <: AbstractBandedLayout end
+
+transposelayout(::BandedColumnMajor) = BandedRowMajor()
+transposelayout(::BandedRowMajor) = BandedColumnMajor()
+conjlayout(::Type{<:Complex}, M::AbstractBandedLayout) = ConjLayout(M)
+
+# Here we override broadcasting for banded matrices.
+# The design is to to exploit the broadcast machinery so that
+# banded matrices that conform to the banded matrix interface but are not
+# <: AbstractBandedMatrix can get access to fast copyto!, lmul!, rmul!, axpy!, etc.
+# using broadcast variants (B .= A, B .= 2.0 .* A, etc.)
+
+
 
 struct BandedStyle <: AbstractArrayStyle{2} end
 BandedStyle(::Val{2}) = BandedStyle()
 BroadcastStyle(::Type{<:AbstractBandedMatrix}) = BandedStyle()
 BroadcastStyle(::DefaultArrayStyle{0}, ::BandedStyle) = BandedStyle()
 
-copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(identity)}) =
-    banded_copyto!(dest, bc.args...)
+##
+# copyto!
+##
 
-copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(identity)}) =
-    banded_copyto!(dest, bc.args...)
+copyto!(dest::AbstractMatrix, src::AbstractBandedMatrix) =  banded_copyto!(dest, src)
+
+function banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
+    m,n = size(dest)
+    (m,n) == size(src) || throw(DimensionMismatch())
+
+    d_l, d_u = bandwidths(dest)
+    s_l, s_u = bandwidths(src)
+    (d_l ≥ s_l && d_u ≥ s_u) || throw(BandError(dest))
+    for j=1:n
+        for k = max(1,j-d_u):min(j-s_u-1,m)
+            inbands_setindex!(dest, zero(T), k, j)
+        end
+        for k = max(1,j-s_u):min(j+s_l,m)
+            inbands_setindex!(dest, inbands_getindex(src, k, j), k, j)
+        end
+        for k = max(1,j+s_l+1):min(j+d_l,m)
+            inbands_setindex!(dest, zero(T), k, j)
+        end
+    end
+    dest
+end
+
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(identity)})
+    (A,) = bc.args
+    dest ≡ A && return dest
+    banded_copyto!(dest, A)
+end
+
+##
+# lmul!/rmul!
+##
+
+function banded_lmul!(α, A::AbstractMatrix)
+    for j=1:size(Α,2), k=colrange(A,j)
+        inbands_setindex!(A, α*inbands_getindex(A,k,j), k,j)
+    end
+    A
+end
+
+function banded_rmul!(A::AbstractMatrix, a)
+    for j=1:size(Α,2), k=colrange(A,j)
+        inbands_setindex!(A, inbands_getindex(A,k,j)*α, k,j)
+    end
+    A
+end
+
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:Number,<:AbstractMatrix}})
+    α,A = bc.args
+    dest ≡ A || copyto!(dest, A)
+    banded_lmul!(α, dest)
+end
+
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:AbstractMatrix,<:Number}})
+    A,α = bc.args
+    dest ≡ A || copyto!(dest, A)
+    banded_rmul!(dest, α)
+end
+
+##
+# axpy!
+##
+
+# these are the routines of the banded interface of other AbstractMatrices
+banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(X), MemoryLayout(Y))
+_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedColumnMajor, ::BandedColumnMajor) =
+    banded_generic_axpy!(a, X, Y)
+_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notbandedY) =
+    banded_dense_axpy!(a, X, Y)
+
+# additions and subtractions
+@propagate_inbounds function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
+    n,m = size(X)
+    if (n,m) ≠ size(Y)
+        throw(BoundsError())
+    end
+    Xl, Xu = bandwidths(X)
+    Yl, Yu = bandwidths(Y)
+
+    @boundscheck if Xl > Yl
+        # test that all entries are zero in extra bands
+        for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
+            if inbands_getindex(X, k, j) ≠ 0
+                throw(BandError(X, (k,j)))
+            end
+        end
+    end
+    @boundscheck if Xu > Yu
+        # test that all entries are zero in extra bands
+        for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
+            if inbands_getindex(X, k, j) ≠ 0
+                throw(BandError(X, (k,j)))
+            end
+        end
+    end
+
+    l = min(Xl,Yl)
+    u = min(Xu,Yu)
+
+    @inbounds for j=1:m,k=max(1,j-u):min(n,j+l)
+        inbands_setindex!(Y, a*inbands_getindex(X,k,j) + inbands_getindex(Y,k,j) ,k, j)
+    end
+    Y
+end
+
+function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
+    if size(X) != size(Y)
+        throw(DimensionMismatch("+"))
+    end
+    @inbounds for j=1:size(X,2),k=colrange(X,j)
+        Y[k,j] += a*inbands_getindex(X,k,j)
+    end
+    Y
+end
 
 
-A = brand(n,n,1,1)
-    B = brand(n,n,2,2)
-    @time B .= 2.0 .* A
+function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
+    A,B = bc.args
+    if dest ≡ B
+        banded_axpy!(one(T), A, dest)
+    elseif dest ≡ A
+        banded_axpy!(one(T), B, dest)
+    else
+        banded_copyto!(dest, B)
+        banded_axpy!(one(T), A, dest)
+    end
+end
 
-BroadcastStyle(A)
+function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
+                                                        <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
+                                                        <:AbstractMatrix}}) where T
+    αA,B = bc.args
+    α,A = αA.args
+    dest ≡ B || banded_copyto!(dest, B)
+    banded_axpy!(α, A, dest)
+end
 
-y .= a .* x .+ y
 
-# copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
-#     copyto!(dest, Broadcasted{DefaultArrayStyle{2}()}(bc.f, bc.args, bc.axes))
 
-# copy(bc::Broadcasted{BandedStyle}) =
-#     copy(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
+
+####
+# Default to standard Array broadcast
+#
+# This is because, for example, exp.(B) is not banded
+####
+
+
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
+ copyto!(dest, Broadcasted{DefaultArrayStyle{2}()}(bc.f, bc.args, bc.axes))
+
+copy(bc::Broadcasted{BandedStyle}) =
+ copy(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
