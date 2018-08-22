@@ -54,37 +54,6 @@ banded_gbmv!(tA, α, A, x, β, y) =
                 α, bandeddata(A), x, β, y)
 
 
-# function generally_banded_matmatmul!(C::AbstractMatrix{T}, tA::Val, tB::Val, A::AbstractMatrix{U}, B::AbstractMatrix{V}) where {T, U, V}
-#     Am, An = _size(tA, A)
-#     Bm, Bn = _size(tB, B)
-#     if An != Bm || size(C, 1) != Am || size(C, 2) != Bn
-#         throw(DimensionMismatch("*"))
-#     end
-#     # TODO: checkbandmatch
-#
-#     Al, Au = _bandwidths(tA, A)
-#     Bl, Bu = _bandwidths(tB, B)
-#
-#     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
-#         fill!(C, zero(T))
-#     elseif Al < 0
-#         C[max(1,Bn+Al-1):Am, :] .= zero(T)
-#         banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Al:An), _view(tB, B, 1-Al:An, :))
-#     elseif Au < 0
-#         C[1:-Au,:] .= zero(T)
-#         banded_matmatmul!(view(C, 1-Au:Am,:), tA, tB, _view(tA, A, 1-Au:Am,:), B)
-#     elseif Bl < 0
-#         C[:, 1:-Bl] .= zero(T)
-#         banded_matmatmul!(view(C, :, 1-Bl:Bn), tA, tB, A, _view(tB, B, :, 1-Bl:Bn))
-#     elseif Bu < 0
-#         C[:, max(1,Am+Bu-1):Bn] .= zero(T)
-#         banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Bu:Bm), _view(tB, B, 1-Bu:Bm, :))
-#     else
-#         positively_banded_matmatmul!(C, tA, tB, A, B)
-#     end
-#     C
-# end
-
 @inline function _banded_gbmv!(tA, α, A, x, β, y)
     if x ≡ y
         banded_gbmv!(tA, α, A, copy(x), β, y)
@@ -95,8 +64,8 @@ end
 
 @blasmatvec BandedColumnMajor
 
-@inline function blasmul!(y::AbstractVector, A::AbstractMatrix, x::AbstractVector, α, β,
-              ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout)
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
+                ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout) where T<:BlasFloat
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
@@ -116,38 +85,46 @@ end
 
 
 
-#
-# function generally_banded_matvecmul!(c::AbstractVector{T}, tA::Val, A::AbstractMatrix{U}, b::AbstractVector{V}) where {T, U, V}
-#     m, n = _size(tA, A)
-#     if length(c) ≠ m || length(b) ≠ n
-#         throw(DimensionMismatch("*"))
-#     end
-#
-#     l, u = _bandwidths(tA, A)
-#     if -l > u
-#         # no bands
-#         fill!(c, zero(T))
-#     elseif l < 0
-#         banded_matvecmul!(c, tA, _view(tA, A, :, 1-l:n), view(b, 1-l:n))
-#     elseif u < 0
-#         c[1:-u] .= zero(T)
-#         banded_matvecmul!(view(c, 1-u:m), tA, _view(tA, A, 1-u:m, :), b)
-#     else
-#         positively_banded_matvecmul!(c, tA, A, b)
-#     end
-#     c
-# end
-
-
 @blasmatvec BandedRowMajor
 
-@inline blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
-              ::AbstractStridedLayout, ::BandedRowMajor, ::AbstractStridedLayout) where T<:BlasFloat =
-    _banded_gbmv!('T', α, transpose(A), x, β, y)
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
+                   ::AbstractStridedLayout, ::BandedRowMajor, ::AbstractStridedLayout) where T<:BlasFloat
+    At = transpose(A)
+    m, n = size(A)
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    l, u = bandwidths(A)
+    if -l > u # no bands
+      lmul!(β, y)
+    elseif l < 0
+      blasmul!(y, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), α, β)
+    elseif u < 0
+      y[1:-u] .= zero(T)
+      blasmul!(view(y, 1-u:m), transpose(view(At, :, 1-u:m)), x, α, β)
+      y
+    else
+      _banded_gbmv!('T', α, At, x, β, y)
+    end
+end
 
-@inline blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
-              ::AbstractStridedLayout, ::ConjLayout{BandedRowMajor}, ::AbstractStridedLayout) where T<:BlasComplex =
-    _banded_gbmv!('C', α, A', x, β, y)
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
+                ::AbstractStridedLayout, ::ConjLayout{BandedRowMajor}, ::AbstractStridedLayout) where T<:BlasComplex
+    Ac = A'
+    m, n = size(A)
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    l, u = bandwidths(A)
+    if -l > u # no bands
+        lmul!(β, y)
+    elseif l < 0
+        blasmul!(y, view(Ac, 1-l:n, :,)', view(x, 1-l:n), α, β)
+    elseif u < 0
+        y[1:-u] .= zero(T)
+        blasmul!(view(y, 1-u:m), view(Ac, :, 1-u:m)', x, α, β)
+        y
+    else
+    _banded_gbmv!('C', α, Ac, x, β, y)
+    end
+end
+
 
 
 ##
@@ -193,7 +170,9 @@ end
 end
 
 
-## Banded * Banded
+####
+# Matrix * Matrix
+####
 function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix) where T
     Am, An = size(A)
     Bm, Bn = size(B)
@@ -225,6 +204,36 @@ function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix)
     C
 end
 
+# function generally_banded_matmatmul!(C::AbstractMatrix{T}, tA::Val, tB::Val, A::AbstractMatrix{U}, B::AbstractMatrix{V}) where {T, U, V}
+#     Am, An = _size(tA, A)
+#     Bm, Bn = _size(tB, B)
+#     if An != Bm || size(C, 1) != Am || size(C, 2) != Bn
+#         throw(DimensionMismatch("*"))
+#     end
+#     # TODO: checkbandmatch
+#
+#     Al, Au = _bandwidths(tA, A)
+#     Bl, Bu = _bandwidths(tB, B)
+#
+#     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
+#         fill!(C, zero(T))
+#     elseif Al < 0
+#         C[max(1,Bn+Al-1):Am, :] .= zero(T)
+#         banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Al:An), _view(tB, B, 1-Al:An, :))
+#     elseif Au < 0
+#         C[1:-Au,:] .= zero(T)
+#         banded_matmatmul!(view(C, 1-Au:Am,:), tA, tB, _view(tA, A, 1-Au:Am,:), B)
+#     elseif Bl < 0
+#         C[:, 1:-Bl] .= zero(T)
+#         banded_matmatmul!(view(C, :, 1-Bl:Bn), tA, tB, A, _view(tB, B, :, 1-Bl:Bn))
+#     elseif Bu < 0
+#         C[:, max(1,Am+Bu-1):Bn] .= zero(T)
+#         banded_matmatmul!(C, tA, tB, _view(tA, A, :, 1-Bu:Bm), _view(tB, B, 1-Bu:Bm, :))
+#     else
+#         positively_banded_matmatmul!(C, tA, tB, A, B)
+#     end
+#     C
+# end
 
 const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
 

@@ -1,6 +1,7 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-
+    import LazyArrays: MemoryLayout
 @testset "lmul!/rmul!" begin
+    n = 1000
     A = brand(n,n,1,1)
     B = brand(n,n,2,2)
     B .= 2.0.*A
@@ -82,7 +83,7 @@ end
     y .= Mul(A,x)
     @test Matrix(A)*x ≈ y
     @test all(BLAS.gbmv!('N', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
-    @test MemoryLayout(A') == LazyArrays.ConjLayout(BandedMatrices.BandedRowMajor())
+    @test LazyArrays.MemoryLayout(A') == LazyArrays.ConjLayout(BandedMatrices.BandedRowMajor())
     z = similar(y)
     z .= (2.0+0.0im).*Mul(A,x) .+ (3.0+0.0im).*y
     @test 2Matrix(A)*x + 3y ≈ z
@@ -119,23 +120,25 @@ end
     @test y == Matrix(transpose(A))*x
 end
 
+@testset "gbmm!" begin
+    n = 10
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    C = brand(n,n,3,3)
+    C .= Mul(A,B)
+    @test Matrix(C) ≈ Matrix(A)*Matrix(B)
+    C .= Mul(A',B)
+    @test Matrix(C) ≈ Matrix(A')*Matrix(B)
+    C .= Mul(A,B')
+    @test Matrix(C) ≈ Matrix(A)*Matrix(B')
+    C = brand(n,n,4,4)
+    C .= Mul(A,B)
+    @test Matrix(C) ≈ Matrix(A)*Matrix(B)
+    B = randn(n,n)
+    C = similar(B)
 
-n = 10
-A = brand(n,n,1,1)
-B = brand(n,n,2,2)
-C = brand(n,n,3,3)
-C .= Mul(A,B)
-@test Matrix(C) ≈ Matrix(A)*Matrix(B)
-C = brand(n,n,4,4)
-C .= Mul(A,B)
-@test Matrix(C) ≈ Matrix(A)*Matrix(B)
-B = randn(n,n)
-C = similar(B)
-
-C .= Mul(A,B)
-C .= Mul(B,A)
-
-
-
-
-C
+    C .= Mul(A,B)
+    @test C ≈ Matrix(A)*Matrix(B)
+    C .= Mul(B,A)
+    @test C ≈ Matrix(B)*Matrix(A)
+end
