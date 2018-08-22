@@ -134,7 +134,7 @@ end
 
 
 @inline function _copyto!(_, c::AbstractVector{T},
-         bc::BMixedMatVec{<:Any, <:BandedColumnMajor}) where T
+         bc::BMixedMatVec{<:Any, <:AbstractBandedLayout}) where T
     (M,) = bc.args
     A,b = M.A, M.B
     fill!(c, zero(T))

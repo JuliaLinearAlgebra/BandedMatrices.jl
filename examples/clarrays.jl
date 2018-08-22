@@ -20,7 +20,7 @@ function expliciteuler(L, u₀, n)
     u = copy(u₀)
     v = copy(u)
     for _ = 1:n
-        A_mul_B!(v, L, u)
+        mul!(v, L, u)
         u,v = v,u
     end
     u

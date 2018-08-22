@@ -3,7 +3,7 @@ sbmv!(α::T,A::SymBandedMatrix{T},x::AbstractVector{T},β::T,y::AbstractVector{T
 
 
 
-function symbanded_A_mul_B!(c::AbstractVector{T},A::AbstractMatrix{T},b::AbstractVector{T}) where {T<:BlasFloat}
+function symbanded_mul!(c::AbstractVector{T},A::AbstractMatrix{T},b::AbstractVector{T}) where {T<:BlasFloat}
     n = size(A,1)
 
     @boundscheck if length(c) ≠ n || length(b) ≠ n
@@ -17,10 +17,5 @@ function symbanded_A_mul_B!(c::AbstractVector{T},A::AbstractMatrix{T},b::Abstrac
 end
 
 
-A_mul_B!(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) where {T} =
-    symbanded_A_mul_B!(c,A,b)
-
-## TODO
-
-# - A_mul_B where A and B are banded matrices
-# - Ac_mul_B!
+mul!(c::AbstractVector,A::SymBandedMatrix{T},b::AbstractVector) where {T} =
+    symbanded_mul!(c,A,b)

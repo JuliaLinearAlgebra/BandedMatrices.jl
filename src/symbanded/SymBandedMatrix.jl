@@ -254,7 +254,7 @@ function *(A::SymBandedMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Numb
     Bk = bandwidth(B,2)
     n = size(A,1)
     Y = BandedMatrix(promote_type(T,V),n,Ak+Bk)
-    A_mul_B!(Y,A,B)
+    mul!(Y,A,B)
 end
 
 function *(A::SymBandedMatrix{T},B::AbstractMatrix{V}) where {T<:Number,V<:Number}
@@ -263,14 +263,14 @@ function *(A::SymBandedMatrix{T},B::AbstractMatrix{V}) where {T<:Number,V<:Numbe
     end
     n,m=size(A,1),size(B,2)
 
-    A_mul_B!(Array(promote_type(T,V),n,m),A,B)
+    mul!(Array(promote_type(T,V),n,m),A,B)
 end
 
 *(A::AbstractMatrix{T},B::SymBandedMatrix{V}) where {T<:Number,V<:Number} =
     A*Array(B)
 
 *(A::SymBandedMatrix{T},b::AbstractVector{T}) where {T<:BlasFloat} =
-    A_mul_B!(Vector{T}(undef,size(A,1)),A,b)
+    mul!(Vector{T}(undef,size(A,1)),A,b)
 
 function *(A::SymBandedMatrix{T},b::AbstractVector{T}) where {T}
     ret = zeros(T,size(A,1))

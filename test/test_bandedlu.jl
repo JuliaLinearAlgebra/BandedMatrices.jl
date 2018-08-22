@@ -1,4 +1,4 @@
-using BandedMatrices, Test, Random
+using BandedMatrices, LinearAlgebra, Test, Random
 import BandedMatrices: _BandedMatrix
 
 # set prng to some value that avoids test failure
@@ -58,7 +58,7 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
             @test Matrix(A)\copy(b)             ≈ ldiv!(lu(A), copy(b))
             @test transpose(Matrix(A))\copy(b)  ≈ tldiv!(lu(A), copy(b))
             @test transpose(Matrix(A))\copy(b)  ≈ ldiv!(lu(transpose(A)), copy(b))
-            @test adjoint(Matrix(A))\copy(b) ≈ cldiv!(lu(A), copy(b))
+            @test Matrix(A)'\copy(b)            ≈ cldiv!(lu(A), copy(b))
         end
     end
 end
@@ -152,8 +152,7 @@ end
     end
 
 
-    # test complex input algorithm
-    let
+    @testset "complex input" begin
         # banded
         A = brand(5, 1, 1) + brand(5, 1, 1)*im
         b = rand(5) + rand(5)*im
@@ -175,8 +174,7 @@ end
         @test adjoint(Af)\bf ≈ cldiv!(lu(A), copy(b))
     end
 
-    # test with multiple rhs
-    let
+    @testset "multiple rhs" begin
         # banded
         A = brand(5, 1, 1)
         b = rand(5, 10)
@@ -197,8 +195,7 @@ end
         @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
     end
 
-    # test properties of factorisation
-    let
+    @testset "properties of factorisation" begin
         BLU = lu(brand(5, 4, 1, 1))
         @test size(BLU) == (5, 4)
         @test size(BLU, 1) == 5

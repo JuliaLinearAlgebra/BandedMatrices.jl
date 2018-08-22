@@ -104,6 +104,11 @@ interface consists of the following:
 | `isbanded(A)`    | Override to return `true` |
 | `inbands_getindex(A, k, j)` | Unsafe: return `A[k,j]`, without the need to check if we are inside the bands |
 | `inbands_setindex!(A, v, k, j)` | Unsafe: set `A[k,j] = v`, without the need to check if we are inside the bands |
+| --------------- | --------------- |
+| Optional methods | Brief description |
+| --------------- | --------------- |
+| `BandedMatrices.MemoryLayout(A)` | Override to get banded lazy linear algebra, e.g. `y .= Mul(A,x)` |
+| `BandedMatrices.bandeddata(A)` | Override to return a matrix of the entries in BLAS format. Required if `MemoryLayout(A)` returns `BandedColumnMajor` |
 
 Note that certain `SubArray`s of `BandedMatrix` are also banded matrices.
 The banded matrix interface is implemented for such `SubArray`s to take advantage of this.

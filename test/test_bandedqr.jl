@@ -6,9 +6,9 @@ using BandedMatrices, Test
         Q,R=qr(A)
         @test Matrix(Q)*Matrix(R) ≈ A
         b=rand(T,10)
-        @test mul!(similar(b),Q,BandedMatrices.Ac_mul_B!(similar(b),Q,b)) ≈ b
+        @test mul!(similar(b),Q,mul!(similar(b),Q',b)) ≈ b
         for j=1:size(A,2)
-            @test BandedMatrices.Ac_mul_B(Q,A[:,j]) ≈ R[:,j]
+            @test Q' * A[:,j] ≈ R[:,j]
         end
         A=brand(T,14,10,3,2)
 

@@ -35,6 +35,9 @@ function lu(A::BandedMatrix{T}) where {T<:Number}
 end
 lu(F::BandedLU) = F # no op
 
+lu(A::AbstractBandedMatrix) = lu(convert(BandedMatrix, A))
+lu(A::Transpose{<:Any,<:AbstractBandedMatrix}) = lu(convert(BandedMatrix, A))
+lu(A::Adjoint{<:Any,<:AbstractBandedMatrix}) = lu(convert(BandedMatrix, A))
 
 adjoint(F::BandedLU) = Adjoint(F)
 transpose(F::BandedLU) = Transpose(F)
