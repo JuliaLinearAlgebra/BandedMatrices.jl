@@ -1,3 +1,7 @@
+@blasmatvec BandedColumnMajor
+@blasmatvec BandedRowMajor
+@lazymul AbstractBandedMatrix
+
 
 ###
 # For <: AbstractBandedMatrix, we can use Base routines like `mul!`
@@ -28,20 +32,6 @@ function *(A::AdjOrTrans{T,<:AbstractBandedMatrix{T}}, B::AdjOrTrans{V,<:Abstrac
 end
 
 
-mul!(dest::AbstractVector, A::AbstractBandedMatrix, x::AbstractVector) =
-    (dest .= Mul(A,x))
-
-mul!(dest::AbstractMatrix, A::AbstractBandedMatrix, x::AbstractMatrix) =
-    (dest .= Mul(A,x))
-mul!(dest::AbstractMatrix, A::AbstractBandedMatrix, x::AbstractBandedMatrix) =
-    (dest .= Mul(A,x))
-mul!(dest::AbstractMatrix, A::AbstractBandedMatrix, x::Adjoint{<:Any,<:AbstractMatrix}) =
-    (dest .= Mul(A,x))
-
-mul!(dest::AbstractVector, A::Adjoint{<:Any,<:AbstractBandedMatrix}, b::AbstractVector) =
-    (dest .= Mul(A, b))
-mul!(dest::AbstractVector, A::Transpose{<:Any,<:AbstractBandedMatrix}, b::AbstractVector) =
-    (dest .= Mul(A, b))
 
 ##
 # BLAS routines
@@ -62,7 +52,7 @@ banded_gbmv!(tA, α, A, x, β, y) =
     end
 end
 
-@blasmatvec BandedColumnMajor
+
 
 function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
                 ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout) where T<:BlasFloat
@@ -85,7 +75,7 @@ end
 
 
 
-@blasmatvec BandedRowMajor
+
 
 function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
                    ::AbstractStridedLayout, ::BandedRowMajor, ::AbstractStridedLayout) where T<:BlasFloat
