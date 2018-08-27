@@ -1,8 +1,5 @@
-if VERSION ≥ v"0.7-"
-    import LinearAlgebra.BLAS.@blasfunc
-else
-    import Base.BLAS.@blasfunc
-end
+import LinearAlgebra.BLAS.@blasfunc
+
 
 for (fname, elty) in ((:dgbmv_,:Float64),
                       (:sgbmv_,:Float32),
@@ -65,7 +62,7 @@ for (fname, elty) in ((:dsbmv_,:Float64),
 end
 
 sbmv!(uplo::Char, k::Int, alpha::T,
-      A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
+      A::AbstractMatrix{T}, x::AbstractVector{T}, beta::T, y::AbstractVector{T}) where {T<:BlasFloat} =
     sbmv!(uplo,size(A,2),k,alpha,pointer(A),max(1,stride(A,2)),x,stride(x,1),beta,y,stride(y,1))
 
 

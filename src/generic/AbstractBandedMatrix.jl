@@ -2,6 +2,17 @@
 
 abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
 
+
+"""
+    bandeddata(A)
+
+returns a matrix containing the data of a banded matrix, in the
+BLAS format.
+
+This is required for gbmv! support
+"""
+bandeddata(A) = error("Override bandeddata(::$(typeof(A)))")
+
 """
     bandwidths(A)
 
@@ -10,6 +21,9 @@ Returns a tuple containing the upper and lower bandwidth of `A`.
 bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
 bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
+
+bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
+bandwidth(A::AdjOrTrans{T,S}, i::Int) where {T,S} = bandwidths(A)[i]
 
 
 """
@@ -88,35 +102,20 @@ end
     r
 end
 
-
+inbands_getindex(x::Adjoint, i::Integer, j::Integer) =
+    inbands_getindex(parent(x), j, i)'
+inbands_getindex(x::Transpose, i::Integer, j::Integer) =
+    transpose(inbands_getindex(parent(x), j, i))
+inbands_setindex!(x::Adjoint, v, i::Integer, j::Integer) =
+    inbands_setindex!(parent(x), v', j, i)
+inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
+    inbands_setindex!(parent(x), transpose(v), j, i)
 ## Show
 
-struct PrintShow
-    str
-end
-Base.show(io::IO,N::PrintShow) = print(io,N.str)
 
-if VERSION < v"0.7-"
-    showarray(io,M;opts...) = Base.showarray(io,M,false;opts...)
-    function Base.showarray(io::IO,B::AbstractBandedMatrix,repr::Bool = true; header = true)
-        header && print(io,summary(B))
-
-        if !isempty(B) && size(B,1) ≤ 1000 && size(B,2) ≤ 1000
-            header && println(io,":")
-            M=Array{Any}(size(B)...)
-            fill!(M,PrintShow("⋅"))
-            for j = 1:size(B,2), k = colrange(B,j)
-                M[k,j]=B[k,j]
-            end
-
-            showarray(io,M;header=false)
-        end
-    end
-else
-    ## structured matrix methods ##
-    function Base.replace_in_print_matrix(A::AbstractBandedMatrix, i::Integer, j::Integer, s::AbstractString)
-        -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
-    end
+## structured matrix methods ##
+function Base.replace_in_print_matrix(A::AbstractBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
 end
 
 

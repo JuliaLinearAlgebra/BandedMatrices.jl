@@ -1,6 +1,5 @@
-using BandedMatrices, Compat.Test
-
-import BandedMatrices: banded_axpy!, banded_A_mul_B!, isbanded
+using BandedMatrices, LinearAlgebra, LazyArrays, Test
+import BandedMatrices: banded_axpy!, banded_mul!, isbanded, AbstractBandedLayout
 
 
 struct SimpleBandedMatrix{T} <: AbstractMatrix{T}
@@ -8,6 +7,7 @@ struct SimpleBandedMatrix{T} <: AbstractMatrix{T}
     l::Int
     u::Int
 end
+
 
 Base.size(A::SimpleBandedMatrix) = size(A.data)
 function Base.getindex(A::SimpleBandedMatrix, j::Int, k::Int)
@@ -27,6 +27,8 @@ function Base.setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int)
     end
 end
 
+struct SimpleBandedLayout <: AbstractBandedLayout end
+BandedMatrices.MemoryLayout(::SimpleBandedMatrix) = SimpleBandedLayout()
 BandedMatrices.isbanded(::SimpleBandedMatrix) = true
 BandedMatrices.bandwidth(A::SimpleBandedMatrix, k::Int) = k==1 ? A.l : A.u
 BandedMatrices.inbands_getindex(A::SimpleBandedMatrix, j::Int, k::Int) = A.data[j, k]
@@ -57,13 +59,11 @@ BandedMatrices.inbands_setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int) = set
     BandedMatrices.inbands_setindex!(A, 2, 1,1)
     @test A[1,1] == 2
 
-
     A = SimpleBandedMatrix(rand(5, 4), 2, 2)
     B = rand(5, 4)
     C = copy(B)
 
     @test Matrix(banded_axpy!(2.0, A, B)) ≈ 2*Matrix(A) + C
-
 
     A = SimpleBandedMatrix(rand(5, 4), 1, 2)
     B = SimpleBandedMatrix(rand(5, 4), 2, 3)
@@ -73,12 +73,12 @@ BandedMatrices.inbands_setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int) = set
 
     y = rand(4)
     z = zeros(5)
-
-    @test banded_A_mul_B!(z, A, y) ≈ A*y ≈ Matrix(A)*y
+    z .= Mul(A, y)
+    @test z ≈ A*y ≈ Matrix(A)*y
 
     B = SimpleBandedMatrix(rand(4, 4), 2, 3)
     C = SimpleBandedMatrix(zeros(5, 4), 3, 4)
     D = zeros(5, 4)
 
-    @test banded_A_mul_B!(C, A, B) ≈ banded_A_mul_B!(D, A, B) ≈ A*B
+    @test (C .= Mul(A, B)) ≈ (D .= Mul(A, B)) ≈ A*B
 end

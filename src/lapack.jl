@@ -55,7 +55,7 @@ end
 # the LU factorization in-place and `ipiv`, the vector of pivots used.
 # AB should be a (2l+u) by n matrix.
 
-function gbtrf!(kl::Int, ku::Int, m::Int, AB::StridedMatrix)
+function gbtrf!(kl::Int, ku::Int, m::Int, AB::AbstractMatrix)
     n = size(AB, 2)
     mnmn = min(m, n)
     ipiv = similar(AB, BlasInt, mnmn)
@@ -105,8 +105,8 @@ end
 # containing one, and `m` is the first dimension of the matrix `AB`. `ipiv` is the vector
 # of pivots returned from `gbtrf!`. Returns the vector or matrix `X`, overwriting `B` in-place.
 
-function gbtrs!(trans::Char, kl::Int, ku::Int, m::Int, AB::StridedMatrix,
-                ipiv::StridedVector{BlasInt}, B::StridedVecOrMat)
+function gbtrs!(trans::Char, kl::Int, ku::Int, m::Int, AB::AbstractMatrix,
+                ipiv::AbstractVector{BlasInt}, B::AbstractVecOrMat)
     n    = size(AB,2)
     if m != n || m != size(B,1)
         throw(DimensionMismatch("matrix AB has dimensions $(size(AB)), but right hand side matrix B has dimensions $(size(B))"))

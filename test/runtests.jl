@@ -1,9 +1,10 @@
-using BandedMatrices, Compat
-using Compat.LinearAlgebra
-using Compat.Test
+using BandedMatrices
+using LinearAlgebra
+using Test
 
 include("test_banded.jl")
 include("test_subarray.jl")
+include("test_broadcasting.jl")
 include("test_gbmm.jl")
 include("test_indexing.jl")
 include("test_bandedlu.jl")

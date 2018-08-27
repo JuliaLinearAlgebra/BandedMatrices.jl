@@ -1,16 +1,3 @@
-gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::StridedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
-   BLAS.gbmv!(trans, m, kl, ku, alpha, A, x, beta, y)
-gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::AbstractMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
-   gbmv!(trans, m, size(A,2), kl, ku, alpha,
-      pointer(A), leadingdimension(A), pointer(x), stride(x,1), beta, pointer(y), stride(y,1))
-gbmv!(trans::Char, m::Integer, kl::Integer, ku::Integer, alpha::T, A::BandedMatrix{T}, x::StridedVector{T}, beta::T, y::StridedVector{T}) where {T<:BlasFloat} =
-   gbmv!(trans, m, kl, ku, alpha, A.data, x, beta, y) # unroll the data
-
-# this supports non-strided matrices
-# TODO: remove in 0.7
-gbmv!(trans::Char, α::T, A::AbstractMatrix{T}, x::StridedVector{T}, β::T, y::StridedVector{T}) where {T<:BlasFloat} =
-    gbmv!(trans, size(A,1), bandwidth(A,1), bandwidth(A,2), α, A, x, β, y)
-
 
 
 
@@ -275,55 +262,5 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
                             c,Cl,Cu,stc)
     end
 
-    C
-end
-
-function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::StridedMatrix{T}, β::T, C::StridedMatrix{T}) where {T<:BlasFloat}
-    if tA ≠ 'N' || tB ≠ 'N'
-        error("Only 'N' flag is supported.")
-    end
-    st = leadingdimension(A)
-    n,ν = size(A)
-    a = pointer(A)
-    b = pointer(B)
-    stb = stride(B,2)
-    m = size(B,2)
-
-    @assert size(C,1) == n
-    @assert size(C,2) == m
-
-    c=pointer(C)
-    stc=stride(C,2)
-    sz=sizeof(T)
-
-    Al = bandwidth(A,1); Au = bandwidth(A,2)
-
-    for j=1:m
-        gbmv!('N',n,ν,Al,Au,α,a,st,b+(j-1)*sz*stb,stride(B,1),β,c+(j-1)*sz*stc,stride(C,1))
-    end
-    C
-end
-
-function gbmm!(tA::Char, tB::Char, α::T, A::StridedMatrix{T}, B::AbstractMatrix{T}, β::T, C::StridedMatrix{T}) where {T<:BlasFloat}
-    if tA ≠ 'N' || tB ≠ 'N'
-        error("Only 'N' flag is supported.")
-    end
-    st = leadingdimension(B)
-    n,ν = size(B)
-    a = pointer(A)
-    b = pointer(B)
-    m = size(A, 1)
-
-    @assert size(C,1) == m
-    @assert size(C,2) == ν
-
-    c=pointer(C)
-    sz=sizeof(T)
-
-    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
-
-    for j=1:m
-        gbmv!('T',n,ν,Bl,Bu,α,b,st,a+(j-1)*sz,stride(A,2),β,c+(j-1)*sz,stride(C,2))
-    end
     C
 end

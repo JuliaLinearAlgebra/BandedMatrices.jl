@@ -1,5 +1,4 @@
-using BandedMatrices, FillArrays, Compat.Test, Compat.LinearAlgebra, Compat.SparseArrays
-using Compat
+using BandedMatrices, FillArrays, Test, LinearAlgebra, SparseArrays
 import BandedMatrices: _BandedMatrix
 
 # used to test general matrix backends
@@ -67,6 +66,8 @@ end
 
     ## UniformScaling
     let A = brand(10,10,1,2)
+        @test A+I isa BandedMatrix
+        @test bandwidths(A+I) == (1,2)
         @test Matrix(A+I) ≈ Matrix(A)+I
         @test Matrix(I-A) ≈ I-Matrix(A)
 
@@ -76,8 +77,6 @@ end
     end
 end
 
-
-# banded * vec
 @testset "BandedMatrix * Vector" begin
     let A=brand(10,12,2,3), v=rand(12), w=rand(10)
         @test A*v ≈ Matrix(A)*v
@@ -100,7 +99,6 @@ end
     end
 end
 
-# test matrix multiplications
 @testset "Banded * Dense" begin
     # big banded * dense
 
@@ -153,71 +151,68 @@ end
     end
 
 
-    ## BigFloat
+    @testset "BigFloat" begin
+        let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
+            for j = 1:size(B,2), k = colrange(B,j)
+                B[k,j]=randn()
+            end
 
-    let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
-        for j = 1:size(B,2), k = colrange(B,j)
-            B[k,j]=randn()
-        end
+            x = BigFloat[1:size(B,1)...]
 
-        x = BigFloat[1:size(B,1)...]
-
-        @test Matrix(A)*Matrix(B) ≈ A*B
-        @test Matrix(B)*Matrix(A) ≈ B*A
-        @test Matrix(B)*x ≈ B*x
-        @test Matrix(B*B) ≈ Matrix(B)*Matrix(B)
-        @test Matrix(A)*Matrix(D) ≈ A*D
-        @test Matrix(D)*Matrix(A) ≈ D*A
-    end
-
-
-    ## negative bands
-
-    for A in (brand(3,4,-1,2),brand(5,4,-1,2),
-                brand(3,4,2,-1),brand(5,4,2,-1))
-        b = rand(size(A,2))
-        c = rand(size(A,1))
-        @test A*b ≈ Matrix(A)*b
-        @test A'*c ≈ Matrix(A)'*c
-    end
-
-
-    let C = brand(4, 5, -1, 3), D = rand(4, 4)
-        for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
-            B in (brand(4,5,1,2),brand(4,5,-1,2),brand(4,5,2,-1))
-            @test A*B ≈ Matrix(A)*Matrix(B)
-            @test B*C' ≈ Matrix(B)*Matrix(C)'
-            @test B'*C ≈ Matrix(B)'*Matrix(C)
-            @test B'*A' ≈ Matrix(B)'*Matrix(A)'
-        end
-
-        for A in (brand(5,4,-1,2),brand(5,4,2,-1),brand(3,4,-1,2),brand(3,4,2,-1))
-            @test A*D ≈ Matrix(A)*Matrix(D)
-        end
-
-        for B in (brand(4,3,-1,2),brand(4,3,2,-1),brand(4,5,-1,2),brand(4,5,2,-1))
-            @test D*B ≈ Matrix(D)*Matrix(B)
+            @test Matrix(A)*Matrix(B) ≈ A*B
+            @test Matrix(B)*Matrix(A) ≈ B*A
+            @test Matrix(B)*x ≈ B*x
+            @test Matrix(B*B) ≈ Matrix(B)*Matrix(B)
+            @test Matrix(A)*Matrix(D) ≈ A*D
+            @test Matrix(D)*Matrix(A) ≈ D*A
         end
     end
 
-    # zero arrays
+    @testset "Negative bands" begin
+        for A in (brand(3,4,-1,2),brand(5,4,-1,2),
+                    brand(3,4,2,-1),brand(5,4,2,-1))
+            b = rand(size(A,2))
+            c = rand(size(A,1))
+            @test A*b ≈ Matrix(A)*b
+            @test A'*c ≈ Matrix(A)'*c
+        end
 
-    let b = rand(4)
-        for A in (brand(3,4,-1,0),brand(3,4,0,-1),brand(3,4,-1,-1)),
-            B in (brand(4,3,1,2),brand(4,3,-1,0),brand(4,3,-1,-1))
-            @test Matrix(A) == zeros(3,4)
-            @test A*B == zeros(3,3)
-            @test A*b == zeros(3)
+        let C = brand(4, 5, -1, 3), D = rand(4, 4)
+            for A in (brand(3,4,1,2),brand(3,4,-1,2),brand(3,4,2,-1)),
+                B in (brand(4,5,1,2),brand(4,5,-1,2),brand(4,5,2,-1))
+                @test A*B ≈ Matrix(A)*Matrix(B)
+                @test B*C' ≈ Matrix(B)*Matrix(C)'
+                @test B'*C ≈ Matrix(B)'*Matrix(C)
+                @test B'*A' ≈ Matrix(B)'*Matrix(A)'
+            end
+
+            for A in (brand(5,4,-1,2),brand(5,4,2,-1),brand(3,4,-1,2),brand(3,4,2,-1))
+                @test A*D ≈ Matrix(A)*Matrix(D)
+            end
+
+            for B in (brand(4,3,-1,2),brand(4,3,2,-1),brand(4,5,-1,2),brand(4,5,2,-1))
+                @test D*B ≈ Matrix(D)*Matrix(B)
+            end
         end
     end
 
-    # Test for errors in collect
+    @testset "zero" begin
+        let b = rand(4)
+            for A in (brand(3,4,-1,0),brand(3,4,0,-1),brand(3,4,-1,-1)),
+                B in (brand(4,3,1,2),brand(4,3,-1,0),brand(4,3,-1,-1))
+                @test Matrix(A) == zeros(3,4)
+                @test A*B == zeros(3,3)
+                @test A*b == zeros(3)
+            end
+        end
+    end
 
-   let B = brand(10,10,0,4)
-       @test B*[collect(1.0:10) collect(1.0:10)] ≈ Matrix(B)*[collect(1.0:10) collect(1.0:10)]
-   end
+    @testset "errors in collect" begin
+       let B = brand(10,10,0,4)
+           @test B*[collect(1.0:10) collect(1.0:10)] ≈ Matrix(B)*[collect(1.0:10) collect(1.0:10)]
+       end
+    end
 end
-
 
 @testset "BandedMatrix interface" begin
     # check that col/rowstop is ≥ 0

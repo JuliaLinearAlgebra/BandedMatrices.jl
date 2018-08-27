@@ -1,4 +1,4 @@
-using BandedMatrices, Compat.Test
+using BandedMatrices, Test
 
 ## Banded Matrix of Banded Matrix
 
@@ -45,17 +45,10 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         @test isa(AbstractArray{ComplexF16}(A), BandedMatrix{ComplexF16})
     end
     @time @testset "show" begin
-        if VERSION < v"0.7-"
-          @test occursin("10×10 BandedMatrices.BandedMatrix{Float64,Array{Float64,2}}",
-             sprint() do io
-                 show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
-             end)
-        else
-          @test occursin("10×10 BandedMatrix{Float64,Array{Float64,2}}",
-             sprint() do io
-                show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
-             end)
-        end
+      @test occursin("10×10 BandedMatrix{Float64,Array{Float64,2}}",
+         sprint() do io
+            show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
+         end)
         needle = "1.0  0.0   ⋅ \n 0.0  1.0  0.0\n  ⋅   0.0  1.0"
         @test occursin(needle, sprint() do io
              show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
@@ -69,6 +62,6 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
 
     @testset "defaultdot" begin
         A = randn(5)
-        @test BandedMatrices.dot(A,A) ≡ Compat.LinearAlgebra.dot(A,A)
+        @test BandedMatrices.dot(A,A) ≡ LinearAlgebra.dot(A,A)
     end
 end

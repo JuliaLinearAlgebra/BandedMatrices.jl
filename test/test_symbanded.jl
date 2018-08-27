@@ -1,5 +1,4 @@
-using Compat
-using BandedMatrices, Compat.Test
+using BandedMatrices, Test
 @testset "SymBandedMatrix tests" begin
     @test_throws UndefRefError SymBandedMatrix{Vector{Float64}}(undef, 5, 1)[1,1]
 
@@ -14,12 +13,8 @@ using BandedMatrices, Compat.Test
 
 
     # eigvals
+    Random.seed!(0)
 
-    if VERSION < v"0.7"
-        srand(0)
-    else
-        Random.seed!(0)
-    end
     A = sbrand(Float64, 100, 4)
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
@@ -66,16 +61,8 @@ using BandedMatrices, Compat.Test
 
     @test norm(err[1:40]) < 100eps(Float32)
 
-
-    if VERSION < v"0.7-"
-      @test occursin("10×10 BandedMatrices.SymBandedMatrix{Float64}",
-         sprint() do io
-             show(io, MIME"text/plain"(), SymBandedMatrix{Float64}(Zeros(10,10), 1))
-         end)
-    else
-      @test occursin("10×10 SymBandedMatrix{Float64}",
-         sprint() do io
-            show(io, MIME"text/plain"(), SymBandedMatrix{Float64}(Zeros(10,10), 1))
-         end)
-    end
+  @test occursin("10×10 SymBandedMatrix{Float64}",
+     sprint() do io
+        show(io, MIME"text/plain"(), SymBandedMatrix{Float64}(Zeros(10,10), 1))
+     end)
 end

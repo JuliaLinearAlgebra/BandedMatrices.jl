@@ -27,14 +27,8 @@ mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
     end
 end
 
-MemoryLayout(::BandedMatrix) = BandedLayout()
+MemoryLayout(::BandedMatrix) = BandedColumnMajor()
 
-
-# BandedMatrix with unit range indexes is also banded
-const BandedSubBandedMatrix{T, C} =
-    SubArray{T,2,BandedMatrix{T, C},I} where I<:Tuple{Vararg{AbstractUnitRange}}
-
-@banded BandedSubBandedMatrix
 
 ## Constructors
 
@@ -260,18 +254,6 @@ similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer
     similar(bm, eltype(bm), m, n, l, u)
 
 
-function _shift(bm::BandedSubBandedMatrix)
-    kr,jr=parentindices(bm)
-    kr[1]-jr[1]
-end
-
-function similar(bm::BandedSubBandedMatrix, T::Type=eltype(bm),
-                      n::Integer=size(bm, 1), m::Integer=size(bm, 2),
-                      l::Integer=max(0, bandwidth(parent(bm), 1) - _shift(bm)),
-                      u::Integer=max(0, bandwidth(parent(bm), 2) + _shift(bm)))
-    similar(bm.parent, T, n, m, l, u)
-end
-
 
 ## Abstract Array Interface
 
@@ -281,7 +263,9 @@ size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
                                     k == 2 ? size(A.data, 2) : 1
 
 
-bandwidth(A::BandedMatrix,k::Integer) = k==1 ? A.l : A.u
+## banded matrix interface
+bandeddata(A::BandedMatrix) = A.data
+bandwidth(A::BandedMatrix, k::Integer) = k==1 ? A.l : A.u
 
 IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
 
@@ -693,11 +677,6 @@ function convert(::Type{Matrix}, A::BandedMatrix)
     ret
 end
 
-if VERSION < v"0.7-"
-    Base.full(A::BandedMatrix) = convert(Matrix, A)
-end
-
-
 function sparse(B::BandedMatrix)
     i=Vector{Int}(undef,length(B.data)); j=Vector{Int}(undef,length(B.data))
     n,m=size(B.data)
@@ -736,43 +715,16 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-if VERSION < v"0.7-"
-    function Base.scale!(α::Number, A::BandedMatrix)
-        Base.scale!(α, A.data)
-        A
-    end
-
-    function Base.scale!(A::BandedMatrix, α::Number)
-        Base.scale!(A.data, α)
-        A
-    end
-else
-    function LinearAlgebra.lmul!(α::Number, A::BandedMatrix)
-        LinearAlgebra.lmul!(α, A.data)
-        A
-    end
-
-    function LinearAlgebra.rmul!(A::BandedMatrix, α::Number)
-        LinearAlgebra.rmul!(A.data, α)
-        A
-    end
+function banded_lmul!(α::Number, A::BandedMatrix)
+    lmul!(α, A.data)
+    A
 end
 
-function transpose(B::BandedMatrix)
-    Bt = BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
-    for j = 1:size(B,2), k = colrange(B,j)
-       Bt[j,k]=B[k,j]
-    end
-    Bt
+function banded_rmul!(A::BandedMatrix, α::Number)
+    rmul!(A.data, α)
+    A
 end
 
-function adjoint(B::BandedMatrix)
-    Bt=BandedMatrix(Zeros{eltype(B)}(size(B,2),size(B,1)), (B.u,B.l))
-    for j = 1:size(B,2), k = colrange(B,j)
-       Bt[j,k]=conj(B[k,j])
-    end
-    Bt
-end
 
 
 
@@ -849,6 +801,29 @@ bandshift(a::AbstractRange,::Slice{OneTo{Int}}) = first(a)-1
 bandshift(::Slice{OneTo{Int}},b::Slice{OneTo{Int}}) = 0
 bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
 
+
+
+
+# BandedMatrix with unit range indexes is also banded
+const BandedSubBandedMatrix{T, C} =
+    SubArray{T,2,BandedMatrix{T, C},I} where I<:Tuple{Vararg{AbstractUnitRange}}
+
+@banded BandedSubBandedMatrix
+
+function _shift(bm::BandedSubBandedMatrix)
+    kr,jr=parentindices(bm)
+    kr[1]-jr[1]
+end
+
+function similar(bm::BandedSubBandedMatrix, T::Type=eltype(bm),
+                      n::Integer=size(bm, 1), m::Integer=size(bm, 2),
+                      l::Integer=max(0, bandwidth(parent(bm), 1) - _shift(bm)),
+                      u::Integer=max(0, bandwidth(parent(bm), 2) + _shift(bm)))
+    similar(bm.parent, T, n, m, l, u)
+end
+
+bandeddata(V::BandedSubBandedMatrix) = view(bandeddata(parent(V)), :, parentindices(V)[2])
+
 bandwidth(S::BandedSubBandedMatrix{T}, k::Integer) where {T} = bandwidth(parent(S),k) + (k==1 ? -1 : 1)*bandshift(S)
 
 @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
@@ -886,7 +861,10 @@ end
 @inline leadingdimension(B::BandedMatrix) = stride(B.data,2)
 @inline leadingdimension(B::BandedSubBandedMatrix{T}) where {T} = leadingdimension(parent(B))
 
-
 @inline pointer(B::BandedMatrix) = pointer(B.data)
 @inline pointer(B::BandedSubBandedMatrix{T}) where {T} =
     pointer(parent(B))+leadingdimension(parent(B))*(first(parentindices(B)[2])-1)*sizeof(T)
+
+@inline unsafe_convert(::Type{Ptr{T}}, a::BandedMatrix{T}) where T = unsafe_convert(Ptr{T}, a.data)
+@inline unsafe_convert(::Type{Ptr{T}}, a::BandedSubBandedMatrix{T}) where T =
+    pointer(a)

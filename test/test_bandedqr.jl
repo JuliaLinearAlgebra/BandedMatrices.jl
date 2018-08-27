@@ -1,17 +1,14 @@
-using BandedMatrices, Compat.Test
+using BandedMatrices, Test
 
-if VERSION < v"0.7-"
-    const mul! = Base.A_mul_B!
-end
 @testset "QR tests" begin
     for T in (Float64,ComplexF64,Float32,ComplexF32)
         A=brand(T,10,10,3,2)
         Q,R=qr(A)
         @test Matrix(Q)*Matrix(R) ≈ A
         b=rand(T,10)
-        @test mul!(similar(b),Q,BandedMatrices.Ac_mul_B!(similar(b),Q,b)) ≈ b
+        @test mul!(similar(b),Q,mul!(similar(b),Q',b)) ≈ b
         for j=1:size(A,2)
-            @test BandedMatrices.Ac_mul_B(Q,A[:,j]) ≈ R[:,j]
+            @test Q' * A[:,j] ≈ R[:,j]
         end
         A=brand(T,14,10,3,2)
 

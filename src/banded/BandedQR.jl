@@ -3,7 +3,7 @@ struct BandedQR{T} <: Factorization{T}
     R::BandedMatrix{T}
 end
 
-Base.size(QR::BandedQR,k) = size(QR.R,k)
+size(QR::BandedQR,k) = size(QR.R,k)
 
 struct BandedQ{T} <: AbstractMatrix{T}
     H::Matrix{T}
@@ -16,20 +16,26 @@ size(A::BandedQ,i::Integer) = i <= 0 ? error("dimension out of range") :
                                 i == 1 ? A.m :
                                 i == 2 ? A.m : 1
 
+transpose(A::BandedQ) = Transpose(A)
+adjoint(A::BandedQ) = Adjoint(A)
 
-At_mul_B(A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B(A,B)
-At_mul_B!(Y,A::BandedQ{T},B::Union{Vector{T},Matrix{T}}) where {T<:Real} = Ac_mul_B!(Y,A,B)
+*(At::Transpose{T,BandedQ{T}}, B::AbstractVecOrMat{T}) where {T<:Real} = transpose(At)'*B
+mul!(Y, At::Transpose{T,BandedQ{T}}, B::AbstractVecOrMat{T}) where {T<:Real} =
+    mul!(Y, transpose(At)', B)
 
-Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Complex} =
-    Ac_mul_B(A,real(B))+im*Ac_mul_B(A,imag(B))
-Ac_mul_B(A::BandedQ{T},B::Vector{V}) where {T<:Real,V<:Real} =
-    Ac_mul_B(A,Vector{T}(B))
-Ac_mul_B(A::BandedQ{T},B::Vector) where {T<:Complex} =
-    Ac_mul_B(A,Vector{T}(B))
-Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Real} = Ac_mul_B!(similar(B),A,B)
-Ac_mul_B(A::BandedQ{T},B::Vector{T}) where {T<:Complex} = Ac_mul_B!(similar(B),A,B)
+*(Ac::Adjoint{T,BandedQ{T}}, B::AbstractVector{V}) where {T<:Real,V<:Complex} =
+    Ac * real(B) + im* Ac * imag(B)
+*(Ac::Adjoint{T,BandedQ{T}}, B::AbstractVector{V}) where {T<:Real,V<:Real} =
+    Ac * convert(Vector{T}, B)
+*(Ac::Adjoint{T,BandedQ{T}}, B::AbstractVector) where {T<:Complex} =
+    Ac * convert(Vector{T}, B)
+*(Ac::Adjoint{T,BandedQ{T}}, B::AbstractVector{T}) where {T<:Real} =
+    mul!(similar(B), Ac, B)
+*(Ac::Adjoint{T,BandedQ{T}}, B::AbstractVector{T}) where {T<:Complex} =
+    mul!(similar(B), Ac, B)
 
-function Ac_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
+function mul!(Y::Vector{T}, Ac::Adjoint{T,BandedQ{T}}, B::Vector{T}) where {T<:BlasFloat}
+    A = parent(Ac)
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -70,7 +76,7 @@ end
 
 
 # Each householder is symmetyric, this just reverses the order of application
-function A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
+function mul!(Y::Vector{T}, A::BandedQ{T}, B::Vector{T}) where {T<:BlasFloat}
     if length(Y) != size(A,1) || length(B) != size(A,2)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
@@ -110,14 +116,14 @@ function A_mul_B!(Y::Vector{T},A::BandedQ{T},B::Vector{T}) where {T<:BlasFloat}
     Y
 end
 
-function A_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
+function mul!(Y::Matrix, A::BandedQ, B::Matrix)
     for j=1:size(A,2)
         Y[:,j]=A*B[:,j]
     end
     Y
 end
 
-function Ac_mul_B!(Y::Matrix,A::BandedQ,B::Matrix)
+function mul!(Y::Matrix,A::Adjoint{T,BandedQ{T}},B::Matrix) where T
     for j=1:size(A,2)
         Y[:,j]=A'*B[:,j]
     end
@@ -126,11 +132,7 @@ end
 
 function (*)(A::BandedQ{T}, x::AbstractVector{S}) where {T,S}
     TS = promote_type(T, S)
-    A_mul_B!(similar(x,TS,size(A,1)),A,x)
-end
-
-if VERSION < v"0.7-"
-    Base.full(A::BandedQ) = A*eye(eltype(A),size(A,1))
+    mul!(similar(x,TS,size(A,1)),A,x)
 end
 
 Base.IndexStyle(::Type{BandedQ{T}}) where {T} = IndexCartesian()
@@ -147,37 +149,25 @@ function Base.getindex(QR::BandedQR,d::Symbol)
 end
 
 
-if VERSION < v"0.7-"
-    function qr(A::BandedMatrix)
-        QR = qrfact(A)
-        QR[:Q],QR[:R]
-    end
 
-    function qrfact(A::BandedMatrix)
-        R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
-        R.data[A.l+1:end,:]=A.data
-        banded_qr!(R)
+function getproperty(QR::BandedQR, d::Symbol)
+    if d == :R
+        return getfield(QR,:R)
+    elseif d == :Q
+        return BandedQ(QR.H,size(QR,1))
+    else
+        getfield(QR, d)
     end
-else
-    function getproperty(QR::BandedQR, d::Symbol)
-        if d == :R
-            return getfield(QR,:R)
-        elseif d == :Q
-            return BandedQ(QR.H,size(QR,1))
-        else
-            getfield(QR, d)
-        end
-    end
-    # iteration for destructuring into components
-    iterate(S::BandedQR) = (S.Q, Val(:R))
-    iterate(S::BandedQR, ::Val{:R}) = (S.R, Val(:done))
-    iterate(S::BandedQR, ::Val{:done}) = nothing
+end
+# iteration for destructuring into components
+iterate(S::BandedQR) = (S.Q, Val(:R))
+iterate(S::BandedQR, ::Val{:R}) = (S.R, Val(:done))
+iterate(S::BandedQR, ::Val{:done}) = nothing
 
-    function qr(A::BandedMatrix)
-        R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
-        R.data[A.l+1:end,:]=A.data
-        banded_qr!(R)
-    end
+function qr(A::BandedMatrix)
+    R=BandedMatrix(Zeros{eltype(A)}(size(A)), (A.l,A.l+A.u))
+    R.data[A.l+1:end,:]=A.data
+    banded_qr!(R)
 end
 
 flipsign(x,y) = Base.flipsign(x,y)
