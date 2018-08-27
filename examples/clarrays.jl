@@ -36,7 +36,7 @@ T = 1f0 / 1_000
 n_t = floor(Int, T/Δt)
 L = finitedifference(CLArray, nₓ, Δt)
 
-x= linspace(-1, 1, nₓ)
+x= range(-1, stop=1, length=nₓ)
 u₀ = CLArray{Float32}(exp.(-10x.^2));
 
 
@@ -63,7 +63,7 @@ T = 1f0 / 1_000
 n_t = floor(Int, T/Δt)
 L = finitedifference(CLArray, nₓ, Δt)
 
-x= linspace(-1, 1, nₓ)
+x= range(-1, stop=1, length=nₓ)
 u₀ = CLArray(exp.(-10x.^2));
 
 
