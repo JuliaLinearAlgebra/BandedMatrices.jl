@@ -35,7 +35,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul,
                     AbstractStridedLayout, AbstractColumnMajor,
                     _copyto!, BMatVec, BMixedMatVec, BMixedMatMat, transposelayout,
-                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout
+                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata
 import FillArrays: AbstractFill
 
 export BandedMatrix,
@@ -74,9 +74,8 @@ include("banded/BandedQR.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
 
-include("symbanded/SymBandedMatrix.jl")
+include("symbanded/symbanded.jl")
 include("symbanded/BandedCholesky.jl")
-include("symbanded/linalg.jl")
 
 include("interfaceimpl.jl")
 
