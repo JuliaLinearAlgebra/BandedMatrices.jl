@@ -34,11 +34,11 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul,
                     AbstractStridedLayout, AbstractColumnMajor,
-                    _copyto!, BMatVec, BMixedMatVec, BMixedMatMat, transposelayout, ConjLayout, conjlayout
+                    _copyto!, BMatVec, BMixedMatVec, BMixedMatMat, transposelayout,
+                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout
 import FillArrays: AbstractFill
 
 export BandedMatrix,
-       SymBandedMatrix,
        bandrange,
        brand,
        bandwidth,

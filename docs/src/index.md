@@ -77,19 +77,7 @@ BandRange
 
 ## Creating symmetric banded matrices
 
-```@docs
-SymBandedMatrix
-```
-
-
-```@docs
-sbones
-```
-
-```@docs
-sbrand
-```
-
+Use `Symmetric(::BandedMatrix)` to work with symmetric banded matrices.
 
 ## Banded matrix interface
 
