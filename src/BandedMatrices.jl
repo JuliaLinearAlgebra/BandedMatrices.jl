@@ -33,7 +33,7 @@ import Base: convert, size, view, unsafe_indices,
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
-import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul, @lazylmul,
+import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,

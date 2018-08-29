@@ -78,6 +78,11 @@ end
 
 
 # Ldiv
+@lazyldiv UpperTriangular{T, <:AbstractBandedMatrix{T}} where T
+@lazyldiv UnitUpperTriangular{T, <:AbstractBandedMatrix{T}} where T
+@lazyldiv LowerTriangular{T, <:AbstractBandedMatrix{T}} where T
+@lazyldiv UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
+
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
          M::MatLdivVec{T, <:TriangularLayout{'U',UNIT,BandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T <: BlasFloat}
