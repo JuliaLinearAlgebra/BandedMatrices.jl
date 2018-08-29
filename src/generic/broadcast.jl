@@ -25,7 +25,23 @@ conjlayout(::Type{<:Complex}, M::AbstractBandedLayout) = ConjLayout(M)
 struct BandedStyle <: AbstractArrayStyle{2} end
 BandedStyle(::Val{2}) = BandedStyle()
 BroadcastStyle(::Type{<:AbstractBandedMatrix}) = BandedStyle()
-BroadcastStyle(::DefaultArrayStyle{0}, ::BandedStyle) = BandedStyle()
+BroadcastStyle(::DefaultArrayStyle{2}, ::BandedStyle) = DefaultArrayStyle{2}()
+BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = DefaultArrayStyle{2}()
+
+
+
+####
+# Default to standard Array broadcast
+#
+# This is because, for example, exp.(B) is not banded
+####
+
+
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
+   copyto!(dest, Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
+
+similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T =
+    similar(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes), T)
 
 ##
 # copyto!
@@ -60,6 +76,7 @@ function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof
     banded_copyto!(dest, A)
 end
 
+
 ##
 # lmul!/rmul!
 ##
@@ -84,11 +101,18 @@ function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof
     banded_lmul!(α, dest)
 end
 
+similar(bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:Number,<:AbstractMatrix}}, ::Type{T}) where T =
+    similar(bc.args[2], T)
+
+
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:AbstractMatrix,<:Number}})
     A,α = bc.args
     dest ≡ A || copyto!(dest, A)
     banded_rmul!(dest, α)
 end
+
+similar(bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:AbstractMatrix,<:Number}}, ::Type{T}) where T =
+    similar(bc.args[1], T)
 
 ##
 # axpy!
@@ -147,7 +171,8 @@ function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
 end
 
 
-function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
+function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
+                                                            <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
     A,B = bc.args
     if dest ≡ B
         banded_axpy!(one(T), A, dest)
@@ -159,6 +184,16 @@ function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typ
     end
 end
 
+function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
+    A,B = bc.args
+    n,m = size(A)
+    (n,m) == size(B) || throw(DimensionMismatch())
+    Al,Au = bandwidths(A)
+    Bl,Bu = bandwidths(B)
+    similar(A, T, n, m, max(Al,Bl), max(Au,Bu))
+end
+
+
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
                                                         <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
                                                         <:AbstractMatrix}}) where T
@@ -168,18 +203,14 @@ function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typ
     banded_axpy!(α, A, dest)
 end
 
-
-
-
-####
-# Default to standard Array broadcast
-#
-# This is because, for example, exp.(B) is not banded
-####
-
-
-copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
- copyto!(dest, Broadcasted{DefaultArrayStyle{2}()}(bc.f, bc.args, bc.axes))
-
-copy(bc::Broadcasted{BandedStyle}) =
- copy(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
+function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
+                        <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
+                        <:AbstractMatrix}}, ::Type{T}) where T
+    αA,B = bc.args
+    α,A = αA.args
+    n,m = size(A)
+    (n,m) == size(B) || throw(DimensionMismatch())
+    Al,Au = bandwidths(A)
+    Bl,Bu = bandwidths(B)
+    similar(A, T, n, m, max(Al,Bl), max(Au,Bu))
+end

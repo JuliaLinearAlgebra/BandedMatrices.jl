@@ -1,21 +1,27 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
     import LazyArrays: MemoryLayout
+
+@testset "general" begin
+    n = 1000
+    A = brand(n,n,1,1)
+    B = Matrix{Float64}(undef, n,n)
+    B .= exp.(A)
+    @test B == exp.(Matrix(A)) == exp.(A)
+    @test exp.(A) isa Matrix
+    @test A .+ 1 isa Matrix
+end
+
 @testset "lmul!/rmul!" begin
     n = 1000
     A = brand(n,n,1,1)
     B = brand(n,n,2,2)
     B .= 2.0.*A
 
-    @test B ==  2A
-    A .= 2.0.*A
-    @test A == B
+    @test B ==  2A == 2.0.*A
+    @test 2A isa BandedMatrix
+    @test 2.0.*A isa BandedMatrix
+    @test bandwidths(2A) == bandwidths(2.0.*A) == bandwidths(A)
 
-    n = 1000
-    A = brand(n,n,1,1)
-    B = brand(n,n,2,2)
-    B .= 2.0.*A
-
-    @test B ==  2A
     A .= 2.0.*A
     @test A == B
 
@@ -24,7 +30,10 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
     B = brand(n,n,2,2)
     B .= A.*2.0
 
-    @test B ==  2A
+    @test B ==  A*2 == A.*2.0
+    @test A*2 isa BandedMatrix
+    @test A .* 2.0 isa BandedMatrix
+    @test bandwidths(A*2) == bandwidths(A.*2.0) == bandwidths(A)
     A .= A.*2.0
     @test A == B
 end
@@ -35,10 +44,12 @@ end
     B = brand(n,n,2,2)
     C = brand(n,n,3,3)
     @time C .= A .+ B
-    @test C == A + B
+    @test C == A + B == A .+ B
+    @test A + B isa BandedMatrix
+    @test A .+ B isa BandedMatrix
+    @test bandwidths(A+B) == bandwidths(A.+B) == (2,2)
     @time B .= A .+ B
     @test B == C
-
 
     n = 1000
     A = brand(n,n,1,1)
@@ -46,7 +57,10 @@ end
     C = brand(n,n,3,3)
 
     C .= 2.0 .* A .+ B
-    @test C == 2A+B
+    @test C == 2A+B == 2.0.*A .+ B
+    @test 2A + B isa BandedMatrix
+    @test 2.0.*A .+ B isa BandedMatrix
+    @test bandwidths(2A+B) == bandwidths(2.0.*A .+ B) == (2,2)
     B .= 2.0 .* A .+ B
     @test B == C
 end

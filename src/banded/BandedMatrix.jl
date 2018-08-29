@@ -726,51 +726,11 @@ function banded_rmul!(A::BandedMatrix, α::Number)
 end
 
 
-
-
 function diag(A::BandedMatrix{T}) where {T}
     n=size(A,1)
     @assert n==size(A,2)
 
     vec(A.data[A.u+1,1:n])
-end
-
-
-
-## Matrix.*Matrix
-
-function broadcast(::typeof(*), A::BandedMatrix, B::BandedMatrix)
-    @assert size(A,1)==size(B,1)&&size(A,2)==size(B,2)
-
-    l=min(A.l,B.l);u=min(A.u,B.u)
-    T=promote_type(eltype(A),eltype(B))
-    ret=BandedMatrix(T,size(A,1),size(A,2),l,u)
-
-    for j = 1:size(ret,2), k = colrange(ret,j)
-        @inbounds ret[k,j]=A[k,j]*B[k,j]
-    end
-    ret
-end
-
-
-
-## numbers
-for OP in (:*,:/)
-    @eval begin
-        $OP(A::BandedMatrix, b::Number) =
-            _BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
-        broadcast(::typeof($OP), A::BandedMatrix, b::Number) =
-            _BandedMatrix($OP.(A.data,b),A.m,A.l,A.u)
-    end
-end
-
-for OP in (:*,:\)
-    @eval begin
-        $OP(a::Number, B::BandedMatrix) =
-            _BandedMatrix($OP(a,B.data),B.m,B.l,B.u)
-        broadcast(::typeof($OP), a::Number, B::BandedMatrix) =
-            _BandedMatrix($OP.(a,B.data),B.m,B.l,B.u)
-    end
 end
 
 

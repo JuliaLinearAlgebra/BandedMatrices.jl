@@ -27,7 +27,12 @@ function bandwidths(K::Kron{<:Any,2})
     (size(B,1)*bandwidth(A,1) + max(0,size(B,1)-size(B,2))*size(A,1)   + bandwidth(B,1),
         size(B,2)*bandwidth(A,2) + max(0,size(B,2)-size(B,1))*size(A,2) + bandwidth(B,2))
 end
-kron(A::AbstractBandedMatrix, B::AbstractBandedMatrix) = BandedMatrix(Kron(A,B))
-kron(A::AdjOrTrans{<:Any,<:AbstractBandedMatrix}, B::AbstractBandedMatrix) = BandedMatrix(Kron(A,B))
-kron(A::AbstractBandedMatrix, B::AdjOrTrans{<:Any,<:AbstractBandedMatrix}) = BandedMatrix(Kron(A,B))
-kron(A::AdjOrTrans{<:Any,<:AbstractBandedMatrix}, B::AdjOrTrans{<:Any,<:AbstractBandedMatrix}) = BandedMatrix(Kron(A,B))
+
+const BandedMatrixTypes = (:AbstractBandedMatrix, :(AdjOrTrans{<:Any,<:AbstractBandedMatrix}),
+                                    :(AbstractTriangular{<:Any, <:AbstractBandedMatrix}),
+                                    :(Symmetric{<:Any, <:AbstractBandedMatrix}),
+                                    :Zeros, :Eye, :Diagonal, :SymTridiagonal)
+
+for T1 in BandedMatrixTypes, T2 in BandedMatrixTypes
+    @eval kron(A::$T1, B::$T2) = BandedMatrix(Kron(A,B))
+end
