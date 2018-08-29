@@ -17,7 +17,7 @@ import LinearAlgebra: BlasInt,
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
-            qr, axpy!, ldiv!, mul!, lu, lu!
+            qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -33,9 +33,10 @@ import Base: convert, size, view, unsafe_indices,
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
 import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul,
-                    AbstractStridedLayout, AbstractColumnMajor,
-                    _copyto!, BMatVec, BMixedMatVec, BMixedMatMat, transposelayout,
-                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata
+                    AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
+                    _copyto!, MatMulVec, MatMulMat, transposelayout,
+                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
+                    triangularlayout, InverseLayout, MatMulVec, TriangularLayout
 import FillArrays: AbstractFill
 
 export BandedMatrix,
@@ -65,7 +66,6 @@ include("generic/broadcast.jl")
 include("generic/matmul.jl")
 include("generic/Band.jl")
 include("generic/utils.jl")
-include("generic/interface.jl")
 
 
 include("banded/BandedMatrix.jl")
@@ -76,6 +76,8 @@ include("banded/linalg.jl")
 
 include("symbanded/symbanded.jl")
 include("symbanded/BandedCholesky.jl")
+
+include("tribanded.jl")
 
 include("interfaceimpl.jl")
 

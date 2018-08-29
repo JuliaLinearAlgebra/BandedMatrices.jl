@@ -54,7 +54,7 @@ end
 
 
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α::T, β::T,
                 ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout) where T<:BlasFloat
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -77,7 +77,7 @@ end
 
 
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α::T, β::T,
                    ::AbstractStridedLayout, ::BandedRowMajor, ::AbstractStridedLayout) where T<:BlasFloat
     At = transpose(A)
     m, n = size(A)
@@ -96,7 +96,7 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     end
 end
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α, β,
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α::T, β::T,
                 ::AbstractStridedLayout, ::ConjLayout{BandedRowMajor}, ::AbstractStridedLayout) where T<:BlasComplex
     Ac = A'
     m, n = size(A)
@@ -124,8 +124,7 @@ end
 
 
 @inline function _copyto!(_, c::AbstractVector{T},
-         bc::BMixedMatVec{<:Any, <:AbstractBandedLayout}) where T
-    (M,) = bc.args
+         M::MatMulVec{<:Any, <:AbstractBandedLayout}) where T
     A,b = M.A, M.B
     fill!(c, zero(T))
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
@@ -136,8 +135,7 @@ end
 
 
 @inline function _copyto!(_, c::AbstractVector{T},
-         bc::BMixedMatVec{<:Any, <:BandedRowMajor}) where T
-    (M,) = bc.args
+         M::MatMulVec{<:Any, <:BandedRowMajor}) where T
     At,b = M.A, M.B
     A = transpose(At)
     fill!(c, zero(T))
@@ -148,8 +146,7 @@ end
 end
 
 @inline function _copyto!(_, c::AbstractVector{T},
-         bc::BMixedMatVec{<:Any, <:ConjLayout{<:BandedRowMajor}}) where T
-    (M,) = bc.args
+         M::MatMulVec{<:Any, <:ConjLayout{<:BandedRowMajor}}) where T
     Ac,b = M.A, M.B
     A = Ac'
     fill!(c, zero(T))
@@ -228,22 +225,19 @@ end
 const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
 
 @inline function _copyto!(_, C::AbstractMatrix,
-         bc::BMixedMatMat{<:Any,<:ConjOrBandedLayout,<:ConjOrBandedLayout})
-     (M,) = bc.args
+         M::MatMulMat{<:Any,<:ConjOrBandedLayout,<:ConjOrBandedLayout})
      A, B = M.A, M.B
      banded_mul!(C, A, B)
 end
 
 @inline function _copyto!(_, C::AbstractMatrix,
-         bc::BMixedMatMat{<:Any,<:ConjOrBandedLayout})
-     (M,) = bc.args
+         M::MatMulMat{<:Any,<:ConjOrBandedLayout})
      A, B = M.A, M.B
      banded_mul!(C, A, B)
 end
 
 @inline function _copyto!(_, C::AbstractMatrix,
-         bc::BMixedMatMat{<:Any,<:Any,<:ConjOrBandedLayout})
-     (M,) = bc.args
+         M::MatMulMat{<:Any,<:Any,<:ConjOrBandedLayout})
      A, B = M.A, M.B
      banded_mul!(C, A, B)
 end

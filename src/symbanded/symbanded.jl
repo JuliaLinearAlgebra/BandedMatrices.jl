@@ -24,10 +24,13 @@ symmetriclayout(layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
 
 @blasmatvec SymmetricLayout{BandedColumnMajor}
 
-isbanded(::Symmetric{<:Any,<:BandedMatrix}) = true
+isbanded(::Symmetric{<:Any,<:AbstractBandedMatrix}) = true
 
 bandwidth(A::Symmetric) = ifelse(A.uplo == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
-bandwidth(A::Symmetric, _::Integer) = bandwidth(A)
+bandwidths(A::Symmetric) = (bandwidth(A), bandwidth(A))
+
+Base.replace_in_print_matrix(A::Symmetric{<:Any,<:AbstractBandedMatrix}, i::Integer, j::Integer, s::AbstractString) =
+    -bandwidth(A) ≤ j-i ≤ bandwidth(A) ? s : Base.replace_with_centered_mark(s)
 
 function symbandeddata(A)
     M = MemoryLayout(A)

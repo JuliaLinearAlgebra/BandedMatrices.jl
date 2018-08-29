@@ -18,20 +18,16 @@ bandeddata(A) = error("Override bandeddata(::$(typeof(A)))")
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
 """
-bandwidths(A::AbstractVecOrMat) = bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractVecOrMat) = -bandwidth(A,1),bandwidth(A,2)
-bandinds(A::AbstractVecOrMat, k::Integer) = k==1 ? -bandwidth(A,1) : bandwidth(A,2)
+bandwidths(A::AbstractVecOrMat) = (size(A,1)-1 , size(A,2)-1)
 
 bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
-bandwidth(A::AdjOrTrans{T,S}, i::Int) where {T,S} = bandwidths(A)[i]
-
 
 """
     bandwidth(A,i)
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
-bandwidth(A::AbstractVecOrMat, k::Integer) = k==1 ? size(A,1)-1 : size(A,2)-1
+bandwidth(A::AbstractVecOrMat, k::Integer) = bandwidths(A)[k]
 
 """
     bandrange(A)
@@ -114,9 +110,8 @@ inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
 
 
 ## structured matrix methods ##
-function Base.replace_in_print_matrix(A::AbstractBandedMatrix, i::Integer, j::Integer, s::AbstractString)
+Base.replace_in_print_matrix(A::AbstractBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
     -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
-end
 
 
 ## @inbands

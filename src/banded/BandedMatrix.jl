@@ -265,7 +265,7 @@ size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
 
 ## banded matrix interface
 bandeddata(A::BandedMatrix) = A.data
-bandwidth(A::BandedMatrix, k::Integer) = k==1 ? A.l : A.u
+bandwidths(A::BandedMatrix) = (A.l , A.u)
 
 IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
 
@@ -825,7 +825,7 @@ end
 
 bandeddata(V::BandedSubBandedMatrix) = view(bandeddata(parent(V)), :, parentindices(V)[2])
 
-bandwidth(S::BandedSubBandedMatrix{T}, k::Integer) where {T} = bandwidth(parent(S),k) + (k==1 ? -1 : 1)*bandshift(S)
+bandwidths(S::BandedSubBandedMatrix) = bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)
 
 @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
     @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)
