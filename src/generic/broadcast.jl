@@ -95,6 +95,15 @@ function banded_rmul!(A::AbstractMatrix, a)
     A
 end
 
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(-), <:Tuple{<:AbstractMatrix}})
+    A, = bc.args
+    dest ≡ A || copyto!(dest, A)
+    banded_lmul!(-1, dest)
+end
+
+similar(bc::Broadcasted{BandedStyle, <:Any, typeof(-), <:Tuple{<:AbstractMatrix}}, ::Type{T}) where T =
+    similar(bc.args[1], T)
+
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:Number,<:AbstractMatrix}})
     α,A = bc.args
     dest ≡ A || copyto!(dest, A)
@@ -113,6 +122,24 @@ end
 
 similar(bc::Broadcasted{BandedStyle, <:Any, typeof(*), <:Tuple{<:AbstractMatrix,<:Number}}, ::Type{T}) where T =
     similar(bc.args[1], T)
+
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(/), <:Tuple{<:AbstractMatrix,<:Number}})
+    A,α = bc.args
+    dest ≡ A || copyto!(dest, A)
+    banded_rmul!(dest, inv(α))
+end
+
+similar(bc::Broadcasted{BandedStyle, <:Any, typeof(/), <:Tuple{<:AbstractMatrix,<:Number}}, ::Type{T}) where T =
+    similar(bc.args[1], T)
+
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(\), <:Tuple{<:Number,<:AbstractMatrix}})
+    α,A = bc.args
+    dest ≡ A || copyto!(dest, A)
+    banded_lmul!(inv(α), dest)
+end
+
+similar(bc::Broadcasted{BandedStyle, <:Any, typeof(\), <:Tuple{<:Number,<:AbstractMatrix}}, ::Type{T}) where T =
+    similar(bc.args[2], T)
 
 ##
 # axpy!

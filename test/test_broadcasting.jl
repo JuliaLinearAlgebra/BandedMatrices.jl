@@ -15,6 +15,18 @@ end
     n = 1000
     A = brand(n,n,1,1)
     B = brand(n,n,2,2)
+    B .= (-).(A)
+    @test -A isa BandedMatrix
+    @test (-).(A) isa BandedMatrix
+    @test bandwidths(A) == bandwidths(-A) == bandwidths((-).(A))
+    @test B == -A == (-).(A)
+    @test A-I isa BandedMatrix
+    @test I-A isa BandedMatrix
+    @test bandwidths(A) == bandwidths(A-I) == bandwidths(I-A)
+
+    n = 1000
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
     B .= 2.0.*A
 
     @test B ==  2A == 2.0.*A
@@ -36,6 +48,25 @@ end
     @test bandwidths(A*2) == bandwidths(A.*2.0) == bandwidths(A)
     A .= A.*2.0
     @test A == B
+
+    n = 1000
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    B .= A ./ 2.0
+
+    @test B == A/2 == A ./ 2.0
+    @test A/2 isa BandedMatrix
+    @test A ./ 2.0 isa BandedMatrix
+    @test bandwidths(A/2) == bandwidths(A ./ 2.0) == bandwidths(A)
+
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    B .= 2.0 .\ A
+
+    @test B == A/2 == A ./ 2.0
+    @test 2\A isa BandedMatrix
+    @test 2.0 .\ A isa BandedMatrix
+    @test bandwidths(2\A) == bandwidths(2.0 .\ A) == bandwidths(A)
 end
 
 @testset "axpy!" begin

@@ -1,9 +1,9 @@
 
 
-isbanded(::AbstractTriangular{<:Any,<:AbstractBandedMatrix}) = true
-bandwidths(A::Union{UpperTriangular{<:Any,<:AbstractBandedMatrix},UnitUpperTriangular{<:Any,<:AbstractBandedMatrix}}) =
+isbanded(A::AbstractTriangular) = isbanded(parent(A))
+bandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) =
     (min(0,bandwidth(parent(A),1)), bandwidth(parent(A),2))
-bandwidths(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatrix},UnitLowerTriangular{<:Any,<:AbstractBandedMatrix}}) =
+bandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) =
     (bandwidth(parent(A),1), min(0,bandwidth(parent(A),2)))
 
 triangularlayout(::Type{Tri}, ML::BandedColumnMajor) where {Tri} = Tri(ML)
