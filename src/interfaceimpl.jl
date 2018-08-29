@@ -20,3 +20,14 @@ inbands_getindex(J::SymTridiagonal, k::Integer, j::Integer) =
     k == j ? J.dv[k] : J.ev[k]
 inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
     k == j ? (J.dv[k] = v) : (J.ev[k] = v)
+
+isbanded(K::Kron{<:Any,2}) = all(isbanded, K.arrays)
+function bandwidths(K::Kron{<:Any,2})
+    A,B = K.arrays
+    (size(B,1)*bandwidth(A,1) + max(0,size(B,1)-size(B,2))*size(A,1)   + bandwidth(B,1),
+        size(B,2)*bandwidth(A,2) + max(0,size(B,2)-size(B,1))*size(A,2) + bandwidth(B,2))
+end
+kron(A::AbstractBandedMatrix, B::AbstractBandedMatrix) = BandedMatrix(Kron(A,B))
+kron(A::AdjOrTrans{<:Any,<:AbstractBandedMatrix}, B::AbstractBandedMatrix) = BandedMatrix(Kron(A,B))
+kron(A::AbstractBandedMatrix, B::AdjOrTrans{<:Any,<:AbstractBandedMatrix}) = BandedMatrix(Kron(A,B))
+kron(A::AdjOrTrans{<:Any,<:AbstractBandedMatrix}, B::AdjOrTrans{<:Any,<:AbstractBandedMatrix}) = BandedMatrix(Kron(A,B))

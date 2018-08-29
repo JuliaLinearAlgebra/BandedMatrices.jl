@@ -18,7 +18,7 @@ import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
             qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
-            chkstride1
+            chkstride1, kron
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
