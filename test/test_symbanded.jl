@@ -2,7 +2,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     import BandedMatrices: MemoryLayout, SymmetricLayout, BandedColumnMajor
 
 
-@testset "Symmetric BandedMatrix tests" begin
+@testset "Symmetric" begin
     A = Symmetric(brand(10,10,1,2))
     @test isbanded(A)
     @test BandedMatrix(A) == A
