@@ -1,10 +1,16 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     import BandedMatrices: MemoryLayout, SymmetricLayout, BandedColumnMajor
+
+
 @testset "Symmetric BandedMatrix tests" begin
     A = Symmetric(brand(10,10,1,2))
+    @test isbanded(A)
+    @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
-    @test bandwidths(A) == (2,2)
+    @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
     @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'U')
+
+
 
     @test A[1,2] == A[2,1]
     @test A[1,4] == 0
@@ -15,8 +21,10 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
 
 
     A = Symmetric(brand(10,10,1,2),:L)
+    @test isbanded(A)
+    @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
-    @test bandwidths(A) == (1,1)
+    @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
     @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'L')
 
     @test A[1,2] == A[2,1]

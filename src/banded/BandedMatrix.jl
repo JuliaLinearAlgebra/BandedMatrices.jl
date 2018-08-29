@@ -808,7 +808,8 @@ bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
 const BandedSubBandedMatrix{T, C} =
     SubArray{T,2,BandedMatrix{T, C},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
-@banded BandedSubBandedMatrix
+isbanded(::BandedSubBandedMatrix) = true
+MemoryLayout(::BandedSubBandedMatrix) = BandedColumnMajor()
 
 function _shift(bm::BandedSubBandedMatrix)
     kr,jr=parentindices(bm)

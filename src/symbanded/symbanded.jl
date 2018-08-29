@@ -11,6 +11,8 @@
 ###
 
 
+
+
 @inline inbands_getindex(A::Symmetric{<:Any, <:BandedMatrix}, k::Integer, j::Integer) =
     parent(A).data[A.k - abs(k-j) + 1, max(k,j)]
 
@@ -21,6 +23,8 @@ symmetriclayout(layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
 
 
 @blasmatvec SymmetricLayout{BandedColumnMajor}
+
+isbanded(::Symmetric{<:Any,<:BandedMatrix}) = true
 
 bandwidth(A::Symmetric) = ifelse(A.uplo == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
 bandwidth(A::Symmetric, _::Integer) = bandwidth(A)
