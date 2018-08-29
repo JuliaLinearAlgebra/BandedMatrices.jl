@@ -8,7 +8,7 @@ bandwidths(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatrix},UnitLowerTrian
 
 triangularlayout(::Type{Tri}, ML::BandedColumnMajor) where {Tri} = Tri(ML)
 triangularlayout(::Type{Tri}, ML::BandedRowMajor) where {Tri} = Tri(ML)
-triangularlayout(::Type{Tri}, ML::ConjLayout{<:BandedRowMajor}) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ML::ConjLayout{BandedRowMajor}) where {Tri} = Tri(ML)
 
 
 function tribandeddata(::TriangularLayout{'U'}, A)
@@ -37,8 +37,14 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
     -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
 
 # Mul
+@lazylmul UpperTriangular{T, <:AbstractBandedMatrix{T}} where T
+@lazylmul UnitUpperTriangular{T, <:AbstractBandedMatrix{T}} where T
+@lazylmul LowerTriangular{T, <:AbstractBandedMatrix{T}} where T
+@lazylmul UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
+
+
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatMulVec{T, <:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
+         M::MatMulVec{T, <:TriangularLayout{'U',UNIT,BandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T <: BlasFloat}
     A,x = M.A, M.B
     x ≡ dest || copyto!(dest, x)
@@ -46,7 +52,7 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatMulVec{T, <:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
+         M::MatMulVec{T, <:TriangularLayout{'L',UNIT,BandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T <: BlasFloat}
     A,x = M.A, M.B
     x ≡ dest || copyto!(dest, x)
@@ -54,7 +60,7 @@ end
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatMulVec{T, <:TriangularLayout{UPLO,UNIT,<:BandedRowMajor},
+         M::MatMulVec{T, <:TriangularLayout{UPLO,UNIT,BandedRowMajor},
                                    <:AbstractStridedLayout}) where {UPLO,UNIT,T <: BlasFloat}
     A,x = M.A, M.B
     x ≡ dest || copyto!(dest, x)
@@ -63,7 +69,7 @@ end
 
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatMulVec{T, <:TriangularLayout{UPLO,UNIT,<:ConjLayout{<:BandedRowMajor}},
+         M::MatMulVec{T, <:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
                                    <:AbstractStridedLayout}) where {UPLO,UNIT,T <: BlasFloat}
     A,x = M.A, M.B
     x ≡ dest || copyto!(dest, x)
@@ -73,7 +79,7 @@ end
 
 # Ldiv
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{T, <:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
+         M::MatLdivVec{T, <:TriangularLayout{'U',UNIT,BandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T <: BlasFloat}
     A,x = inv(M.A), M.B
     x ≡ dest || copyto!(dest, x)
@@ -81,7 +87,7 @@ end
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{T, <:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
+         M::MatLdivVec{T, <:TriangularLayout{'L',UNIT,BandedColumnMajor},
                                    <:AbstractStridedLayout}) where {UNIT,T <: BlasFloat}
     A,x = inv(M.A), M.B
     x ≡ dest || copyto!(dest, x)
@@ -89,7 +95,7 @@ end
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{T, <:TriangularLayout{UPLO,UNIT,<:BandedRowMajor},
+         M::MatLdivVec{T, <:TriangularLayout{UPLO,UNIT,BandedRowMajor},
                                    <:AbstractStridedLayout}) where {UPLO,UNIT,T <: BlasFloat}
     A,x = inv(M.A), M.B
     x ≡ dest || copyto!(dest, x)
@@ -98,7 +104,7 @@ end
 
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{T, <:TriangularLayout{UPLO,UNIT,<:ConjLayout{<:BandedRowMajor}},
+         M::MatLdivVec{T, <:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
                                    <:AbstractStridedLayout}) where {UPLO,UNIT,T <: BlasFloat}
     A,x = inv(M.A), M.B
     x ≡ dest || copyto!(dest, x)

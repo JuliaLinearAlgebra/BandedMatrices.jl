@@ -14,11 +14,11 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         x=rand(10)
         @test A*x ≈ BandedMatrix(A)*x ≈ Matrix(A)*x
-        @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== copyto!(similar(x), Mul(A,copy(x))) .===
+        @test all(A*x .=== lmul!(A, copy(x)) .=== (similar(x) .= Mul(A,x)) .=== copyto!(similar(x), Mul(A,copy(x))) .===
                     BandedMatrices.tbmv!('U', 'N', 'N', 10, 2, parent(A).data, copy(x)))
 
         @test A\x ≈ Matrix(A) \ x ≈ BandedMatrix(A) \ x
-        @test all((A \ x) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
+        @test all((A \ x) .=== ldiv!(A, copy(x)) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
                     BandedMatrices.tbsv!('U', 'N', 'N', 10, 2, parent(A).data, copy(x)))
 
         A = UnitUpperTriangular(brand(10,10,1,2))
@@ -32,11 +32,11 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         x=rand(10)
         @test A*x ≈ Matrix(A)*x
-        @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== copyto!(similar(x), Mul(A,copy(x))) .===
+        @test all(A*x .=== lmul!(A, copy(x)) .=== (similar(x) .= Mul(A,x)) .=== copyto!(similar(x), Mul(A,copy(x))) .===
                     BandedMatrices.tbmv!('U', 'N', 'U', 10, 2, parent(A).data, copy(x)))
 
         @test A\x ≈ Matrix(A) \ x ≈ BandedMatrix(A) \ x
-        @test all((A \ x) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
+        @test all((A \ x) .=== ldiv!(A, copy(x)) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
                     BandedMatrices.tbsv!('U', 'N', 'U', 10, 2, parent(A).data, copy(x)))
     end
     @testset "Lower" begin
@@ -50,11 +50,11 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         x=rand(10)
         @test A*x ≈ Matrix(A)*x
-        @test all(A*x .=== copyto!(similar(x), Mul(A,copy(x))) .=== (similar(x) .= Mul(A,x)) .===
+        @test all(A*x .=== lmul!(A, copy(x)) .=== copyto!(similar(x), Mul(A,copy(x))) .=== (similar(x) .= Mul(A,x)) .===
                     BandedMatrices.tbmv!('L', 'N', 'N', 10, 1, view(parent(A).data, 3:4,:), copy(x)))
 
         @test A\x ≈ Matrix(A) \ x ≈ BandedMatrix(A) \ x
-        @test all((A \ x) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
+        @test all((A \ x) .=== ldiv!(A, copy(x)) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
                     BandedMatrices.tbsv!('L', 'N', 'N', 10, 1, view(parent(A).data, 3:4,:), copy(x)))
 
         A = UnitLowerTriangular(brand(10,10,1,2))
@@ -68,11 +68,11 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         x=rand(10)
         @test A*x ≈ Matrix(A)*x
-        @test all(A*x .=== copyto!(similar(x), Mul(A,copy(x))) .=== (similar(x) .= Mul(A,x)) .===
+        @test all(A*x .=== lmul!(A, copy(x)) .=== copyto!(similar(x), Mul(A,copy(x))) .=== (similar(x) .= Mul(A,x)) .===
                     BandedMatrices.tbmv!('L', 'N', 'U', 10, 1, view(parent(A).data, 3:4,:), copy(x)))
 
         @test A\x ≈ Matrix(A) \ x ≈ BandedMatrix(A) \ x
-        @test all((A \ x) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
+        @test all((A \ x) .=== ldiv!(A, copy(x)) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
                     BandedMatrices.tbsv!('L', 'N', 'U', 10, 1, view(parent(A).data, 3:4,:), copy(x)))
     end
 end
