@@ -17,7 +17,8 @@ import LinearAlgebra: BlasInt,
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
-            qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular
+            qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
+            chkstride1
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -34,9 +35,9 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
-                    _copyto!, MatMulVec, MatMulMat, transposelayout,
+                    _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
-                    triangularlayout, InverseLayout, MatMulVec, TriangularLayout
+                    triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout
 import FillArrays: AbstractFill
 
 export BandedMatrix,
@@ -80,7 +81,5 @@ include("symbanded/BandedCholesky.jl")
 include("tribanded.jl")
 
 include("interfaceimpl.jl")
-
-include("deprecate.jl")
 
 end #module
