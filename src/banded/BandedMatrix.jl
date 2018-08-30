@@ -816,16 +816,3 @@ function convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
     end
     _BandedMatrix(data,length(kr),max(0, l-shft),max(0, u+shft))
 end
-
-## These routines give access to the necessary information to call BLAS
-
-@inline leadingdimension(B::BandedMatrix) = stride(B.data,2)
-@inline leadingdimension(B::BandedSubBandedMatrix{T}) where {T} = leadingdimension(parent(B))
-
-@inline pointer(B::BandedMatrix) = pointer(B.data)
-@inline pointer(B::BandedSubBandedMatrix{T}) where {T} =
-    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindices(B)[2])-1)*sizeof(T)
-
-@inline unsafe_convert(::Type{Ptr{T}}, a::BandedMatrix{T}) where T = unsafe_convert(Ptr{T}, a.data)
-@inline unsafe_convert(::Type{Ptr{T}}, a::BandedSubBandedMatrix{T}) where T =
-    pointer(a)

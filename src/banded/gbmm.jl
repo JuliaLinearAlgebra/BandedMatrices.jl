@@ -201,20 +201,26 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
     Al = bandwidth(A,1); Au = bandwidth(A,2)
     Bl = bandwidth(B,1); Bu = bandwidth(B,2)
-    Cl = bandwidth(C,1); Cu = bandwidth(C,2)
+    C̃l = bandwidth(C,1); C̃u = bandwidth(C,2)
+    Cl,Cu = Al+Bl,Au+Bu
 
-    # only tested at the moment for this case
-    # TODO: implement when C.u,C.l ≥
-    @assert Cu == Au+Bu
-    @assert Cl == Al+Bl
+    @assert C̃u ≥ Cu
+    @assert C̃l ≥ Cl
+
+    A_data = bandeddata(A)
+    B_data = bandeddata(B)
+    C̃_data = bandeddata(C)
+    lmul!(β, view(C̃_data, 1:C̃u-Cu,:))
+    lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:))
+    C_data = view(C̃_data, (C̃u-Cu+1):(C̃u+Cl+1), :) # shift to bands we will write to
 
 
-    a = pointer(A)
-    b = pointer(B)
-    c = pointer(C)
-    sta = leadingdimension(A)
-    stb = leadingdimension(B)
-    stc = leadingdimension(C)
+    a = pointer(A_data)
+    b = pointer(B_data)
+    c = pointer(C_data)
+    sta = stride(A_data,2)
+    stb = stride(B_data,2)
+    stc = stride(C_data,2)
     sz = sizeof(T)
 
 

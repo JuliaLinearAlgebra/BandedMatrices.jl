@@ -74,21 +74,21 @@ end
 # Direct and transposed algorithms
 function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
     checksquare(A)
-    gbtrs!('N', A.l, A.u, A.m, A.data, A.ipiv, B)
+    gbtrs!('N', A.m, A.l, A.u, A.data, A.ipiv, B)
 end
 
 function ldiv!(At::Transpose{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
     A = parent(At)
     checksquare(A)
-    gbtrs!('T', A.l, A.u, A.m, A.data, A.ipiv, B)
+    gbtrs!('T', A.m, A.l, A.u, A.data, A.ipiv, B)
 end
 function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasReal}
     A = parent(Ac)
     checksquare(A)
-    gbtrs!('T', A.l, A.u, A.m, A.data, A.ipiv, B)
+    gbtrs!('T', A.m, A.l, A.u, A.data, A.ipiv, B)
 end
 function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasComplex}
     A = parent(Ac)
     checksquare(A)
-    gbtrs!('C', A.l, A.u, A.m, A.data, A.ipiv, B)
+    gbtrs!('C', A.m, A.l, A.u, A.data, A.ipiv, B)
 end

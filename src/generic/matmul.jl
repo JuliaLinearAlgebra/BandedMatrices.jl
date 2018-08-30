@@ -1,5 +1,6 @@
 @blasmatvec BandedColumnMajor
 @blasmatvec BandedRowMajor
+@blasmatmat BandedColumnMajor BandedColumnMajor BandedColumnMajor
 @lazymul AbstractBandedMatrix
 
 
@@ -71,11 +72,6 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α
         _banded_gbmv!('N', α, A, x, β, y)
     end
 end
-
-
-
-
-
 
 function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α::T, β::T,
                    ::AbstractStridedLayout, ::BandedRowMajor, ::AbstractStridedLayout) where T<:BlasFloat
@@ -191,6 +187,60 @@ function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix)
     C
 end
 
+const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
+
+@inline function _copyto!(_, C::AbstractMatrix,
+         M::MatMulMat{<:Any,<:ConjOrBandedLayout,<:ConjOrBandedLayout})
+     A, B = M.A, M.B
+     banded_mul!(C, A, B)
+end
+
+@inline function _copyto!(_, C::AbstractMatrix,
+         M::MatMulMat{<:Any,<:ConjOrBandedLayout})
+     A, B = M.A, M.B
+     banded_mul!(C, A, B)
+end
+
+@inline function _copyto!(_, C::AbstractMatrix,
+         M::MatMulMat{<:Any,<:Any,<:ConjOrBandedLayout})
+     A, B = M.A, M.B
+     banded_mul!(C, A, B)
+end
+
+
+
+function blasmul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{T}, α::T, β::T,
+                ::BandedColumnMajor, ::BandedColumnMajor, ::BandedColumnMajor) where T<:BlasFloat
+    Am, An = size(A)
+    Bm, Bn = size(B)
+    if An != Bm || size(C, 1) != Am || size(C, 2) != Bn
+        throw(DimensionMismatch("*"))
+    end
+
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+
+    if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
+        fill!(C, zero(T))
+    elseif Al < 0
+        lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
+        blasmul!(C, view(A, :, 1-Al:An), view(B, 1-Al:An, :), α, β)
+    elseif Au < 0
+        lmul!(β, @views(C[1:-Au,:]))
+        blasmul!(view(C, 1-Au:Am,:), view(A, 1-Au:Am,:), B, α, β)
+    elseif Bl < 0
+        lmul!(β, @views(C[:, 1:-Bl]))
+        blasmul!(view(C, :, 1-Bl:Bn), A, view(B, :, 1-Bl:Bn), α, β)
+    elseif Bu < 0
+        lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
+        blasmul!(C, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), α, β)
+    else
+        gbmm!('N', 'N', α, A, B, β, C)
+    end
+    C
+end
+
+
 # function generally_banded_matmatmul!(C::AbstractMatrix{T}, tA::Val, tB::Val, A::AbstractMatrix{U}, B::AbstractMatrix{V}) where {T, U, V}
 #     Am, An = _size(tA, A)
 #     Bm, Bn = _size(tB, B)
@@ -221,23 +271,3 @@ end
 #     end
 #     C
 # end
-
-const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
-
-@inline function _copyto!(_, C::AbstractMatrix,
-         M::MatMulMat{<:Any,<:ConjOrBandedLayout,<:ConjOrBandedLayout})
-     A, B = M.A, M.B
-     banded_mul!(C, A, B)
-end
-
-@inline function _copyto!(_, C::AbstractMatrix,
-         M::MatMulMat{<:Any,<:ConjOrBandedLayout})
-     A, B = M.A, M.B
-     banded_mul!(C, A, B)
-end
-
-@inline function _copyto!(_, C::AbstractMatrix,
-         M::MatMulMat{<:Any,<:Any,<:ConjOrBandedLayout})
-     A, B = M.A, M.B
-     banded_mul!(C, A, B)
-end

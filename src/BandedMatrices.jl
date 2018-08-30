@@ -15,7 +15,7 @@ import LinearAlgebra: BlasInt,
                     transpose,
                     AdjOrTrans
 import LinearAlgebra.BLAS: libblas
-import LinearAlgebra.LAPACK: liblapack
+import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
             qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
             chkstride1, kron

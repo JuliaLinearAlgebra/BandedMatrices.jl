@@ -16,7 +16,7 @@ convert(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) where {T<:Number, S<:Nu
 # Cholesky factorisation.
 function cholesky!(A::Symmetric{T,<:BandedMatrix}) where {T<:Number}
     P = parent(A)
-    pbtrf!('U', size(A, 1), bandwidth(A), pointer(bandeddata(parent(P))), leadingdimension(A))
+    pbtrf!('U', size(A, 1), bandwidth(A), bandeddata(parent(P)))
     BandedCholesky{T}(P)
 end
 cholesky(A::Symmetric{<:Any, <:BandedMatrix}) = cholesky!(copy(A))

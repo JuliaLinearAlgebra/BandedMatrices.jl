@@ -79,9 +79,7 @@ function tridiagonalize!(A::AbstractMatrix{T}) where T
     work = Vector{T}(undef,n)
     D = symbandeddata(A)
 
-    sbtrd!('N','U',
-                size(A,1), bandwidth(A), pointer(D), stride(D,2),
-                pointer(d),pointer(e),pointer(q), n, pointer(work))
+    sbtrd!('N','U', size(A,1), bandwidth(A), D, d, e, q, work)
 
     SymTridiagonal(d,e)
 end
@@ -98,16 +96,13 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     # compute split-Cholesky factorization of B.
     kb = bandwidth(B, 2)
     B_data = symbandeddata(B)
-    ldb = stride(B_data,2)
-    pbstf!('U', n, kb, pointer(B_data), ldb)
+    pbstf!('U', n, kb, B_data)
     # convert to a regular symmetric eigenvalue problem.
     ka = bandwidth(A)
     A_data = symbandeddata(A)
-    lda = stride(A_data,2)
     X = Array{T}(undef,0,0)
     work = Vector{T}(undef,2n)
-    sbgst!('N', 'U', n, ka, kb, pointer(A_data), lda, pointer(B_data), ldb,
-           pointer(X), max(1, n), pointer(work))
+    sbgst!('N', 'U', n, ka, kb, A_data, B_data, X, work)
     # compute eigenvalues of symmetric eigenvalue problem.
     eigvals!(A)
 end
