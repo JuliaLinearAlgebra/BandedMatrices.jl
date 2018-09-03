@@ -86,7 +86,7 @@ end
 function convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
-    ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+    ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
@@ -95,7 +95,7 @@ end
 
 function convert(BM::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+    ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
@@ -159,6 +159,8 @@ end
 BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
     BandedMatrix{T}(A, bnds)
 
+
+
 BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
 
@@ -169,6 +171,8 @@ function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Int}) where T
     ret
 end
 
+BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} = BandedMatrix{T,C}(A, bandwidths(A))
+BandedMatrix{T}(A::AbstractMatrix) where T = BandedMatrix{T}(A, bandwidths(A))
 BandedMatrix(A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
 
 

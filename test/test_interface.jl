@@ -81,4 +81,11 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
     D = zeros(5, 4)
 
     @test (C .= Mul(A, B)) ≈ (D .= Mul(A, B)) ≈ A*B
+
+    @test bandwidths(BandedMatrix(A)) ==
+            bandwidths(BandedMatrix{Float64}(A)) ==
+            bandwidths(BandedMatrix{Float64,Matrix{Float64}}(A)) ==
+            bandwidths(convert(BandedMatrix{Float64}, A)) ==
+            bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) == 
+            bandwidths(A)
 end
