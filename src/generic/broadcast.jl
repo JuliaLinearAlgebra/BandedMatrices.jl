@@ -95,6 +95,10 @@ function banded_rmul!(A::AbstractMatrix, a)
     A
 end
 
+lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
+rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
+
+
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(-), <:Tuple{<:AbstractMatrix}})
     A, = bc.args
     dest ≡ A || copyto!(dest, A)

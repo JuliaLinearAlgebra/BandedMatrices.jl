@@ -1,3 +1,10 @@
+###########
+# This gives an example of Gauss–Seidel
+#
+# It is _much_ more efficient to use BlockBandedMatrices.jl
+###########
+
+
 using BandedMatrices, LazyArrays, LinearAlgebra
 
 function finitedifference_2d(n)

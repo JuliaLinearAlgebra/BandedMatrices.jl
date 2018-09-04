@@ -729,7 +729,6 @@ function banded_rmul!(A::BandedMatrix, α::Number)
     A
 end
 
-
 function diag(A::BandedMatrix{T}) where {T}
     n=size(A,1)
     @assert n==size(A,2)

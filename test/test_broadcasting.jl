@@ -67,7 +67,19 @@ end
     @test 2\A isa BandedMatrix
     @test 2.0 .\ A isa BandedMatrix
     @test bandwidths(2\A) == bandwidths(2.0 .\ A) == bandwidths(A)
+
+    A = brand(5,5,1,1)
+    A.data .= NaN
+    lmul!(0.0,A)
+    @test norm(A) == 0.0
+
+    A = brand(5,5,1,1)
+    A.data .= NaN
+    rmul!(A,0.0)
+    @test norm(A) == 0.0
 end
+
+
 
 @testset "axpy!" begin
     n = 1000
