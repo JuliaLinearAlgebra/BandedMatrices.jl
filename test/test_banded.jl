@@ -26,7 +26,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
 
 
 # some basic operations
-@testset "BandedMatrix" begin
+# @testset "BandedMatrix" begin
     @testset "Creating BandedMatrix" begin
         @test BandedMatrix(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(3,5), 5, 1, 1)
         @test BandedMatrix(Zeros{Int32}(5,5), (1,1)) isa BandedMatrix{Int32, Matrix{Int32}}
@@ -373,4 +373,4 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test bandwidth(similar(bview, Int64), 2) == bandwidth(expected, 2)
         end
     end
-end
+# end
