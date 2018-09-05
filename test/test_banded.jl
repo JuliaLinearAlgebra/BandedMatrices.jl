@@ -1,6 +1,8 @@
 using BandedMatrices, FillArrays, Test, LinearAlgebra, SparseArrays
 import BandedMatrices: _BandedMatrix
 
+println("Start tests1")
+
 # used to test general matrix backends
 struct MyMatrix{T} <: AbstractMatrix{T}
     A::Matrix{T}
@@ -23,7 +25,7 @@ Base.size(A::MyMatrix) = size(A.A)
 Base.similar(::Type{MyMatrix{T}}, m::Int, n::Int) where T = MyMatrix{T}(undef, m, n)
 Base.similar(::MyMatrix{T}, m::Int, n::Int) where T = MyMatrix{T}(undef, m, n)
 Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef, m, n)
-
+println("Start tests2")
 
 # some basic operations
 # @testset "BandedMatrix" begin
@@ -34,6 +36,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test BandedMatrix{Int}(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(Int,3,5), 5, 1, 1)
         @test Matrix(BandedMatrix(Ones(5,5), (1,1))) == Matrix(BandedMatrix(Fill(1.0,(5,5)), (1,1))) ==
                                                         Matrix(SymTridiagonal(ones(5), ones(4)))
+println("Start tests3")                                                        
         @test all(BandedMatrix(0 => 1:5, 2=> 2:3, -3=> 1:7) .=== diagm(0 => 1:5, 2=> 2:3, -3=> 1:7))
         @test all(BandedMatrix{Float64}(0 => 1:5, 2=> 2:3, -3=> 1:7) .=== Matrix{Float64}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
         @test all(BandedMatrix((0 => 1:5, 2=> 2:3, -3=> 1:7),(10,10)) .=== Matrix{Int}(diagm(0 => 1:5, 2=> 2:3, -3=> 1:7)))
