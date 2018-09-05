@@ -5,6 +5,7 @@ A Julia package for representing banded matrices
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/latest)
+[![codecov](https://codecov.io/gh/JuliaMatrices/BandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/BandedMatrices.jl)
 
 
 

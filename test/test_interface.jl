@@ -2,15 +2,15 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 import BandedMatrices: banded_axpy!, banded_mul!, isbanded, AbstractBandedLayout
 
 
-struct SimpleBandedMatrix{T} <: AbstractMatrix{T}
+struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
     l::Int
     u::Int
 end
 
 
-Base.size(A::SimpleBandedMatrix) = size(A.data)
-function Base.getindex(A::SimpleBandedMatrix, j::Int, k::Int)
+Base.size(A::PseudoBandedMatrix) = size(A.data)
+function Base.getindex(A::PseudoBandedMatrix, j::Int, k::Int)
     l, u = bandwidths(A)
     if -l ≤ k-j ≤ u
         A.data[j, k]
@@ -18,7 +18,7 @@ function Base.getindex(A::SimpleBandedMatrix, j::Int, k::Int)
         zero(eltype(A.data))
     end
 end
-function Base.setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int)
+function Base.setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int)
     l, u = bandwidths(A)
     if -l ≤ k-j ≤ u
         A.data[j, k] = v
@@ -27,12 +27,12 @@ function Base.setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int)
     end
 end
 
-struct SimpleBandedLayout <: AbstractBandedLayout end
-BandedMatrices.MemoryLayout(::SimpleBandedMatrix) = SimpleBandedLayout()
-BandedMatrices.isbanded(::SimpleBandedMatrix) = true
-BandedMatrices.bandwidth(A::SimpleBandedMatrix, k::Int) = k==1 ? A.l : A.u
-BandedMatrices.inbands_getindex(A::SimpleBandedMatrix, j::Int, k::Int) = A.data[j, k]
-BandedMatrices.inbands_setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int) = setindex!(A.data, v, j, k)
+struct PseudoBandedLayout <: AbstractBandedLayout end
+BandedMatrices.MemoryLayout(::PseudoBandedMatrix) = PseudoBandedLayout()
+BandedMatrices.isbanded(::PseudoBandedMatrix) = true
+BandedMatrices.bandwidths(A::PseudoBandedMatrix) = (A.l , A.u)
+BandedMatrices.inbands_getindex(A::PseudoBandedMatrix, j::Int, k::Int) = A.data[j, k]
+BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = setindex!(A.data, v, j, k)
 
 @testset "banded matrix interface" begin
     @test isbanded(Zeros(5,6))
@@ -59,14 +59,14 @@ BandedMatrices.inbands_setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int) = set
     BandedMatrices.inbands_setindex!(A, 2, 1,1)
     @test A[1,1] == 2
 
-    A = SimpleBandedMatrix(rand(5, 4), 2, 2)
+    A = PseudoBandedMatrix(rand(5, 4), 2, 2)
     B = rand(5, 4)
     C = copy(B)
 
     @test Matrix(banded_axpy!(2.0, A, B)) ≈ 2*Matrix(A) + C
 
-    A = SimpleBandedMatrix(rand(5, 4), 1, 2)
-    B = SimpleBandedMatrix(rand(5, 4), 2, 3)
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = PseudoBandedMatrix(rand(5, 4), 2, 3)
     C = deepcopy(B)
 
     @test Matrix(banded_axpy!(2.0, A, C)) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
@@ -76,9 +76,16 @@ BandedMatrices.inbands_setindex!(A::SimpleBandedMatrix, v, j::Int, k::Int) = set
     z .= Mul(A, y)
     @test z ≈ A*y ≈ Matrix(A)*y
 
-    B = SimpleBandedMatrix(rand(4, 4), 2, 3)
-    C = SimpleBandedMatrix(zeros(5, 4), 3, 4)
+    B = PseudoBandedMatrix(rand(4, 4), 2, 3)
+    C = PseudoBandedMatrix(zeros(5, 4), 3, 4)
     D = zeros(5, 4)
 
     @test (C .= Mul(A, B)) ≈ (D .= Mul(A, B)) ≈ A*B
+
+    @test bandwidths(BandedMatrix(A)) ==
+            bandwidths(BandedMatrix{Float64}(A)) ==
+            bandwidths(BandedMatrix{Float64,Matrix{Float64}}(A)) ==
+            bandwidths(convert(BandedMatrix{Float64}, A)) ==
+            bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) == 
+            bandwidths(A)
 end

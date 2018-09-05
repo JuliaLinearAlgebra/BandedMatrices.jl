@@ -1,40 +1,64 @@
-using BandedMatrices, Test
-@testset "SymBandedMatrix tests" begin
-    @test_throws UndefRefError SymBandedMatrix{Vector{Float64}}(undef, 5, 1)[1,1]
+using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
+    import BandedMatrices: MemoryLayout, SymmetricLayout, BandedColumnMajor
 
 
-    A = sbrand(10,2)
+@testset "Symmetric" begin
+    A = Symmetric(brand(10,10,1,2))
+    @test isbanded(A)
+    @test BandedMatrix(A) == A
+    @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
+    @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
+    @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'U')
+
+
 
     @test A[1,2] == A[2,1]
+    @test A[1,4] == 0
+    x=rand(10)
+    @test A*x ≈ Matrix(A)*x
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
+                BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
 
 
-    b=rand(10)
-    @test A*b ≈ Matrix(A)*b
+    A = Symmetric(brand(10,10,1,2),:L)
+    @test isbanded(A)
+    @test BandedMatrix(A) == A
+    @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
+    @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
+    @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'L')
 
+    @test A[1,2] == A[2,1]
+    @test A[1,3] == 0
+    x=rand(10)
+    @test A*x ≈ Matrix(A)*x
+
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
+                BLAS.sbmv!('L', 1, 1.0, view(parent(A).data,3:4,:), x, 0.0, similar(x)))
 
     # eigvals
     Random.seed!(0)
 
-    A = sbrand(Float64, 100, 4)
+    A = Symmetric(brand(Float64, 100, 100, 0, 4))
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
+
 
     # generalized eigvals
 
     function An(::Type{T}, N::Int) where {T}
-        A = SymBandedMatrix(Zeros{T}(N,N), 2)
+        A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
         for n = 0:N-1
-            A.data[3,n+1] = T((n+1)*(n+2))
+            parent(A).data[3,n+1] = T((n+1)*(n+2))
         end
         A
     end
 
     function Bn(::Type{T}, N::Int) where {T}
-        B = SymBandedMatrix(Zeros{T}(N,N), 2)
+        B = Symmetric(BandedMatrix(Zeros{T}(N,N), (0,2)))
         for n = 0:N-1
-            B.data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
+            parent(B).data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
         end
         for n = 0:N-3
-            B.data[1,n+3] = -sqrt(T((n+1)*(n+2)*(n+3)*(n+4))/T((2n+3)*(2n+5)*(2n+5)*(2n+7)))
+            parent(B).data[1,n+3] = -sqrt(T((n+1)*(n+2)*(n+3)*(n+4))/T((2n+3)*(2n+5)*(2n+5)*(2n+7)))
         end
         B
     end
@@ -43,7 +67,6 @@ using BandedMatrices, Test
     B = Bn(Float64, 100)
 
     λ = eigvals(A, B)
-
     @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
     err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
@@ -60,9 +83,4 @@ using BandedMatrices, Test
     err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
     @test norm(err[1:40]) < 100eps(Float32)
-
-  @test occursin("10×10 SymBandedMatrix{Float64}",
-     sprint() do io
-        show(io, MIME"text/plain"(), SymBandedMatrix{Float64}(Zeros(10,10), 1))
-     end)
 end

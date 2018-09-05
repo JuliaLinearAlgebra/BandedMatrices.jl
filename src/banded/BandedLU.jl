@@ -30,7 +30,7 @@ function lu(A::BandedMatrix{T}) where {T<:Number}
     m, n = size(A)
     data = Array{S}(undef, 2*A.l+A.u+1, n)
     data[(A.l+1):end, :] = A.data
-    data, ipiv = gbtrf!(A.l, A.u, m, data)
+    data, ipiv = gbtrf!(m, A.l, A.u, data)
     BandedLU{S}(data, ipiv, A.l, A.u, m)
 end
 lu(F::BandedLU) = F # no op

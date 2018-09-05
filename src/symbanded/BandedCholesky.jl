@@ -1,12 +1,12 @@
 ## Banded Cholesky decomposition
 
 struct BandedCholesky{T} <: Factorization{T}
-    data::SymBandedMatrix{T}  # symmetric banded matrix
+    data::BandedMatrix{T}  # symmetric banded matrix
 end
 
 # conversion
 convert(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) where {T<:Number, S<:Number} =
-    BandedCholesky{T}(convert(SymBandedMatrix{T}, B.data))
+    BandedCholesky{T}(convert(BandedMatrix{T}, B.data))
 
 # size of the parent array
 @inline size(A::BandedCholesky) = size(A.data)
@@ -14,16 +14,17 @@ convert(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) where {T<:Number, S<:Nu
 @inline bandwidth(A::BandedCholesky, k) = bandwidth(A.data, k)
 
 # Cholesky factorisation.
-function cholesky!(A::SymBandedMatrix{T}) where {T<:Number}
-    pbtrf!('U', size(A, 1), bandwidth(A, 2), pointer(A), leadingdimension(A))
-    BandedCholesky{T}(A)
+function cholesky!(A::Symmetric{T,<:BandedMatrix}) where {T<:Number}
+    P = parent(A)
+    pbtrf!('U', size(A, 1), bandwidth(A), bandeddata(parent(P)))
+    BandedCholesky{T}(P)
 end
-cholesky(A::SymBandedMatrix) = cholesky!(copy(A))
+cholesky(A::Symmetric{<:Any, <:BandedMatrix}) = cholesky!(copy(A))
 cholesky(F::BandedCholesky) = F # no op
 
 function getindex(F::BandedCholesky, d::Symbol)
-    d == :U && return BandedMatrix(F.data.data, size(F, 1), 0, bandwidth(F, 2)) # UpperTriangular(F.data)
-    d == :L && return BandedMatrix(F.data.data, size(F, 1), 0, bandwidth(F, 2))' # LowerTriangular(F.data)
+    d == :U && return F.data # UpperTriangular(F.data)
+    d == :L && return F.data' # LowerTriangular(F.data)
     throw(KeyError(d))
 end
 

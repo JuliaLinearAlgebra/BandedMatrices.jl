@@ -15,9 +15,10 @@ import LinearAlgebra: BlasInt,
                     transpose,
                     AdjOrTrans
 import LinearAlgebra.BLAS: libblas
-import LinearAlgebra.LAPACK: liblapack
+import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
-            qr, axpy!, ldiv!, mul!, lu, lu!
+            qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
+            chkstride1, kron, lmul!, rmul!
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -32,13 +33,14 @@ import Base: convert, size, view, unsafe_indices,
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
-import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul,
-                    AbstractStridedLayout, AbstractColumnMajor,
-                    _copyto!, BMatVec, BMixedMatVec, BMixedMatMat, transposelayout, ConjLayout, conjlayout
+import LazyArrays: MemoryLayout, blasmul!, @lazymul, @lazylmul, @lazyldiv,
+                    AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
+                    _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
+                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
+                    triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout
 import FillArrays: AbstractFill
 
 export BandedMatrix,
-       SymBandedMatrix,
        bandrange,
        brand,
        bandwidth,
@@ -56,16 +58,18 @@ export BandedMatrix,
        Eye
 
 
+
+
 include("blas.jl")
 include("lapack.jl")
 
+include("lazyblasmacros.jl")
 
 include("generic/AbstractBandedMatrix.jl")
 include("generic/broadcast.jl")
 include("generic/matmul.jl")
 include("generic/Band.jl")
 include("generic/utils.jl")
-include("generic/interface.jl")
 
 
 include("banded/BandedMatrix.jl")
@@ -74,12 +78,11 @@ include("banded/BandedQR.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
 
-include("symbanded/SymBandedMatrix.jl")
+include("symbanded/symbanded.jl")
 include("symbanded/BandedCholesky.jl")
-include("symbanded/linalg.jl")
+
+include("tribanded.jl")
 
 include("interfaceimpl.jl")
-
-include("deprecate.jl")
 
 end #module

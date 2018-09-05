@@ -86,7 +86,7 @@ end
 function convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
-    ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+    ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
@@ -95,7 +95,7 @@ end
 
 function convert(BM::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M,1),size(M,2),size(M,1)-1,size(M,2)-1)
+    ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
@@ -159,6 +159,8 @@ end
 BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
     BandedMatrix{T}(A, bnds)
 
+
+
 BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
 
@@ -169,6 +171,8 @@ function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Int}) where T
     ret
 end
 
+BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} = BandedMatrix{T,C}(A, bandwidths(A))
+BandedMatrix{T}(A::AbstractMatrix) where T = BandedMatrix{T}(A, bandwidths(A))
 BandedMatrix(A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
 
 
@@ -265,7 +269,7 @@ size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
 
 ## banded matrix interface
 bandeddata(A::BandedMatrix) = A.data
-bandwidth(A::BandedMatrix, k::Integer) = k==1 ? A.l : A.u
+bandwidths(A::BandedMatrix) = (A.l , A.u)
 
 IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
 
@@ -725,52 +729,11 @@ function banded_rmul!(A::BandedMatrix, α::Number)
     A
 end
 
-
-
-
 function diag(A::BandedMatrix{T}) where {T}
     n=size(A,1)
     @assert n==size(A,2)
 
     vec(A.data[A.u+1,1:n])
-end
-
-
-
-## Matrix.*Matrix
-
-function broadcast(::typeof(*), A::BandedMatrix, B::BandedMatrix)
-    @assert size(A,1)==size(B,1)&&size(A,2)==size(B,2)
-
-    l=min(A.l,B.l);u=min(A.u,B.u)
-    T=promote_type(eltype(A),eltype(B))
-    ret=BandedMatrix(T,size(A,1),size(A,2),l,u)
-
-    for j = 1:size(ret,2), k = colrange(ret,j)
-        @inbounds ret[k,j]=A[k,j]*B[k,j]
-    end
-    ret
-end
-
-
-
-## numbers
-for OP in (:*,:/)
-    @eval begin
-        $OP(A::BandedMatrix, b::Number) =
-            _BandedMatrix($OP(A.data,b),A.m,A.l,A.u)
-        broadcast(::typeof($OP), A::BandedMatrix, b::Number) =
-            _BandedMatrix($OP.(A.data,b),A.m,A.l,A.u)
-    end
-end
-
-for OP in (:*,:\)
-    @eval begin
-        $OP(a::Number, B::BandedMatrix) =
-            _BandedMatrix($OP(a,B.data),B.m,B.l,B.u)
-        broadcast(::typeof($OP), a::Number, B::BandedMatrix) =
-            _BandedMatrix($OP.(a,B.data),B.m,B.l,B.u)
-    end
 end
 
 
@@ -808,7 +771,8 @@ bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
 const BandedSubBandedMatrix{T, C} =
     SubArray{T,2,BandedMatrix{T, C},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
-@banded BandedSubBandedMatrix
+isbanded(::BandedSubBandedMatrix) = true
+MemoryLayout(::BandedSubBandedMatrix) = BandedColumnMajor()
 
 function _shift(bm::BandedSubBandedMatrix)
     kr,jr=parentindices(bm)
@@ -824,7 +788,7 @@ end
 
 bandeddata(V::BandedSubBandedMatrix) = view(bandeddata(parent(V)), :, parentindices(V)[2])
 
-bandwidth(S::BandedSubBandedMatrix{T}, k::Integer) where {T} = bandwidth(parent(S),k) + (k==1 ? -1 : 1)*bandshift(S)
+bandwidths(S::BandedSubBandedMatrix) = bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)
 
 @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
     @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)
@@ -855,16 +819,3 @@ function convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
     end
     _BandedMatrix(data,length(kr),max(0, l-shft),max(0, u+shft))
 end
-
-## These routines give access to the necessary information to call BLAS
-
-@inline leadingdimension(B::BandedMatrix) = stride(B.data,2)
-@inline leadingdimension(B::BandedSubBandedMatrix{T}) where {T} = leadingdimension(parent(B))
-
-@inline pointer(B::BandedMatrix) = pointer(B.data)
-@inline pointer(B::BandedSubBandedMatrix{T}) where {T} =
-    pointer(parent(B))+leadingdimension(parent(B))*(first(parentindices(B)[2])-1)*sizeof(T)
-
-@inline unsafe_convert(::Type{Ptr{T}}, a::BandedMatrix{T}) where T = unsafe_convert(Ptr{T}, a.data)
-@inline unsafe_convert(::Type{Ptr{T}}, a::BandedSubBandedMatrix{T}) where T =
-    pointer(a)

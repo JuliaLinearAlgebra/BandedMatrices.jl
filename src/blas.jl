@@ -68,48 +68,78 @@ sbmv!(uplo::Char, k::Int, alpha::T,
 
 ## Triangular *
 
+function tbmv! end
+
 for (fname, elty) in ((:dtbmv_,:Float64),
-                      (:stbmv_,:Float32),
-                      (:ztbmv_,:ComplexF64),
-                      (:ctbmv_,:ComplexF32))
+                        (:stbmv_,:Float32),
+                        (:ztbmv_,:ComplexF64),
+                        (:ctbmv_,:ComplexF32))
     @eval begin
-        function tbmv!(uplo::Char, trans::Char, diag::Char,
-                        n::Int, k::Int, A::Ptr{$elty}, lda::Int,
-                        x::Ptr{$elty}, incx::Int)
-            ccall((@blasfunc($fname), libblas), Nothing,
-                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8},
-                 Ref{BlasInt}, Ref{BlasInt},
-                 Ptr{$elty}, Ref{BlasInt},
-                 Ptr{$elty}, Ref{BlasInt}),
-                 uplo, trans, diag,
-                 n, k,
-                 A, lda,
-                 x, incx)
+                #       SUBROUTINE DTRMV(UPLO,TRANS,DIAG,N,A,LDA,X,INCX)
+                # *     .. Scalar Arguments ..
+                #       INTEGER INCX,LDA,N
+                #       CHARACTER DIAG,TRANS,UPLO
+                # *     .. Array Arguments ..
+                #       DOUBLE PRECISION A(LDA,*),X(*)
+        function tbmv!(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar,
+                       m::Int, k::Int, A::AbstractMatrix{$elty}, x::AbstractVector{$elty})
+            @assert !has_offset_axes(A, x)
+            n = size(A,2)
+            size(A,1) ≥ k+1 || throw(ArgumentError("triangular banded data missing"))
+            n == m || throw(DimensionMismatch("matrix is not square: dimensions are $n, $m"))
+            if n != length(x)
+                throw(DimensionMismatch("size of A is $n != length(x) = $(length(x))"))
+            end
+            chkstride1(A)
+            ccall((@blasfunc($fname), libblas), Cvoid,
+                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}),
+                 uplo, trans, diag, m, k,
+                 A, max(1,stride(A,2)), x, max(1,stride(x, 1)))
             x
+        end
+        function tbmv(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar, m::Int, k::Int,
+                      A::AbstractMatrix{$elty}, x::AbstractVector{$elty})
+            tbmv!(uplo, trans, diag, m, k, A, copy(x))
         end
     end
 end
 
 ## Triangular \
 
+function tbsv end
+
 for (fname, elty) in ((:dtbsv_,:Float64),
-                      (:stbsv_,:Float32),
-                      (:ztbsv_,:ComplexF64),
-                      (:ctbsv_,:ComplexF32))
+                        (:stbsv_,:Float32),
+                        (:ztbsv_,:ComplexF64),
+                        (:ctbsv_,:ComplexF32))
     @eval begin
-        function tbsv!(uplo::Char, trans::Char, diag::Char,
-                        n::Int, k::Int, A::Ptr{$elty}, lda::Int,
-                        x::Ptr{$elty}, incx::Int)
-            ccall((@blasfunc($fname), libblas), Nothing,
-                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8},
-                 Ref{BlasInt}, Ref{BlasInt},
-                 Ptr{$elty}, Ref{BlasInt},
-                 Ptr{$elty}, Ref{BlasInt}),
-                 uplo, trans, diag,
-                 n, k,
-                 A, lda,
-                 x, incx)
+                #       SUBROUTINE DTRSV(UPLO,TRANS,DIAG,N,A,LDA,X,INCX)
+                #       .. Scalar Arguments ..
+                #       INTEGER INCX,LDA,N
+                #       CHARACTER DIAG,TRANS,UPLO
+                #       .. Array Arguments ..
+                #       DOUBLE PRECISION A(LDA,*),X(*)
+        function tbsv!(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar,
+                        m::Int, k::Int, A::AbstractMatrix{$elty}, x::AbstractVector{$elty})
+            @assert !has_offset_axes(A, x)
+            n = size(A,2)
+            size(A,1) ≥ k+1 || throw(ArgumentError("triangular banded data missing"))
+            n == m || throw(DimensionMismatch("matrix is not square: dimensions are $n, $m"))
+            if n != length(x)
+                throw(DimensionMismatch("size of A is $n != length(x) = $(length(x))"))
+            end
+            chkstride1(A)
+            ccall((@blasfunc($fname), libblas), Cvoid,
+                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}),
+                 uplo, trans, diag, m, k,
+                 A, max(1,stride(A,2)), x, stride(x, 1))
             x
+        end
+        function tbsv(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar,
+                        m::Int, k::Int, A::AbstractMatrix{$elty}, x::AbstractVector{$elty})
+            tbsv!(uplo, trans, diag, m, k, A, copy(x))
         end
     end
 end

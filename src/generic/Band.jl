@@ -83,7 +83,7 @@ end
 
 # check indices fall in the band
 checkband(A::AbstractMatrix, i::Integer) =
-    (bandinds(A, 1) ≤ i ≤ bandinds(A, 2) || throw(BandError(A, i)))
+    (-bandwidth(A, 1) ≤ i ≤ bandwidth(A, 2) || throw(BandError(A, i)))
 
 checkband(A::AbstractMatrix, b::Band) = checkband(A, b.i)
 
