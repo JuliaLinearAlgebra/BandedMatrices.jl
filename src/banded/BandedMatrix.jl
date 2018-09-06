@@ -696,8 +696,9 @@ function _banded_rowval(B::AbstractMatrix)
     i = Vector{Int}(undef, length(data))
     n,m = size(data)
     Bn = size(B,1)
+    l,u = bandwidths(B)
     for κ=1:n, ℓ=1:m
-        ii=κ+ℓ-B.u-1
+        ii=κ+ℓ-u-1
         i[κ+n*(ℓ-1)] = min(max(ii,1),Bn)
     end
     i
@@ -708,9 +709,10 @@ function _banded_nzval(B::AbstractMatrix)
     i = Vector{Int}(undef, length(data))
     n,m = size(data)
     Bn = size(B,1)
-    vb = copy(vec(B.data))
+    vb = copy(vec(data))
+    l,u = bandwidths(B)
     for κ=1:n, ℓ=1:m
-        ii=κ+ℓ-B.u-1
+        ii=κ+ℓ-u-1
         if ii <1 || ii > Bn
             vb[κ+n*(ℓ-1)] = 0
         end
