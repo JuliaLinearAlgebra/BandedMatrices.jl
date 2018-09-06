@@ -37,7 +37,8 @@ import LazyArrays: MemoryLayout, blasmul!, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
-                    triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout
+                    triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
+                    ArrayMulArrayStyle
 import FillArrays: AbstractFill
 
 export BandedMatrix,

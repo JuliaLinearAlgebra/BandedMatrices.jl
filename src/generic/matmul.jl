@@ -1,3 +1,6 @@
+BroadcastStyle(M::ArrayMulArrayStyle, ::BandedStyle) = M
+BroadcastStyle(::BandedStyle, M::ArrayMulArrayStyle) = M
+
 @blasmatvec BandedColumnMajor
 @blasmatvec BandedRowMajor
 @blasmatmat BandedColumnMajor BandedColumnMajor BandedColumnMajor
