@@ -55,7 +55,11 @@ julia> A[2,BandRange]
  1.0
 ```
 """
-struct BandRange end
+struct BandRangeType end
+const BandRange = BandRangeType()
+
+to_indices(A::AbstractArray, (_, j)::Tuple{BandRangeType,Integer}) = (colrange(A, j), j)
+to_indices(A::AbstractArray, (k, _)::Tuple{Integer,BandRangeType}) = (k, rowrange(A, k))
 
 # ~~ Out of band error
 struct BandError <: Exception
@@ -64,7 +68,7 @@ struct BandError <: Exception
 end
 
 # shorthand to specify k and j without calculating band
-BandError(A::AbstractMatrix, kj::Tuple{Int,Int}) = BandError(A, kj[2]-kj[1])
+BandError(A::AbstractMatrix, (k, j)::Tuple{Int,Int}) = BandError(A, j-k)
 BandError(A::AbstractMatrix) = BandError(A, max(size(A)...)-1)
 
 function showerror(io::IO, e::BandError)

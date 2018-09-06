@@ -174,11 +174,11 @@ import BandedMatrices: rowstart,
             # 0.0  0.0  0.0  1.0  1.0
 
             # in band
-            a[BandRange, 1] = 2
-            a[BandRange, 2] = 3
-            a[BandRange, 3] = 4
-            a[BandRange, 4] = 5
-            a[BandRange, 5] = 6
+            a[BandRange, 1] .= 2
+            a[BandRange, 2] .= 3
+            a[BandRange, 3] .= 4
+            a[BandRange, 4] .= 5
+            a[BandRange, 5] .= 6
             @test a ==  [2  3  0  0  0;
                          2  3  4  0  0;
                          0  3  4  5  0;
@@ -191,10 +191,10 @@ import BandedMatrices: rowstart,
             @test a[BandRange, 4] == [5, 5, 5]
             @test a[BandRange, 5] == [6, 6]
 
-            @test_throws BandError a[:, 0] = 1
-            @test_throws BandError a[:, 1] = 1
-            @test_throws BoundsError a[BandRange, 0] = 1
-            @test_throws BoundsError a[BandRange, 6] = 1
+            @test_throws BoundsError a[:, 0] .= 1
+            @test_throws BandError a[:, 1] .= 1
+            @test_throws BoundsError a[BandRange, 0] .= 1
+            @test_throws BoundsError a[BandRange, 6] .= 1
 
             a = BandedMatrix(Ones(3, 5), (-1, 2))
             @test isempty(a[BandRange,1])
@@ -256,18 +256,18 @@ import BandedMatrices: rowstart,
             # 1.0  1.0  1.0  1.0
 
             # Matrix column span
-            a[1:3, 1] = 1
-            a[1:3, 2] = 2
-            a[2:3, 3] = 3
-            a[3:3, 4] = 4
+            a[1:3, 1] .= 1
+            a[1:3, 2] .= 2
+            a[2:3, 3] .= 3
+            a[3:3, 4] .= 4
             @test a == [ 1  2  0  0;
                          1  2  3  0;
                          1  2  3  4]
 
             # partial span
-            a[1:1, 1] = 3
-            a[2:3, 2] = 4
-            a[3:3, 3] = 5
+            a[1:1, 1] .= 3
+            a[2:3, 2] .= 4
+            a[3:3, 3] .= 5
             @test a == [ 3  2  0  0;
                          1  4  3  0;
                          1  4  5  4]
@@ -282,10 +282,10 @@ import BandedMatrices: rowstart,
                           1  2  3  4]
 
             # wrong range input
-            @test_throws BoundsError   a[0:1, 1] = 3
-            @test_throws BoundsError   a[1:4, 1] = 3
-            @test_throws BandError a[2:3, 4] = 3
-            @test_throws BoundsError   a[3:4, 4] = 3
+            @test_throws BoundsError   a[0:1, 1] .= 3
+            @test_throws BoundsError   a[1:4, 1] .= 3
+            @test_throws BandError a[2:3, 4] .= 3
+            @test_throws BoundsError   a[3:4, 4] .= 3
         end
 
         # vector - range - integer
@@ -350,11 +350,11 @@ import BandedMatrices: rowstart,
             # 0.0  0.0  0.0  1.0  1.0
 
             # in band
-            a[1, BandRange] = 2
-            a[2, BandRange] = 3
-            a[3, BandRange] = 4
-            a[4, BandRange] = 5
-            a[5, BandRange] = 6
+            a[1, BandRange] .= 2
+            a[2, BandRange] .= 3
+            a[3, BandRange] .= 4
+            a[4, BandRange] .= 5
+            a[5, BandRange] .= 6
 
             @test a == [2  2  0  0  0;
                         3  3  3  0  0;
@@ -363,12 +363,12 @@ import BandedMatrices: rowstart,
                         0  0  0  6  6]
 
 
-            @test_throws BandError a[0, :] = 1
-            @test_throws BandError a[1, :] = 1
-            @test_throws BoundsError a[0, BandRange] = 1
-            @test_throws BoundsError a[6, BandRange] = 1
+            @test_throws BoundsError a[0, :] .= 1
+            @test_throws BandError a[1, :] .= 1
+            @test_throws BoundsError a[0, BandRange] .= 1
+            @test_throws BoundsError a[6, BandRange] .= 1
 
-            a[1, :] = 0
+            a[1, :] .= 0
             @test vec(a[1, :]) == [0, 0, 0, 0, 0]
         end
 
@@ -408,7 +408,15 @@ import BandedMatrices: rowstart,
             @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
             @test_throws DimensionMismatch a[7, BandRange] = [1, 2, 3]
-            @test_throws BandError a[7, BandRange] = 1
+
+            a[7, BandRange] .= 1
+            @test a ==  [1  2   3   0   0;
+                         4  5   6   7   0;
+                         0  8   9  10  11;
+                         0  0  12  13  14;
+                         0  0   0  15  16;
+                         0  0   0   0  17;
+                         0  0   0   0   0]
         end
 
 
@@ -425,12 +433,12 @@ import BandedMatrices: rowstart,
             # 0.0  0.0  0.0  0.0  0.0
 
             # in band
-            a[1, 1:3] = 2
-            a[2, 1:4] = 3
-            a[3, 2:5] = 4
-            a[4, 3:5] = 5
-            a[5, 4:5] = 6
-            a[6, 5:5] = 7
+            a[1, 1:3] .= 2
+            a[2, 1:4] .= 3
+            a[3, 2:5] .= 4
+            a[4, 3:5] .= 5
+            a[5, 4:5] .= 6
+            a[6, 5:5] .= 7
 
             @test a ==  [2  2  2  0  0;
                          3  3  3  3  0;
@@ -440,7 +448,7 @@ import BandedMatrices: rowstart,
                          0  0  0  0  7;
                          0  0  0  0  0]
 
-            a[1, 1:4] = 0
+            a[1, 1:4] .= 0
 
             @test a ==  [0  0  0  0  0;
                          3  3  3  3  0;
@@ -450,12 +458,12 @@ import BandedMatrices: rowstart,
                          0  0  0  0  7;
                          0  0  0  0  0]
 
-            @test_throws BoundsError a[0, 1:3] = 1
-            @test_throws BoundsError a[8, 2:3] = 1
-            @test_throws BoundsError a[1, 0:3] = 1
-            @test_throws BoundsError a[4, 4:6] = 1
+            @test_throws BoundsError a[0, 1:3] .= 1
+            @test_throws BoundsError a[8, 2:3] .= 1
+            @test_throws BoundsError a[1, 0:3] .= 1
+            @test_throws BoundsError a[4, 4:6] .= 1
 
-            @test_throws BandError a[1, 1:4] = 1
+            @test_throws BandError a[1, 1:4] .= 1
         end
 
         # vector - integer - range
@@ -506,10 +514,10 @@ import BandedMatrices: rowstart,
             #  0.0  0.0  0.0  0.0
             #       0.0  0.0  0.0
             #            0.0  0.0
-            a[band(-2)] = 5
-            a[band(-1)] = 1
-            a[band( 0)] = 2
-            a[band( 1)] = 3
+            a[band(-2)] .= 5
+            a[band(-1)] .= 1
+            a[band( 0)] .= 2
+            a[band( 1)] .= 3
 
             @test Matrix(a) == [ 2  3  0  0;
                                1  2  3  0;
@@ -517,7 +525,7 @@ import BandedMatrices: rowstart,
                                0  5  1  2;
                                0  0  5  1]
 
-            @test_throws BandError a[band(-3)] = 1
+            @test_throws BandError a[band(-3)] .= 1
 
             a[band(-2)] = [4, 4, 4]
             a[band(-1)] = [1, 2, 3, 4]
@@ -548,11 +556,11 @@ import BandedMatrices: rowstart,
             #  0.0  0.0  0.0  0.0
             #       0.0  0.0  0.0
             #            0.0  0.0
-            a[band(-2)] = 5
-            a[band(-1)] = 1
-            a[band( 0)] = 2
-            a[band( 1)] = 3
-            a[band( 2)] = 4
+            a[band(-2)] .= 5
+            a[band(-1)] .= 1
+            a[band( 0)] .= 2
+            a[band( 1)] .= 3
+            a[band( 2)] .= 4
 
             @test Matrix(a) == [ 2  3  4  0;
                                1  2  3  4;
@@ -560,7 +568,7 @@ import BandedMatrices: rowstart,
                                0  5  1  2;
                                0  0  5  1]
 
-            @test_throws BandError a[band(-3)] = 1
+            @test_throws BandError a[band(-3)] .= 1
 
             a[band(-2)] = [4,  4,  4]
             a[band(-1)] = [1,  2,  3, 4]
@@ -591,13 +599,13 @@ import BandedMatrices: rowstart,
     @testset "other special indexing" begin
         @testset "all elements" begin
             a = BandedMatrix(Ones(3, 3), (1, 1))
-            a[:] = 0
+            a[:] .= 0
             @test a == [0 0 0;
                         0 0 0;
                         0 0 0]
 
             # all rows/cols
-            a[BandRange] = 2
+            a.data .= 2
             @test a == [2 2 0;
                         2 2 2;
                         0 2 2]
@@ -609,8 +617,8 @@ import BandedMatrices: rowstart,
                         3 3 3;
                         0 3 3]
 
-            @test_throws BandError a[:] = 1
-            @test_throws BandError a[:,:] = 1
+            @test_throws BandError a[:] .= 1
+            @test_throws BandError a[:,:] .= 1
             @test_throws BandError a[:,:] = ones(3,3)
         end
 
@@ -624,7 +632,7 @@ import BandedMatrices: rowstart,
             #  0.0  0.0  0.0  0.0
             #       0.0  0.0  0.0
             #            0.0  0.0
-            a[1:3, 1:2] = 2
+            a[1:3, 1:2] .= 2
             a[3:5, 3:4] = [1 2;
                            3 4;
                            5 6]
@@ -634,16 +642,16 @@ import BandedMatrices: rowstart,
                               0  0  3 4;
                               0  0  5 6]
 
-            @test_throws BoundsError a[0:3, 1:2] = 2
-            @test_throws BoundsError a[3:6, 3:4] = 2
-            @test_throws BoundsError a[1:3, 0:2] = 2
-            @test_throws BoundsError a[3:5, 3:5] = 2
+            @test_throws BoundsError a[0:3, 1:2] .= 2
+            @test_throws BoundsError a[3:6, 3:4] .= 2
+            @test_throws BoundsError a[1:3, 0:2] .= 2
+            @test_throws BoundsError a[3:5, 3:5] .= 2
             @test_throws BoundsError a[0:3, 1:2] = [1 2; 3 4]
             @test_throws BoundsError a[3:6, 3:4] = [1 2; 3 4]
             @test_throws BoundsError a[1:3, 0:2] = [1 2; 3 4]
             @test_throws BoundsError a[3:5, 3:5] = [1 2; 3 4]
 
-            @test_throws BandError a[1:3, 1:3] = 2
+            @test_throws BandError a[1:3, 1:3] .= 2
             @test_throws BandError a[1:3, 1:3] = rand(3, 3)
 
             @test_throws DimensionMismatch a[1:3, 1:2] = rand(3, 3)
