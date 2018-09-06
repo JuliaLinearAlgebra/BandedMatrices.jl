@@ -26,7 +26,7 @@ function gaussseidel(L, U, b, x=copy(b), M=5)
 end
 
 n = 400
-Δt = (1/n^2)/4; Δ = finitedifference_2d(n); A = I - Δt*Δ  # 16k x 16k discretization
+Δt = (1/n^2)/4; Δ = finitedifference_2d(n); A = I - Δt*Δ  # 160k x 160k discretization
 
 L = LowerTriangular(A)
 U = UpperTriangular(@view A[1:end-1,2:end])

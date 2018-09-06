@@ -719,16 +719,6 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-function banded_lmul!(α::Number, A::BandedMatrix)
-    lmul!(α, A.data)
-    A
-end
-
-function banded_rmul!(A::BandedMatrix, α::Number)
-    rmul!(A.data, α)
-    A
-end
-
 function diag(A::BandedMatrix{T}) where {T}
     n=size(A,1)
     @assert n==size(A,2)

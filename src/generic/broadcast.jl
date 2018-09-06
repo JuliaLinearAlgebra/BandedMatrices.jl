@@ -81,19 +81,34 @@ end
 # lmul!/rmul!
 ##
 
-function banded_lmul!(α, A::AbstractMatrix)
-    for j=1:size(Α,2), k=colrange(A,j)
+function _banded_lmul!(α, A::AbstractMatrix, _)
+    for j=1:size(A,2), k=colrange(A,j)
         inbands_setindex!(A, α*inbands_getindex(A,k,j), k,j)
     end
     A
 end
 
-function banded_rmul!(A::AbstractMatrix, a)
+function _banded_rmul!(A::AbstractMatrix, a, _)
     for j=1:size(Α,2), k=colrange(A,j)
         inbands_setindex!(A, inbands_getindex(A,k,j)*α, k,j)
     end
     A
 end
+
+
+function _banded_lmul!(α::Number, A::AbstractMatrix, ::BandedColumnMajor)
+    lmul!(α, bandeddata(A))
+    A
+end
+
+function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumnMajor)
+    rmul!(bandeddata(A), α)
+    A
+end
+
+banded_lmul!(α, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(A))
+
+banded_rmul!(A::AbstractMatrix, α) = _banded_rmul!(A, α, MemoryLayout(A))
 
 lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
 rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
