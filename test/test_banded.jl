@@ -373,5 +373,10 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test bandwidth(similar(bview, Int64), 1) == bandwidth(expected, 1)
             @test bandwidth(similar(bview, Int64), 2) == bandwidth(expected, 2)
         end
+
+        @testset "banded -> sparse" begin
+            B = brand(5,5,1,1)
+            @test Matrix(sparse(B)) == Matrix(B)
+        end
     end
 end

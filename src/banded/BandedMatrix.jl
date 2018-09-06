@@ -681,22 +681,45 @@ function convert(::Type{Matrix}, A::BandedMatrix)
     ret
 end
 
-function sparse(B::BandedMatrix)
-    i=Vector{Int}(undef,length(B.data)); j=Vector{Int}(undef,length(B.data))
-    n,m=size(B.data)
-    Bn=size(B,1)
-    vb=copy(vec(B.data))
-    for κ=1:n,ℓ=1:m
-        j[κ+n*(ℓ-1)]=ℓ
+function _banded_colval(B::AbstractMatrix)
+    data = bandeddata(B)
+    j = Vector{Int}(undef, length(data))
+    n,m = size(data)
+    for κ=1:n, ℓ=1:m
+        j[κ+n*(ℓ-1)] = ℓ
+    end
+    j
+end
+
+function _banded_rowval(B::AbstractMatrix)
+    data = bandeddata(B)
+    i = Vector{Int}(undef, length(data))
+    n,m = size(data)
+    Bn = size(B,1)
+    for κ=1:n, ℓ=1:m
+        ii=κ+ℓ-B.u-1
+        i[κ+n*(ℓ-1)] = min(max(ii,1),Bn)
+    end
+    i
+end
+
+function _banded_nzval(B::AbstractMatrix)
+    data = bandeddata(B)
+    i = Vector{Int}(undef, length(data))
+    n,m = size(data)
+    Bn = size(B,1)
+    vb = copy(vec(B.data))
+    for κ=1:n, ℓ=1:m
         ii=κ+ℓ-B.u-1
         if ii <1 || ii > Bn
             vb[κ+n*(ℓ-1)] = 0
         end
-        i[κ+n*(ℓ-1)]=min(max(ii,1),Bn)
     end
-
-    sparse(i,j,vb,Bn,m)
+    vb
 end
+
+
+sparse(B::BandedMatrix) = sparse(_banded_rowval(B), _banded_colval(B), _banded_nzval(B), size(B)...)
 
 
 
