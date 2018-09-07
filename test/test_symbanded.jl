@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
-    import BandedMatrices: MemoryLayout, SymmetricLayout, BandedColumnMajor
+    import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumnMajor
 
 
 @testset "Symmetric" begin
@@ -10,15 +10,12 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
     @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'U')
 
-
-
     @test A[1,2] == A[2,1]
     @test A[1,4] == 0
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
     @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
                 BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
-
 
     A = Symmetric(brand(10,10,1,2),:L)
     @test isbanded(A)
@@ -83,4 +80,38 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
     @test norm(err[1:40]) < 100eps(Float32)
+end
+
+
+
+@testset "Hermitian" begin
+    T = ComplexF64
+    A = Hermitian(brand(T,10,10,1,2))
+    @test isbanded(A)
+    @test BandedMatrix(A) == A
+    @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
+    @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
+    @test MemoryLayout(A) == HermitianLayout(BandedColumnMajor(), 'U')
+
+    @test A[1,2] == conj(A[2,1])
+    @test A[1,4] == 0
+    x=rand(T,10)
+    @test A*x ≈ Matrix(A)*x
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= T(1.0).*Mul(A,x) .+ T(0.0).*similar(x)) .===
+                BLAS.hbmv!('U', 2, T(1.0), parent(A).data, x, T(0.0), similar(x)))
+
+    A = Hermitian(brand(T,10,10,1,2),:L)
+    @test isbanded(A)
+    @test BandedMatrix(A) == A
+    @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
+    @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
+    @test MemoryLayout(A) == HermitianLayout(BandedColumnMajor(), 'L')
+
+    @test A[1,2] == conj(A[2,1])
+    @test A[1,3] == 0
+    x=rand(T, 10)
+    @test A*x ≈ Matrix(A)*x
+
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= one(T).*Mul(A,x) .+ zero(T).*similar(x)) .===
+                BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
 end

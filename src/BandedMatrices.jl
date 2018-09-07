@@ -13,7 +13,7 @@ import LinearAlgebra: BlasInt,
                     checksquare,
                     adjoint,
                     transpose,
-                    AdjOrTrans
+                    AdjOrTrans, HermOrSym
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals,
@@ -38,7 +38,7 @@ import LazyArrays: MemoryLayout, blasmul!, @lazymul, @lazylmul, @lazyldiv,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
                     triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
-                    ArrayMulArrayStyle
+                    ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata
 import FillArrays: AbstractFill
 
 export BandedMatrix,

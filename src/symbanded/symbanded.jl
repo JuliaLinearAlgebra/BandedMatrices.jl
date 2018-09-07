@@ -21,20 +21,39 @@
 symmetriclayout(layout::BandedColumnMajor, uplo) = SymmetricLayout(layout,uplo)
 symmetriclayout(layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
 
+hermitianlayout(::Type{<:Complex}, layout::BandedColumnMajor, uplo) = HermitianLayout(layout,uplo)
+hermitianlayout(::Type{<:Real}, layout::BandedColumnMajor, uplo) = SymmetricLayout(layout,uplo)
+hermitianlayout(::Type{<:Complex}, layout::BandedRowMajor, uplo) = HermitianLayout(layout,uplo)
+hermitianlayout(::Type{<:Real}, layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
+
 
 @blasmatvec SymmetricLayout{BandedColumnMajor}
+@blasmatvec HermitianLayout{BandedColumnMajor}
 
-isbanded(::Symmetric{<:Any,<:AbstractBandedMatrix}) = true
+isbanded(A::HermOrSym) = isbanded(parent(A))
 
-bandwidth(A::Symmetric) = ifelse(A.uplo == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
-bandwidths(A::Symmetric) = (bandwidth(A), bandwidth(A))
+bandwidth(A::HermOrSym) = ifelse(A.uplo == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
+bandwidths(A::HermOrSym) = (bandwidth(A), bandwidth(A))
 
-Base.replace_in_print_matrix(A::Symmetric{<:Any,<:AbstractBandedMatrix}, i::Integer, j::Integer, s::AbstractString) =
+Base.replace_in_print_matrix(A::HermOrSym{<:Any,<:AbstractBandedMatrix}, i::Integer, j::Integer, s::AbstractString) =
     -bandwidth(A) ≤ j-i ≤ bandwidth(A) ? s : Base.replace_with_centered_mark(s)
 
 function symbandeddata(A)
     M = MemoryLayout(A)
     B = symmetricdata(A)
+    l,u = bandwidths(B)
+    D = bandeddata(B)
+    if M.uplo == 'U'
+        view(D, 1:u+1, :)
+    else
+        m = size(D,1)
+        view(D, u+1:u+l+1, :)
+    end
+end
+
+function hermbandeddata(A)
+    M = MemoryLayout(A)
+    B = hermitiandata(A)
     l,u = bandwidths(B)
     D = bandeddata(B)
     if M.uplo == 'U'
@@ -67,11 +86,33 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α
     _banded_sbmv!(S.uplo, α, A, x, β, y)
 end
 
+banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::AbstractVector{T}) where {T<:BlasFloat} =
+  BLAS.hbmv!(uplo, bandwidth(A), α, hermbandeddata(A), x, β, y)
+
+
+@inline function _banded_hbmv!(tA, α, A, x, β, y)
+    if x ≡ y
+        banded_hbmv!(tA, α, A, copy(x), β, y)
+    else
+        banded_hbmv!(tA, α, A, x, β, y)
+    end
+end
+
+function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
+                ::AbstractStridedLayout, S::HermitianLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
+    m, n = size(A)
+    m == n || throw(DimensionMismatch("matrix is not square"))
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    l = bandwidth(A)
+    l ≥ 0 || return lmul!(β, y)
+    _banded_hbmv!(S.uplo, α, A, x, β, y)
+end
+
 
 ## eigvals routine
 
 
-function tridiagonalize!(A::AbstractMatrix{T}) where T
+function _tridiagonalize!(A::AbstractMatrix{T}, S::SymmetricLayout{BandedColumnMajor}) where T
     n=size(A, 1)
     d = Vector{T}(undef,n)
     e = Vector{T}(undef,n-1)
@@ -79,12 +120,12 @@ function tridiagonalize!(A::AbstractMatrix{T}) where T
     work = Vector{T}(undef,n)
     D = symbandeddata(A)
 
-    sbtrd!('N','U', size(A,1), bandwidth(A), D, d, e, q, work)
+    sbtrd!('N', S.uplo, size(A,1), bandwidth(A), D, d, e, q, work)
 
     SymTridiagonal(d,e)
 end
 
-
+tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(A))
 tridiagonalize(A::AbstractMatrix) = tridiagonalize!(copy(A))
 
 eigvals!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))
@@ -96,13 +137,13 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     # compute split-Cholesky factorization of B.
     kb = bandwidth(B, 2)
     B_data = symbandeddata(B)
-    pbstf!('U', n, kb, B_data)
+    pbstf!(B.uplo, n, kb, B_data)
     # convert to a regular symmetric eigenvalue problem.
     ka = bandwidth(A)
     A_data = symbandeddata(A)
     X = Array{T}(undef,0,0)
     work = Vector{T}(undef,2n)
-    sbgst!('N', 'U', n, ka, kb, A_data, B_data, X, work)
+    sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
     # compute eigenvalues of symmetric eigenvalue problem.
     eigvals!(A)
 end
