@@ -34,7 +34,7 @@ bandwidth(A::AbstractVecOrMat, k::Integer) = bandwidths(A)[k]
 
 Returns the range `-bandwidth(A,1):bandwidth(A,2)`.
 """
-bandrange(A::AbstractVecOrMat) = -bandwidth(A,1):bandwidth(A,2)
+bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 
 
 

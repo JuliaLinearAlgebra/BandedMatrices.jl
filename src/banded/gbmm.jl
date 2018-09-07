@@ -188,6 +188,8 @@ end
 #            c+sz*(j-1)*stc)
 # end
 
+_fill_lmul!(β, A::AbstractArray{T}) where T = β == zero(T) ? fill!(A, β) : lmul!(β, A)
+
 function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β::T, C::AbstractMatrix{T}) where {T<:BlasFloat}
     if tA ≠ 'N' || tB ≠ 'N'
         error("Only 'N' flag is supported.")
@@ -210,8 +212,8 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     A_data = bandeddata(A)
     B_data = bandeddata(B)
     C̃_data = bandeddata(C)
-    lmul!(β, view(C̃_data, 1:C̃u-Cu,:))
-    lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:))
+    _fill_lmul!(β, view(C̃_data, 1:C̃u-Cu,:))
+    _fill_lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:))
     C_data = view(C̃_data, (C̃u-Cu+1):(C̃u+Cl+1), :) # shift to bands we will write to
 
 
@@ -259,14 +261,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     end
 
     # scale columns of C by β that aren't impacted by α*A*B
-    for j = ν+Bu+1:min(m,n+Cu)
-        Anon_Bnon_C_gbmv!(α,β,
-                            n,ν,m,j,
-                            sz,
-                            a,Al,Au,sta,
-                            b,Bl,Bu,stb,
-                            c,Cl,Cu,stc)
-    end
+    _fill_lmul!(β, view(C_data, :, ν+Bu+1:min(m,n+Cu)))
 
     C
 end

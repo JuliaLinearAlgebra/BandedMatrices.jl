@@ -83,7 +83,7 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
-      lmul!(β, y)
+      _fill_lmul!(β, y)
     elseif l < 0
       blasmul!(y, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), α, β)
     elseif u < 0
@@ -102,7 +102,7 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
-        lmul!(β, y)
+        _fill_lmul!(β, y)
     elseif l < 0
         blasmul!(y, view(Ac, 1-l:n, :,)', view(x, 1-l:n), α, β)
     elseif u < 0
@@ -226,16 +226,16 @@ function blasmul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{
     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
         fill!(C, zero(T))
     elseif Al < 0
-        lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
+        _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
         blasmul!(C, view(A, :, 1-Al:An), view(B, 1-Al:An, :), α, β)
     elseif Au < 0
-        lmul!(β, @views(C[1:-Au,:]))
+        _fill_lmul!(β, @views(C[1:-Au,:]))
         blasmul!(view(C, 1-Au:Am,:), view(A, 1-Au:Am,:), B, α, β)
     elseif Bl < 0
-        lmul!(β, @views(C[:, 1:-Bl]))
+        _fill_lmul!(β, @views(C[:, 1:-Bl]))
         blasmul!(view(C, :, 1-Bl:Bn), A, view(B, :, 1-Bl:Bn), α, β)
     elseif Bu < 0
-        lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
+        _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
         blasmul!(C, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), α, β)
     else
         gbmm!('N', 'N', α, A, B, β, C)
