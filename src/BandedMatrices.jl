@@ -33,7 +33,7 @@ import Base: convert, size, view, unsafe_indices,
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
-import LazyArrays: MemoryLayout, blasmul!, @lazymul, @lazylmul, @lazyldiv,
+import LazyArrays: MemoryLayout, blasmul!, @lazymul, @lazylmul, @lazyldiv, @blasmatvec, @blasmatmat,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
@@ -63,8 +63,6 @@ export BandedMatrix,
 
 include("blas.jl")
 include("lapack.jl")
-
-include("lazyblasmacros.jl")
 
 include("generic/AbstractBandedMatrix.jl")
 include("generic/broadcast.jl")
