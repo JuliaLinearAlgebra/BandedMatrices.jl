@@ -17,7 +17,7 @@ brand
 
 ```@meta
 DocTestSetup = quote
-    using BandedMatrices, FillArrays
+    using BandedMatrices
 end
 ```
 
