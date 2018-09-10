@@ -15,6 +15,12 @@ bones
 brand
 ```
 
+```@meta
+DocTestSetup = quote
+    using BandedMatrices, FillArrays
+end
+```
+
 To create a banded matrix of all zeros, identity matrix, or with a constant value
 use the following constructors:
 ```jldoctest
@@ -87,12 +93,12 @@ many of the utility functions in this package are available. The banded matrix
 interface consists of the following:
 
 | Required methods | Brief description |
-| --------------- | --------------- |
+| :--------------- | :--------------- |
 | `bandwidths(A)` | Returns a tuple containing the sub-diagonal and super-diagonal bandwidth |
 | `isbanded(A)`    | Override to return `true` |
-| --------------- | --------------- |
+| :--------------- | :--------------- |
 | Optional methods | Brief description |
-| --------------- | --------------- |
+| :--------------- | :--------------- |
 | `inbands_getindex(A, k, j)` | Unsafe: return `A[k,j]`, without the need to check if we are inside the bands |
 | `inbands_setindex!(A, v, k, j)` | Unsafe: set `A[k,j] = v`, without the need to check if we are inside the bands |
 | `BandedMatrices.MemoryLayout(A)` | Override to get banded lazy linear algebra, e.g. `y .= Mul(A,x)` |

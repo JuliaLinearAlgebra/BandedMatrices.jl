@@ -13,13 +13,13 @@ Represents the `i`-th band of a banded matrix.
 ```jldoctest
 julia> using BandedMatrices
 
-julia> A = bones(5,5,1,1)
-5×5 BandedMatrices.BandedMatrix{Float64}:
- 1.0  1.0
- 1.0  1.0  1.0
-      1.0  1.0  1.0
-           1.0  1.0  1.0
-                1.0  1.0
+julia> A = BandedMatrix(Ones(5,5),(1,1))
+5×5 BandedMatrix{Float64,Array{Float64,2}}:
+ 1.0  1.0   ⋅    ⋅    ⋅
+ 1.0  1.0  1.0   ⋅    ⋅
+  ⋅   1.0  1.0  1.0   ⋅
+  ⋅    ⋅   1.0  1.0  1.0
+  ⋅    ⋅    ⋅   1.0  1.0
 
 julia> A[band(1)]
 4-element Array{Float64,1}:
@@ -40,13 +40,13 @@ Represents the entries in a row/column inside the bands.
 ```jldoctest
 julia> using BandedMatrices
 
-julia> A = bones(5,5,1,1)
-5×5 BandedMatrices.BandedMatrix{Float64}:
- 1.0  1.0
- 1.0  1.0  1.0
-      1.0  1.0  1.0
-           1.0  1.0  1.0
-                1.0  1.0
+julia> A = BandedMatrix(Ones(5,5),(1,1))
+5×5 BandedMatrix{Float64,Array{Float64,2}}:
+ 1.0  1.0   ⋅    ⋅    ⋅
+ 1.0  1.0  1.0   ⋅    ⋅
+  ⋅   1.0  1.0  1.0   ⋅
+  ⋅    ⋅   1.0  1.0  1.0
+  ⋅    ⋅    ⋅   1.0  1.0
 
 julia> A[2,BandRange]
 3-element Array{Float64,1}:
