@@ -150,3 +150,9 @@ end
     A[band(1)] .= randn(9)
     @test_throws BandError C .= Mul(A,B)
 end
+
+
+@testset "BandedMatrix{Int} * Vector{Vector{Int}}" begin
+    A, x =  [1 2; 3 4] , [[1,2],[3,4]]
+    @test BandedMatrix(A)*x == A*x
+end

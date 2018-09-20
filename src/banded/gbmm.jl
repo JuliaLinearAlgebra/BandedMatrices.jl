@@ -235,7 +235,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
         end
 
         Ã = _BandedMatrix(@views(A_data[Au_r+1:end,:]), n, Al, Au-Au_r)
-        B̃ = _BandedMatrix(@views(B_data[Bu_r+1:end,:]), n, Bl, Bu-Bu_r)
+        B̃ = _BandedMatrix(@views(B_data[Bu_r+1:end,:]), ν, Bl, Bu-Bu_r)
         return gbmm!('N', 'N', α, Ã, B̃, β, C)
     end
 
@@ -251,7 +251,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
         end
 
         Ã = _BandedMatrix(@views(A_data[1:end-Al_r,:]), n, Al-Al_r, Au)
-        B̃ = _BandedMatrix(@views(B_data[1:end-Bl_r,:]), n, Bl-Bl_r, Bu)
+        B̃ = _BandedMatrix(@views(B_data[1:end-Bl_r,:]), ν, Bl-Bl_r, Bu)
         return gbmm!('N', 'N', α, Ã, B̃, β, C)
     end
 

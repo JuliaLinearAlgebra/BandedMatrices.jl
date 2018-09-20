@@ -122,33 +122,31 @@ end
 
 
 
-@inline function _copyto!(_, c::AbstractVector{T},
-         M::MatMulVec{<:Any, <:AbstractBandedLayout}) where T
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:Any, <:AbstractBandedLayout})
     A,b = M.A, M.B
-    fill!(c, zero(T))
+    for k = 1:length(c)
+        c[k] = zero(eltype(A)) * b[1]
+    end
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
         c[k] += inbands_getindex(A,k,j)*b[j]
     end
     c
 end
 
-
-@inline function _copyto!(_, c::AbstractVector{T},
-         M::MatMulVec{<:Any, <:BandedRowMajor}) where T
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:Any, <:BandedRowMajor})
     At,b = M.A, M.B
     A = transpose(At)
-    fill!(c, zero(T))
+    c .= zero.(c)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
         c[j] += transpose(inbands_getindex(A,k,j))*b[k]
     end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector{T},
-         M::MatMulVec{<:Any, <:ConjLayout{<:BandedRowMajor}}) where T
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:Any, <:ConjLayout{<:BandedRowMajor}})
     Ac,b = M.A, M.B
     A = Ac'
-    fill!(c, zero(T))
+    c .= zero.(c)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
         c[j] += inbands_getindex(A,k,j)'*b[k]
     end
