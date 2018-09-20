@@ -136,3 +136,17 @@ end
     C .= Mul(A,B)
     @test C == A*B
 end
+
+@testset "Not enough bands" begin
+    A = BandedMatrix(Zeros(10,10), (1,1))
+    A[band(0)] .= randn(10)
+    B = BandedMatrix(randn(10,10), (1,1))
+    C = BandedMatrix(Zeros(10,10), (1,1))
+
+    C .= Mul(A,B)
+
+    @test all(C .=== A*B)
+
+    A[band(1)] .= randn(9)
+    @test_throws BandError C .= Mul(A,B)
+end

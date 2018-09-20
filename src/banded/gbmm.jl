@@ -190,6 +190,22 @@ end
 
 _fill_lmul!(β, A::AbstractArray{T}) where T = β == zero(T) ? fill!(A, β) : lmul!(β, A)
 
+function _num_zeroband_u(A)
+    Al, Au = bandwidths(A)
+    for b = 0:Al+Au
+        any(!iszero, view(A,band(Au-b))) && return b
+    end
+    return Al+Au+1
+end
+
+function _num_zeroband_l(A)
+    Al, Au = bandwidths(A)
+    for b = 0:Al+Au
+        any(!iszero, view(A,band(-Al+b))) && return b
+    end
+    return Al+Au+1
+end
+
 function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β::T, C::AbstractMatrix{T}) where {T<:BlasFloat}
     if tA ≠ 'N' || tB ≠ 'N'
         error("Only 'N' flag is supported.")
@@ -201,22 +217,59 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     @assert ν == size(B,1)
     @assert m == size(C,2)
 
-    Al = bandwidth(A,1); Au = bandwidth(A,2)
-    Bl = bandwidth(B,1); Bu = bandwidth(B,2)
-    C̃l = bandwidth(C,1); C̃u = bandwidth(C,2)
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+    C̃l, C̃u = bandwidths(C)
     Cl,Cu = Al+Bl,Au+Bu
 
-    @assert C̃u ≥ Cu
-    @assert C̃l ≥ Cl
+    # prune zero bands
+    if C̃u < Cu
+        Au_r, Bu_r = _num_zeroband_u(A), _num_zeroband_u(B)
+        C̃u ≥  Cu - Au_r - Bu_r || throw(BandError(C, Cu - Au_r - Bu_r))
+        A_data = bandeddata(A)
+        B_data = bandeddata(B)
+
+        if Au-Au_r < -Al || Bu - Bu_r < -Bl
+            _fill_lmul!(β, C)
+            return C
+        end
+
+        Ã = _BandedMatrix(@views(A_data[Au_r+1:end,:]), n, Al, Au-Au_r)
+        B̃ = _BandedMatrix(@views(B_data[Bu_r+1:end,:]), n, Bl, Bu-Bu_r)
+        return gbmm!('N', 'N', α, Ã, B̃, β, C)
+    end
+
+    if C̃l < Cl
+        Al_r, Bl_r = _num_zeroband_l(A), _num_zeroband_l(B)
+        C̃l ≥  Cl - Al_r - Bl_r || throw(BandError(C, Cl - Al_r - Bl_r))
+        A_data = bandeddata(A)
+        B_data = bandeddata(B)
+
+        if Al-Al_r < -Au || Bl - Bl_r < -Bu
+            _fill_lmul!(β, C)
+            return C
+        end
+
+        Ã = _BandedMatrix(@views(A_data[1:end-Al_r,:]), n, Al-Al_r, Au)
+        B̃ = _BandedMatrix(@views(B_data[1:end-Bl_r,:]), n, Bl-Bl_r, Bu)
+        return gbmm!('N', 'N', α, Ã, B̃, β, C)
+    end
 
     A_data = bandeddata(A)
     B_data = bandeddata(B)
     C̃_data = bandeddata(C)
+
+    # scale extra bands
     _fill_lmul!(β, view(C̃_data, 1:C̃u-Cu,:))
     _fill_lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:))
     C_data = view(C̃_data, (C̃u-Cu+1):(C̃u+Cl+1), :) # shift to bands we will write to
+    _gbmm!(α, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu))
+
+    C
+end
 
 
+function _gbmm!(α::T, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu)) where T
     a = pointer(A_data)
     b = pointer(B_data)
     c = pointer(C_data)
@@ -224,8 +277,6 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     stb = stride(B_data,2)
     stc = stride(C_data,2)
     sz = sizeof(T)
-
-
 
     # Multiply columns j where B[1,j]≠0: A is at 1,1 and C[1,j]≠0
     for j = 1:min(m,1+Bu)
@@ -262,6 +313,4 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
     # scale columns of C by β that aren't impacted by α*A*B
     _fill_lmul!(β, view(C_data, :, ν+Bu+1:min(m,n+Cu)))
-
-    C
 end

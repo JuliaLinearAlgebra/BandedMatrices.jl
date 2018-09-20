@@ -18,7 +18,7 @@ mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
     m::Int #Number of rows
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
-    global function _BandedMatrix(data::AbstractMatrix{T},m,l,u) where {T}
+    global function _BandedMatrix(data::AbstractMatrix{T}, m, l, u) where {T}
         if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
            error("Data matrix must have number rows equal to number of bands")
         else
