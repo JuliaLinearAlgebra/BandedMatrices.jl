@@ -34,7 +34,6 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 end
 
 
-
 @testset "identity" begin
     n = 100
     A = brand(n,n,2,2)
@@ -143,33 +142,32 @@ end
     @test norm(A) == 0.0
 end
 
-
-
 @testset "axpy!" begin
-n = 1000
-A = brand(n,n,1,1)
-B = brand(n,n,2,2)
-C = brand(n,n,3,3)
-@time C .= A .+ B
-@test C == A + B == A .+ B
-@test A + B isa BandedMatrix
-@test A .+ B isa BandedMatrix
-@test bandwidths(A+B) == bandwidths(A.+B) == (2,2)
-@time B .= A .+ B
-@test B == C
+    n = 1000
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    C = brand(n,n,3,3)
+    @time C .= A .+ B
+    @test C == A + B == A .+ B
+    @test A + B isa BandedMatrix
+    @test A .+ B isa BandedMatrix
+    @test bandwidths(A+B) == bandwidths(A.+B) == (2,2)
+    @time B .= A .+ B
+    @test B == C
 
-n = 1000
-A = brand(n,n,1,1)
-B = brand(n,n,2,2)
-C = brand(n,n,3,3)
+    n = 1000
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    C = brand(n,n,3,3)
 
-C .= 2.0 .* A .+ B
-@test C == 2A+B == 2.0.*A .+ B
-@test 2A + B isa BandedMatrix
-@test 2.0.*A .+ B isa BandedMatrix
-@test bandwidths(2A+B) == bandwidths(2.0.*A .+ B) == (2,2)
-B .= 2.0 .* A .+ B
-@test B == C
+    C .= 2.0 .* A .+ B
+    @test C == 2A+B == 2.0.*A .+ B
+
+    @test 2A + B isa BandedMatrix
+    @test 2.0.*A .+ B isa BandedMatrix
+    @test bandwidths(2A+B) == bandwidths(2.0.*A .+ B) == (2,2)
+    B .= 2.0 .* A .+ B
+    @test B == C
 end
 
 @testset "gbmv!" begin

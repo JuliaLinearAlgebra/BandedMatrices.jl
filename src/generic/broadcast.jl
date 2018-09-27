@@ -30,6 +30,8 @@ BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = DefaultArrayStyle{2}()
 
 
 
+size(bc::Broadcasted{BandedStyle}) = length.(axes(bc))
+
 ####
 # Default to standard Array broadcast
 #
@@ -39,15 +41,11 @@ BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = DefaultArrayStyle{2}()
 
 copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
    copyto!(dest, Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes))
-
-similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T =
-    similar(Broadcasted{DefaultArrayStyle{2}}(bc.f, bc.args, bc.axes), T)
-
 ##
 # copyto!
 ##
 
-copyto!(dest::AbstractMatrix, src::AbstractBandedMatrix) =  banded_copyto!(dest, src)
+copyto!(dest::AbstractMatrix, src::AbstractBandedMatrix) =  (dest .= src)
 
 
 function checkbroadcastband(dest, src::AbstractMatrix, z)
@@ -138,7 +136,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
 
     d_l, d_u = bandwidths(dest)
     A_l, A_u = bandwidths(A)
-    B_l, B_u = bandwidths(A)
+    B_l, B_u = bandwidths(B)
     l, u = max(A_l,B_l), max(A_u,B_u)
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
@@ -290,54 +288,43 @@ function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any,
     (A,) = bc.args
     _banded_broadcast!(dest, bc.f, A, MemoryLayout(dest), MemoryLayout(A))
 end
-function similar(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}}, ::Type{T}) where T
-    (A,) = bc.args
-    if iszero(bc.f(zero(T)))
-        similar(A, T)
-    else
-        similar(A, T, size(A)..., size(A,1)-1, size(A,2)-1)
-    end
-end
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}})
     (A,x) = bc.args
     _banded_broadcast!(dest, bc.f, (A, x), MemoryLayout(dest), MemoryLayout(A))
 end
-function similar(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}}, ::Type{T}) where T
-    (A,x) = bc.args
-    if iszero(bc.f(zero(T),x))
-        similar(A, T)
-    else
-        similar(A, T, size(A)..., size(A,1)-1, size(A,2)-1)
-    end
-end
+
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}})
     (x,A) = bc.args
     _banded_broadcast!(dest, bc.f, (x,A), MemoryLayout(dest), MemoryLayout(A))
-end
-function similar(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}}, ::Type{T}) where T
-    (x,A) = bc.args
-    if iszero(bc.f(x,zero(T)))
-        similar(A, T)
-    else
-        similar(A, T, size(A)..., size(A,1)-1, size(A,2)-1)
-    end
 end
 
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}})
     _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(dest), MemoryLayout.(bc.args))
 end
-function similar(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
-    (A,B) = bc.args
-    size(A) == size(B) || throw(DimensionMismatch())
-    if iszero(bc.f(zero(eltype(A)),zero(eltype(B))))
-        similar(A, T, size(A)..., max.(bandwidths(A),bandwidths(B))...)
+
+_bandwidths(::Number) = (-720,-720)
+_bandwidths(A) = bandwidths(A)
+
+_band_eval_args() = ()
+_band_eval_args(a::Number, b...) = (a, _band_eval_args(b...)...)
+_band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
+_band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.args)), _band_eval_args(b...)...)
+
+function bandwidths(bc::Broadcasted{BandedStyle})
+    if iszero(bc.f(_band_eval_args(bc.args...)...))
+        max.(_bandwidths.(bc.args)...)
     else
-        similar(A, T, size(A)..., size(A,1)-1, size(A,2)-1)
+        (a,b) = size(bc)
+        (a-1,b-1)
     end
 end
+
+similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), _bandwidths(bc))
+
+
 
 ##
 # lmul!/rmul!
