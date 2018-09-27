@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-import BandedMatrices: banded_axpy!, banded_mul!, isbanded, AbstractBandedLayout
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -63,13 +63,13 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
     B = rand(5, 4)
     C = copy(B)
 
-    @test Matrix(banded_axpy!(2.0, A, B)) ≈ 2*Matrix(A) + C
+    @test Matrix(B .= 2.0 .* A .+ B) ≈ 2*Matrix(A) + C
 
     A = PseudoBandedMatrix(rand(5, 4), 1, 2)
     B = PseudoBandedMatrix(rand(5, 4), 2, 3)
     C = deepcopy(B)
 
-    @test Matrix(banded_axpy!(2.0, A, C)) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
+    @test Matrix(C .= 2.0 .* A .+ C) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
 
     y = rand(4)
     z = zeros(5)
@@ -86,6 +86,6 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
             bandwidths(BandedMatrix{Float64}(A)) ==
             bandwidths(BandedMatrix{Float64,Matrix{Float64}}(A)) ==
             bandwidths(convert(BandedMatrix{Float64}, A)) ==
-            bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) == 
+            bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) ==
             bandwidths(A)
 end
