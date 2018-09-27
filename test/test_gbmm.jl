@@ -149,6 +149,13 @@ end
 
     A[band(1)] .= randn(9)
     @test_throws BandError C .= Mul(A,B)
+
+    A = BandedMatrix(randn(2,1), (2,0))
+    A[1,1] = 0
+    B = BandedMatrix(randn(1,1), (1,1))
+    C = BandedMatrix(randn(2,1), (2,0))
+    D = A * B + C
+    @test BandedMatrices.gbmm!('N','N', 1.0 , A, B, 1.0, C) ≈ D
 end
 
 

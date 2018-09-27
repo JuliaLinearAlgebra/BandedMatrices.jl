@@ -236,7 +236,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
         Ã = _BandedMatrix(@views(A_data[Au_r+1:end,:]), n, Al, Au-Au_r)
         B̃ = _BandedMatrix(@views(B_data[Bu_r+1:end,:]), ν, Bl, Bu-Bu_r)
-        return gbmm!('N', 'N', α, Ã, B̃, β, C)
+        return (C .= α .* Mul(Ã, B̃) .+ β .* C)
     end
 
     if C̃l < Cl
@@ -252,7 +252,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
         Ã = _BandedMatrix(@views(A_data[1:end-Al_r,:]), n, Al-Al_r, Au)
         B̃ = _BandedMatrix(@views(B_data[1:end-Bl_r,:]), ν, Bl-Bl_r, Bu)
-        return gbmm!('N', 'N', α, Ã, B̃, β, C)
+        return (C .= α .* Mul(Ã, B̃) .+ β .* C)
     end
 
     A_data = bandeddata(A)

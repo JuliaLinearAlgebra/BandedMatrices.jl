@@ -11,6 +11,46 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
     @test A .+ 1 isa Matrix
 end
 
+@testset "identity" begin
+    n = 100
+    A = brand(n,n,2,2)
+    A.data[1,1] = NaN
+    B = brand(n,n,2,2)
+    B.data[1,1] = NaN
+    A .= B
+    @test A == B
+    B = brand(n,n,1,1)
+    B.data[1,1] = NaN
+    A .= B
+    B = brand(n,n,3,3)
+    B[band(3)] .= 0
+    B[band(-3)] .= 0
+    B.data[1,1] = NaN
+    B.data[end,end] = NaN
+    A .= B
+    @test A == B
+
+    B = brand(n,n,0,3)
+    B[band(3)] .= 0
+    B.data[1,1] = NaN
+    A .= B
+    @test A == B
+
+    B = brand(n,n,3,0)
+    B[band(-3)] .= 0
+    B.data[end,end] = NaN
+    A .= B
+    @test A == B
+
+    B = brand(n,n,-1,1)
+    A .= B
+    @test A == B
+
+    B = brand(n,n,1,-1)
+    A .= B
+    @test A == B
+end
+
 @testset "lmul!/rmul!" begin
     n = 1000
     A = brand(n,n,1,1)

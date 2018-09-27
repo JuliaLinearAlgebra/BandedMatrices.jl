@@ -49,7 +49,7 @@ similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T =
 
 copyto!(dest::AbstractMatrix, src::AbstractBandedMatrix) =  banded_copyto!(dest, src)
 
-function banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
+function _banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix, _1, _2) where T
     m,n = size(dest)
     (m,n) == size(src) || throw(DimensionMismatch())
 
@@ -69,6 +69,45 @@ function banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix) where T
     end
     dest
 end
+
+function _banded_copyto!(dest::AbstractMatrix{T}, src::AbstractMatrix, ::BandedColumnMajor, ::BandedColumnMajor) where T
+    l,u = bandwidths(src)
+    λ,μ = bandwidths(dest)
+    m,n = size(src)
+    (m,n) == size(dest) || throw(DimensionMismatch())
+    data_d,data_s = bandeddata(dest), bandeddata(src)
+    if (l,u) == (λ,μ)
+        copyto!(data_d, data_s)
+    elseif μ > u && λ > l
+        fill!(view(data_d,1:(μ-u),:), zero(T))
+        fill!(view(data_d,μ+l+2:μ+λ+1,:), zero(T))
+        copyto!(view(data_d,μ-u+1:μ+l+1,:), data_s)
+    elseif μ > u
+        fill!(view(data_d,1:(μ-u),:), zero(T))
+        for b = λ+1:l
+            any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
+        end
+        copyto!(view(data_d,μ-u+1:μ+λ+1,:), view(data_s,1:u+λ+1,:))
+    elseif λ > l
+        for b = μ+1:u
+            any(!iszero, view(data_s,u-b+1,b+1:n)) && throw(BandError(dest,b))
+        end
+        fill!(view(data_d,μ+l+2:μ+λ+1,:), zero(T))
+        copyto!(view(data_d,1:μ+l+1,:), view(data_s,u-μ+1:u+l+1,:))
+    else # μ < u && λ < l
+        for b = μ+1:u
+            any(!iszero, view(data_s,u-b+1,b+1:n)) && throw(BandError(dest,b))
+        end
+        for b = λ+1:l
+            any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
+        end
+        copyto!(data_d, view(data_s,u-μ+1:u+λ+1,:))
+    end
+
+    dest
+end
+
+banded_copyto!(dest::AbstractMatrix, src::AbstractMatrix) = _banded_copyto!(dest, src, MemoryLayout(dest), MemoryLayout(src))
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, typeof(identity)})
     (A,) = bc.args
