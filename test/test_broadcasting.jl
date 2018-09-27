@@ -7,9 +7,33 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
     B = Matrix{Float64}(undef, n,n)
     B .= exp.(A)
     @test B == exp.(Matrix(A)) == exp.(A)
-    @test exp.(A) isa Matrix
-    @test A .+ 1 isa Matrix
+
+    @test exp.(A) isa BandedMatrix
+    @test bandwidths(exp.(A)) == (n-1,n-1)
+
+    C = similar(A)
+    @test_throws BandError C .= exp.(A)
+
+    @test identity.(A) isa BandedMatrix
+    @test bandwidths(identity.(A)) == bandwidths(A)
+
+    @test (z -> exp(z)-1).(A) isa BandedMatrix
+    @test bandwidths((z -> exp(z)-1).(A)) == bandwidths(A)
+
+    @test A .+ 1 isa BandedMatrix
+    @test (A .+ 1) == Matrix(A) .+ 1
+
+    @test A ./ 1 isa BandedMatrix
+    @test bandwidths(A ./ 1) == bandwidths(A)
+
+    @test 1 .+ A isa BandedMatrix
+    @test (1 .+ A) == 1 .+ Matrix(A)
+
+    @test 1 .\ A isa BandedMatrix
+    @test bandwidths(1 .\ A) == bandwidths(A)
 end
+
+
 
 @testset "identity" begin
     n = 100
@@ -122,30 +146,30 @@ end
 
 
 @testset "axpy!" begin
-    n = 1000
-    A = brand(n,n,1,1)
-    B = brand(n,n,2,2)
-    C = brand(n,n,3,3)
-    @time C .= A .+ B
-    @test C == A + B == A .+ B
-    @test A + B isa BandedMatrix
-    @test A .+ B isa BandedMatrix
-    @test bandwidths(A+B) == bandwidths(A.+B) == (2,2)
-    @time B .= A .+ B
-    @test B == C
+n = 1000
+A = brand(n,n,1,1)
+B = brand(n,n,2,2)
+C = brand(n,n,3,3)
+@time C .= A .+ B
+@test C == A + B == A .+ B
+@test A + B isa BandedMatrix
+@test A .+ B isa BandedMatrix
+@test bandwidths(A+B) == bandwidths(A.+B) == (2,2)
+@time B .= A .+ B
+@test B == C
 
-    n = 1000
-    A = brand(n,n,1,1)
-    B = brand(n,n,2,2)
-    C = brand(n,n,3,3)
+n = 1000
+A = brand(n,n,1,1)
+B = brand(n,n,2,2)
+C = brand(n,n,3,3)
 
-    C .= 2.0 .* A .+ B
-    @test C == 2A+B == 2.0.*A .+ B
-    @test 2A + B isa BandedMatrix
-    @test 2.0.*A .+ B isa BandedMatrix
-    @test bandwidths(2A+B) == bandwidths(2.0.*A .+ B) == (2,2)
-    B .= 2.0 .* A .+ B
-    @test B == C
+C .= 2.0 .* A .+ B
+@test C == 2A+B == 2.0.*A .+ B
+@test 2A + B isa BandedMatrix
+@test 2.0.*A .+ B isa BandedMatrix
+@test bandwidths(2A+B) == bandwidths(2.0.*A .+ B) == (2,2)
+B .= 2.0 .* A .+ B
+@test B == C
 end
 
 @testset "gbmv!" begin
