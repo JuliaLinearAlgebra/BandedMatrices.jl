@@ -255,13 +255,13 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         data_d̃ .= f.(data_Ã,data_B̃)
 
         # construct where A lower is zero
-        data_d_l_B = view(data_d, d_u+min_l+2 : d_u+B_l+1, :)
-        data_B_l_B = view(data_B, B_u+min_l+2 : B_u+B_l+1, :)
+        data_d_l_B = view(data_d, d_u+min_l+2 : d_u+min(d_l,B_l)+1, :)
+        data_B_l_B = view(data_B, B_u+min_l+2 : B_u+min(d_l,B_l)+1, :)
         data_d_l_B .= f.(zero(eltype(A)), data_B_l_B)
 
         # construct where B lower is zero
-        data_d_l_A = view(data_d, d_u+min_l+2 : d_u+A_l+1, :)
-        data_A_l_A = view(data_A, A_u+min_l+2 : A_u+A_l+1, :)
+        data_d_l_A = view(data_d, d_u+min_l+2 : d_u+min(d_l,A_l)+1, :)
+        data_A_l_A = view(data_A, A_u+min_l+2 : A_u+min(d_l,A_l)+1, :)
         data_d_l_A .= f.(data_A_l_A, zero(eltype(B)))
     end
 
