@@ -31,7 +31,14 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
     @test 1 .\ A isa BandedMatrix
     @test bandwidths(1 .\ A) == bandwidths(A)
+
+    A = brand(10,1,1,1)
+    @test A[:,1] isa Vector
+    @test norm(A .- A[:,1]) == 0
+    @test A ≈ A[:,1]
 end
+
+
 
 
 @testset "identity" begin

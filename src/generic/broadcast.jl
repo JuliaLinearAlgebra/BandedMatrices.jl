@@ -374,7 +374,7 @@ _bandwidths(A) = bandwidths(A)
 
 _band_eval_args() = ()
 _band_eval_args(a::Number, b...) = (a, _band_eval_args(b...)...)
-_band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
+_band_eval_args(a::AbstractArray{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
 _band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.args)), _band_eval_args(b...)...)
 
 function bandwidths(bc::Broadcasted{BandedStyle})
