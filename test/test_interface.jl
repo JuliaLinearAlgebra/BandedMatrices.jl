@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -28,6 +28,7 @@ function Base.setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int)
 end
 
 struct PseudoBandedLayout <: AbstractBandedLayout end
+Base.BroadcastStyle(::Type{<:PseudoBandedMatrix}) = BandedStyle()
 BandedMatrices.MemoryLayout(::PseudoBandedMatrix) = PseudoBandedLayout()
 BandedMatrices.isbanded(::PseudoBandedMatrix) = true
 BandedMatrices.bandwidths(A::PseudoBandedMatrix) = (A.l , A.u)

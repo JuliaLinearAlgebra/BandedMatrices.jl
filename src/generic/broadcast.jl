@@ -426,103 +426,80 @@ lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
 rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
 
 
-# ##
-# # axpy!
-# ##
-#
-# # these are the routines of the banded interface of other AbstractMatrices
-# banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(X), MemoryLayout(Y))
-# _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedColumnMajor, ::BandedColumnMajor) =
-#     banded_generic_axpy!(a, X, Y)
-# _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notbandedY) =
-#     banded_dense_axpy!(a, X, Y)
-#
-# # additions and subtractions
-# @propagate_inbounds function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
-#     n,m = size(X)
-#     if (n,m) ≠ size(Y)
-#         throw(BoundsError())
-#     end
-#     Xl, Xu = bandwidths(X)
-#     Yl, Yu = bandwidths(Y)
-#
-#     @boundscheck if Xl > Yl
-#         # test that all entries are zero in extra bands
-#         for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
-#             if inbands_getindex(X, k, j) ≠ 0
-#                 throw(BandError(X, (k,j)))
-#             end
-#         end
-#     end
-#     @boundscheck if Xu > Yu
-#         # test that all entries are zero in extra bands
-#         for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
-#             if inbands_getindex(X, k, j) ≠ 0
-#                 throw(BandError(X, (k,j)))
-#             end
-#         end
-#     end
-#
-#     l = min(Xl,Yl)
-#     u = min(Xu,Yu)
-#
-#     @inbounds for j=1:m,k=max(1,j-u):min(n,j+l)
-#         inbands_setindex!(Y, a*inbands_getindex(X,k,j) + inbands_getindex(Y,k,j) ,k, j)
-#     end
-#     Y
-# end
-#
-# function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
-#     if size(X) != size(Y)
-#         throw(DimensionMismatch("+"))
-#     end
-#     @inbounds for j=1:size(X,2),k=colrange(X,j)
-#         Y[k,j] += a*inbands_getindex(X,k,j)
-#     end
-#     Y
-# end
-#
-#
-# function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
-#                                                             <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) where T
-#     A,B = bc.args
-#     if dest ≡ B
-#         banded_axpy!(one(T), A, dest)
-#     elseif dest ≡ A
-#         banded_axpy!(one(T), B, dest)
-#     else
-#         banded_copyto!(dest, B)
-#         banded_axpy!(one(T), A, dest)
-#     end
-# end
-#
-# function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+), <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}, ::Type{T}) where T
-#     A,B = bc.args
-#     n,m = size(A)
-#     (n,m) == size(B) || throw(DimensionMismatch())
-#     Al,Au = bandwidths(A)
-#     Bl,Bu = bandwidths(B)
-#     similar(A, T, n, m, max(Al,Bl), max(Au,Bu))
-# end
-#
-#
-# function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
-#                                                         <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
-#                                                         <:AbstractMatrix}}) where T
-#     αA,B = bc.args
-#     α,A = αA.args
-#     dest ≡ B || banded_copyto!(dest, B)
-#     banded_axpy!(α, A, dest)
-# end
-#
-# function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
-#                         <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
-#                         <:AbstractMatrix}}, ::Type{T}) where T
-#     αA,B = bc.args
-#     α,A = αA.args
-#     n,m = size(A)
-#     (n,m) == size(B) || throw(DimensionMismatch())
-#     Al,Au = bandwidths(A)
-#     Bl,Bu = bandwidths(B)
-#     similar(A, T, n, m, max(Al,Bl), max(Au,Bu))
-# end
+##
+# axpy!
+##
+
+# these are the routines of the banded interface of other AbstractMatrices
+banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(X), MemoryLayout(Y))
+_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedColumnMajor, ::BandedColumnMajor) =
+    banded_generic_axpy!(a, X, Y)
+_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notbandedY) =
+    banded_dense_axpy!(a, X, Y)
+
+# additions and subtractions
+@propagate_inbounds function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
+    n,m = size(X)
+    if (n,m) ≠ size(Y)
+        throw(BoundsError())
+    end
+    Xl, Xu = bandwidths(X)
+    Yl, Yu = bandwidths(Y)
+
+    @boundscheck if Xl > Yl
+        # test that all entries are zero in extra bands
+        for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
+            if inbands_getindex(X, k, j) ≠ 0
+                throw(BandError(X, (k,j)))
+            end
+        end
+    end
+    @boundscheck if Xu > Yu
+        # test that all entries are zero in extra bands
+        for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
+            if inbands_getindex(X, k, j) ≠ 0
+                throw(BandError(X, (k,j)))
+            end
+        end
+    end
+
+    l = min(Xl,Yl)
+    u = min(Xu,Yu)
+
+    @inbounds for j=1:m,k=max(1,j-u):min(n,j+l)
+        inbands_setindex!(Y, a*inbands_getindex(X,k,j) + inbands_getindex(Y,k,j) ,k, j)
+    end
+    Y
+end
+
+function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
+    if size(X) != size(Y)
+        throw(DimensionMismatch("+"))
+    end
+    @inbounds for j=1:size(X,2),k=colrange(X,j)
+        Y[k,j] += a*inbands_getindex(X,k,j)
+    end
+    Y
+end
+
+
+function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
+                                                        <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
+                                                        <:AbstractMatrix}}) where T
+    αA,B = bc.args
+    α,A = αA.args
+    dest ≡ B || (dest .= B)
+    banded_axpy!(α, A, dest)
+end
+
+function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
+                        <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
+                        <:AbstractMatrix}}, ::Type{T}) where T
+    αA,B = bc.args
+    α,A = αA.args
+    n,m = size(A)
+    (n,m) == size(B) || throw(DimensionMismatch())
+    Al,Au = bandwidths(A)
+    Bl,Bu = bandwidths(B)
+    similar(A, T, n, m, max(Al,Bl), max(Au,Bu))
+end
