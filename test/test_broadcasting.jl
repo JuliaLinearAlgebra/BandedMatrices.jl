@@ -38,9 +38,6 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
     @test A ≈ A[:,1]
 end
 
-
-
-
 @testset "identity" begin
     n = 100
     A = brand(n,n,2,2)
@@ -150,19 +147,53 @@ end
 end
 
 @testset "axpy!" begin
-    n = 1000
+    n = 100
     A = brand(n,n,1,1)
     B = brand(n,n,2,2)
     C = brand(n,n,3,3)
-    @time C .= A .+ B
-    @test C == A + B == A .+ B
+    C .= A .+ B
+    @test C == A + B == A .+ B  == Matrix(A) + Matrix(B)
     @test A + B isa BandedMatrix
     @test A .+ B isa BandedMatrix
     @test bandwidths(A+B) == bandwidths(A.+B) == (2,2)
-    @time B .= A .+ B
+    B .= A .+ B
     @test B == C
 
-    n = 1000
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    C = brand(n,n,3,3)
+    C .= A .* B
+    @test C == A .* B  == Matrix(A) .* Matrix(B)
+    @test A .* B isa BandedMatrix
+    @test bandwidths(A.*B) == (2,2)
+    @time B .= A .* B
+    @test B == C
+
+    n = 100
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    B[band(2)] .= B[band(-2)] .= 0
+    C = brand(n,n,1,1)
+    C .= A .+ B
+    @test C == A + B == A .+ B == Matrix(A) + Matrix(B)
+
+    n = 100
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    B[band(-2)] .= 0
+    C = brand(n,n,1,2)
+    C .= A .+ B
+    @test C == A + B == A .+ B == Matrix(A) + Matrix(B)
+
+    n = 100
+    A = brand(n,n,1,1)
+    B = brand(n,n,2,2)
+    B[band(2)] .= 0
+    C = brand(n,n,2,1)
+    C .= A .+ B
+    @test C == A + B == A .+ B == Matrix(A) + Matrix(B)
+
+    n = 100
     A = brand(n,n,1,1)
     B = brand(n,n,2,2)
     C = brand(n,n,3,3)

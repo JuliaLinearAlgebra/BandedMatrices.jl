@@ -244,7 +244,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         data_d_u_A .= f.(data_A_u_A, zero(eltype(B)))
 
         # construct where A upper is zero
-        data_d_u_B = view(data_d,d_u-max(A_u,B_u)+1:d_u-A_u, :)
+        data_d_u_B = view(data_d,max(1,d_u-max(A_u,B_u)+1):d_u-A_u, :)
         data_B_u_B = view(data_B, 1:B_u-A_u, :)
         data_d_u_B .= f.(zero(eltype(A)), data_B_u_B)
 
