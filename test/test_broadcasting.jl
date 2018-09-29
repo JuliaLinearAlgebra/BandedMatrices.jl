@@ -144,6 +144,35 @@ end
     A.data .= NaN
     rmul!(A,0.0)
     @test norm(A) == 0.0
+
+    n = 100
+    A = brand(n,n,2,2)
+    B = brand(n,n,1,1)
+    A[band(2)] .= A[band(-2)] .= 0
+    B .= A ./ 2.0
+    @test B == A / 2.0 == Matrix(A)/2.0
+
+    B .= 2.0 .\ A
+    @test B == 2.0 \ A == 2.0 \ Matrix(A)
+
+    n = 100
+    A = brand(n,n,2,2)
+    B = brand(n,n,1,3)
+    A[band(-2)] .= 0
+    B .= A ./ 2.0
+    @test B == A / 2.0 == Matrix(A)/2.0
+
+    B .= 2.0 .\ A
+    @test B == 2.0 \ A == 2.0 \ Matrix(A)
+
+    A = brand(n,n,2,2)
+    B = brand(n,n,3,1)
+    A[band(2)] .= 0
+    B .= A ./ 2.0
+    @test B == A / 2.0 == Matrix(A)/2.0
+
+    B .= 2.0 .\ A
+    @test B == 2.0 \ A == 2.0 \ Matrix(A)
 end
 
 @testset "axpy!" begin

@@ -67,9 +67,27 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
     @test Matrix(B .= 2.0 .* A .+ B) ≈ 2*Matrix(A) + C
 
     A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = (z -> exp(z)-1).(A)
+    @test B isa BandedMatrix
+    @test bandwidths(B) == bandwidths(A)
+    @test B == (z -> exp(z)-1).(Matrix(A))
+
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = A .* 2
+    @test B isa BandedMatrix
+    @test bandwidths(B) == bandwidths(A)
+    @test B == 2Matrix(A) == (2 .* A)
+
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = PseudoBandedMatrix(rand(5, 4), 2, 1)
+
+    @test A .+ B isa BandedMatrix
+    @test bandwidths(A .+ B) == (2,2)
+    @test A .+ B == Matrix(A) + Matrix(B)
+
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
     B = PseudoBandedMatrix(rand(5, 4), 2, 3)
     C = deepcopy(B)
-
     @test Matrix(C .= 2.0 .* A .+ C) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
 
     y = rand(4)
