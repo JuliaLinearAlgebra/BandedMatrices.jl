@@ -318,7 +318,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,Abst
     m,n = size(src)
     data_d,data_s = bandeddata(dest), bandeddata(src)
     if (l,u) == (λ,μ)
-        data_d .= f.(data_s, x)
+        data_d .= f.(x, data_s)
     elseif μ > u && λ > l
         fill!(view(data_d,1:(μ-u),:), z)
         fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
