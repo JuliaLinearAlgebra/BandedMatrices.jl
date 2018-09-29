@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-import BandedMatrices: banded_axpy!, banded_mul!, isbanded, AbstractBandedLayout
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -28,6 +28,7 @@ function Base.setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int)
 end
 
 struct PseudoBandedLayout <: AbstractBandedLayout end
+Base.BroadcastStyle(::Type{<:PseudoBandedMatrix}) = BandedStyle()
 BandedMatrices.MemoryLayout(::PseudoBandedMatrix) = PseudoBandedLayout()
 BandedMatrices.isbanded(::PseudoBandedMatrix) = true
 BandedMatrices.bandwidths(A::PseudoBandedMatrix) = (A.l , A.u)
@@ -63,13 +64,31 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
     B = rand(5, 4)
     C = copy(B)
 
-    @test Matrix(banded_axpy!(2.0, A, B)) ≈ 2*Matrix(A) + C
+    @test Matrix(B .= 2.0 .* A .+ B) ≈ 2*Matrix(A) + C
+
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = (z -> exp(z)-1).(A)
+    @test B isa BandedMatrix
+    @test bandwidths(B) == bandwidths(A)
+    @test B == (z -> exp(z)-1).(Matrix(A))
+
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = A .* 2
+    @test B isa BandedMatrix
+    @test bandwidths(B) == bandwidths(A)
+    @test B == 2Matrix(A) == (2 .* A)
+
+    A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+    B = PseudoBandedMatrix(rand(5, 4), 2, 1)
+
+    @test A .+ B isa BandedMatrix
+    @test bandwidths(A .+ B) == (2,2)
+    @test A .+ B == Matrix(A) + Matrix(B)
 
     A = PseudoBandedMatrix(rand(5, 4), 1, 2)
     B = PseudoBandedMatrix(rand(5, 4), 2, 3)
     C = deepcopy(B)
-
-    @test Matrix(banded_axpy!(2.0, A, C)) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
+    @test Matrix(C .= 2.0 .* A .+ C) ≈ 2*Matrix(A) + B ≈ 2*A + Matrix(B) ≈ 2*Matrix(A) + Matrix(B) ≈ 2*A + B
 
     y = rand(4)
     z = zeros(5)
@@ -86,6 +105,6 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
             bandwidths(BandedMatrix{Float64}(A)) ==
             bandwidths(BandedMatrix{Float64,Matrix{Float64}}(A)) ==
             bandwidths(convert(BandedMatrix{Float64}, A)) ==
-            bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) == 
+            bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) ==
             bandwidths(A)
 end
