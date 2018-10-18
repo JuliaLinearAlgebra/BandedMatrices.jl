@@ -122,4 +122,10 @@ end
     A = Symmetric(BandedMatrix(0 => 1 ./ [12, 6, 6, 6, 12],
                                1 => ones(4) ./ 24))
     @test norm(cholesky(A).data - cholesky(Matrix(A)).U) < 1e-15
+
+    Ac = cholesky(A)
+    b = rand(size(A,1))
+    @test norm(Ac\b - Matrix(A)\b) < 1e-14
+
+    @test_throws DimensionMismatch Ac\rand(size(A,1)+1)
 end

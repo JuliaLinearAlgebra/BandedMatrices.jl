@@ -28,6 +28,12 @@ function getindex(F::BandedCholesky, d::Symbol)
     throw(KeyError(d))
 end
 
+function ldiv!(A::BandedCholesky{T}, B::AbstractVecOrMat{T}) where T
+    checksquare(A)
+    m = size(A,1)
+    pbtrs!('U', size(A, 1), bandwidth(A,2), A.data.data, B)
+end
+
 ## Utilities
 
 # check if matrix is square before solution of linear system or before converting
