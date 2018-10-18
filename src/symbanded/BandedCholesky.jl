@@ -14,12 +14,12 @@ convert(::Type{BandedCholesky{T}}, B::BandedCholesky{S}) where {T<:Number, S<:Nu
 @inline bandwidth(A::BandedCholesky, k) = bandwidth(A.data, k)
 
 # Cholesky factorisation.
-function cholesky!(A::Symmetric{T,<:BandedMatrix}) where {T<:Number}
+function cholesky!(A::Union{Symmetric{R,<:BandedMatrix},Hermitian{Complex{R},<:BandedMatrix}}) where {R<:Real}
     P = parent(A)
     pbtrf!('U', size(A, 1), bandwidth(A), bandeddata(parent(P)))
-    BandedCholesky{T}(P)
+    BandedCholesky{eltype(A)}(P)
 end
-cholesky(A::Symmetric{<:Any, <:BandedMatrix}) = cholesky!(copy(A))
+cholesky(A::Union{Symmetric{R,<:BandedMatrix},Hermitian{Complex{R},<:BandedMatrix}}) where {R<:Real} = cholesky!(copy(A))
 cholesky(F::BandedCholesky) = F # no op
 
 function getindex(F::BandedCholesky, d::Symbol)
