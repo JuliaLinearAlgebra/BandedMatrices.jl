@@ -60,26 +60,28 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
         B
     end
 
-    A = An(Float64, 100)
-    B = Bn(Float64, 100)
+    for ef in (eigvals,(A,B)->eigen(A,B).values)
+        A = An(Float64, 100)
+        B = Bn(Float64, 100)
 
-    λ = eigvals(A, B)
-    @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
+        λ = ef(A, B)
+        @test λ ≈ ef(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
-    err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
+        err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
 
-    @test norm(err[1:40]) < 100eps(Float64)
+        @test norm(err[1:40]) < 100eps(Float64)
 
-    A = An(Float32, 100)
-    B = Bn(Float32, 100)
+        A = An(Float32, 100)
+        B = Bn(Float32, 100)
 
-    λ = eigvals(A, B)
+        λ = ef(A, B)
 
-    @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
+        @test λ ≈ ef(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
-    err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
+        err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
-    @test norm(err[1:40]) < 100eps(Float32)
+        @test norm(err[1:40]) < 100eps(Float32)
+    end
 end
 
 
