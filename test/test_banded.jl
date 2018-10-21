@@ -379,4 +379,12 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test Matrix(sparse(B)) == Matrix(B)
         end
     end
+
+    @testset "real-imag" begin
+        B = brand(ComplexF64,5,5,1,1)
+        @test real(B) isa BandedMatrix
+        @test imag(B) isa BandedMatrix
+        @test bandwidths(real(B)) == bandwidths(imag(B)) == bandwidths(B)
+        @test real(B) + im*imag(B) == B
+    end
 end

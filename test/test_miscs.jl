@@ -1,5 +1,5 @@
-using BandedMatrices, LinearAlgebra, Test
-
+using BandedMatrices, LinearAlgebra, FillArrays, Test
+import BandedMatrices: _BandedMatrix
 ## Banded Matrix of Banded Matrix
 
 BandedMatrixWithZero = Union{BandedMatrix{Float64,Matrix{Float64}}, UniformScaling}
@@ -23,8 +23,6 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         @test_skip (A*B)[1,1][1,1] ≈ 1/3
     end
 
-
-
     @time @testset "dense overrides" begin
         A = rand(10,11)
         @test bandwidths(A) == (9,10)
@@ -32,6 +30,7 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         @test bandwidths(A) == (9,0)
         @test bandwidths(A') == (0,9)
     end
+
     @time @testset "trivial convert routines" begin
         A = brand(3,4,1,2)
         @test isa(BandedMatrix{Float64}(A), BandedMatrix{Float64})
@@ -45,7 +44,7 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         @test isa(AbstractArray{ComplexF16}(A), BandedMatrix{ComplexF16})
     end
     @time @testset "show" begin
-      @test occursin("10×10 BandedMatrix{Float64,Array{Float64,2}}",
+      @test occursin("10×10 BandedMatrix{Float64,Array{Float64,2},"*string(Base.OneTo{Int})*"}",
          sprint() do io
             show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
          end)
@@ -111,4 +110,13 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         @test Δ isa BandedMatrix
         @test bandwidths(Δ) == (10,10)
     end
+end
+
+@testset "Offset axes" begin
+    A = _BandedMatrix(Ones((Base.OneTo(3),Base.Slice(-5:5),)), Base.Slice(-4:2), 1,1)
+    @test size(A) == (7,11)
+    @test A[-4,-5] == 1
+    @test A[-4,-5+2] == 1
+    @test A[-4,-5+3] == 0
+    @test_throws BoundsError A[-5,-5+3]
 end
