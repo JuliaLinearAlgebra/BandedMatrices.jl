@@ -66,10 +66,10 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α
     if -l > u # no bands
         lmul!(β, y)
     elseif l < 0
-        blasmul!(y, view(A, :, 1-l:n), view(x, 1-l:n), α, β)
+        materialize!(BLASMul(α, view(A, :, 1-l:n), view(x, 1-l:n), β, y))
     elseif u < 0
         y[1:-u] .= zero(T)
-        blasmul!(view(y, 1-u:m), view(A, 1-u:m, :), x, α, β)
+        materialize!(BLASMul(α, view(A, 1-u:m, :), x, β, view(y, 1-u:m)))
         y
     else
         _banded_gbmv!('N', α, A, x, β, y)
@@ -85,10 +85,10 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     if -l > u # no bands
       _fill_lmul!(β, y)
     elseif l < 0
-      blasmul!(y, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), α, β)
+      materialize!(BLASMul(α, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), β, y))
     elseif u < 0
       y[1:-u] .= zero(T)
-      blasmul!(view(y, 1-u:m), transpose(view(At, :, 1-u:m)), x, α, β)
+      materialize!(BLASMul(α, transpose(view(At, :, 1-u:m)), x, β, view(y, 1-u:m)))
       y
     else
       _banded_gbmv!('T', α, At, x, β, y)
@@ -104,10 +104,10 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     if -l > u # no bands
         _fill_lmul!(β, y)
     elseif l < 0
-        blasmul!(y, view(Ac, 1-l:n, :,)', view(x, 1-l:n), α, β)
+        materialize!(BLASMul(α, view(Ac, 1-l:n, :,)', view(x, 1-l:n), β, y))
     elseif u < 0
         y[1:-u] .= zero(T)
-        blasmul!(view(y, 1-u:m), view(Ac, :, 1-u:m)', x, α, β)
+        materialize!(BLASMul(α, view(Ac, :, 1-u:m)', x, β, view(y, 1-u:m)))
         y
     else
     _banded_gbmv!('C', α, Ac, x, β, y)
@@ -122,8 +122,8 @@ end
 
 
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:Any, <:AbstractBandedLayout})
-    A,b = M.A, M.B
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:AbstractBandedLayout})
+    A,b = M.factors
     for k = 1:length(c)
         c[k] = zero(eltype(A)) * b[1]
     end
@@ -133,8 +133,8 @@ end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:Any, <:BandedRowMajor})
-    At,b = M.A, M.B
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:BandedRowMajor})
+    At,b = M.factors
     A = transpose(At)
     c .= zero.(c)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
@@ -143,8 +143,8 @@ end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:Any, <:ConjLayout{<:BandedRowMajor}})
-    Ac,b = M.A, M.B
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:ConjLayout{<:BandedRowMajor}})
+    Ac,b = M.factors
     A = Ac'
     c .= zero.(c)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
@@ -190,21 +190,18 @@ end
 
 const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
 
-@inline function _copyto!(_, C::AbstractMatrix,
-         M::MatMulMat{<:Any,<:ConjOrBandedLayout,<:ConjOrBandedLayout})
-     A, B = M.A, M.B
+@inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:ConjOrBandedLayout,<:ConjOrBandedLayout})
+     A, B = M.factors
      banded_mul!(C, A, B)
 end
 
-@inline function _copyto!(_, C::AbstractMatrix,
-         M::MatMulMat{<:Any,<:ConjOrBandedLayout})
-     A, B = M.A, M.B
+@inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:ConjOrBandedLayout})
+     A, B = M.factors
      banded_mul!(C, A, B)
 end
 
-@inline function _copyto!(_, C::AbstractMatrix,
-         M::MatMulMat{<:Any,<:Any,<:ConjOrBandedLayout})
-     A, B = M.A, M.B
+@inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:Any,<:ConjOrBandedLayout})
+     A, B = M.factors
      banded_mul!(C, A, B)
 end
 
@@ -225,16 +222,16 @@ function blasmul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{
         fill!(C, zero(T))
     elseif Al < 0
         _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
-        blasmul!(C, view(A, :, 1-Al:An), view(B, 1-Al:An, :), α, β)
+        materialize!(BLASMul(α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C))
     elseif Au < 0
         _fill_lmul!(β, @views(C[1:-Au,:]))
-        blasmul!(view(C, 1-Au:Am,:), view(A, 1-Au:Am,:), B, α, β)
+        materialize!(BLASMul(α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:)))
     elseif Bl < 0
         _fill_lmul!(β, @views(C[:, 1:-Bl]))
-        blasmul!(view(C, :, 1-Bl:Bn), A, view(B, :, 1-Bl:Bn), α, β)
+        materialize!(BLASMul(α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn)))
     elseif Bu < 0
         _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
-        blasmul!(C, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), α, β)
+        materialize!(BLASMul(α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C))
     else
         gbmm!('N', 'N', α, A, B, β, C)
     end

@@ -33,12 +33,13 @@ import Base: convert, size, view, unsafe_indices,
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
 
-import LazyArrays: MemoryLayout, blasmul!, @lazymul, @lazylmul, @lazyldiv, @blasmatvec, @blasmatmat,
+import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
                     triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
-                    ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata
+                    ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
+                    BLASMul, materialize!
 import FillArrays: AbstractFill
 
 export BandedMatrix,
