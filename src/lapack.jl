@@ -167,6 +167,43 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
     end
 end
 
+# Symmetric/Hermitian Positive Definite banded Cholesky solver
+for (fname, elty) in ((:dpbtrs_,:Float64),
+                      (:spbtrs_,:Float32),
+                      (:zpbtrs_,:ComplexF64),
+                      (:cpbtrs_,:ComplexF32))
+    @eval begin
+                # SUBROUTINE DPBTRS( UPLO, N, KD, NRHS, AB, LDAB, B, LDB, INFO )
+                # CHARACTER          UPLO
+                # INTEGER            INFO, KD, LDAB, LDB, N
+                # DOUBLE PRECISION   AB( LDAB, * ), B( LDB, * )
+
+        function pbtrs!(uplo::Char, m::Int, kd::Int, A::AbstractMatrix{$elty},
+                        B::AbstractVecOrMat{$elty})
+            @assert !has_offset_axes(A)
+            chkstride1(A)
+            chkuplo(uplo)
+            info = Ref{BlasInt}()
+            n    = size(A,2)
+            if m != n || m != size(B,1)
+                throw(DimensionMismatch("matrix A has dimensions $(size(A)), but right hand side matrix B has dimensions $(size(B))"))
+            end
+            size(A,1) < kd+1 && throw(ArgumentError("Not enough bands"))
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                  (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                   Ptr{$elty}, Ref{BlasInt},
+                   Ptr{$elty}, Ref{BlasInt},
+                   Ptr{BlasInt}),
+                  uplo, n, kd, size(B,2),
+                  A, max(1,stride(A,2)),
+                  B, max(1,stride(B,2)),
+                  info)
+            LAPACK.chklapackerror(info[])
+            B
+        end
+    end
+end
+
 # Symmetric/Hermitian Positive Definite split-Cholesky factorization
 for (fname, elty) in ((:dpbstf_,:Float64),
                       (:spbstf_,:Float32),

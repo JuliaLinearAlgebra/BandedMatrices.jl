@@ -117,3 +117,15 @@ end
     @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= one(T).*Mul(A,x) .+ zero(T).*similar(x)) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
 end
+
+@testset "Cholesky" begin
+    A = Symmetric(BandedMatrix(0 => 1 ./ [12, 6, 6, 6, 12],
+                               1 => ones(4) ./ 24))
+    @test norm(cholesky(A).data - cholesky(Matrix(A)).U) < 1e-15
+
+    Ac = cholesky(A)
+    b = rand(size(A,1))
+    @test norm(Ac\b - Matrix(A)\b) < 1e-14
+
+    @test_throws DimensionMismatch Ac\rand(size(A,1)+1)
+end
