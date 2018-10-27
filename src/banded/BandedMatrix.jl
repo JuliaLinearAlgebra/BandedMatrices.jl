@@ -1,4 +1,4 @@
-undef##
+##
 # Represent a banded matrix
 # [ a_11 a_12
 #   a_21 a_22 a_23
@@ -13,19 +13,21 @@ undef##
 
 function _BandedMatrix end
 
-mutable struct BandedMatrix{T, CONTAINER} <: AbstractBandedMatrix{T}
+mutable struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     data::CONTAINER  # l+u+1 x n (# of columns)
-    m::Int #Number of rows
+    raxis::RAXIS # axis for rows (col axis comes from data)
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
-    global function _BandedMatrix(data::AbstractMatrix{T}, m, l, u) where {T}
+    global function _BandedMatrix(data::AbstractMatrix{T}, raxis::AbstractUnitRange, l, u) where {T}
         if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
            error("Data matrix must have number rows equal to number of bands")
         else
-            new{T, typeof(data)}(data,m,l,u)
+            new{T, typeof(data), typeof(raxis)}(data, raxis, l, u)
         end
     end
 end
+
+_BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
 MemoryLayout(::BandedMatrix) = BandedColumnMajor()
 
@@ -57,21 +59,21 @@ BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)
 
 
 BandedMatrix{V}(M::BandedMatrix) where {V} =
-        _BandedMatrix(AbstractMatrix{V}(M.data), M.m, M.l, M.u)
+        _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
 BandedMatrix(M::BandedMatrix{V}) where {V} =
-        _BandedMatrix(AbstractMatrix{V}(M.data), M.m, M.l, M.u)
+        _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
 
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
-        _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.m, M.l, M.u)
+        _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.raxis, M.l, M.u)
 convert(::Type{BandedMatrix}, M::BandedMatrix) = M
 function convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C
     M.data isa C && return M
-    _BandedMatrix(convert(C, M.data), M.m, M.l, M.u)
+    _BandedMatrix(convert(C, M.data), M.raxis, M.l, M.u)
 end
 function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}}
     M.data isa C && return M
-    _BandedMatrix(convert(C, M.data), M.m, M.l, M.u)
+    _BandedMatrix(convert(C, M.data), M.raxis, M.l, M.u)
 end
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
@@ -107,7 +109,7 @@ convert(BM::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
 
 convert(BM::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
 
-copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.m, B.l, B.u)
+copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.raxis, B.l, B.u)
 
 promote_rule(::Type{BandedMatrix{T1, C1}}, ::Type{BandedMatrix{T2, C2}}) where {T1,C1, T2,C2} =
     BandedMatrix{promote_type(T1,T2), promote_type(C1, C2)}
@@ -261,10 +263,8 @@ similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer
 
 ## Abstract Array Interface
 
-size(A::BandedMatrix) = A.m, size(A.data, 2)
-size(A::BandedMatrix, k::Integer) = k <= 0 ? error("dimension out of range") :
-                                    k == 1 ? A.m :
-                                    k == 2 ? size(A.data, 2) : 1
+axes(A::BandedMatrix) = (A.raxis, axes(A.data,2))
+size(A::BandedMatrix) = (length(A.raxis), size(A.data,2))
 
 
 ## banded matrix interface
@@ -649,26 +649,25 @@ function fliplrud(A::BandedMatrix)
 end
 
 
-for OP in (:(real),:(imag))
-    @eval $OP(A::BandedMatrix) =
-        BandedMatrix($OP(A.data),A.m,A.l,A.u)
+for OP in (:real, :imag)
+    @eval $OP(A::BandedMatrix) = _BandedMatrix($OP(A.data),A.raxis,A.l,A.u)
 end
 
 
 ## BandedSubBandedMatrix routines
 # gives the band which is diagonal for the parent
-bandshift(a::AbstractRange,b::AbstractRange) = first(a)-first(b)
-bandshift(::Slice{OneTo{Int}},b::AbstractRange) = 1-first(b)
-bandshift(a::AbstractRange,::Slice{OneTo{Int}}) = first(a)-1
-bandshift(::Slice{OneTo{Int}},b::Slice{OneTo{Int}}) = 0
+bandshift(a::AbstractRange, b::AbstractRange) = first(a)-first(b)
+bandshift(::Slice{OneTo{Int}}, b::AbstractRange) = 1-first(b)
+bandshift(a::AbstractRange, ::Slice{OneTo{Int}}) = first(a)-1
+bandshift(::Slice{OneTo{Int}}, b::Slice{OneTo{Int}}) = 0
 bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
 
 
 
 
 # BandedMatrix with unit range indexes is also banded
-const BandedSubBandedMatrix{T, C} =
-    SubArray{T,2,BandedMatrix{T, C},I} where I<:Tuple{Vararg{AbstractUnitRange}}
+const BandedSubBandedMatrix{T, C, R} =
+    SubArray{T,2,BandedMatrix{T, C, R},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
 isbanded(::BandedSubBandedMatrix) = true
 MemoryLayout(::BandedSubBandedMatrix) = BandedColumnMajor()

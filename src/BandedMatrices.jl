@@ -3,7 +3,7 @@ using Base, FillArrays, LazyArrays
 
 using LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
-import Base: axes1, getproperty, iterate
+import Base: axes, axes1, getproperty, iterate
 import LinearAlgebra: BlasInt,
                     BlasReal,
                     BlasFloat,
