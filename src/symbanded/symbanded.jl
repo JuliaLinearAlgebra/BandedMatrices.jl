@@ -65,7 +65,7 @@ function hermbandeddata(A)
 end
 
 banded_sbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::AbstractVector{T}) where {T<:BlasFloat} =
-  BLAS.sbmv!(uplo, bandwidth(A), α, symbandeddata(A), x, β, y)
+    BLAS.sbmv!(uplo, bandwidth(A), α, symbandeddata(A), x, β, y)
 
 
 @inline function _banded_sbmv!(tA, α, A, x, β, y)
@@ -77,7 +77,7 @@ banded_sbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
 end
 
 function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
-                ::AbstractStridedLayout, S::SymmetricLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
+                  ::AbstractStridedLayout, S::SymmetricLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -87,7 +87,7 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α
 end
 
 banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::AbstractVector{T}) where {T<:BlasFloat} =
-  BLAS.hbmv!(uplo, bandwidth(A), α, hermbandeddata(A), x, β, y)
+    BLAS.hbmv!(uplo, bandwidth(A), α, hermbandeddata(A), x, β, y)
 
 
 @inline function _banded_hbmv!(tA, α, A, x, β, y)
@@ -99,7 +99,7 @@ banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
 end
 
 function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
-                ::AbstractStridedLayout, S::HermitianLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
+                  ::AbstractStridedLayout, S::HermitianLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -128,25 +128,30 @@ end
 tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(A))
 tridiagonalize(A::AbstractMatrix) = tridiagonalize!(copy(A))
 
-eigvals!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(copy(A))
+for (ef,ef!) in ((:eigen, :eigen!),
+                 (:eigvals, :eigvals!))
+    @eval begin
+        $(ef!)(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = $(ef!)(tridiagonalize!(A))
+        $(ef)(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = $(ef!)(copy(A))
 
-function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
-    n = size(A, 1)
-    @assert n == size(B, 1)
-    # compute split-Cholesky factorization of B.
-    kb = bandwidth(B, 2)
-    B_data = symbandeddata(B)
-    pbstf!(B.uplo, n, kb, B_data)
-    # convert to a regular symmetric eigenvalue problem.
-    ka = bandwidth(A)
-    A_data = symbandeddata(A)
-    X = Array{T}(undef,0,0)
-    work = Vector{T}(undef,2n)
-    sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
-    # compute eigenvalues of symmetric eigenvalue problem.
-    eigvals!(A)
+        function $(ef!)(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
+            n = size(A, 1)
+            @assert n == size(B, 1)
+            # compute split-Cholesky factorization of B.
+            kb = bandwidth(B, 2)
+            B_data = symbandeddata(B)
+            pbstf!(B.uplo, n, kb, B_data)
+            # convert to a regular symmetric eigenvalue problem.
+            ka = bandwidth(A)
+            A_data = symbandeddata(A)
+            X = Array{T}(undef,0,0)
+            work = Vector{T}(undef,2n)
+            sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
+            # compute eigenvalues (and eigenvectors) of symmetric eigenvalue problem.
+            $(ef!)(A)
+        end
+
+        $(ef)(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix}) =
+            $(ef!)(copy(A), copy(B))
+    end
 end
-
-eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix}) =
-    eigvals!(copy(A), copy(B))

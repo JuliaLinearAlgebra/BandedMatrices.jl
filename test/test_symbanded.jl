@@ -60,26 +60,28 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
         B
     end
 
-    A = An(Float64, 100)
-    B = Bn(Float64, 100)
+    for ef in (eigvals,(A,B)->eigen(A,B).values)
+        A = An(Float64, 100)
+        B = Bn(Float64, 100)
 
-    λ = eigvals(A, B)
-    @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
+        λ = ef(A, B)
+        @test λ ≈ ef(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
-    err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
+        err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
 
-    @test norm(err[1:40]) < 100eps(Float64)
+        @test norm(err[1:40]) < 100eps(Float64)
 
-    A = An(Float32, 100)
-    B = Bn(Float32, 100)
+        A = An(Float32, 100)
+        B = Bn(Float32, 100)
 
-    λ = eigvals(A, B)
+        λ = ef(A, B)
 
-    @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
+        @test λ ≈ ef(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
-    err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
+        err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
 
-    @test norm(err[1:40]) < 100eps(Float32)
+        @test norm(err[1:40]) < 100eps(Float32)
+    end
 end
 
 
@@ -114,4 +116,16 @@ end
 
     @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= one(T).*Mul(A,x) .+ zero(T).*similar(x)) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
+end
+
+@testset "Cholesky" begin
+    A = Symmetric(BandedMatrix(0 => 1 ./ [12, 6, 6, 6, 12],
+                               1 => ones(4) ./ 24))
+    @test norm(cholesky(A).data - cholesky(Matrix(A)).U) < 1e-15
+
+    Ac = cholesky(A)
+    b = rand(size(A,1))
+    @test norm(Ac\b - Matrix(A)\b) < 1e-14
+
+    @test_throws DimensionMismatch Ac\rand(size(A,1)+1)
 end
