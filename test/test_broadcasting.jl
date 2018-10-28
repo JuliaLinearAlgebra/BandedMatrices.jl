@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-    import LazyArrays: MemoryLayout
+    import LazyArrays: MemoryLayout, MulAdd
 
 @testset "general" begin
     n = 1000
@@ -244,7 +244,8 @@ end
     y = similar(x)
     y .= Mul(A,x)
     @test Matrix(A)*x ≈ y
-    @test all(BLAS.gbmv!('N', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
+    @test all(BLAS.gbmv!('N', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .===
+                Broadcast.materialize!(MulAdd(1.0,A,x,0.0,similar(y))) .=== y)
     z = similar(y)
     z .= 2.0.*Mul(A,x) .+ 3.0.*y
     @test 2Matrix(A)*x + 3y ≈ z

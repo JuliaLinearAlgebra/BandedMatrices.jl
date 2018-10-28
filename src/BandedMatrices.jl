@@ -31,15 +31,16 @@ import Base: convert, size, view, unsafe_indices,
                                similar, copy, convert, promote_rule, rand,
                             IndexStyle, real, imag, Slice, pointer, unsafe_convert, copyto!
 
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
+                        materialize, materialize!
 
-import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul, @lazylmul, @lazyldiv,
+import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
                     triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
-                    MulAdd, materialize!
+                    MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec
 import FillArrays: AbstractFill
 
 export BandedMatrix,

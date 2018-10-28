@@ -27,9 +27,6 @@ hermitianlayout(::Type{<:Complex}, layout::BandedRowMajor, uplo) = HermitianLayo
 hermitianlayout(::Type{<:Real}, layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
 
 
-@blasmatvec SymmetricLayout{BandedColumnMajor}
-@blasmatvec HermitianLayout{BandedColumnMajor}
-
 isbanded(A::HermOrSym) = isbanded(parent(A))
 
 bandwidth(A::HermOrSym) = ifelse(A.uplo == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
@@ -76,8 +73,9 @@ banded_sbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
     end
 end
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
-                  ::AbstractStridedLayout, S::SymmetricLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
+
+function materialize!(M::BlasMatMulVec{SymmetricLayout{BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+    S, α, A, x, β, y = M.styleA, M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -98,8 +96,8 @@ banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
     end
 end
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α, β,
-                  ::AbstractStridedLayout, S::HermitianLayout{BandedColumnMajor}, ::AbstractStridedLayout) where T<:BlasFloat
+function materialize!(M::BlasMatMulVec{HermitianLayout{BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+    S, α, A, x, β, y = M.styleA, M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))

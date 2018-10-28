@@ -1,9 +1,6 @@
 BroadcastStyle(M::ArrayMulArrayStyle, ::BandedStyle) = M
 BroadcastStyle(::BandedStyle, M::ArrayMulArrayStyle) = M
 
-@blasmatvec BandedColumnMajor
-@blasmatvec BandedRowMajor
-@blasmatmat BandedColumnMajor BandedColumnMajor BandedColumnMajor
 @lazymul AbstractBandedMatrix
 
 
@@ -58,8 +55,8 @@ end
 
 
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α::T, β::T,
-                ::AbstractStridedLayout, ::BandedColumnMajor, ::AbstractStridedLayout) where T<:BlasFloat
+function materialize!(M::BlasMatMulVec{BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
+    α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
@@ -76,8 +73,8 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α
     end
 end
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α::T, β::T,
-                   ::AbstractStridedLayout, ::BandedRowMajor, ::AbstractStridedLayout) where T<:BlasFloat
+function materialize!(M::BlasMatMulVec{BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
+    α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     At = transpose(A)
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -95,8 +92,8 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     end
 end
 
-function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{T}, α::T, β::T,
-                ::AbstractStridedLayout, ::ConjLayout{BandedRowMajor}, ::AbstractStridedLayout) where T<:BlasComplex
+function materialize!(M::BlasMatMulVec{ConjLayout{BandedRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasComplex
+    α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     Ac = A'
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -121,6 +118,21 @@ end
 ##
 
 
+@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{BandedColumnMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
+    A,B = M.factors
+    materialize!(MulAdd(one(T), A, B, zero(T), C))
+end
+
+@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{BandedRowMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
+    A,B = M.factors
+    materialize!(MulAdd(one(T), A, B, zero(T), C))
+end
+
+@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{ConjLayout{BandedRowMajor},<:AbstractStridedLayout,T,T}) where T<:BlasFloat
+    A,B = M.factors
+    materialize!(MulAdd(one(T), A, B, zero(T), C))
+end
+
 
 @inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:AbstractBandedLayout})
     A,b = M.factors
@@ -133,7 +145,7 @@ end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:BandedRowMajor})
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{BandedRowMajor})
     At,b = M.factors
     A = transpose(At)
     c .= zero.(c)
@@ -143,7 +155,7 @@ end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:ConjLayout{<:BandedRowMajor}})
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{ConjLayout{BandedRowMajor}})
     Ac,b = M.factors
     A = Ac'
     c .= zero.(c)
@@ -167,15 +179,15 @@ function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix)
     C̃l,C̃u = bandwidths(C)
     # set extra bands to zero
     @inbounds for j = 1:Bn
-        for k = max(j - C̃u,1):max(min(j-Cu-1,Am),0)
+        for k = max(j - C̃u,1):min(j-Cu-1,Am)
             inbands_setindex!(C,zero(T),k,j)
         end
-        for k = max(j + Cl+1,1):max(min(j+C̃l,Am),0)
+        for k = max(j + Cl+1,1):min(j+C̃l,Am)
             inbands_setindex!(C,zero(T),k,j)
         end
     end
 
-    @inbounds for j = 1:Bn, k = max(j-Cu, 1):max(min(j+Cl, Am), 0)
+    @inbounds for j = 1:Bn, k = max(j-Cu, 1):min(j+Cl, Am)
         νmin = max(1,k-Al,j-Bu)
         νmax = min(An,k+Au,j+Bl)
 
@@ -183,12 +195,18 @@ function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix)
         for ν=νmin:νmax
             tmp = tmp + inbands_getindex(A,k,ν) * inbands_getindex(B,ν,j)
         end
-        inbands_setindex!(C,tmp,k,j)
+        setindex!(C,tmp,k,j)
     end
     C
 end
 
 const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
+const ConjOrBandedColumnMajor = Union{BandedColumnMajor,ConjLayout{BandedColumnMajor}}
+
+@inline function _copyto!(_, C::AbstractMatrix{T}, M::MatMulMat{<:ConjOrBandedColumnMajor,<:ConjOrBandedColumnMajor,T,T}) where T<:BlasFloat
+    A,B = M.factors
+    materialize!(MulAdd(one(T), A, B, zero(T), C))
+end
 
 @inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:ConjOrBandedLayout,<:ConjOrBandedLayout})
      A, B = M.factors
@@ -205,10 +223,9 @@ end
      banded_mul!(C, A, B)
 end
 
+function materialize!(M::BlasMatMulMat{BandedColumnMajor,BandedColumnMajor,BandedColumnMajor,T}) where T<:BlasFloat
+    α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
 
-
-function blasmul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{T}, α::T, β::T,
-                ::BandedColumnMajor, ::BandedColumnMajor, ::BandedColumnMajor) where T<:BlasFloat
     Am, An = size(A)
     Bm, Bn = size(B)
     if An != Bm || size(C, 1) != Am || size(C, 2) != Bn
