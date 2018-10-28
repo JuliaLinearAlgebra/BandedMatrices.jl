@@ -66,10 +66,10 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix, x::AbstractVector, α
     if -l > u # no bands
         lmul!(β, y)
     elseif l < 0
-        materialize!(BLASMul(α, view(A, :, 1-l:n), view(x, 1-l:n), β, y))
+        materialize!(MulAdd(α, view(A, :, 1-l:n), view(x, 1-l:n), β, y))
     elseif u < 0
         y[1:-u] .= zero(T)
-        materialize!(BLASMul(α, view(A, 1-u:m, :), x, β, view(y, 1-u:m)))
+        materialize!(MulAdd(α, view(A, 1-u:m, :), x, β, view(y, 1-u:m)))
         y
     else
         _banded_gbmv!('N', α, A, x, β, y)
@@ -85,10 +85,10 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     if -l > u # no bands
       _fill_lmul!(β, y)
     elseif l < 0
-      materialize!(BLASMul(α, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), β, y))
+      materialize!(MulAdd(α, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), β, y))
     elseif u < 0
       y[1:-u] .= zero(T)
-      materialize!(BLASMul(α, transpose(view(At, :, 1-u:m)), x, β, view(y, 1-u:m)))
+      materialize!(MulAdd(α, transpose(view(At, :, 1-u:m)), x, β, view(y, 1-u:m)))
       y
     else
       _banded_gbmv!('T', α, At, x, β, y)
@@ -104,10 +104,10 @@ function blasmul!(y::AbstractVector{T}, A::AbstractMatrix{T}, x::AbstractVector{
     if -l > u # no bands
         _fill_lmul!(β, y)
     elseif l < 0
-        materialize!(BLASMul(α, view(Ac, 1-l:n, :,)', view(x, 1-l:n), β, y))
+        materialize!(MulAdd(α, view(Ac, 1-l:n, :,)', view(x, 1-l:n), β, y))
     elseif u < 0
         y[1:-u] .= zero(T)
-        materialize!(BLASMul(α, view(Ac, :, 1-u:m)', x, β, view(y, 1-u:m)))
+        materialize!(MulAdd(α, view(Ac, :, 1-u:m)', x, β, view(y, 1-u:m)))
         y
     else
     _banded_gbmv!('C', α, Ac, x, β, y)
@@ -222,16 +222,16 @@ function blasmul!(C::AbstractMatrix{T}, A::AbstractMatrix{T}, B::AbstractMatrix{
         fill!(C, zero(T))
     elseif Al < 0
         _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
-        materialize!(BLASMul(α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C))
+        materialize!(MulAdd(α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C))
     elseif Au < 0
         _fill_lmul!(β, @views(C[1:-Au,:]))
-        materialize!(BLASMul(α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:)))
+        materialize!(MulAdd(α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:)))
     elseif Bl < 0
         _fill_lmul!(β, @views(C[:, 1:-Bl]))
-        materialize!(BLASMul(α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn)))
+        materialize!(MulAdd(α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn)))
     elseif Bu < 0
         _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
-        materialize!(BLASMul(α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C))
+        materialize!(MulAdd(α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C))
     else
         gbmm!('N', 'N', α, A, B, β, C)
     end

@@ -39,7 +39,7 @@ import LazyArrays: MemoryLayout, blasmul!, @blasmatvec, @blasmatmat, @lazymul, @
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
                     triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
-                    BLASMul, materialize!
+                    MulAdd, materialize!
 import FillArrays: AbstractFill
 
 export BandedMatrix,
