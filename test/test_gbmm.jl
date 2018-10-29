@@ -90,7 +90,6 @@ using BandedMatrices, LazyArrays, Test
     end
 end
 
-
 @testset "Negative bands fills with zero" begin
     A = brand(10,10,2,2)
     B = brand(10,10,-2,2)
@@ -157,7 +156,6 @@ end
     D = A * B + C
     @test BandedMatrices.gbmm!('N','N', 1.0 , A, B, 1.0, C) ≈ D
 end
-
 
 @testset "BandedMatrix{Int} * Vector{Vector{Int}}" begin
     A, x =  [1 2; 3 4] , [[1,2],[3,4]]
