@@ -3,36 +3,29 @@ BroadcastStyle(::BandedStyle, M::ArrayMulArrayStyle) = M
 
 @lazymul AbstractBandedMatrix
 
+bandwidths(M::Mul) = prodbandwidths(M.factors...)
 
-###
-# For <: AbstractBandedMatrix, we can use Base routines like `mul!`
-# For something only conforming to the banded matrix interface, we
-# need to use LazyArrays style: `b .= Mul(A,x)`
-# note only BLAS types have fast `c .= α.*Mul(A,x) .+ β.*b`
-###
+similar(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}) where T =
+    BandedMatrix{T}(undef, size(M), bandwidths(M))
 
-function *(A::AbstractBandedMatrix{T}, B::AbstractBandedMatrix{V}) where {T, V}
-    n, m = size(A,1), size(B,2)
-    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
-    Y .= Mul(A, B)
-end
-function *(A::AbstractBandedMatrix{T}, B::AdjOrTrans{V,<:AbstractBandedMatrix{V}}) where {T, V}
-    n, m = size(A,1), size(B,2)
-    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
-    Y .= Mul(A, B)
-end
-function *(A::AdjOrTrans{T,<:AbstractBandedMatrix{T}}, B::AbstractBandedMatrix{V}) where {T, V}
-    n, m = size(A,1), size(B,2)
-    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
-    Y .= Mul(A, B)
-end
-function *(A::AdjOrTrans{T,<:AbstractBandedMatrix{T}}, B::AdjOrTrans{V,<:AbstractBandedMatrix{V}}) where {T, V}
-    n, m = size(A,1), size(B,2)
-    Y = BandedMatrix{promote_type(T,V)}(undef, n, m, prodbandwidths(A, B)...)
-    Y .= Mul(A, B)
+for Lay in (:SymmetricLayout, :HermitianLayout)
+    @eval begin
+        similar(M::MatMulMat{<:$Lay{<:AbstractBandedLayout},<:$Lay{<:AbstractBandedLayout}}, ::Type{T}) where T =
+            BandedMatrix{T}(undef, size(M), bandwidths(M))
+        similar(M::MatMulMat{<:$Lay{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}) where T =
+            BandedMatrix{T}(undef, size(M), bandwidths(M))
+        similar(M::MatMulMat{<:AbstractBandedLayout,<:$Lay{<:AbstractBandedLayout}}, ::Type{T}) where T =
+            BandedMatrix{T}(undef, size(M), bandwidths(M))
+    end
 end
 
-
+similar(M::MatMulMat{<:TriangularLayout{uplo1,unit1,<:AbstractBandedLayout},
+                     <:TriangularLayout{uplo2,unit2,<:AbstractBandedLayout}}, ::Type{T}) where {uplo1,uplo2,unit1,unit2,T} =
+    BandedMatrix{T}(undef, size(M), bandwidths(M))
+similar(M::MatMulMat{<:TriangularLayout{uplo,unit,<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}) where {uplo,unit,T} =
+    BandedMatrix{T}(undef, size(M), bandwidths(M))
+similar(M::MatMulMat{<:AbstractBandedLayout,<:TriangularLayout{uplo,unit,<:AbstractBandedLayout}}, ::Type{T}) where {uplo,unit,T} =
+    BandedMatrix{T}(undef, size(M), bandwidths(M))
 
 ##
 # BLAS routines
@@ -52,6 +45,8 @@ banded_gbmv!(tA, α, A, x, β, y) =
         banded_gbmv!(tA, α, A, x, β, y)
     end
 end
+
+
 
 
 

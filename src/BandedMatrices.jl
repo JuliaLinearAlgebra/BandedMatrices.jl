@@ -4,16 +4,8 @@ using Base, FillArrays, LazyArrays
 using LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate
-import LinearAlgebra: BlasInt,
-                    BlasReal,
-                    BlasFloat,
-                    BlasComplex,
-                    axpy!,
-                    copy_oftype,
-                    checksquare,
-                    adjoint,
-                    transpose,
-                    AdjOrTrans, HermOrSym
+import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
+                        copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
