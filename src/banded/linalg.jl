@@ -4,7 +4,8 @@
 
 function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedColumnMajor})
     Ai, B = L.factors
-    copyto!(dest, Mul(factorize(parent(Ai)), B))
+    dest ≡ B || copyto!(dest, B)
+    ldiv!(factorize(parent(Ai)), dest)
 end
 
 function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedRowMajor})
@@ -26,6 +27,11 @@ end
 #     gbtrs!('N', A.m, A.l, A.u, A.data, A.ipiv, dest)
 # end
 
+function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
+    checksquare(A)
+    gbtrs!('N', A.m, A.l, A.u, A.data, A.ipiv, B)
+end
+
 function ldiv!(At::Transpose{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
     A = parent(At)
     checksquare(A)
@@ -41,3 +47,6 @@ function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:Bla
     checksquare(A)
     gbtrs!('C', A.m, A.l, A.u, A.data, A.ipiv, B)
 end
+
+
+factorize(A::BandedMatrix) = lu(A)

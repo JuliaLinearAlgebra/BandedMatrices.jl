@@ -304,14 +304,9 @@ end
     r
 end
 
-# scalar - colon - colon
-@inline getindex(A::BandedMatrix, kr::Colon, jr::Colon) = copy(A)
-
 # ~ indexing along a band
 # we reduce it to converting a View
 
-# scalar - band - colon
-@inline getindex(A::BandedMatrix{T}, b::Band) where {T} = Vector{T}(view(A, b))
 
 # type to represent a view of a band
 const BandedMatrixBand{T} = SubArray{T, 1, ReshapedArray{T,1,BandedMatrix{T},
@@ -355,13 +350,6 @@ convert(::Type{AbstractVector}, A::BandedMatrixBand{T}) where T = A
 
 convert(::Type{AbstractArray{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
 convert(::Type{AbstractVector{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
-
-
-# scalar - BandRange - integer -- A[1, BandRange]
-@inline getindex(A::AbstractMatrix, ::BandRangeType, j::Integer) = A[colrange(A, j), j]
-
-# scalar - integer - BandRange -- A[1, BandRange]
-@inline getindex(A::AbstractMatrix, k::Integer, ::BandRangeType) = A[k, rowrange(A, k)]
 
 
 
@@ -655,6 +643,15 @@ end
 
 
 ## BandedSubBandedMatrix routines
+
+_sub_materialize(_, V) = Array(V)
+_sub_materialize(::BandedColumnMajor, V) = BandedMatrix(V)
+_materialize(V::SubArray{<:Any,2}) = _sub_materialize(MemoryLayout(V), V)
+_materialize(V::SubArray{<:Any,1}) = _sub_materialize(MemoryLayout(V), V)
+_materialize(V::SubArray{<:Any,0}) = first(V)
+
+getindex(A::AbstractBandedMatrix, I...) = _materialize(view(A, I...))
+
 # gives the band which is diagonal for the parent
 bandshift(a::AbstractRange, b::AbstractRange) = first(a)-first(b)
 bandshift(::Slice{OneTo{Int}}, b::AbstractRange) = 1-first(b)

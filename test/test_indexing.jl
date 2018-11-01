@@ -1,12 +1,8 @@
-using BandedMatrices, LinearAlgebra, Test
+using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
-import BandedMatrices: rowstart,
-                       rowstop,
-                       colstart,
-                       colstop,
-                       rowlength,
-                       collength,
-                       diaglength
+import BandedMatrices: rowstart, rowstop, colstart, colstop,
+                       rowlength, collength, diaglength, BandedColumnMajor
+import LazyArrays: MemoryLayout
 
 @testset "Indexing" begin
     @testset "BandedMatrix Indexing" begin
@@ -164,8 +160,7 @@ import BandedMatrices: rowstart,
 
 
     @testset "indexing along a column" begin
-        # scalar - BandRange/Colon - integer
-        let
+        @testset "scalar - BandRange/Colon - integer" begin
             a = BandedMatrix(Ones(5, 5), (1, 1))
             # 1.0  1.0  0.0  0.0  0.0
             # 1.0  1.0  1.0  0.0  0.0
@@ -208,9 +203,7 @@ import BandedMatrices: rowstart,
                           0 0 0 3 4]
         end
 
-
-        # vector - BandRange/Colon - integer
-        let
+        @testset "vector - BandRange/Colon - integer" begin
             a = BandedMatrix(Ones{Int}(5, 7), (2, 1))
             # 5x7 BandedMatrices.BandedMatrix{Float64}:
             #  1.0  1.0    0    0    0    0   0   0
@@ -593,9 +586,6 @@ import BandedMatrices: rowstart,
         end
     end
 
-
-
-
     @testset "other special indexing" begin
         @testset "all elements" begin
             a = BandedMatrix(Ones(3, 3), (1, 1))
@@ -621,8 +611,6 @@ import BandedMatrices: rowstart,
             @test_throws BandError a[:,:] .= 1
             @test_throws BandError a[:,:] = ones(3,3)
         end
-
-
 
         @testset "replace a block in the band" begin
             a = BandedMatrix(Zeros(5, 4), (2, 1))
@@ -666,7 +654,6 @@ import BandedMatrices: rowstart,
             @test a[band(-2)] == Float64[]
         end
 
-
         @testset "band views" begin
             for A in (rand(11,10), brand(11,10,2,3), brand(Float32, 11,10,2,3),
                          brand(ComplexF64, 11,10,2,3))
@@ -684,5 +671,14 @@ import BandedMatrices: rowstart,
                 end
             end
         end
+    end
+
+    @testset "Sub-banded views" begin
+        A = brand(10,10,2,1)
+        V = view(A,Base.OneTo(5),Base.OneTo(6))
+        @test MemoryLayout(V) == BandedColumnMajor()
+        @test A[Base.OneTo(5),Base.OneTo(6)] isa BandedMatrix
+        @test A[2:5,Base.OneTo(6)] isa BandedMatrix
+        @test A[2:2:5,Base.OneTo(6)] isa Matrix
     end
 end

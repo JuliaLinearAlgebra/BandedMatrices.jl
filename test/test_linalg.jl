@@ -7,7 +7,7 @@ import Base.Broadcast: materialize
 
     @test A*x ≈ Matrix(A)*x
 
-    @test A*A == A^2 == Matrix(A)^2
+    @test A*A == A^2 ≈ Matrix(A)^2
     @test A*A isa BandedMatrix
     @test A^2 isa BandedMatrix
     @test bandwidths(A^2) == (2,4)
