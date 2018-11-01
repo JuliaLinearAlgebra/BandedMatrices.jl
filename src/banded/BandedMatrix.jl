@@ -671,6 +671,7 @@ const BandedSubBandedMatrix{T, C, R} =
 
 isbanded(::BandedSubBandedMatrix) = true
 MemoryLayout(::BandedSubBandedMatrix) = BandedColumnMajor()
+BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)
     kr,jr=parentindices(bm)
