@@ -108,3 +108,17 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
             bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) ==
             bandwidths(A)
 end
+
+
+@testset "Diagonal interface" begin
+    D = Diagonal(randn(5))
+    @test bandwidths(D) == (0,0)
+
+    A =  brand(5,5,1,1)
+
+    @test A*D isa BandedMatrix
+    @test A*D == Matrix(A)*D
+
+    @test D*A isa BandedMatrix
+    @test D*A == D*Matrix(A)
+end

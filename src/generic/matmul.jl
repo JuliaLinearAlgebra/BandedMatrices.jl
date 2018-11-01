@@ -8,6 +8,9 @@ bandwidths(M::Mul) = prodbandwidths(M.factors...)
 similar(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}) where T =
     BandedMatrix{T}(undef, size(M), bandwidths(M))
 
+
+### Symmetric
+
 for Lay in (:SymmetricLayout, :HermitianLayout)
     @eval begin
         similar(M::MatMulMat{<:$Lay{<:AbstractBandedLayout},<:$Lay{<:AbstractBandedLayout}}, ::Type{T}) where T =
@@ -19,12 +22,21 @@ for Lay in (:SymmetricLayout, :HermitianLayout)
     end
 end
 
+### Triangular
+
 similar(M::MatMulMat{<:TriangularLayout{uplo1,unit1,<:AbstractBandedLayout},
                      <:TriangularLayout{uplo2,unit2,<:AbstractBandedLayout}}, ::Type{T}) where {uplo1,uplo2,unit1,unit2,T} =
     BandedMatrix{T}(undef, size(M), bandwidths(M))
 similar(M::MatMulMat{<:TriangularLayout{uplo,unit,<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}) where {uplo,unit,T} =
     BandedMatrix{T}(undef, size(M), bandwidths(M))
 similar(M::MatMulMat{<:AbstractBandedLayout,<:TriangularLayout{uplo,unit,<:AbstractBandedLayout}}, ::Type{T}) where {uplo,unit,T} =
+    BandedMatrix{T}(undef, size(M), bandwidths(M))
+
+### Diagonal
+
+similar(M::MatMulMat{<:AbstractBandedLayout,<:DiagonalLayout}, ::Type{T}) where T =
+    BandedMatrix{T}(undef, size(M), bandwidths(M))
+similar(M::MatMulMat{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}) where T =
     BandedMatrix{T}(undef, size(M), bandwidths(M))
 
 ##

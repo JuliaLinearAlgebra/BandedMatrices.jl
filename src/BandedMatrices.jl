@@ -31,6 +31,7 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
                     triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
+                    DiagonalLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
                     MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec
 import FillArrays: AbstractFill
