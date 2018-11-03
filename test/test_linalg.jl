@@ -1,4 +1,4 @@
-using BandedMatrices, LazyArrays, Test
+using BandedMatrices, LazyArrays, LinearAlgebra, Test
 import Base.Broadcast: materialize
 
 @testset "Matrix types" begin
@@ -204,4 +204,16 @@ end
 @testset "BandedMatrix{Int} * Vector{Vector{Int}}" begin
     A, x =  [1 2; 3 4] , [[1,2],[3,4]]
     @test BandedMatrix(A)*x == A*x
+end
+
+@testset "Sym * Banded bug" begin
+    A = SymTridiagonal(randn(10),randn(9))
+    B = BandedMatrix((-1 => Ones{Int}(8),), (10,8))
+
+    M = Mul(A,B)
+    C = Matrix{Float64}(undef,10,8)
+
+    C .= M
+    @test C == A*B == Matrix(A)*Matrix(B)
+    @test A*B isa BandedMatrix
 end

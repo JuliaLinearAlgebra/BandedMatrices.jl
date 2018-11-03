@@ -32,12 +32,6 @@ similar(M::MatMulMat{<:TriangularLayout{uplo,unit,<:AbstractBandedLayout},<:Abst
 similar(M::MatMulMat{<:AbstractBandedLayout,<:TriangularLayout{uplo,unit,<:AbstractBandedLayout}}, ::Type{T}) where {uplo,unit,T} =
     BandedMatrix{T}(undef, size(M), bandwidths(M))
 
-### Diagonal
-
-similar(M::MatMulMat{<:AbstractBandedLayout,<:DiagonalLayout}, ::Type{T}) where T =
-    BandedMatrix{T}(undef, size(M), bandwidths(M))
-similar(M::MatMulMat{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}) where T =
-    BandedMatrix{T}(undef, size(M), bandwidths(M))
 
 ##
 # BLAS routines
