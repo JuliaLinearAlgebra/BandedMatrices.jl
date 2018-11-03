@@ -644,13 +644,8 @@ end
 
 ## BandedSubBandedMatrix routines
 
-_sub_materialize(_, V) = Array(V)
-_sub_materialize(::BandedColumnMajor, V) = BandedMatrix(V)
-_materialize(V::SubArray{<:Any,2}) = _sub_materialize(MemoryLayout(V), V)
-_materialize(V::SubArray{<:Any,1}) = _sub_materialize(MemoryLayout(V), V)
-_materialize(V::SubArray{<:Any,0}) = first(V)
 
-getindex(A::AbstractBandedMatrix, I...) = _materialize(view(A, I...))
+# getindex(A::AbstractBandedMatrix, I...) = _materialize(view(A, I...))
 
 # gives the band which is diagonal for the parent
 bandshift(a::AbstractRange, b::AbstractRange) = first(a)-first(b)

@@ -62,6 +62,7 @@ include("generic/broadcast.jl")
 include("generic/matmul.jl")
 include("generic/Band.jl")
 include("generic/utils.jl")
+include("generic/indexing.jl")
 
 
 include("banded/BandedMatrix.jl")
