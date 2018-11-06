@@ -64,8 +64,7 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
 end
 
 @testset "Banded A\b" begin
-    let
-        # banded
+    @testset "banded" begin
         A = brand(5, 1, 1)
         b = Float64[1, 2, 3, 4, 5]
 
@@ -79,8 +78,7 @@ end
         @test b == [1, 2, 3, 4, 5]
     end
 
-    # advanced interface
-    let
+    @testset "advanced interface" begin
         # banded
         A = brand(5, 1, 1)
         b = rand(5)
@@ -123,20 +121,18 @@ end
         @test bi == [1, 2, 3, 4, 5]
     end
 
-    # matrix must be square error
-    let
+    @testset "matrix must be square error" begin
         for (n, m) in zip([7, 5], [5, 7])
             A = brand(m, n, 1, 1)
             b = rand(m)
-            @test_throws DimensionMismatch A\b
+            @test_throws DimensionMismatch (A\b)
             @test_throws DimensionMismatch lu(A)\b
             @test_throws DimensionMismatch ldiv!(A, b)
             @test_throws DimensionMismatch ldiv!(lu(A), b)
         end
     end
 
-    # test transposed algorithm
-    let
+    @testset "transposed algorithm" begin
         # banded
         A = brand(5, 1, 1)
         b = rand(5)
@@ -150,7 +146,6 @@ end
         @test Af'\bf ≈ tldiv!(lu(A),  copy(b))
         @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
     end
-
 
     @testset "complex input" begin
         # banded

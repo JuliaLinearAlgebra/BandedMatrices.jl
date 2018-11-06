@@ -4,8 +4,10 @@
 
 function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedColumnMajor})
     Ai, B = L.factors
+    A = parent(Ai)
+    checksquare(A)
     dest ≡ B || copyto!(dest, B)
-    ldiv!(factorize(parent(Ai)), dest)
+    ldiv!(factorize(A), dest)
 end
 
 function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedRowMajor})
@@ -26,6 +28,26 @@ end
 #     copyto!(dest, B)
 #     gbtrs!('N', A.m, A.l, A.u, A.data, A.ipiv, dest)
 # end
+
+function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{S}) where {T<:Number, S<:Number}
+     checksquare(A)
+     AA, BB = _convert_to_blas_type(A, B)
+     ldiv!(lu(AA), BB) # call BlasFloat versions
+ end
+
+function ldiv!(At::Transpose{T,BandedLU{T}}, B::AbstractVecOrMat{S}) where {T<:Number, S<:Number}
+    A = parent(At)
+    checksquare(A)
+    AA, BB = _convert_to_blas_type(A, B)
+    ldiv!(transpose(lu(AA)), BB) # call BlasFloat versions
+end
+
+function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{S}) where {T<:Number, S<:Number}
+    A = parent(Ac)
+    checksquare(A)
+    AA, BB = _convert_to_blas_type(A, B)
+    ldiv!(adjoint(lu(AA)), BB) # call BlasFloat versions
+end
 
 function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
     checksquare(A)
