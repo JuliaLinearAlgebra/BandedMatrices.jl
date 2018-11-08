@@ -28,7 +28,7 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
-                    triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
+                    triangularlayout, MatMulVec, MatLdivVec, TriangularLayout,
                     AbstractBandedLayout, DiagonalLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
                     MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec
