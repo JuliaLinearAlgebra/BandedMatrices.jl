@@ -14,7 +14,7 @@
 
 
 @inline inbands_getindex(A::Symmetric{<:Any, <:BandedMatrix}, k::Integer, j::Integer) =
-    parent(A).data[A.k - abs(k-j) + 1, max(k,j)]
+    parent(A).data[bandwidth(A) - abs(k-j) + 1, max(k,j)]
 
 
 

@@ -6,7 +6,7 @@
 # in addition to the banded matrix interface
 ####
 
-abstract type AbstractBandedLayout <: MemoryLayout end
+
 struct BandedColumnMajor <: AbstractBandedLayout end
 struct BandedRowMajor <: AbstractBandedLayout end
 

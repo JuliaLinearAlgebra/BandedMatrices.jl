@@ -17,9 +17,9 @@ inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
 isbanded(::SymTridiagonal) = true
 bandwidths(::SymTridiagonal) = (1,1)
 inbands_getindex(J::SymTridiagonal, k::Integer, j::Integer) =
-    k == j ? J.dv[k] : J.ev[k]
+    k == j ? J.dv[k] : J.ev[min(k,j)]
 inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
-    k == j ? (J.dv[k] = v) : (J.ev[k] = v)
+    k == j ? (J.dv[k] = v) : (J.ev[min(k,j)] = v)
 
 isbanded(K::Kron{<:Any,2}) = all(isbanded, K.arrays)
 function bandwidths(K::Kron{<:Any,2})

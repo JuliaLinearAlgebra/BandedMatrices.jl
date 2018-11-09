@@ -88,24 +88,6 @@ function Base.maximum(B::AbstractBandedMatrix)
     m
 end
 
-# fallbacks for inbands_getindex and inbands_setindex!
-@inline function inbands_getindex(x::AbstractMatrix, i::Integer, j::Integer)
-    @inbounds r = getindex(x, i, j)
-    r
-end
-@inline function inbands_setindex!(x::AbstractMatrix, v, i::Integer, j::Integer)
-    @inbounds r = setindex!(x, v, i, j)
-    r
-end
-
-inbands_getindex(x::Adjoint, i::Integer, j::Integer) =
-    inbands_getindex(parent(x), j, i)'
-inbands_getindex(x::Transpose, i::Integer, j::Integer) =
-    transpose(inbands_getindex(parent(x), j, i))
-inbands_setindex!(x::Adjoint, v, i::Integer, j::Integer) =
-    inbands_setindex!(parent(x), v', j, i)
-inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
-    inbands_setindex!(parent(x), transpose(v), j, i)
 ## Show
 
 

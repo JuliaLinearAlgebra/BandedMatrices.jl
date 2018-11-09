@@ -1,4 +1,48 @@
-using BandedMatrices, LazyArrays, Test
+using BandedMatrices, LazyArrays, LinearAlgebra, Test
+import Base.Broadcast: materialize
+
+@testset "Matrix types" begin
+    A = brand(5,5,1,2)
+    x = randn(5)
+
+    @test A*x ≈ Matrix(A)*x
+
+    @test A*A == A^2 ≈ Matrix(A)^2
+    @test A*A isa BandedMatrix
+    @test A^2 isa BandedMatrix
+    @test bandwidths(A^2) == (2,4)
+
+    @test A*A' isa BandedMatrix
+    @test A*A' ≈ Matrix(A)*Matrix(A)'
+    @test bandwidths(A*A') == (3,3)
+
+    @test A'*A isa BandedMatrix
+    @test A'*A ≈ Matrix(A)'*Matrix(A)
+    @test bandwidths(A'*A) == (3,3)
+
+    @test Symmetric(A)*A isa BandedMatrix
+    @test Symmetric(A)*A ≈ Symmetric(Matrix(A))*Matrix(A)
+    @test bandwidths(Symmetric(A)*A) == (3,4)
+
+    @test Hermitian(A)*A isa BandedMatrix
+    @test Hermitian(A)*A ≈ Hermitian(Matrix(A))*Matrix(A)
+    @test bandwidths(Hermitian(A)*A) == (3,4)
+
+    B = A+im*A
+    @test Hermitian(B)*A isa BandedMatrix
+    @test Hermitian(B)*A ≈ Hermitian(Matrix(B))*Matrix(A)
+    @test bandwidths(Hermitian(B)*A) == (3,4)
+
+    @test UpperTriangular(A)*A isa BandedMatrix
+    @test UpperTriangular(A)*A ≈ UpperTriangular(Matrix(A))*Matrix(A)
+    @test bandwidths(UpperTriangular(A)*A) == (1,4)
+
+    B = materialize(Mul(A,A,A))
+    @test B isa BandedMatrix
+    @test all(B .=== (A*A)*A)
+    @test bandwidths(B) == (3,6)
+end
+
 
 @testset "gbmm!" begin
     # test gbmm! subpieces step by step and column by column
@@ -160,4 +204,16 @@ end
 @testset "BandedMatrix{Int} * Vector{Vector{Int}}" begin
     A, x =  [1 2; 3 4] , [[1,2],[3,4]]
     @test BandedMatrix(A)*x == A*x
+end
+
+@testset "Sym * Banded bug" begin
+    A = SymTridiagonal(randn(10),randn(9))
+    B = BandedMatrix((-1 => Ones{Int}(8),), (10,8))
+
+    M = Mul(A,B)
+    C = Matrix{Float64}(undef,10,8)
+
+    C .= M
+    @test C == A*B == Matrix(A)*Matrix(B)
+    @test A*B isa BandedMatrix
 end

@@ -1,4 +1,4 @@
-using BandedMatrices, Test
+using BandedMatrices, LinearAlgebra, Test
 
 @testset "QR tests" begin
     for T in (Float64,ComplexF64,Float32,ComplexF32)
@@ -37,14 +37,16 @@ using BandedMatrices, Test
         @test R\(Q'*b) ≈ Matrix(A)\b
     end
 
+    @testset "Mixed types" begin
+        A=brand(10,10,3,2)
+        b=rand(ComplexF64,10)
+        Q,R=qr(A)
+        @test R\(Q'*b) ≈ Matrix(A)\b
 
-    A=brand(10,10,3,2)
-    b=rand(ComplexF64,10)
-    Q,R=qr(A)
-    @test R\(Q'*b) ≈ Matrix(A)\b
 
-    A=brand(ComplexF64,10,10,3,2)
-    b=rand(10)
-    Q,R=qr(A)
-    @test R\(Q'*b) ≈ Matrix(A)\b
+        A=brand(ComplexF64,10,10,3,2)
+        b=rand(10)
+        Q,R=qr(A)
+        @test R\(Q'*b) ≈ Matrix(A)\b
+    end
 end

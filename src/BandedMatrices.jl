@@ -1,24 +1,14 @@
 module BandedMatrices
-using Base, FillArrays, LazyArrays
-
-using LinearAlgebra, SparseArrays, Random
+using Base, FillArrays, LazyArrays, LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate
-import LinearAlgebra: BlasInt,
-                    BlasReal,
-                    BlasFloat,
-                    BlasComplex,
-                    axpy!,
-                    copy_oftype,
-                    checksquare,
-                    adjoint,
-                    transpose,
-                    AdjOrTrans, HermOrSym
+import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
+                        copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
             qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
-            chkstride1, kron, lmul!, rmul!
+            chkstride1, kron, lmul!, rmul!, factorize
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -38,7 +28,8 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
                     _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
-                    triangularlayout, InverseLayout, MatMulVec, MatLdivVec, TriangularLayout,
+                    triangularlayout, MatMulVec, MatLdivVec, TriangularLayout,
+                    AbstractBandedLayout, DiagonalLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
                     MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec
 import FillArrays: AbstractFill
@@ -71,6 +62,7 @@ include("generic/broadcast.jl")
 include("generic/matmul.jl")
 include("generic/Band.jl")
 include("generic/utils.jl")
+include("generic/indexing.jl")
 
 
 include("banded/BandedMatrix.jl")
