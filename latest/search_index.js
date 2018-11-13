@@ -97,6 +97,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "index.html#Eigenvalues-1",
+    "page": "Home",
+    "title": "Eigenvalues",
+    "category": "section",
+    "text": "To compute efficiently a selection of eigenvalues for a BandedMatrix, you may use any Krylov method that relies on a sequence of matrix * vector operations. For instance, using the package KrylovKit:using KrylovKit\nA = BandedMatrix(Eye(5), (1, 1))\nKrylovKit.eigsolve(A, 1, :LR)"
+},
+
+{
     "location": "index.html#Implementation-1",
     "page": "Home",
     "title": "Implementation",
