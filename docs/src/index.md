@@ -108,6 +108,15 @@ Note that certain `SubArray`s of `BandedMatrix` are also banded matrices.
 The banded matrix interface is implemented for such `SubArray`s to take advantage of this.
 
 
+## Eigenvalues
+To compute efficiently a selection of eigenvalues for a `BandedMatrix`, you may use any Krylov method that relies on a sequence of matrix * vector operations. For instance, using the package [KrylovKit](https://github.com/Jutho/KrylovKit.jl):
+```julia
+using KrylovKit
+A = BandedMatrix(Eye(5), (1, 1))
+KrylovKit.eigsolve(A, 1, :LR)
+```
+
+
 ## Implementation
 
 Currently, only column-major ordering is supported: a banded matrix `B`
