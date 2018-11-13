@@ -122,11 +122,3 @@ end
     @test D*A isa BandedMatrix
     @test D*A == D*Matrix(A)
 end
-
-@testset "Vcat Zeros special case" begin
-    A = BandedMatrices._BandedMatrix((1:10)', 10, -1,1)
-    x = Vcat(1:3, Zeros(10-3))
-    @test typeof(A*x) <: Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
-    @test length((A*x).arrays[1]) == length(x.arrays[1]) + bandwidth(A,1) == 2
-    @test A*x == A*Vector(x)
-end

@@ -36,30 +36,3 @@ const BandedMatrixTypes = (:AbstractBandedMatrix, :(AdjOrTrans{<:Any,<:AbstractB
 for T1 in BandedMatrixTypes, T2 in BandedMatrixTypes
     @eval kron(A::$T1, B::$T2) = BandedMatrix(Kron(A,B))
 end
-
-###
-# Specialised multiplication for arrays padded for zeros
-# needed for ∞-dimensional banded linear algebra
-###
-
-function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
-                 M::MatMulVec{<:BandedColumnMajor,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
-    A,x = M.factors
-    length(y) == size(A,1) || throw(DimensionMismatch())
-    length(x) == size(A,2) || throw(DimensionMismatch())
-
-    ỹ,_ = y.arrays
-    x̃,_ = x.arrays
-
-    length(ỹ) ≥ length(x̃)+bandwidth(A,1) || throw(InexactError("Cannot assign non-zero entries to Zero"))
-
-    @time ỹ .= Mul(view(A, axes(ỹ,1), axes(x̃,1)) , x̃)
-    y
-end
-
-function similar(M::MatMulVec{<:BandedColumnMajor,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}) where T
-    A,x = M.factors
-    xf,_ = x.arrays
-    n = max(0,length(xf) + bandwidth(A,1))
-    Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
-end
