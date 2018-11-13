@@ -146,9 +146,9 @@ Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T
 brand
 
 ## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
-BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Int}) where T =
+BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Integer}) where T =
     BandedMatrix{T, Matrix{T}}(A, bnds)
-function BandedMatrix{T, C}(A::AbstractMatrix, bnds::NTuple{2,Int}) where {T, C <: AbstractMatrix{T}}
+function BandedMatrix{T, C}(A::AbstractMatrix, bnds::NTuple{2,Integer}) where {T, C <: AbstractMatrix{T}}
     (n,m) = size(A)
     (l,u) = bnds
     ret = BandedMatrix{T, C}(undef, n, m, l, u)
@@ -158,16 +158,16 @@ function BandedMatrix{T, C}(A::AbstractMatrix, bnds::NTuple{2,Int}) where {T, C 
     ret
 end
 
-BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Int}) where T =
+BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Integer}) where T =
     BandedMatrix{T}(A, bnds)
 
 
 
-BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Int}) where {T,V} =
+BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Integer}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
 
-BandedMatrix(E::Eye{T}, bnds::NTuple{2,Int}) where T = BandedMatrix{T}(E, bnds)
-function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Int}) where T
+BandedMatrix(E::Eye{T}, bnds::NTuple{2,Integer}) where T = BandedMatrix{T}(E, bnds)
+function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Integer}) where T
     ret=BandedMatrix(Zeros{T}(E), bnds)
     ret[band(0)] .= one(T)
     ret
@@ -186,8 +186,8 @@ from `Pair`s of diagonals and vectors.
 Vector `kv.second` will be placed on the `kv.first` diagonal.
 """
 function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
-                         mn::NTuple{2,Int},
-                         lu::NTuple{2,Int}) where T
+                         mn::NTuple{2,Integer},
+                         lu::NTuple{2,Integer}) where T
     m,n = mn
     l,u = lu
     data = zeros(T, u+l+1, n)
@@ -204,20 +204,20 @@ function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
 end
 
 BandedMatrix(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
-                         mn::NTuple{2,Int},
-                         lu::NTuple{2,Int}) =
+                         mn::NTuple{2,Integer},
+                         lu::NTuple{2,Integer}) =
     BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv, mn, lu)
 
 
 
 function BandedMatrix{T}(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}},
-                         nm::NTuple{2,Int}) where T
+                         nm::NTuple{2,Integer}) where T
     u = mapreduce(x -> x.first, max, kv)
     l = -mapreduce(x -> x.first, min, kv)
     BandedMatrix{T}(kv, nm, (l,u))
 end
 
-BandedMatrix(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}}, nm::NTuple{2,Int}) =
+BandedMatrix(kv::Tuple{Vararg{Pair{<:Integer,<:AbstractVector}}}, nm::NTuple{2,Integer}) =
     BandedMatrix{promote_type(map(x -> eltype(x.second), kv)...)}(kv, nm)
 
 
@@ -384,7 +384,7 @@ end
     r
 end
 
-@inline function banded_setindex!(data::AbstractMatrix, l::Int, u::Int, v, k::Integer, j::Integer)
+@inline function banded_setindex!(data::AbstractMatrix, l::Integer, u::Integer, v, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
         inbands_setindex!(data, u, v, k, j)
     elseif v ≠ 0  # allow setting outside bands to zero
