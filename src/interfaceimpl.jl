@@ -51,15 +51,16 @@ function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
     ỹ,_ = y.arrays
     x̃,_ = x.arrays
 
-    length(ỹ) ≥ length(x̃)+bandwidth(A,1) || throw(InexactError("Cannot assign non-zero entries to Zero"))
+    length(ỹ) ≥ min(length(M),length(x̃)+bandwidth(A,1)) ||
+        throw(InexactError("Cannot assign non-zero entries to Zero"))
 
-    @time ỹ .= Mul(view(A, axes(ỹ,1), axes(x̃,1)) , x̃)
+    ỹ .= Mul(view(A, axes(ỹ,1), axes(x̃,1)) , x̃)
     y
 end
 
 function similar(M::MatMulVec{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}) where T
     A,x = M.factors
     xf,_ = x.arrays
-    n = max(0,length(xf) + bandwidth(A,1))
+    n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
     Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
 end

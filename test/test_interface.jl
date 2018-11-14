@@ -129,4 +129,10 @@ end
     @test typeof(A*x) <: Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
     @test length((A*x).arrays[1]) == length(x.arrays[1]) + bandwidth(A,1) == 2
     @test A*x == A*Vector(x)
+
+    A = BandedMatrices._BandedMatrix(randn(3,10), 10, 1,1)
+    x = Vcat(randn(10), Zeros(0))
+    @test typeof(A*x) <: Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
+    @test length((A*x).arrays[1]) == 10
+    @test A*x == A*Vector(x)
 end
