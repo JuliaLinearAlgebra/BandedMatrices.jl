@@ -2,7 +2,7 @@
 
 # Direct and transposed algorithms
 
-function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedColumnMajor})
+function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{<:BandedColumnMajor})
     Ai, B = L.factors
     A = parent(Ai)
     checksquare(A)
@@ -10,12 +10,12 @@ function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedColumnMajor})
     ldiv!(factorize(A), dest)
 end
 
-function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{BandedRowMajor})
+function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{<:BandedRowMajor})
     Ai, B = L.factors
     copyto!(dest, Mul(transpose(factorize(transpose(parent(Ai)))), B))
 end
 
-function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{ConjLayout{BandedRowMajor}})
+function _copyto!(_, dest::AbstractVecOrMat, L::Ldiv{<:ConjLayout{<:BandedRowMajor}})
     Ai, B = L.factors
     copyto!(dest, Mul(factorize(parent(Ai)')', B))
 end

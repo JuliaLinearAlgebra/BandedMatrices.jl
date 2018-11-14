@@ -43,7 +43,7 @@ end
 ###
 
 function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
-                 M::MatMulVec{<:BandedColumnMajor,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
+                 M::MatMulVec{<:BandedColumns,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
     A,x = M.factors
     length(y) == size(A,1) || throw(DimensionMismatch())
     length(x) == size(A,2) || throw(DimensionMismatch())
@@ -57,7 +57,7 @@ function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
     y
 end
 
-function similar(M::MatMulVec{<:BandedColumnMajor,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}) where T
+function similar(M::MatMulVec{<:BandedColumns,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}) where T
     A,x = M.factors
     xf,_ = x.arrays
     n = max(0,length(xf) + bandwidth(A,1))

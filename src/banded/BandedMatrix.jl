@@ -29,7 +29,7 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
-MemoryLayout(::BandedMatrix) = BandedColumnMajor()
+MemoryLayout(A::BandedMatrix) = BandedColumns(MemoryLayout(A.data))
 
 
 ## Constructors
@@ -54,6 +54,8 @@ BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integ
     BandedMatrix{T, Matrix{T}}(undef,n,m,a,b)
 BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
     BandedMatrix{T}(undef, nm..., ab...)
+BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,OneTo{Int}}, ab::NTuple{2,Integer}) where T =
+    BandedMatrix{T}(undef, length.(nm), ab)
 BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
     BandedMatrix{T}(undef,n,n+b,a,b)
 
@@ -662,7 +664,7 @@ const BandedSubBandedMatrix{T, C, R} =
     SubArray{T,2,BandedMatrix{T, C, R},I} where I<:Tuple{Vararg{AbstractUnitRange}}
 
 isbanded(::BandedSubBandedMatrix) = true
-MemoryLayout(::BandedSubBandedMatrix) = BandedColumnMajor()
+MemoryLayout(V::BandedSubBandedMatrix) = BandedColumns(MemoryLayout(bandeddata(V)))
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)

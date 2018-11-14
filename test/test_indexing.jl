@@ -1,8 +1,8 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
 import BandedMatrices: rowstart, rowstop, colstart, colstop,
-                       rowlength, collength, diaglength, BandedColumnMajor
-import LazyArrays: MemoryLayout
+                       rowlength, collength, diaglength, BandedColumns
+import LazyArrays: MemoryLayout, DenseColumnMajor
 
 @testset "Indexing" begin
     @testset "BandedMatrix Indexing" begin
@@ -676,7 +676,7 @@ import LazyArrays: MemoryLayout
     @testset "Sub-banded views" begin
         A = brand(10,10,2,1)
         V = view(A,Base.OneTo(5),Base.OneTo(6))
-        @test MemoryLayout(V) == BandedColumnMajor()
+        @test MemoryLayout(V) == BandedColumns(DenseColumnMajor())
         @test A[Base.OneTo(5),Base.OneTo(6)] isa BandedMatrix
         @test A[2:5,Base.OneTo(6)] isa BandedMatrix
         @test A[2:2:5,Base.OneTo(6)] isa Matrix

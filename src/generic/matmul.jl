@@ -6,7 +6,10 @@ BroadcastStyle(::BandedStyle, M::ArrayMulArrayStyle) = M
 bandwidths(M::Mul) = prodbandwidths(M.factors...)
 
 similar(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}) where T =
-    BandedMatrix{T}(undef, size(M), bandwidths(M))
+    similar(M, T, axes(M))
+
+similar(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+    BandedMatrix{T}(undef, axes, bandwidths(M))
 
 
 ### Symmetric
@@ -56,7 +59,7 @@ end
 
 
 
-function materialize!(M::BlasMatMulVec{BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
+function materialize!(M::BlasMatMulVec{<:BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -74,7 +77,7 @@ function materialize!(M::BlasMatMulVec{BandedColumnMajor,<:AbstractStridedLayout
     end
 end
 
-function materialize!(M::BlasMatMulVec{BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
+function materialize!(M::BlasMatMulVec{<:BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     At = transpose(A)
     m, n = size(A)
@@ -93,7 +96,7 @@ function materialize!(M::BlasMatMulVec{BandedRowMajor,<:AbstractStridedLayout,<:
     end
 end
 
-function materialize!(M::BlasMatMulVec{ConjLayout{BandedRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasComplex
+function materialize!(M::BlasMatMulVec{<:ConjLayout{<:BandedRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasComplex
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     Ac = A'
     m, n = size(A)
@@ -119,17 +122,17 @@ end
 ##
 
 
-@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{BandedColumnMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
+@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{<:BandedColumnMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
     A,B = M.factors
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
 
-@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{BandedRowMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
+@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{<:BandedRowMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
     A,B = M.factors
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
 
-@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{ConjLayout{BandedRowMajor},<:AbstractStridedLayout,T,T}) where T<:BlasFloat
+@inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{<:ConjLayout{<:BandedRowMajor},<:AbstractStridedLayout,T,T}) where T<:BlasFloat
     A,B = M.factors
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
@@ -146,7 +149,7 @@ end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{BandedRowMajor})
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:BandedRowMajor})
     At,b = M.factors
     A = transpose(At)
     c .= zero.(c)
@@ -156,7 +159,7 @@ end
     c
 end
 
-@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{ConjLayout{BandedRowMajor}})
+@inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:ConjLayout{<:BandedRowMajor}})
     Ac,b = M.factors
     A = Ac'
     c .= zero.(c)
@@ -202,7 +205,7 @@ function banded_mul!(C::AbstractMatrix{T}, A::AbstractMatrix, B::AbstractMatrix)
 end
 
 const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
-const ConjOrBandedColumnMajor = Union{BandedColumnMajor,ConjLayout{BandedColumnMajor}}
+const ConjOrBandedColumnMajor = Union{<:BandedColumnMajor,ConjLayout{<:BandedColumnMajor}}
 
 @inline function _copyto!(_, C::AbstractMatrix{T}, M::MatMulMat{<:ConjOrBandedColumnMajor,<:ConjOrBandedColumnMajor,T,T}) where T<:BlasFloat
     A,B = M.factors
@@ -224,7 +227,7 @@ end
      banded_mul!(C, A, B)
 end
 
-function materialize!(M::BlasMatMulMat{BandedColumnMajor,BandedColumnMajor,BandedColumnMajor,T}) where T<:BlasFloat
+function materialize!(M::BlasMatMulMat{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor,T}) where T<:BlasFloat
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
 
     Am, An = size(A)

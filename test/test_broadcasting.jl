@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-    import LazyArrays: MemoryLayout, MulAdd
+    import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
     import Base: BroadcastStyle
-    import BandedMatrices: BandedStyle
+    import BandedMatrices: BandedStyle, BandedRows
 
 @testset "broadcasting" begin
     @testset "general" begin
@@ -253,7 +253,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         z .= 2.0.*Mul(A,x) .+ 3.0.*y
         @test 2Matrix(A)*x + 3y ≈ z
         @test all(BLAS.gbmv!('N', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
-        @test MemoryLayout(A') == BandedMatrices.BandedRowMajor()
+        @test MemoryLayout(A') == BandedRows(DenseColumnMajor())
         y .= Mul(A',x)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
@@ -261,7 +261,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         z .= 2.0.*Mul(A',x) .+ 3.0.*y
         @test 2Matrix(A')*x + 3y ≈ z
         @test all(BLAS.gbmv!('T', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
-        @test MemoryLayout(transpose(A)) == BandedMatrices.BandedRowMajor()
+        @test MemoryLayout(transpose(A)) == BandedRows(DenseColumnMajor())
         y .= Mul(transpose(A),x)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
@@ -273,7 +273,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         y .= Mul(A,x)
         @test Matrix(A)*x ≈ y
         @test all(BLAS.gbmv!('N', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
-        @test LazyArrays.MemoryLayout(A') == LazyArrays.ConjLayout(BandedMatrices.BandedRowMajor())
+        @test LazyArrays.MemoryLayout(A') == ConjLayout(BandedRows(DenseColumnMajor()))
         z = similar(y)
         z .= (2.0+0.0im).*Mul(A,x) .+ (3.0+0.0im).*y
         @test 2Matrix(A)*x + 3y ≈ z
@@ -281,7 +281,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         y .= Mul(A',x)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('C', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
-        @test MemoryLayout(transpose(A)) == BandedMatrices.BandedRowMajor()
+        @test MemoryLayout(transpose(A)) == BandedRows(DenseColumnMajor())
         y .= Mul(transpose(A),x)
         @test Matrix(transpose(A))*x ≈ transpose(Matrix(A))*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
