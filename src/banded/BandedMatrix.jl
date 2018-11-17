@@ -681,7 +681,8 @@ end
 
 bandeddata(V::BandedSubBandedMatrix) = view(bandeddata(parent(V)), :, parentindices(V)[2])
 
-bandwidths(S::BandedSubBandedMatrix) = bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)
+bandwidths(S::SubArray{T,2,<:AbstractMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
+    bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)
 
 @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
     @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)

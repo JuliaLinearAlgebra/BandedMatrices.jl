@@ -64,3 +64,38 @@ function similar(M::MatMulVec{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,
     n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
     Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
 end
+
+
+###
+# MulMatrix
+###
+
+bandwidths(M::MulMatrix) = bandwidths(M.mul)
+
+const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
+
+Base.replace_in_print_matrix(A::MulBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
+    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
+
+function getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout},
+                  k::Integer, j::Integer)
+    A,B = M.factors
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+    n = size(A,2)
+    ret = zero(eltype(M))
+    for ν = max(1,j-Bu,k-Al):min(n,j+Bl,k+Au)
+        ret += A[k,ν] * B[ν,j]
+    end
+    ret
+end
+
+@inline _sub_materialize(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, V) = BandedMatrix(V)
+
+MemoryLayout(V::SubArray{T,2,<:MulBandedMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
+    MemoryLayout(parent(V))
+
+@inline getindex(A::MulBandedMatrix, kr::Colon, jr::Colon) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::MulBandedMatrix, kr::Colon, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::Colon) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)

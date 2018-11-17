@@ -1,5 +1,6 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle
+import LazyArrays: MemoryLayout
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -135,4 +136,23 @@ end
     @test typeof(A*x) <: Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
     @test length((A*x).arrays[1]) == 10
     @test A*x == A*Vector(x)
+end
+
+@testset "MulMatrix" begin
+    A = brand(6,5,0,1)
+    B = brand(5,5,1,0)
+    M = MulArray(A,B)
+    @test bandwidths(M) == bandwidths(M.mul)
+    @test BandedMatrix(M) == A*B
+
+    @test M isa BandedMatrices.MulBandedMatrix
+
+    V = view(M,1:4,1:4)
+    @test bandwidths(V) == (1,1)
+    @test MemoryLayout(V) == MemoryLayout(M)
+    @test M[1:4,1:4] isa BandedMatrix
+
+    A = brand(5,5,0,1)
+    B = brand(6,5,1,0)
+    @test_throws DimensionMismatch MulArray(A,B)
 end
