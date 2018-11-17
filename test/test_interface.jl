@@ -142,8 +142,12 @@ end
     A = brand(6,5,0,1)
     B = brand(5,5,1,0)
     M = MulArray(A,B)
+
+    @test isbanded(M)
     @test bandwidths(M) == bandwidths(M.mul)
     @test BandedMatrix(M) == A*B
+
+    @test M .+ A isa BandedMatrix
 
     @test M isa BandedMatrices.MulBandedMatrix
 
@@ -155,4 +159,15 @@ end
     A = brand(5,5,0,1)
     B = brand(6,5,1,0)
     @test_throws DimensionMismatch MulArray(A,B)
+
+    A = brand(6,5,0,1)
+    B = brand(5,5,1,0)
+    C = brand(5,6,2,2)
+    M = Mul(A,B,C)
+    @test bandwidths(M) == (3,3)
+    @test M[1,1] ≈ (A*B*C)[1,1]
+
+    M = @inferred(MulArray(A,B,C))
+    @test bandwidths(M) == (3,3)
+    @test BandedMatrix(M) ≈ A*B*C
 end

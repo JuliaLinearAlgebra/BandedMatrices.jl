@@ -71,24 +71,33 @@ end
 ###
 
 bandwidths(M::MulMatrix) = bandwidths(M.mul)
+isbanded(M::MulMatrix) = all(isbanded, M.mul.factors)
 
 const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
+
+BroadcastStyle(::Type{<:MulBandedMatrix}) = BandedStyle()
 
 Base.replace_in_print_matrix(A::MulBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
     -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
 
-function getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout},
-                  k::Integer, j::Integer)
-    A,B = M.factors
+function _banded_mul_getindex(::Type{T}, (A, B), k::Integer, j::Integer) where T
     Al, Au = bandwidths(A)
     Bl, Bu = bandwidths(B)
     n = size(A,2)
-    ret = zero(eltype(M))
+    ret = zero(T)
     for ν = max(1,j-Bu,k-Al):min(n,j+Bl,k+Au)
         ret += A[k,ν] * B[ν,j]
     end
     ret
 end
+
+
+getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, k::Integer, j::Integer) =
+    _banded_mul_getindex(eltype(M), M.factors, k, j)
+
+getindex(M::Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}, k::Integer, j::Integer) =
+    _banded_mul_getindex(eltype(M), (first(M.factors), Mul(tail(M.factors)...)), k, j)
+
 
 @inline _sub_materialize(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, V) = BandedMatrix(V)
 

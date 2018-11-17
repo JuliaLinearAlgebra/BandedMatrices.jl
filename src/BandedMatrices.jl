@@ -1,7 +1,7 @@
 module BandedMatrices
 using Base, FillArrays, LazyArrays, LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
-import Base: axes, axes1, getproperty, iterate
+import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
                         copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym
 import LinearAlgebra.BLAS: libblas

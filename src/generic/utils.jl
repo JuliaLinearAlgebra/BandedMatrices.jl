@@ -37,12 +37,9 @@ checkdimensions(kr::AbstractRange, jr::AbstractRange, src::AbstractMatrix) =
 
 
 # return the bandwidths of A*B
-function prodbandwidths(A::AbstractMatrix, B::AbstractMatrix)
-    Al, Au = bandwidths(A)
-    Bl, Bu = bandwidths(B)
-    Al + Bl, Au + Bu
-end
-
+prodbandwidths(A) = bandwidths(A)
+prodbandwidths() = (0,0)
+prodbandwidths(A...) = broadcast(+, bandwidths.(A)...)
 
 # helper functions in matrix addition routines
 function sumbandwidths(A::AbstractMatrix, B::AbstractMatrix)
