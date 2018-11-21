@@ -122,6 +122,40 @@ end
 
     @test D*A isa BandedMatrix
     @test D*A == D*Matrix(A)
+
+    D = Diagonal(rand(Int,10))
+    B = brand(10,10,-1,2)
+    J = SymTridiagonal(randn(10), randn(9))
+    T = Tridiagonal(randn(9), randn(10), randn(9))
+    @test Base.BroadcastStyle(Base.BroadcastStyle(typeof(B)), Base.BroadcastStyle(typeof(D))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(D)), Base.BroadcastStyle(typeof(B))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(B)), Base.BroadcastStyle(typeof(T))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(T)), Base.BroadcastStyle(typeof(B))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(B)), Base.BroadcastStyle(typeof(J))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(J)), Base.BroadcastStyle(typeof(B))) ==
+            BandedStyle()
+
+
+    A = B .+ D
+    Ã = D .+ B
+    @test A isa BandedMatrix
+    @test Ã isa BandedMatrix
+    @test bandwidths(A) == bandwidths(Ã) == (0,2)
+    @test Ã == A == Matrix(B) + Matrix(D)
+
+    A = B .+ J
+    Ã = J .+ B
+    @test A isa BandedMatrix
+    @test Ã isa BandedMatrix
+    @test bandwidths(A) == bandwidths(Ã) == (1,2)
+    @test Ã == A == Matrix(B) + Matrix(J)
+
+    A = B .+ T
+    Ã = T .+ B
+    @test A isa BandedMatrix
+    @test Ã isa BandedMatrix
+    @test bandwidths(A) == bandwidths(Ã) == (1,2)
+    @test Ã == A == Matrix(B) + Matrix(T)
 end
 
 @testset "Vcat Zeros special case" begin

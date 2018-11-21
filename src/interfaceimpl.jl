@@ -1,5 +1,18 @@
 
 
+##
+# Sparse BroadcastStyle
+##
+
+for Typ in (:Diagonal, :SymTridiagonal, :Tridiagonal)
+    @eval begin
+        BroadcastStyle(::StructuredMatrixStyle{<:$Typ}, ::BandedStyle) =
+            BandedStyle()
+        BroadcastStyle(::BandedStyle, ::StructuredMatrixStyle{<:$Typ}) =
+            BandedStyle()
+    end
+end
+
 # Here we implement the banded matrix interface for some key examples
 isbanded(::Zeros) = true
 bandwidths(::Zeros) = (0,0)
@@ -20,6 +33,9 @@ inbands_getindex(J::SymTridiagonal, k::Integer, j::Integer) =
     k == j ? J.dv[k] : J.ev[min(k,j)]
 inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
     k == j ? (J.dv[k] = v) : (J.ev[min(k,j)] = v)
+
+isbanded(::Tridiagonal) = true
+bandwidths(::Tridiagonal) = (1,1)
 
 isbanded(K::Kron{<:Any,2}) = all(isbanded, K.arrays)
 function bandwidths(K::Kron{<:Any,2})
