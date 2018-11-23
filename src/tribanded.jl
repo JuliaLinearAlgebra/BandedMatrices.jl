@@ -76,7 +76,6 @@ end
     tbmv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
 end
 
-
 # Ldiv
 @lazyldiv UpperTriangular{T, <:AbstractBandedMatrix{T}} where T
 @lazyldiv UnitUpperTriangular{T, <:AbstractBandedMatrix{T}} where T
