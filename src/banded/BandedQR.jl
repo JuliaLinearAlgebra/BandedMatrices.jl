@@ -199,7 +199,7 @@ function banded_qr!(R::BandedMatrix{T}) where T
         end
     end
 
-    for k=m-R.l+1:(n<m ? n : m-1)
+    for k=max(m-R.l+1,1):(n<m ? n : m-1)
         p=k-m+R.l
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W
