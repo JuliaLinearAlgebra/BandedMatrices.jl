@@ -39,7 +39,7 @@ import Base.Broadcast: materialize
 
     B = materialize(Mul(A,A,A))
     @test B isa BandedMatrix
-    @test all(B .=== A*(A*A))
+    @test all(B .=== (A*A)*A)
     @test bandwidths(B) == (3,6)
 end
 
