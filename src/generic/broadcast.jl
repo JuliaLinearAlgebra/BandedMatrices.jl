@@ -16,7 +16,8 @@ end
 
 const BandedColumnMajor = BandedColumns{<:AbstractColumnMajor}
 const BandedRowMajor = BandedRows{<:AbstractColumnMajor}
-
+BandedColumnMajor() = BandedColumns(DenseColumnMajor())
+BandedRowMajor() = Bandeds(DenseRowMajor())
 
 transposelayout(M::BandedColumns) = BandedRows(M.layout)
 transposelayout(M::BandedRows) = BandedColumns(M.layout)

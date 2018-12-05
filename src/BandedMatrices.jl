@@ -32,7 +32,8 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractBandedLayout, DiagonalLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
                     MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec, VcatLayout, ZerosLayout,
-                    AbstractColumnMajor, MulLayout, colsupport, rowsupport
+                    AbstractColumnMajor, MulLayout, colsupport, rowsupport,
+                    DenseColumnMajor, DenseRowMajor
 import FillArrays: AbstractFill
 
 export BandedMatrix,
