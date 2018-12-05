@@ -1,5 +1,6 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
-    import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumnMajor
+    import LazyArrays: DenseColumnMajor
+    import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
 
 
 @testset "Symmetric" begin
@@ -8,7 +9,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
-    @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'U')
+    @test MemoryLayout(A) == SymmetricLayout(BandedColumns(DenseColumnMajor()), 'U')
 
     @test A[1,2] == A[2,1]
     @test A[1,4] == 0
@@ -22,7 +23,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
-    @test MemoryLayout(A) == SymmetricLayout(BandedColumnMajor(), 'L')
+    @test MemoryLayout(A) == SymmetricLayout(BandedColumns(DenseColumnMajor()), 'L')
 
     @test A[1,2] == A[2,1]
     @test A[1,3] == 0
@@ -93,7 +94,7 @@ end
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
-    @test MemoryLayout(A) == HermitianLayout(BandedColumnMajor(), 'U')
+    @test MemoryLayout(A) == HermitianLayout(BandedColumns(DenseColumnMajor()), 'U')
 
     @test A[1,2] == conj(A[2,1])
     @test A[1,4] == 0
@@ -107,7 +108,7 @@ end
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
-    @test MemoryLayout(A) == HermitianLayout(BandedColumnMajor(), 'L')
+    @test MemoryLayout(A) == HermitianLayout(BandedColumns(DenseColumnMajor()), 'L')
 
     @test A[1,2] == conj(A[2,1])
     @test A[1,3] == 0

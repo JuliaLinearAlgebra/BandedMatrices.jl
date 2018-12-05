@@ -18,13 +18,13 @@
 
 
 
-symmetriclayout(layout::BandedColumnMajor, uplo) = SymmetricLayout(layout,uplo)
-symmetriclayout(layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
+symmetriclayout(layout::BandedColumns, uplo) = SymmetricLayout(layout,uplo)
+symmetriclayout(layout::BandedRows, uplo) = SymmetricLayout(layout,uplo)
 
-hermitianlayout(::Type{<:Complex}, layout::BandedColumnMajor, uplo) = HermitianLayout(layout,uplo)
-hermitianlayout(::Type{<:Real}, layout::BandedColumnMajor, uplo) = SymmetricLayout(layout,uplo)
-hermitianlayout(::Type{<:Complex}, layout::BandedRowMajor, uplo) = HermitianLayout(layout,uplo)
-hermitianlayout(::Type{<:Real}, layout::BandedRowMajor, uplo) = SymmetricLayout(layout,uplo)
+hermitianlayout(::Type{<:Complex}, layout::BandedColumns, uplo) = HermitianLayout(layout,uplo)
+hermitianlayout(::Type{<:Real}, layout::BandedColumns, uplo) = SymmetricLayout(layout,uplo)
+hermitianlayout(::Type{<:Complex}, layout::BandedRows, uplo) = HermitianLayout(layout,uplo)
+hermitianlayout(::Type{<:Real}, layout::BandedRows, uplo) = SymmetricLayout(layout,uplo)
 
 
 isbanded(A::HermOrSym) = isbanded(parent(A))
@@ -74,7 +74,7 @@ banded_sbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
 end
 
 
-function materialize!(M::BlasMatMulVec{SymmetricLayout{BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+function materialize!(M::BlasMatMulVec{<:SymmetricLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
     S, α, A, x, β, y = M.style_A, M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
@@ -96,7 +96,7 @@ banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
     end
 end
 
-function materialize!(M::BlasMatMulVec{HermitianLayout{BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+function materialize!(M::BlasMatMulVec{<:HermitianLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
     S, α, A, x, β, y = M.style_A, M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
@@ -110,7 +110,7 @@ end
 ## eigvals routine
 
 
-function _tridiagonalize!(A::AbstractMatrix{T}, S::SymmetricLayout{BandedColumnMajor}) where T
+function _tridiagonalize!(A::AbstractMatrix{T}, S::SymmetricLayout{<:BandedColumnMajor}) where T
     n=size(A, 1)
     d = Vector{T}(undef,n)
     e = Vector{T}(undef,n-1)

@@ -1,5 +1,7 @@
 using BandedMatrices, FillArrays, Test
 import LinearAlgebra: axpy!
+import LazyArrays: DenseColumnMajor
+import BandedMatrices: BandedColumns, bandeddata
 
 
 @testset "BandedMatrix SubArray interface" begin
@@ -7,8 +9,8 @@ import LinearAlgebra: axpy!
     V = view(A,2:4,3:6)
     @test isbanded(V)
     @test bandwidths(V) == (2,1)
-    @test BandedMatrices.MemoryLayout(V) == BandedMatrices.BandedColumnMajor()
-    @test all(Matrix(BandedMatrices._BandedMatrix(BandedMatrices.bandeddata(V), size(V,1), bandwidths(V)...)) .===
+    @test BandedMatrices.MemoryLayout(V) == BandedColumns(DenseColumnMajor())
+    @test all(Matrix(BandedMatrices._BandedMatrix(bandeddata(V), size(V,1), bandwidths(V)...)) .===
               Matrix(V))
 end
 

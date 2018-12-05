@@ -6,9 +6,9 @@ bandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) =
 bandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) =
     (bandwidth(parent(A),1), min(0,bandwidth(parent(A),2)))
 
-triangularlayout(::Type{Tri}, ML::BandedColumnMajor) where {Tri} = Tri(ML)
-triangularlayout(::Type{Tri}, ML::BandedRowMajor) where {Tri} = Tri(ML)
-triangularlayout(::Type{Tri}, ML::ConjLayout{BandedRowMajor}) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ML::BandedColumns) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ML::BandedRows) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ML::ConjLayout{<:BandedRows}) where {Tri} = Tri(ML)
 
 
 function tribandeddata(::TriangularLayout{'U'}, A)
@@ -44,7 +44,7 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
 
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{'U',UNIT,BandedColumnMajor},
+         M::MatMulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
     A,x = M.factors
     x ≡ dest || copyto!(dest, x)
@@ -52,7 +52,7 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{'L',UNIT,BandedColumnMajor},
+         M::MatMulVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
     A,x = M.factors
     x ≡ dest || copyto!(dest, x)
@@ -76,7 +76,6 @@ end
     tbmv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
 end
 
-
 # Ldiv
 @lazyldiv UpperTriangular{T, <:AbstractBandedMatrix{T}} where T
 @lazyldiv UnitUpperTriangular{T, <:AbstractBandedMatrix{T}} where T
@@ -84,7 +83,7 @@ end
 @lazyldiv UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatLdivVec{<:TriangularLayout{'U',UNIT,BandedColumnMajor},
+         M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
     Ai,x = M.factors
     A = inv(Ai)
@@ -93,7 +92,7 @@ end
 end
 
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{<:TriangularLayout{'L',UNIT,BandedColumnMajor},
+         M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
     Ai,x = M.factors
     A = inv(Ai)

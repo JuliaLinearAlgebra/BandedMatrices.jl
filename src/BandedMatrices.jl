@@ -1,14 +1,14 @@
 module BandedMatrices
 using Base, FillArrays, LazyArrays, LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
-import Base: axes, axes1, getproperty, iterate
+import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
                         copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
             qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
-            chkstride1, kron, lmul!, rmul!, factorize
+            chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -31,7 +31,8 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     triangularlayout, MatMulVec, MatLdivVec, TriangularLayout,
                     AbstractBandedLayout, DiagonalLayout,
                     ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
-                    MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec
+                    MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec, VcatLayout, ZerosLayout,
+                    AbstractColumnMajor, MulLayout, colsupport, rowsupport
 import FillArrays: AbstractFill
 
 export BandedMatrix,

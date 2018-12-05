@@ -1,12 +1,13 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-    import BandedMatrices: MemoryLayout, TriangularLayout, BandedColumnMajor
+    import LazyArrays: DenseColumnMajor
+    import BandedMatrices: MemoryLayout, TriangularLayout, BandedColumns
 
 
 @testset "Triangular" begin
     @testset "Upper" begin
         A = UpperTriangular(brand(10,10,1,2))
         @test isbanded(A)
-        @test MemoryLayout(A) == TriangularLayout{'U','N'}(BandedColumnMajor())
+        @test MemoryLayout(A) == TriangularLayout{'U','N'}(BandedColumns(DenseColumnMajor()))
         @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (0,2)
         @test bandwidth(A,2) == 2
         @test BandedMatrix(A) == A
@@ -23,7 +24,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         A = UnitUpperTriangular(brand(10,10,1,2))
         @test isbanded(A)
-        @test MemoryLayout(A) == TriangularLayout{'U','U'}(BandedColumnMajor())
+        @test MemoryLayout(A) == TriangularLayout{'U','U'}(BandedColumns(DenseColumnMajor()))
         @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (0,2)
         @test bandwidth(A,2) == 2
         @test BandedMatrix(A) == A
@@ -42,7 +43,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
     @testset "Lower" begin
         A = LowerTriangular(brand(10,10,1,2))
         @test isbanded(A)
-        @test MemoryLayout(A) == TriangularLayout{'L','N'}(BandedColumnMajor())
+        @test MemoryLayout(A) == TriangularLayout{'L','N'}(BandedColumns(DenseColumnMajor()))
         @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,0)
         @test bandwidth(A,2) == 0
         @test BandedMatrix(A) == A
@@ -59,7 +60,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         A = UnitLowerTriangular(brand(10,10,1,2))
         @test isbanded(A)
-        @test MemoryLayout(A) == TriangularLayout{'L','U'}(BandedColumnMajor())
+        @test MemoryLayout(A) == TriangularLayout{'L','U'}(BandedColumns(DenseColumnMajor()))
         @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,0)
         @test bandwidth(A,2) == 0
         @test BandedMatrix(A) == A

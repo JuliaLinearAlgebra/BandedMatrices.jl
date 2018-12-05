@@ -34,19 +34,19 @@ using BandedMatrices, LinearAlgebra, Test
         A=brand(T,100,100,3,4)
         Q,R=qr(A)
         b=rand(T,100)
-        @test R\(Q'*b) ≈ Matrix(A)\b
+        @test R\(Q'*b) ≈ qr(A)\b ≈ Matrix(A)\b
     end
 
     @testset "Mixed types" begin
         A=brand(10,10,3,2)
         b=rand(ComplexF64,10)
         Q,R=qr(A)
-        @test R\(Q'*b) ≈ Matrix(A)\b
+        @test R\(Q'*b) ≈ qr(A)\b ≈ Matrix(A)\b
 
 
         A=brand(ComplexF64,10,10,3,2)
         b=rand(10)
         Q,R=qr(A)
-        @test R\(Q'*b) ≈ Matrix(A)\b
+        @test R\(Q'*b) ≈ qr(A)\b ≈ Matrix(A)\b
     end
 end

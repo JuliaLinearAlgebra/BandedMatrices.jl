@@ -53,6 +53,8 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 @inline collength(A::AbstractVecOrMat, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
 @inline rowlength(A::AbstractVecOrMat, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
+@inline colsupport(::AbstractBandedLayout, A, j) = colrange(A, j)
+@inline rowsupport(::AbstractBandedLayout, A, j) = rowrange(A, j)
 
 """
     isbanded(A)

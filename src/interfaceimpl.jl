@@ -1,5 +1,18 @@
 
 
+##
+# Sparse BroadcastStyle
+##
+
+for Typ in (:Diagonal, :SymTridiagonal, :Tridiagonal)
+    @eval begin
+        BroadcastStyle(::StructuredMatrixStyle{<:$Typ}, ::BandedStyle) =
+            BandedStyle()
+        BroadcastStyle(::BandedStyle, ::StructuredMatrixStyle{<:$Typ}) =
+            BandedStyle()
+    end
+end
+
 # Here we implement the banded matrix interface for some key examples
 isbanded(::Zeros) = true
 bandwidths(::Zeros) = (0,0)
@@ -21,6 +34,9 @@ inbands_getindex(J::SymTridiagonal, k::Integer, j::Integer) =
 inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
     k == j ? (J.dv[k] = v) : (J.ev[min(k,j)] = v)
 
+isbanded(::Tridiagonal) = true
+bandwidths(::Tridiagonal) = (1,1)
+
 isbanded(K::Kron{<:Any,2}) = all(isbanded, K.arrays)
 function bandwidths(K::Kron{<:Any,2})
     A,B = K.arrays
@@ -36,3 +52,75 @@ const BandedMatrixTypes = (:AbstractBandedMatrix, :(AdjOrTrans{<:Any,<:AbstractB
 for T1 in BandedMatrixTypes, T2 in BandedMatrixTypes
     @eval kron(A::$T1, B::$T2) = BandedMatrix(Kron(A,B))
 end
+
+###
+# Specialised multiplication for arrays padded for zeros
+# needed for ∞-dimensional banded linear algebra
+###
+
+function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
+                 M::MatMulVec{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
+    A,x = M.factors
+    length(y) == size(A,1) || throw(DimensionMismatch())
+    length(x) == size(A,2) || throw(DimensionMismatch())
+
+    ỹ,_ = y.arrays
+    x̃,_ = x.arrays
+
+    length(ỹ) ≥ min(length(M),length(x̃)+bandwidth(A,1)) ||
+        throw(InexactError("Cannot assign non-zero entries to Zero"))
+
+    ỹ .= Mul(view(A, axes(ỹ,1), axes(x̃,1)) , x̃)
+    y
+end
+
+function similar(M::MatMulVec{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}) where T
+    A,x = M.factors
+    xf,_ = x.arrays
+    n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
+    Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
+end
+
+
+###
+# MulMatrix
+###
+
+bandwidths(M::MulMatrix) = bandwidths(M.mul)
+isbanded(M::MulMatrix) = all(isbanded, M.mul.factors)
+
+const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
+
+BroadcastStyle(::Type{<:MulBandedMatrix}) = BandedStyle()
+
+Base.replace_in_print_matrix(A::MulBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
+    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
+
+function _banded_mul_getindex(::Type{T}, (A, B), k::Integer, j::Integer) where T
+    Al, Au = bandwidths(A)
+    Bl, Bu = bandwidths(B)
+    n = size(A,2)
+    ret = zero(T)
+    for ν = max(1,j-Bu,k-Al):min(n,j+Bl,k+Au)
+        ret += A[k,ν] * B[ν,j]
+    end
+    ret
+end
+
+
+getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, k::Integer, j::Integer) =
+    _banded_mul_getindex(eltype(M), M.factors, k, j)
+
+getindex(M::Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}, k::Integer, j::Integer) =
+    _banded_mul_getindex(eltype(M), (first(M.factors), Mul(tail(M.factors)...)), k, j)
+
+
+@inline _sub_materialize(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, V) = BandedMatrix(V)
+
+MemoryLayout(V::SubArray{T,2,<:MulBandedMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
+    MemoryLayout(parent(V))
+
+@inline getindex(A::MulBandedMatrix, kr::Colon, jr::Colon) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::MulBandedMatrix, kr::Colon, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::Colon) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)

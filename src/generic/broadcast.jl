@@ -7,11 +7,19 @@
 ####
 
 
-struct BandedColumnMajor <: AbstractBandedLayout end
-struct BandedRowMajor <: AbstractBandedLayout end
+struct BandedColumns{ML} <: AbstractBandedLayout
+    layout::ML
+end
+struct BandedRows{ML} <: AbstractBandedLayout
+    layout::ML
+end
 
-transposelayout(::BandedColumnMajor) = BandedRowMajor()
-transposelayout(::BandedRowMajor) = BandedColumnMajor()
+const BandedColumnMajor = BandedColumns{<:AbstractColumnMajor}
+const BandedRowMajor = BandedRows{<:AbstractColumnMajor}
+
+
+transposelayout(M::BandedColumns) = BandedRows(M.layout)
+transposelayout(M::BandedRows) = BandedColumns(M.layout)
 conjlayout(::Type{<:Complex}, M::AbstractBandedLayout) = ConjLayout(M)
 
 # Here we override broadcasting for banded matrices.
@@ -194,7 +202,7 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
 end
 
 
-function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::BandedColumnMajor, ::BandedColumnMajor) where T
+function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::BandedColumns, ::BandedColumns) where T
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, A)
 
@@ -216,7 +224,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     dest
 end
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumnMajor, ::Tuple{BandedColumnMajor,BandedColumnMajor})
+function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumns, ::Tuple{<:BandedColumns,<:BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
     iszero(z) || checkbroadcastband(dest, A)
     iszero(z) || checkbroadcastband(dest, B)
@@ -270,7 +278,7 @@ end
 
 
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumnMajor, ::BandedColumnMajor) where T
+function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns, ::BandedColumns) where T
     z = f(zero(T),x)
     iszero(z) || checkbroadcastband(dest, src)
 
@@ -309,7 +317,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     dest
 end
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::BandedColumnMajor, ::BandedColumnMajor) where T
+function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::BandedColumns, ::BandedColumns) where T
     z = f(x, zero(T))
     iszero(z) || checkbroadcastband(dest, src)
 
@@ -409,12 +417,12 @@ function _banded_rmul!(A::AbstractMatrix, a, _)
 end
 
 
-function _banded_lmul!(α::Number, A::AbstractMatrix, ::BandedColumnMajor)
+function _banded_lmul!(α::Number, A::AbstractMatrix, ::BandedColumns)
     lmul!(α, bandeddata(A))
     A
 end
 
-function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumnMajor)
+function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumns)
     rmul!(bandeddata(A), α)
     A
 end
@@ -432,7 +440,7 @@ rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
 
 # these are the routines of the banded interface of other AbstractMatrices
 banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(X), MemoryLayout(Y))
-_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedColumnMajor, ::BandedColumnMajor) =
+_banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedColumns, ::BandedColumns) =
     banded_generic_axpy!(a, X, Y)
 _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notbandedY) =
     banded_dense_axpy!(a, X, Y)

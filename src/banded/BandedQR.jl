@@ -34,9 +34,9 @@ mul!(Y, At::Transpose{T,BandedQ{T}}, B::AbstractVecOrMat{T}) where {T<:Real} =
 *(Ac::Adjoint{T,BandedQ{T}}, B::AbstractVector{T}) where {T<:Complex} =
     mul!(similar(B), Ac, B)
 
-function mul!(Y::Vector{T}, Ac::Adjoint{T,BandedQ{T}}, B::Vector{T}) where {T<:BlasFloat}
+function lmul!(Ac::Adjoint{T,BandedQ{T}}, Y::AbstractVector{T}) where {T<:BlasFloat}
     A = parent(Ac)
-    if length(Y) != size(A,1) || length(B) != size(A,2)
+    if length(Y) != size(A,1)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
 
@@ -44,14 +44,11 @@ function mul!(Y::Vector{T}, Ac::Adjoint{T,BandedQ{T}}, B::Vector{T}) where {T<:B
     m=A.m
 
     M=size(H,1)
-    b=pointer(B)
     y=pointer(Y)
     h=pointer(H)
     st=stride(H,2)
-
     sz=sizeof(T)
 
-    BLAS.blascopy!(m,B,1,Y,1)
 
 
     for k=1:min(size(H,2),m-M+1)
@@ -74,10 +71,9 @@ function mul!(Y::Vector{T}, Ac::Adjoint{T,BandedQ{T}}, B::Vector{T}) where {T<:B
     Y
 end
 
-
 # Each householder is symmetyric, this just reverses the order of application
-function mul!(Y::Vector{T}, A::BandedQ{T}, B::Vector{T}) where {T<:BlasFloat}
-    if length(Y) != size(A,1) || length(B) != size(A,2)
+function lmul!(A::BandedQ{T}, Y::AbstractVector{T}) where {T<:BlasFloat}
+    if length(Y) != size(A,1)
         throw(DimensionMismatch("Matrices have wrong dimensions"))
     end
 
@@ -85,14 +81,12 @@ function mul!(Y::Vector{T}, A::BandedQ{T}, B::Vector{T}) where {T<:BlasFloat}
     m=A.m
 
     M=size(H,1)
-    b=pointer(B)
     y=pointer(Y)
     h=pointer(H)
     st=stride(H,2)
 
     sz=sizeof(T)
 
-    BLAS.blascopy!(m,B,1,Y,1)
 
     for k=size(H,2):-1:m-M+2
         p=k-m+M-1
@@ -116,19 +110,26 @@ function mul!(Y::Vector{T}, A::BandedQ{T}, B::Vector{T}) where {T<:BlasFloat}
     Y
 end
 
-function mul!(Y::Matrix, A::BandedQ, B::Matrix)
-    for j=1:size(A,2)
-        Y[:,j]=A*B[:,j]
+
+function lmul!(A::BandedQ, Y::AbstractMatrix)
+    @views for j=1:size(Y,2)
+        lmul!(A, Y[:,j])
     end
     Y
 end
 
-function mul!(Y::Matrix,A::Adjoint{T,BandedQ{T}},B::Matrix) where T
-    for j=1:size(A,2)
-        Y[:,j]=A'*B[:,j]
+function lmul!(A::Adjoint{T,BandedQ{T}}, Y::AbstractMatrix) where T
+    @views for j=1:size(Y,2)
+        lmul!(A, Y[:,j])
     end
     Y
 end
+
+mul!(Y::AbstractVecOrMat{T}, Ac::Adjoint{T,BandedQ{T}}, B::AbstractVecOrMat{T}) where {T<:BlasFloat} =
+    lmul!(Ac, copyto!(Y, B))
+
+mul!(Y::AbstractVecOrMat{T}, A::BandedQ{T}, B::AbstractVecOrMat{T}) where {T<:BlasFloat} =
+    lmul!(A, copyto!(Y, B))
 
 function (*)(A::BandedQ{T}, x::AbstractVector{S}) where {T,S}
     TS = promote_type(T, S)
@@ -198,7 +199,7 @@ function banded_qr!(R::BandedMatrix{T}) where T
         end
     end
 
-    for k=m-R.l+1:(n<m ? n : m-1)
+    for k=max(m-R.l+1,1):(n<m ? n : m-1)
         p=k-m+R.l
         v=r+sz*(R.u + (k-1)*st)    # diagonal entry
         wp=w+stw*sz*(k-1)          # k-th column of W
@@ -215,3 +216,7 @@ function banded_qr!(R::BandedMatrix{T}) where T
 
     BandedQR(W, _BandedMatrix(R.data[1:R.u+1,:],m,0,R.u))
 end
+
+
+ldiv!(F::BandedQR{T}, x::AbstractVecOrMat{T}) where T =
+    ldiv!(UpperTriangular(F.R), lmul!(F.Q', x))
