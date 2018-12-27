@@ -46,12 +46,23 @@ end
 
 const BandedMatrixTypes = (:AbstractBandedMatrix, :(AdjOrTrans{<:Any,<:AbstractBandedMatrix}),
                                     :(AbstractTriangular{<:Any, <:AbstractBandedMatrix}),
-                                    :(Symmetric{<:Any, <:AbstractBandedMatrix}),
-                                    :Zeros, :Eye, :Diagonal, :SymTridiagonal)
+                                    :(Symmetric{<:Any, <:AbstractBandedMatrix}))
+
+const OtherBandedMatrixTypes = (:Zeros, :Eye, :Diagonal, :SymTridiagonal)
 
 for T1 in BandedMatrixTypes, T2 in BandedMatrixTypes
     @eval kron(A::$T1, B::$T2) = BandedMatrix(Kron(A,B))
 end
+
+for T1 in BandedMatrixTypes, T2 in OtherBandedMatrixTypes
+    @eval kron(A::$T1, B::$T2) = BandedMatrix(Kron(A,B))
+end
+
+for T1 in OtherBandedMatrixTypes, T2 in BandedMatrixTypes
+    @eval kron(A::$T1, B::$T2) = BandedMatrix(Kron(A,B))
+end
+
+
 
 ###
 # Specialised multiplication for arrays padded for zeros

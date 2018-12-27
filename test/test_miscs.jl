@@ -110,13 +110,17 @@ Base.zero(::Type{BandedMatrixWithZero}) = 0*I
         @test Δ isa BandedMatrix
         @test bandwidths(Δ) == (10,10)
     end
-end
 
-@testset "Offset axes" begin
-    A = _BandedMatrix(Ones((Base.OneTo(3),Base.Slice(-5:5),)), Base.Slice(-4:2), 1,1)
-    @test size(A) == (7,11)
-    @test A[-4,-5] == 1
-    @test A[-4,-5+2] == 1
-    @test A[-4,-5+3] == 0
-    @test_throws BoundsError A[-5,-5+3]
+    @testset "Offset axes" begin
+        A = _BandedMatrix(Ones((Base.OneTo(3),Base.Slice(-5:5),)), Base.Slice(-4:2), 1,1)
+        @test size(A) == (7,11)
+        @test A[-4,-5] == 1
+        @test A[-4,-5+2] == 1
+        @test A[-4,-5+3] == 0
+        @test_throws BoundsError A[-5,-5+3]
+    end
+
+    @testset "#87" begin
+        @test kron(Diagonal([1,2,3]), Eye(3)) isa Diagonal{Float64,Vector{Float64}}
+    end
 end
