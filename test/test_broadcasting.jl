@@ -141,11 +141,17 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         A = brand(5,5,1,1)
         A.data .= NaN
         lmul!(0.0,A)
+        @test isnan(norm(A)) == isnan(norm(lmul!(0.0,[NaN])))
+
+        lmul!(false,A)
         @test norm(A) == 0.0
 
         A = brand(5,5,1,1)
         A.data .= NaN
         rmul!(A,0.0)
+        @test isnan(norm(A)) == isnan(norm(rmul!([NaN],0.0)))
+
+        rmul!(A,false)
         @test norm(A) == 0.0
 
         n = 100

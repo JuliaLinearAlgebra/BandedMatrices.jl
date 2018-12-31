@@ -31,7 +31,6 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         @test BandedMatrices._promote_to_blas_type(typ, Int16)      == typ
         @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
 
-
         @test_throws ErrorException BandedMatrices._promote_to_blas_type(_foo, Float64)
     end
 
