@@ -71,7 +71,7 @@ end
 
 function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
                  M::MatMulVec{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
-    A,x = M.factors
+    A,x = M.args
     length(y) == size(A,1) || throw(DimensionMismatch())
     length(x) == size(A,2) || throw(DimensionMismatch())
 
@@ -86,7 +86,7 @@ function _copyto!(::VcatLayout{<:Tuple{<:Any,ZerosLayout}}, y::AbstractVector,
 end
 
 function similar(M::MatMulVec{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}) where T
-    A,x = M.factors
+    A,x = M.args
     xf,_ = x.arrays
     n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
     Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
@@ -97,8 +97,8 @@ end
 # MulMatrix
 ###
 
-bandwidths(M::MulMatrix) = bandwidths(M.mul)
-isbanded(M::MulMatrix) = all(isbanded, M.mul.factors)
+bandwidths(M::MulMatrix) = bandwidths(M.applied)
+isbanded(M::MulMatrix) = all(isbanded, M.applied.args)
 
 const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
 
@@ -120,10 +120,10 @@ end
 
 
 getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, k::Integer, j::Integer) =
-    _banded_mul_getindex(eltype(M), M.factors, k, j)
+    _banded_mul_getindex(eltype(M), M.args, k, j)
 
 getindex(M::Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}, k::Integer, j::Integer) =
-    _banded_mul_getindex(eltype(M), (first(M.factors), Mul(tail(M.factors)...)), k, j)
+    _banded_mul_getindex(eltype(M), (first(M.args), Mul(tail(M.args)...)), k, j)
 
 
 @inline _sub_materialize(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, V) = BandedMatrix(V)

@@ -178,7 +178,7 @@ end
     M = MulArray(A,B)
 
     @test isbanded(M)
-    @test bandwidths(M) == bandwidths(M.mul)
+    @test bandwidths(M) == bandwidths(M.applied)
     @test BandedMatrix(M) == A*B
 
     @test M .+ A isa BandedMatrix
@@ -198,10 +198,12 @@ end
     B = brand(5,5,1,0)
     C = brand(5,6,2,2)
     M = Mul(A,B,C)
+    @test @inferred(eltype(M)) == Float64
     @test bandwidths(M) == (3,3)
     @test M[1,1] ≈ (A*B*C)[1,1]
 
     M = @inferred(MulArray(A,B,C))
+    @test @inferred(eltype(M)) == Float64
     @test bandwidths(M) == (3,3)
     @test BandedMatrix(M) ≈ A*B*C
 end

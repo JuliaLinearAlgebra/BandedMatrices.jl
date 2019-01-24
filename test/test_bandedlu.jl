@@ -9,60 +9,60 @@ tldiv!(A, b) = ldiv!(transpose(A), b)
 cldiv!(A, b) = ldiv!(adjoint(A), b)
 
 
-@testset "Conversion to blas type" begin
-    @testset "_promote_to_blas_type" begin
-        typ = Float64
-        @test BandedMatrices._promote_to_blas_type(typ, ComplexF64) == ComplexF64
-        @test BandedMatrices._promote_to_blas_type(typ, ComplexF32)  == ComplexF64
-        @test BandedMatrices._promote_to_blas_type(typ, Float64)    == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Float32)    == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int64)      == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int32)      == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int16)      == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
+@testset "Banded A\\b" begin
+    @testset "Conversion to blas type" begin
+        @testset "_promote_to_blas_type" begin
+            typ = Float64
+            @test BandedMatrices._promote_to_blas_type(typ, ComplexF64) == ComplexF64
+            @test BandedMatrices._promote_to_blas_type(typ, ComplexF32)  == ComplexF64
+            @test BandedMatrices._promote_to_blas_type(typ, Float64)    == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Float32)    == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int64)      == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int32)      == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int16)      == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
 
-        typ = Float32
-        @test BandedMatrices._promote_to_blas_type(typ, ComplexF64) == ComplexF64
-        @test BandedMatrices._promote_to_blas_type(typ, ComplexF32)  == ComplexF32
-        @test BandedMatrices._promote_to_blas_type(typ, Float64)    == Float64
-        @test BandedMatrices._promote_to_blas_type(typ, Float32)    == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int64)      == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int32)      == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int16)      == typ
-        @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
+            typ = Float32
+            @test BandedMatrices._promote_to_blas_type(typ, ComplexF64) == ComplexF64
+            @test BandedMatrices._promote_to_blas_type(typ, ComplexF32)  == ComplexF32
+            @test BandedMatrices._promote_to_blas_type(typ, Float64)    == Float64
+            @test BandedMatrices._promote_to_blas_type(typ, Float32)    == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int64)      == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int32)      == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int16)      == typ
+            @test BandedMatrices._promote_to_blas_type(typ, Int8)       == typ
 
-        @test_throws ErrorException BandedMatrices._promote_to_blas_type(_foo, Float64)
-    end
+            @test_throws ErrorException BandedMatrices._promote_to_blas_type(_foo, Float64)
+        end
 
-    @testset "ldiv!" begin
-        As   = Any[_BandedMatrix(rand(1:10, 3, 5), 5, 1, 1),
-                   _BandedMatrix(rand(3, 5)*im,    5, 1, 1),
-                   _BandedMatrix(rand(3, 5),       5, 1, 1)
-                  ]
-        bs   = Any[rand(1:10,   5),
-                   rand(1:10,   5),
-                   rand(1:10.0, 5)*im,
-                  ]
-        typs = Any[Float64,
-                   ComplexF64,
-                   ComplexF64]
+        @testset "ldiv!" begin
+            As   = Any[_BandedMatrix(rand(1:10, 3, 5), 5, 1, 1),
+                       _BandedMatrix(rand(3, 5)*im,    5, 1, 1),
+                       _BandedMatrix(rand(3, 5),       5, 1, 1)
+                      ]
+            bs   = Any[rand(1:10,   5),
+                       rand(1:10,   5),
+                       rand(1:10.0, 5)*im,
+                      ]
+            typs = Any[Float64,
+                       ComplexF64,
+                       ComplexF64]
 
-        for (A, b, typ) in zip(As, bs, typs)
-            AA,   bb   = BandedMatrices._convert_to_blas_type(A,         b)
-            AAlu, bblu = BandedMatrices._convert_to_blas_type(lu(A), b)
-            @test eltype(AA) == eltype(bb) == eltype(AAlu) == eltype(bblu) == typ
-            @test Matrix(A)\copy(b)             ≈ A\copy(b)
-            @test Matrix(A)\copy(b)             ≈ lu(A)\copy(b)
-            @test Matrix(A)\copy(b)             ≈ ldiv!(A, copy(b))
-            @test Matrix(A)\copy(b)             ≈ ldiv!(lu(A), copy(b))
-            @test transpose(Matrix(A))\copy(b)  ≈ tldiv!(lu(A), copy(b))
-            @test transpose(Matrix(A))\copy(b)  ≈ ldiv!(lu(transpose(A)), copy(b))
-            @test Matrix(A)'\copy(b)            ≈ cldiv!(lu(A), copy(b))
+            for (A, b, typ) in zip(As, bs, typs)
+                AA,   bb   = BandedMatrices._convert_to_blas_type(A,         b)
+                AAlu, bblu = BandedMatrices._convert_to_blas_type(lu(A), b)
+                @test eltype(AA) == eltype(bb) == eltype(AAlu) == eltype(bblu) == typ
+                @test Matrix(A)\copy(b)             ≈ A\copy(b)
+                @test Matrix(A)\copy(b)             ≈ lu(A)\copy(b)
+                @test Matrix(A)\copy(b)             ≈ ldiv!(A, copy(b))
+                @test Matrix(A)\copy(b)             ≈ ldiv!(lu(A), copy(b))
+                @test transpose(Matrix(A))\copy(b)  ≈ tldiv!(lu(A), copy(b))
+                @test transpose(Matrix(A))\copy(b)  ≈ ldiv!(lu(transpose(A)), copy(b))
+                @test Matrix(A)'\copy(b)            ≈ cldiv!(lu(A), copy(b))
+            end
         end
     end
-end
 
-@testset "Banded A\b" begin
     @testset "banded" begin
         A = brand(5, 1, 1)
         b = Float64[1, 2, 3, 4, 5]
