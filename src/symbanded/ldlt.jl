@@ -4,26 +4,43 @@
 
 factorize(S::Symmetric{<:Any,<:BandedMatrix}) = ldlt(S)
 
-function ldlt(A::Symmetric{T,M}) where {T<:Real,M<:BandedMatrix{T}}
-    F = Symmetric(similar(A.data), :L)
-    B = F.data
+function ldlt!(F::Symmetric{T,M}) where {T<:Real,M<:BandedMatrix{T}}
+    A = F.data
     n = size(A, 1)
     b = bandwidth(A, 1)
-    for j = 1:n
-        B[j,j] = A[j,j]
-        for k = max(1,j-b-1):j-1
-            B[j,j] -= B[j,k]^2*B[k,k]
-        end
-        for i = j+1:min(n,j+b)
-            B[i,j] = A[i,j]
-            for k = max(1,j-b-1):j-1
-                B[i,j] -= B[i,k]*B[j,k]*B[k,k]
+    if F.uplo == 'L'
+        @inbounds for j = 1:n
+            @simd for k = max(1,j-b-1):j-1
+                A[j,j] -= abs2(A[j,k])*A[k,k]
             end
-            B[i,j] /= B[j,j]
+            for i = j+1:min(n,j+b)
+                @simd for k = max(1,j-b-1):j-1
+                    A[i,j] -= A[i,k]*A[j,k]*A[k,k]
+                end
+                A[i,j] /= A[j,j]
+            end
+        end
+    elseif F.uplo == 'U'
+        @inbounds for j = 1:n
+            @simd for k = max(1,j-b-1):j-1
+                A[j,j] -= abs2(A[k,j])*A[k,k]
+            end
+            for i = j+1:min(n,j+b)
+                @simd for k = max(1,j-b-1):j-1
+                    A[j,i] -= A[k,i]*A[k,j]*A[k,k]
+                end
+                A[j,i] /= A[j,j]
+            end
         end
     end
     return LDLt{T,Symmetric{T,M}}(F)
 end
+
+function ldlt(A::Symmetric{T,M}) where {T<:Real,M<:BandedMatrix{T}}
+    S = typeof(zero(T)/one(T))
+    return S == T ? ldlt!(copy(A)) : ldlt!(Symmetric(BandedMatrix{S}(M), A.uplo))
+end
+
 
 function ldiv!(S::LDLt{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
     @assert !has_offset_axes(B)
