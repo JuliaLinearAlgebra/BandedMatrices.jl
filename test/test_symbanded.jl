@@ -120,7 +120,7 @@ end
 end
 
 @testset "LDLᵀ" begin
-    for T in subtypes(AbstractFloat)
+    for T in (Float16, Float32, Float64, BigFloat)
         A = BandedMatrix{T}(undef,(10,10),(2,2))
         A[band(0)] .= 4
         A[band(1)] .= -one(T)/4
