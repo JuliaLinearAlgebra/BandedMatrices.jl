@@ -7,8 +7,8 @@ import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, axpy!, ldiv!, mul!, lu, lu!, AbstractTriangular, has_offset_axes,
-            chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle
+            qr, axpy!, ldiv!, mul!, lu, lu!, ldlt, AbstractTriangular, has_offset_axes,
+            chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -74,6 +74,7 @@ include("banded/gbmm.jl")
 include("banded/linalg.jl")
 
 include("symbanded/symbanded.jl")
+include("symbanded/ldlt.jl")
 include("symbanded/BandedCholesky.jl")
 
 include("tribanded.jl")

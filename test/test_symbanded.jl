@@ -119,6 +119,31 @@ end
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
 end
 
+@testset "LDLᵀ" begin
+    for T in subtypes(AbstractFloat)
+        A = BandedMatrix{T}(undef,(10,10),(2,2))
+        A[band(0)] .= 4
+        A[band(1)] .= -one(T)/4
+        A[band(2)] .= -one(T)/16
+        SAU = Symmetric(A, :U)
+        F = ldlt(SAU)
+        b = collect(one(T):size(F, 1))
+        x = Matrix(SAU)\b
+        y = F\b
+        @test x ≈ y
+        A[band(-1)] .= -one(T)/3
+        A[band(-2)] .= -one(T)/9
+        SAL = Symmetric(A, :L)
+        x = Matrix(SAL)\b
+        F = ldlt(SAL)
+        y = F\b
+        @test x ≈ y
+        @test_throws DimensionMismatch F\[b;b]
+        @test det(F) ≈ det(SAL)
+    end
+end
+
+
 @testset "Cholesky" begin
     A = Symmetric(BandedMatrix(0 => 1 ./ [12, 6, 6, 6, 12],
                                1 => ones(4) ./ 24))
