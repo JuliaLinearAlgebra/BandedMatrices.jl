@@ -100,7 +100,7 @@ end
 bandwidths(M::MulMatrix) = bandwidths(M.applied)
 isbanded(M::MulMatrix) = all(isbanded, M.applied.args)
 
-const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
+const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:LayoutApplyStyle{<:Tuple{Vararg{<:AbstractBandedLayout}}}}}
 
 BroadcastStyle(::Type{<:MulBandedMatrix}) = BandedStyle()
 
@@ -122,7 +122,7 @@ end
 getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, k::Integer, j::Integer) =
     _banded_mul_getindex(eltype(M), M.args, k, j)
 
-getindex(M::Mul{<:Tuple{Vararg{<:AbstractBandedLayout}}}, k::Integer, j::Integer) =
+getindex(M::Mul{<:LayoutApplyStyle{<:Tuple{Vararg{<:AbstractBandedLayout}}}}, k::Integer, j::Integer) =
     _banded_mul_getindex(eltype(M), (first(M.args), Mul(tail(M.args)...)), k, j)
 
 
