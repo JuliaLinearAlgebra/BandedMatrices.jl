@@ -51,7 +51,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     end
 
     function Bn(::Type{T}, N::Int) where {T}
-        B = Symmetric(BandedMatrix(Zeros{T}(N,N), (0,2)))
+        B = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
         for n = 0:N-1
             parent(B).data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
         end
@@ -120,8 +120,8 @@ end
 end
 
 @testset "LDLᵀ" begin
-    for T in (Float16, Float32, Float64, BigFloat)
-        A = BandedMatrix{T}(undef,(10,10),(2,2))
+    for T in (Float16, Float32, Float64, BigFloat, Rational{BigInt})
+        A = BandedMatrix{T}(undef,(10,10),(0,2))
         A[band(0)] .= 4
         A[band(1)] .= -one(T)/4
         A[band(2)] .= -one(T)/16
@@ -131,6 +131,8 @@ end
         x = Matrix(SAU)\b
         y = F\b
         @test x ≈ y
+        A = BandedMatrix{T}(undef,(10,10),(2,0))
+        A[band(0)] .= 4
         A[band(-1)] .= -one(T)/3
         A[band(-2)] .= -one(T)/9
         SAL = Symmetric(A, :L)
@@ -140,6 +142,13 @@ end
         @test x ≈ y
         @test_throws DimensionMismatch F\[b;b]
         @test det(F) ≈ det(SAL)
+    end
+    for T in (Int16, Int32, Int64, BigInt)
+        A = BandedMatrix{T}(undef, (4,4), (1,1))
+        A[band(0)] .= 3
+        A[band(1)] .= 1
+        F = ldlt(Symmetric(A))
+        @test eltype(F) == float(T)
     end
 end
 
