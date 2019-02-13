@@ -65,7 +65,7 @@ function materialize!(M::BlasMatMulVec{<:BandedColumnMajor,<:AbstractStridedLayo
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
-        lmul!(β, y)
+        _fill_lmul!(β, y)
     elseif l < 0
         materialize!(MulAdd(α, view(A, :, 1-l:n), view(x, 1-l:n), β, y))
     elseif u < 0
