@@ -46,7 +46,7 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatMulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    A,x = M.factors
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbmv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), dest)
 end
@@ -54,7 +54,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatMulVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    A,x = M.factors
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbmv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), dest)
 end
@@ -62,7 +62,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatMulVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
                                    <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T <: BlasFloat}
-    A,x = M.factors
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbmv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), dest)
 end
@@ -71,7 +71,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatMulVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
                                    <:AbstractStridedLayout, T, T}) where {UPLO,UNIT,T <: BlasFloat}
-    A,x = M.factors
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbmv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
 end
@@ -85,8 +85,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
          M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    Ai,x = M.factors
-    A = inv(Ai)
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbsv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), dest)
 end
@@ -94,8 +93,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
          M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
                                    <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    Ai,x = M.factors
-    A = inv(Ai)
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbsv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), dest)
 end
@@ -103,8 +101,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
          M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
                                    <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T <: BlasFloat}
-    Ai,x = M.factors
-    A = inv(Ai)
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbsv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), dest)
 end
@@ -113,8 +110,7 @@ end
 @inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
          M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
                                    <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T <: BlasFloat}
-    Ai,x = M.factors
-    A = inv(Ai)
+    A,x = M.args
     x ≡ dest || copyto!(dest, x)
     tbsv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
 end

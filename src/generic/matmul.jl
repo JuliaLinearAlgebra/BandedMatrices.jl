@@ -3,7 +3,7 @@ BroadcastStyle(::BandedStyle, M::ArrayMulArrayStyle) = M
 
 @lazymul AbstractBandedMatrix
 
-bandwidths(M::Mul) = prodbandwidths(M.factors...)
+bandwidths(M::Mul) = prodbandwidths(M.args...)
 
 similar(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}) where T =
     similar(M, T, axes(M))
@@ -65,7 +65,7 @@ function materialize!(M::BlasMatMulVec{<:BandedColumnMajor,<:AbstractStridedLayo
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
-        lmul!(β, y)
+        _fill_lmul!(β, y)
     elseif l < 0
         materialize!(MulAdd(α, view(A, :, 1-l:n), view(x, 1-l:n), β, y))
     elseif u < 0
@@ -123,23 +123,23 @@ end
 
 
 @inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{<:BandedColumnMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
-    A,B = M.factors
+    A,B = M.args
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
 
 @inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{<:BandedRowMajor,<:AbstractStridedLayout,T,T}) where T<:BlasFloat
-    A,B = M.factors
+    A,B = M.args
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
 
 @inline function _copyto!(_, C::AbstractVector{T}, M::MatMulVec{<:ConjLayout{<:BandedRowMajor},<:AbstractStridedLayout,T,T}) where T<:BlasFloat
-    A,B = M.factors
+    A,B = M.args
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
 
 
 @inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:AbstractBandedLayout})
-    A,b = M.factors
+    A,b = M.args
     for k = 1:length(c)
         c[k] = zero(eltype(A)) * b[1]
     end
@@ -150,7 +150,7 @@ end
 end
 
 @inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:BandedRowMajor})
-    At,b = M.factors
+    At,b = M.args
     A = transpose(At)
     c .= zero.(c)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
@@ -160,7 +160,7 @@ end
 end
 
 @inline function _copyto!(_, c::AbstractVector, M::MatMulVec{<:ConjLayout{<:BandedRowMajor}})
-    Ac,b = M.factors
+    Ac,b = M.args
     A = Ac'
     c .= zero.(c)
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
@@ -208,22 +208,27 @@ const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBande
 const ConjOrBandedColumnMajor = Union{<:BandedColumnMajor,ConjLayout{<:BandedColumnMajor}}
 
 @inline function _copyto!(_, C::AbstractMatrix{T}, M::MatMulMat{<:ConjOrBandedColumnMajor,<:ConjOrBandedColumnMajor,T,T}) where T<:BlasFloat
-    A,B = M.factors
+    A,B = M.args
     materialize!(MulAdd(one(T), A, B, zero(T), C))
 end
 
 @inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:ConjOrBandedLayout,<:ConjOrBandedLayout})
-     A, B = M.factors
+     A, B = M.args
      banded_mul!(C, A, B)
 end
 
 @inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:ConjOrBandedLayout})
-     A, B = M.factors
+     A, B = M.args
      banded_mul!(C, A, B)
 end
 
 @inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:Any,<:ConjOrBandedLayout})
-     A, B = M.factors
+     A, B = M.args
+     banded_mul!(C, A, B)
+end
+
+@inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:TriangularLayout,<:ConjOrBandedLayout})
+     A, B = M.args
      banded_mul!(C, A, B)
 end
 
