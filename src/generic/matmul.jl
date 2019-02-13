@@ -227,6 +227,11 @@ end
      banded_mul!(C, A, B)
 end
 
+@inline function _copyto!(_, C::AbstractMatrix, M::MatMulMat{<:TriangularLayout,<:ConjOrBandedLayout})
+     A, B = M.args
+     banded_mul!(C, A, B)
+end
+
 function materialize!(M::BlasMatMulMat{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor,T}) where T<:BlasFloat
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
 
