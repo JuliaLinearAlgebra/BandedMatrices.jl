@@ -33,14 +33,17 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
                 BLAS.sbmv!('L', 1, 1.0, view(parent(A).data,3:4,:), x, 0.0, similar(x)))
 
-    # eigvals
+    @test norm(A) ≈ norm(Matrix(A))
+    @test cond(A) ≈ cond(Matrix(A))
+
+    # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = Symmetric(brand(Float64, 100, 100, 0, 4))
+    A = Symmetric(brand(Float64, 10, 10, 0, 4))
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
-
-    # generalized eigvals
+    Λ, Q = eigen(A)
+    @test Q'A*Q ≈ Diagonal(Λ)
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
@@ -61,27 +64,20 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
         B
     end
 
-    for ef in (eigvals,(A,B)->eigen(A,B).values)
-        A = An(Float64, 100)
-        B = Bn(Float64, 100)
+    for T in (Float32, Float64)
+        A = An(T, 100)
+        B = Bn(T, 100)
 
-        λ = ef(A, B)
-        @test λ ≈ ef(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
+        λ = eigvals(A, B)
+        @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
 
-        err = λ*(2/π)^2 ./ (1:length(λ)).^2 .- 1
+        err = λ*(T(2)/π)^2 ./ (1:length(λ)).^2 .- 1
 
-        @test norm(err[1:40]) < 100eps(Float64)
+        @test norm(err[1:40]) < 100eps(T)
 
-        A = An(Float32, 100)
-        B = Bn(Float32, 100)
-
-        λ = ef(A, B)
-
-        @test λ ≈ ef(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
-
-        err = λ*(2.f0/π)^2 ./ (1:length(λ)).^2 .- 1
-
-        @test norm(err[1:40]) < 100eps(Float32)
+        Λ, V = eigen(A, B)
+        @test V'A*V ≈ Diagonal(Λ)
+        @test V'B*V ≈ I
     end
 end
 

@@ -600,10 +600,24 @@ sparse(B::BandedMatrix) = sparse(_banded_rowval(B), _banded_colval(B), _banded_n
 
 
 
-# pass standard routines to Matrix
+function _bidiagonalize!(A::AbstractMatrix{T}, M::BandedColumnMajor) where T
+    m, n = size(A)
+    mn = min(m, n)
+    d = Vector{T}(undef, mn)
+    e = Vector{T}(undef, mn-1)
+    Q = Matrix{T}(undef, 0, 0)
+    Pt = Matrix{T}(undef, 0, 0)
+    C = Matrix{T}(undef, 0, 0)
+    work = Vector{T}(undef, 2*max(m, n))
+    gbbrd!('N', m, n, 0, bandwidth(A, 1), bandwidth(A, 2), bandeddata(A), d, e, Q, Pt, C, work)
+    Bidiagonal(d, e, :U)
+end
 
-norm(B::BandedMatrix,opts...) = norm(Matrix(B),opts...)
+bidiagonalize!(A::AbstractMatrix) = _bidiagonalize!(A, MemoryLayout(A))
+bidiagonalize(A::AbstractMatrix) = bidiagonalize!(copy(A))
 
+svdvals!(A::BandedMatrix) = svdvals!(bidiagonalize!(A))
+svdvals(A::BandedMatrix) = svdvals!(copy(A))
 
 # We turn off bound checking to allow nicer syntax without branching
 #setindex!(A::BandedMatrix,v,k::Integer,j::Integer)=((A.l≤j-k≤A.u)&&k≤A.n)?ussetindex!(A,v,k,j):throw(BoundsError())
