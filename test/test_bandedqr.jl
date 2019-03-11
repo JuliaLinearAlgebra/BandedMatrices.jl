@@ -27,15 +27,23 @@ using BandedMatrices, LinearAlgebra, Test
             @test Q[k,j] ≈ Matrix(Q)[k,j]
         end
 
-        A=brand(T,100,100,3,4) + 10I
-        Q,R=qr(A)
+        A=brand(T,100,100,3,4)
+        @test qr(A).factors ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).factors
+        @test qr(A).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
         b=rand(T,100)
-        @test R\(Q'*b) ≈ qr(A)\b ≈ Matrix(A)\b
+        @test qr(A)\b ≈ Matrix(A)\b
 
         A=brand(T,102,100,3,4)
-        Q,R=qr(A)
+        @test qr(A).factors ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).factors
+        @test qr(A).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
         b=rand(T,102)
-        qr(A)\b ≈ Matrix(A)\b
+        @test qr(A)\b ≈ Matrix(A)\b
+
+        A=brand(T,100,102,3,4)
+        @test qr(A).factors ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).factors
+        @test qr(A).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
+        b=rand(T,100)
+        @test_broken qr(A)\b ≈ Matrix(A)\b
     end
 
     @testset "Mixed types" begin

@@ -49,14 +49,33 @@ function lmul!(adjA::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BandedMatrix}}, B::Abstra
     B
 end
 
+function _banded_widerect_ldiv!(A::QR{T}, B) where T
+    error("Not implemented")
+end
+function _banded_longrect_ldiv!(A::QR, B)
+    m, n = size(A)
+    R = A.factors
+    lmul!(adjoint(A.Q), B)
+    B̃ = view(B, 1:n, :)
+    B̃ .= Ldiv(UpperTriangular(view(R, 1:n, 1:n)), B̃)
+    B
+end
+function _banded_square_ldiv!(A::QR, B)
+    R = A.factors
+    lmul!(adjoint(A.Q), B)
+    B .= Ldiv(UpperTriangular(R), B)
+    B
+end
+
 for Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat) 
     @eval function ldiv!(A::QR{T,<:BandedMatrix}, B::$Typ{T}) where T
         m, n = size(A)
-        minmn = min(m,n)
-        n == m == size(B,1) || error("Not implemented")
-        lmul!(adjoint(A.Q), B)
-        R = A.factors
-        LinearAlgebra.ldiv!(UpperTriangular(R), B)
-        return B
+        if m == n
+            _banded_square_ldiv!(A, B)
+        elseif n > m
+            _banded_widerect_ldiv!(A, B)
+        else
+            _banded_longrect_ldiv!(A, B)
+        end
     end
 end
