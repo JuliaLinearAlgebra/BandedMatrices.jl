@@ -13,28 +13,29 @@ using BandedMatrices, LinearAlgebra, Test
         A=brand(T,14,10,3,2)
 
         Q,R=qr(A)
+        @test Matrix(Q)*Matrix(R) ≈ A
 
-
-        for k=1:size(Q,1),j=1:size(Q,2)
+        for k=1:size(A,1),j=1:size(A,2)
             @test Q[k,j] ≈ Matrix(Q)[k,j]
         end
-
-        @test Matrix(Q)*Matrix(R) ≈ A
 
         A=brand(T,10,14,3,2)
-
         Q,R=qr(A)
-
+        @test Matrix(Q)*Matrix(R) ≈ A
 
         for k=1:size(Q,1),j=1:size(Q,2)
             @test Q[k,j] ≈ Matrix(Q)[k,j]
         end
 
-        @test Matrix(Q)*Matrix(R) ≈ A
-        A=brand(T,100,100,3,4)
+        A=brand(T,100,100,3,4) + 10I
         Q,R=qr(A)
         b=rand(T,100)
         @test R\(Q'*b) ≈ qr(A)\b ≈ Matrix(A)\b
+
+        A=brand(T,102,100,3,4)
+        Q,R=qr(A)
+        b=rand(T,102)
+        qr(A)\b ≈ Matrix(A)\b
     end
 
     @testset "Mixed types" begin
