@@ -1,10 +1,6 @@
 # BLAS/linear algebra overrides
 
 @inline dot(x...) = LinearAlgebra.dot(x...)
-@inline dot(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) where {T<:Union{Float64,Float32}} =
-    BLAS.dot(M,a,incx,b,incy)
-@inline dot(M::Int,a::Ptr{T},incx::Int,b::Ptr{T},incy::Int) where {T<:Union{ComplexF64,ComplexF32}} =
-    BLAS.dotc(M,a,incx,b,incy)
 
 dotu(f::StridedVector{T},g::StridedVector{T}) where {T<:Union{ComplexF32,ComplexF64}} =
     BLAS.dotu(f,g)
@@ -14,10 +10,6 @@ dotu(f::AbstractVector{N},g::AbstractVector{T}) where {N<:Real,T<:Number} = dot(
 
 normalize!(w::AbstractVector) = rmul!(w,inv(norm(w)))
 normalize!(w::Vector{T}) where {T<:BlasFloat} = normalize!(length(w),w)
-normalize!(n,w::Union{Vector{T},Ptr{T}}) where {T<:Union{Float64,Float32}} =
-    BLAS.scal!(n,inv(BLAS.nrm2(n,w,1)),w,1)
-normalize!(n,w::Union{Vector{T},Ptr{T}}) where {T<:Union{ComplexF64,ComplexF32}} =
-    BLAS.scal!(n,T(inv(BLAS.nrm2(n,w,1))),w,1)
 
 
 # check dimensions of inputs
