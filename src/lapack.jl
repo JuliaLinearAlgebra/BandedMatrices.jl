@@ -1,7 +1,7 @@
 "Check that vect is correctly specified"
 function chkvect(vect::AbstractChar)
-    if !(vect == 'N' || vect == 'V')
-        throw(ArgumentError("vect argument must be 'N' (X is not returned), 'V' (X is returned)"))
+    if !(vect == 'N' || vect == 'U' || vect == 'V')
+        throw(ArgumentError("vect argument must be 'N' (X is not returned), or 'U' or 'V' (X is returned)"))
     end
     vect
 end
@@ -12,7 +12,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
     @eval begin
         function sbtrd!(vect::Char, uplo::Char,
                         m::Int, k::Int, A::AbstractMatrix{$elty},
-                        d::AbstractVector{$elty}, e::AbstractVector{$elty}, q::AbstractVector{$elty},
+                        d::AbstractVector{$elty}, e::AbstractVector{$elty}, Q::AbstractMatrix{$elty},
                         work::AbstractVector{$elty})
             @assert !has_offset_axes(A)
             chkstride1(A)
@@ -29,12 +29,37 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                  Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
                  vect, uplo,
                  n, k, A, max(1,stride(A,2)),
-                 d, e, q, max(1,stride(q,2)), work, info)
+                 d, e, Q, max(1,stride(Q,2)), work, info)
             LAPACK.chklapackerror(info[])
-            d, e, q
+            d, e, Q
         end
     end
 end
+
+## Bidiagonalization
+for (fname, elty) in ((:dgbbrd_,:Float64),
+                      (:sgbbrd_,:Float32))
+    @eval begin
+        function gbbrd!(vect::Char, m::Int, n::Int, ncc::Int,
+                        kl::Int, ku::Int, ab::AbstractMatrix{$elty},
+                        d::AbstractVector{$elty}, e::AbstractVector{$elty}, Q::AbstractMatrix{$elty},
+                        Pt::AbstractMatrix{$elty}, C::AbstractMatrix{$elty}, work::AbstractVector{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 vect, m, n, ncc,
+                 kl, ku, ab, max(1,stride(ab,2)),
+                 d, e, Q, max(1,stride(Q,2)),
+                 Pt, max(1,stride(Pt,2)), C, max(1,stride(C,2)), work, info)
+            LAPACK.chklapackerror(info[])
+            d, e, Q, Pt, C
+        end
+    end
+end
+
 
 # (GB) general banded matrices, LU decomposition
 for (gbtrf, elty) in
@@ -134,6 +159,52 @@ for (gbtrs, elty) in
     end
 end
 
+# All the eigenvalues and, optionally, eigenvectors of a real symmetric band matrix A.
+for (fname, elty) in ((:dsbev_,:Float64),
+                      (:ssbev_,:Float32))
+    @eval begin
+                # SUBROUTINE       SUBROUTINE DSBEV( JOBZ, UPLO, N, KD, AB, LDAB, W, Z, LDZ, WORK,
+                #     $                  INFO )
+                # CHARACTER          JOBZ, UPLO
+                # INTEGER            INFO, KD, LDAB, LDZ, N
+                # DOUBLE PRECISION   AB( LDAB, * ), W( * ), WORK( * ), Z( LDZ, * )
+
+        function sbev!(jobz::Char, uplo::Char, n::Int, kd::Int, AB::AbstractMatrix{$elty},
+                       w::AbstractVector{$elty}, Z::AbstractMatrix{$elty}, work::AbstractVector{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty},
+                 Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 jobz, uplo, n, kd, AB, max(stride(AB,2),1), w, Z, max(stride(Z,2),1), work, info)
+            LAPACK.chklapackerror(info[])
+            w, Z
+        end
+    end
+end
+
+# All the generalized eigenvalues and, optionally, eigenvectors of a real symmetric-definite pencil (A,B).
+for (fname, elty) in ((:dsbgv_,:Float64),
+                      (:ssbgv_,:Float32))
+    @eval begin
+                # SUBROUTINE       DSBGV( JOBZ, UPLO, N, KA, KB, AB, LDAB, BB, LDBB, W, Z,
+                #     $                  LDZ, WORK, INFO )
+                # CHARACTER          JOBZ, UPLO
+                # INTEGER            INFO, KA, KB, LDAB, LDBB, LDZ, N
+                # DOUBLE PRECISION   AB( LDAB, * ), BB( LDBB, * ), W( * ), WORK( * ), Z( LDZ, * )
+
+        function sbgv!(jobz::Char, uplo::Char, n::Int, ka::Int, kb::Int, AB::AbstractMatrix{$elty},
+                       BB::AbstractMatrix{$elty}, w::AbstractVector{$elty}, Z::AbstractMatrix{$elty}, work::AbstractVector{$elty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 jobz, uplo, n, ka, kb, AB, max(stride(AB,2),1), BB, max(stride(BB,2),1), w, Z, max(stride(Z,2),1), work, info)
+            LAPACK.chklapackerror(info[])
+            w, Z
+        end
+    end
+end
 
 
 

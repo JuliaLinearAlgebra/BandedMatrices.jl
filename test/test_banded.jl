@@ -387,4 +387,11 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test bandwidths(real(B)) == bandwidths(imag(B)) == bandwidths(B)
         @test real(B) + im*imag(B) == B
     end
+
+    @testset "induced norm" begin
+        A = brand(Float64, 12, 10, 2, 3)
+        B = Matrix(A)
+	    @test opnorm(A) ≈ opnorm(B)
+	    @test cond(A) ≈ cond(B)
+    end
 end
