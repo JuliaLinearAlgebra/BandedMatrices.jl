@@ -140,45 +140,43 @@ import Base.Broadcast: materialize
         B = brand(10,10,-2,2)
         C = BandedMatrix(Fill(NaN,10,10),(0,4))
         C .= Mul(A,B)
-        @test C == Matrix(A)*Matrix(B)
-
+        @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,-2,2)
         B = brand(10,10,-2,2)
         C = BandedMatrix(Fill(NaN,10,10),(-4,4))
         C .= Mul(A,B)
-        @test C == Matrix(A)*Matrix(B)
+        @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,-2,2)
         B = brand(10,10,2,2)
         C = BandedMatrix(Fill(NaN,10,10),(0,4))
         C .= Mul(A,B)
-        @test C == Matrix(A)*Matrix(B)
+        @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,2,2)
         B = brand(10,10,2,-2)
         C = BandedMatrix(Fill(NaN,10,10),(4,0))
         C .= Mul(A,B)
-        @test C == Matrix(A)*Matrix(B)
-
+        @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,2,-2)
         B = brand(10,10,2,-2)
         C = BandedMatrix(Fill(NaN,10,10),(4,-4))
         C .= Mul(A,B)
-        @test C == Matrix(A)*Matrix(B)
+        @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,2,-2)
         B = brand(10,10,2,2)
         C = BandedMatrix(Fill(NaN,10,10),(4,0))
         C .= Mul(A,B)
-        @test C == Matrix(A)*Matrix(B)
+        @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(30,1,0,0)
         B = brand(1,30,17,17)
         C = BandedMatrix(Fill(NaN, 30,30), (17,17))
         C .= Mul(A,B)
-        @test C == A*B
+        @test C ≈ Matrix(A)*Matrix(B)
     end
 
     @testset "Not enough bands" begin
