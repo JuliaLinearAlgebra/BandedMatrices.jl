@@ -1,6 +1,9 @@
 
-qr(A::BandedMatrix) = banded_qr!(BandedMatrix(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
-qr(A::Tridiagonal) = banded_qr!(BandedMatrix(A, (1,2)))
+qr(A::BandedMatrix) = qr!(BandedMatrix(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
+qr(A::Tridiagonal) = qr!(BandedMatrix(A, (1,2)))
+
+qr!(A::BandedMatrix) = banded_qr!(A)
+
 
 function banded_qr!(R::BandedMatrix{T}) where T
     D = bandeddata(R)

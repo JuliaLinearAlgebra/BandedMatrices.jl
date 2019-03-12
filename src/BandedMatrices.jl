@@ -7,10 +7,10 @@ import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
+            qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
             svdvals, svdvals!, QRPackedQ, reflector!, reflectorApply!
-import MatrixFactorizations: ql, QLPackedQ            
+import MatrixFactorizations: ql, ql!, QLPackedQ            
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,

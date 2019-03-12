@@ -1,4 +1,6 @@
 
+ql!(A::BandedMatrix) = banded_ql!(A)
+
 ql(A::BandedMatrix) = banded_ql!(BandedMatrix(A, (bandwidth(A,1)+bandwidth(A,2),bandwidth(A,2))))
 ql(A::Tridiagonal) = banded_ql!(BandedMatrix(A, (2,1)))
 
