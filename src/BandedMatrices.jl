@@ -9,7 +9,7 @@ import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
             qr, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
-            svdvals, svdvals!
+            svdvals, svdvals!, QRPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
