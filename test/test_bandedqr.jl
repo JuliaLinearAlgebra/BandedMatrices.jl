@@ -1,7 +1,9 @@
-using BandedMatrices, MatrixFactorizations, LinearAlgebra, Test
+using BandedMatrices, MatrixFactorizations, LinearAlgebra, Test, Random
 
-@testset "QR tests" begin
-    for T in (Float64,ComplexF64,Float32,ComplexF32)
+Random.seed!(0)
+
+for T in (Float64,ComplexF64,Float32,ComplexF32)
+    @testset "QR tests" begin
         A=brand(T,10,10,3,2)
         Q,R=qr(A)
         @test Matrix(Q)*Matrix(R) ≈ A
@@ -83,6 +85,8 @@ end
     for T in (Float64,ComplexF64,Float32,ComplexF32)
         A=brand(T,10,10,3,2)
         Q,L=ql(A)
+        @test ql(A).factors ≈ ql!(Matrix(A)).factors
+        @test ql(A).τ ≈ ql!(Matrix(A)).τ
         @test Matrix(Q)*Matrix(L) ≈ A
         b=rand(T,10)
         @test mul!(similar(b),Q,mul!(similar(b),Q',b)) ≈ b
@@ -92,6 +96,8 @@ end
 
         A=brand(T,14,10,3,2)
         Q,L=ql(A)
+        @test ql(A).factors ≈ ql!(Matrix(A)).factors
+        @test ql(A).τ ≈ ql!(Matrix(A)).τ
         @test_broken Matrix(Q)*Matrix(L) ≈ A
 
         for k=1:size(A,1),j=1:size(A,2)
@@ -100,7 +106,19 @@ end
 
         A=brand(T,10,14,3,2)
         Q,L=ql(A)
-        @test_broken Matrix(Q)*Matrix(L) ≈ A
+        @test ql(A).factors ≈ ql!(Matrix(A)).factors
+        @test ql(A).τ ≈ ql!(Matrix(A)).τ
+        @test Matrix(Q)*Matrix(L) ≈ A
+
+        for k=1:size(Q,1),j=1:size(Q,2)
+            @test Q[k,j] ≈ Matrix(Q)[k,j]
+        end
+
+        A=brand(T,10,14,3,6)
+        Q,L=ql(A)
+        @test ql(A).factors ≈ ql!(Matrix(A)).factors
+        @test ql(A).τ ≈ ql!(Matrix(A)).τ
+        @test Matrix(Q)*Matrix(L) ≈ A
 
         for k=1:size(Q,1),j=1:size(Q,2)
             @test Q[k,j] ≈ Matrix(Q)[k,j]
