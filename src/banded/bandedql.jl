@@ -55,6 +55,7 @@ function lmul!(A::QLPackedQ{<:Any,<:BandedMatrix}, B::AbstractVecOrMat)
     B
 end
 
+
 function lmul!(adjA::Adjoint{<:Any,<:QLPackedQ{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
     @assert !has_offset_axes(B)
     A = adjA.parent
@@ -84,6 +85,68 @@ function lmul!(adjA::Adjoint{<:Any,<:QLPackedQ{<:Any,<:BandedMatrix}}, B::Abstra
     end
     B
 end
+
+### QBc/QcBc
+function rmul!(A::AbstractMatrix,Q::QLPackedQ{<:Any,<:BandedMatrix})
+    mQ, nQ = size(Q.factors)
+    mA, nA = size(A,1), size(A,2)
+    if nA != mQ
+        throw(DimensionMismatch("matrix A has dimensions ($mA,$nA) but matrix Q has dimensions ($mQ, $nQ)"))
+    end
+    Qfactors = Q.factors
+    l,u = bandwidths(Qfactors)
+    D = Qfactors.data
+    @inbounds begin
+        for k = min(mQ,nQ):-1:1
+            ν = k+nQ-min(mQ,nQ)
+            for i = 1:mA
+                vAi = A[i,k]
+                for j = max(1,ν-u):k-1
+                    vAi += A[i,j]*D[j-ν+u+1,ν]
+                end
+                vAi = vAi*Q.τ[k]
+                A[i,k] -= vAi
+                for j = max(1,ν-u):k-1
+                    A[i,j] -= vAi*conj(D[j-ν+u+1,ν])
+                end
+            end
+        end
+    end
+    A
+end
+
+### AQc
+function rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QLPackedQ{<:Any,<:BandedMatrix}})
+    Q = adjQ.parent
+    mQ, nQ = size(Q.factors)
+    mA, nA = size(A,1), size(A,2)
+    if nA != mQ
+        throw(DimensionMismatch("matrix A has dimensions ($mA,$nA) but matrix Q has dimensions ($mQ, $nQ)"))
+    end
+    Qfactors = Q.factors
+    l,u = bandwidths(Qfactors)
+    D = Qfactors.data
+    @inbounds begin
+        for k = 1:min(mQ,nQ)
+            ν = k+nQ-min(mQ,nQ)
+            for i = 1:mA
+                vAi = A[i,k]
+                for j = max(1,ν-u):k-1
+                    vAi += A[i,j]*D[j-ν+u+1,ν]
+                end
+                vAi = vAi*conj(Q.τ[k])
+                A[i,k] -= vAi
+                for j = max(1,ν-u):k-1
+                    A[i,j] -= vAi*conj(D[j-ν+u+1,ν])
+                end
+            end
+        end
+    end
+    A
+end
+
+
+
 
 function _banded_widerect_ldiv!(A::QL, B)
     error("Not implemented")

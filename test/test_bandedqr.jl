@@ -161,6 +161,32 @@ end
         @test_throws DimensionMismatch ql(A).Q'randn(3)
     end
 
+    @testset "lmul!/rmul!" begin
+        A = brand(100,100,3,4)
+        Q,R = qr(A)
+        x = randn(100)
+        b = randn(100,2)
+        @test lmul!(Q, copy(x)) ≈ Matrix(Q)*x
+        @test lmul!(Q, copy(b)) ≈ Matrix(Q)*b
+        @test lmul!(Q', copy(x)) ≈ Matrix(Q)'*x
+        @test lmul!(Q', copy(b)) ≈ Matrix(Q)'*b
+        c = randn(2,100)
+        @test rmul!(copy(c), Q) ≈ c*Matrix(Q)
+        @test rmul!(copy(c), Q') ≈ c*Matrix(Q')
+
+        A = brand(100,100,3,4)
+        Q,L = ql(A)
+        x = randn(100)
+        b = randn(100,2)
+        @test lmul!(Q, copy(x)) ≈ Matrix(Q)*x
+        @test lmul!(Q, copy(b)) ≈ Matrix(Q)*b
+        @test lmul!(Q', copy(x)) ≈ Matrix(Q)'*x
+        @test lmul!(Q', copy(b)) ≈ Matrix(Q)'*b
+        c = randn(2,100)
+        @test rmul!(copy(c), Q) ≈ c*Matrix(Q)
+        @test rmul!(copy(c), Q') ≈ c*Matrix(Q')
+    end
+
     @testset "Mixed types" begin
         A=brand(10,10,3,2)
         b=rand(ComplexF64,10)
