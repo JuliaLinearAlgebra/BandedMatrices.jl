@@ -1,5 +1,5 @@
 module BandedMatrices
-using Base, FillArrays, LazyArrays, LinearAlgebra, SparseArrays, Random
+using Base, FillArrays, LazyArrays, MatrixFactorizations, LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
@@ -7,9 +7,10 @@ import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, norm, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
+            qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
-            svdvals, svdvals!, QRPackedQ, reflector!, reflectorApply!
+            svdvals, svdvals!, QRPackedQ
+import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
@@ -70,7 +71,8 @@ include("generic/indexing.jl")
 
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
-include("banded/BandedQR.jl")
+include("banded/bandedqr.jl")
+include("banded/bandedql.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
 
