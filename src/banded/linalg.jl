@@ -34,6 +34,15 @@ function ldiv!(A::BandedLU, B::AbstractVecOrMat)
     ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
 
+function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real
+    # c2r = reshape(transpose(reinterpret(T, reshape(B, (1, length(B))))), size(B, 1), 2*size(B, 2))
+    a = real.(B)
+    b = imag.(B)
+    ldiv!(A, a)
+    ldiv!(A, b)
+    B .= a .+ im.*b
+end
+
 function ldiv!(transA::Transpose{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasFloat}
     A = transA.parent
     m = size(A.factors,1)

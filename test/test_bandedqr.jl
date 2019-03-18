@@ -2,8 +2,9 @@ using BandedMatrices, MatrixFactorizations, LinearAlgebra, Test, Random
 
 Random.seed!(0)
 
-for T in (Float64,ComplexF64,Float32,ComplexF32)
-    @testset "QR tests" begin
+
+@testset "QR tests" begin
+    for T in (Float64,ComplexF64,Float32,ComplexF32)
         A=brand(T,10,10,3,2)
         Q,R=qr(A)
         @test Matrix(Q)*Matrix(R) ≈ A
