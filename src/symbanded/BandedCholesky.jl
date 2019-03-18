@@ -63,8 +63,14 @@ banded_chol!(A, ::Type{T}) where T = banded_chol!(MemoryLayout(A), A, T)
 chol!(A::AbstractBandedMatrix, ::Type{UpperTriangular}) = banded_chol!(A, UpperTriangular)
 chol!(A::AbstractBandedMatrix, ::Type{LowerTriangular}) = banded_chol!(A, LowerTriangular)
 
-_ldiv!(::BandedColumns{DenseColumnMajor}, A::Cholesky{T}, B::AbstractVecOrMat{T}) where T<:BlasFloat =
-    pbtrs!('U', size(A, 1), bandwidth(A.factors,2), A.factors.data, B)
+function _ldiv!(::BandedColumns{DenseColumnMajor}, A::Cholesky{T}, B::AbstractVecOrMat{T}) where T<:BlasFloat
+    if A.uplo == 'U'
+        pbtrs!('U', size(A, 1), bandwidth(A.factors,2), bandeddata(A.factors), B)
+    else
+        pbtrs!('L', size(A, 1), bandwidth(A.factors,1), bandeddata(A.factors), B)
+    end
+    B
+end
 
 function _ldiv!(::AbstractBandedLayout, C::Cholesky, B::AbstractMatrix)
     if C.uplo == 'L'
