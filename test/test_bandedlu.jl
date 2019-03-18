@@ -32,6 +32,11 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         # dense storage
         Af = Matrix(A)
         bf = copy(b)
+        L,U,p = lu(A)
+        Lf,Uf,pf = lu(Af)
+        @test L ≈ Lf
+        @test U ≈ Uf
+        @test p ≈ pf
 
         # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
@@ -139,7 +144,7 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         @test size(BLU, 1) == 5
         @test size(BLU, 2) == 4
         @test size(BLU, 3) == 1
-        @test_throws ErrorException size(BLU, -1)
-        @test_throws ErrorException size(BLU,  0)
+        @test_throws BoundsError size(BLU, -1)
+        @test_throws BoundsError size(BLU,  0)
     end
 end
