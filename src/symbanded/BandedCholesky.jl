@@ -89,6 +89,7 @@ end
 ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:BlasFloat = 
     _ldiv!(MemoryLayout(A.factors), A, B)
 
+
 # For some bizarre reason this isnt in LinearAlgebra
 cholesky(A::Symmetric{T,<:BandedMatrix{T}},
     ::Val{false}=Val(false); check::Bool = true) where T<:Real = cholesky!(cholcopy(A); check = check)
