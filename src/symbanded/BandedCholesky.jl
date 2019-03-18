@@ -1,8 +1,14 @@
 
 function banded_chol!(::BandedColumns{DenseColumnMajor}, 
                        A::AbstractMatrix{T}, ::Type{UpperTriangular}) where T<:BlasFloat
-    C, info = pbtrf!('U', size(A, 1), bandwidth(A,2), bandeddata(A))
-    UpperTriangular(C), info
+    _, info = pbtrf!('U', size(A, 1), bandwidth(A,2), bandeddata(A))
+    UpperTriangular(A), info
+end
+
+function banded_chol!(::BandedColumns{DenseColumnMajor}, 
+                      A::AbstractMatrix{T}, ::Type{LowerTriangular}) where T<:BlasFloat
+    _, info = pbtrf!('L', size(A, 1), bandwidth(A,1), bandeddata(A))
+    LowerTriangular(A), info
 end
 
 ## Non BLAS/LAPACK element types (generic)
@@ -60,8 +66,8 @@ function banded_chol!(_, A::AbstractMatrix, ::Type{LowerTriangular})
 end
 
 banded_chol!(A, ::Type{T}) where T = banded_chol!(MemoryLayout(A), A, T)
-chol!(A::AbstractBandedMatrix, ::Type{UpperTriangular}) = banded_chol!(A, UpperTriangular)
-chol!(A::AbstractBandedMatrix, ::Type{LowerTriangular}) = banded_chol!(A, LowerTriangular)
+_chol!(A::AbstractBandedMatrix, ::Type{UpperTriangular}) = banded_chol!(A, UpperTriangular)
+_chol!(A::AbstractBandedMatrix, ::Type{LowerTriangular}) = banded_chol!(A, LowerTriangular)
 
 function _ldiv!(::BandedColumns{DenseColumnMajor}, A::Cholesky{T}, B::AbstractVecOrMat{T}) where T<:BlasFloat
     if A.uplo == 'U'
@@ -82,8 +88,6 @@ end
 
 ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:BlasFloat = 
     _ldiv!(MemoryLayout(A.factors), A, B)
-
-# @lazyldiv Cholesky{<:Any,<:AbstractBandedMatrix}
 
 # For some bizarre reason this isnt in LinearAlgebra
 cholesky(A::Symmetric{T,<:BandedMatrix{T}},

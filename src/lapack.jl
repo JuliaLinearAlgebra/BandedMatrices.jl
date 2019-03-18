@@ -233,7 +233,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
                  uplo, n, kd,
                  A, max(1,stride(A,2)), info)
             LAPACK.chklapackerror(info[])
-            A
+            A, info[]
         end
     end
 end
