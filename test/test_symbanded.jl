@@ -150,13 +150,15 @@ end
 
 
 @testset "Cholesky" begin
-    A = Symmetric(BandedMatrix(0 => 1 ./ [12, 6, 6, 6, 12],
-                               1 => ones(4) ./ 24))
-    @test norm(cholesky(A).data - cholesky(Matrix(A)).U) < 1e-15
+    for T in (Float64, BigFloat) 
+        A = Symmetric(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],
+                                1 => ones(T,4) ./ 24))
+        Ac = cholesky(A)
 
-    Ac = cholesky(A)
-    b = rand(size(A,1))
-    @test norm(Ac\b - Matrix(A)\b) < 1e-14
+        @test Ac isa Cholesky{T,<:BandedMatrix{T}}                           
+        @test norm(Ac.U - cholesky(Matrix(A)).U) < 1e-15
 
-    @test_throws DimensionMismatch Ac\rand(size(A,1)+1)
+        b = rand(T,size(A,1))
+        @test norm(Ac\b - Matrix(A)\b) < 1e-14
+    end                    
 end
