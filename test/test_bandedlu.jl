@@ -34,7 +34,7 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         bf = copy(b)
         L,U,p = lu(A)
         Lf,Uf,pf = lu(Af)
-        @test_skip L ≈ Lf # storage format is different
+        @test L ≈ Lf # storage format is different
         @test U ≈ Uf
         @test p ≈ pf
 

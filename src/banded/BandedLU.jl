@@ -102,9 +102,10 @@ end
 function getproperty(F::BandedLU{T}, d::Symbol) where T
     m, n = size(F)
     if d == :L
-        L = tril!(getfield(F, :factors)[1:m, 1:min(m,n)])
-        for i = 1:min(m,n); L[i,i] = one(T); end
-        return L
+        # not clear how to get it from F.factors so we 
+        # form it in the most insane way possible
+        Ai = F\Matrix(I,n,m)
+        tril!((F.P/Ai)/F.U)
     elseif d == :U
         return triu!(getfield(F, :factors)[1:min(m,n), 1:n])
     elseif d == :p
