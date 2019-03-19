@@ -22,52 +22,59 @@ end
 
 
 # Direct and transposed algorithms
-# function _copyto!(::AbstractStridedLayout, dest::AbstractVecOrMat{T}, M::MatMulVec{BandedLULayout}A::BandedLU{T}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
-#     checksquare(A)
-#     copyto!(dest, B)
-#     gbtrs!('N', A.m, A.l, A.u, A.data, A.ipiv, dest)
-# end
-
-function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{S}) where {T<:Number, S<:Number}
-     checksquare(A)
-     AA, BB = _convert_to_blas_type(A, B)
-     ldiv!(lu(AA), BB) # call BlasFloat versions
- end
-
-function ldiv!(At::Transpose{T,BandedLU{T}}, B::AbstractVecOrMat{S}) where {T<:Number, S<:Number}
-    A = parent(At)
-    checksquare(A)
-    AA, BB = _convert_to_blas_type(A, B)
-    ldiv!(transpose(lu(AA)), BB) # call BlasFloat versions
+function ldiv!(A::BandedLU{T,<:BandedMatrix}, B::StridedVecOrMat{T}) where {T<:BlasFloat}
+    m = size(A.factors,1)
+    l,u = bandwidths(A.factors)
+    data = bandeddata(A.factors)
+    LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
 end
 
-function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{S}) where {T<:Number, S<:Number}
-    A = parent(Ac)
-    checksquare(A)
-    AA, BB = _convert_to_blas_type(A, B)
-    ldiv!(adjoint(lu(AA)), BB) # call BlasFloat versions
+function ldiv!(A::BandedLU, B::AbstractVecOrMat)
+    _apply_ipiv!(A, B)
+    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
 
-function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
-    checksquare(A)
-    gbtrs!('N', A.m, A.l, A.u, A.data, A.ipiv, B)
+function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real
+    # c2r = reshape(transpose(reinterpret(T, reshape(B, (1, length(B))))), size(B, 1), 2*size(B, 2))
+    a = real.(B)
+    b = imag.(B)
+    ldiv!(A, a)
+    ldiv!(A, b)
+    B .= a .+ im.*b
 end
 
-function ldiv!(At::Transpose{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasFloat}
-    A = parent(At)
-    checksquare(A)
-    gbtrs!('T', A.m, A.l, A.u, A.data, A.ipiv, B)
-end
-function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasReal}
-    A = parent(Ac)
-    checksquare(A)
-    gbtrs!('T', A.m, A.l, A.u, A.data, A.ipiv, B)
-end
-function ldiv!(Ac::Adjoint{T,BandedLU{T}}, B::AbstractVecOrMat{T}) where {T<:BlasComplex}
-    A = parent(Ac)
-    checksquare(A)
-    gbtrs!('C', A.m, A.l, A.u, A.data, A.ipiv, B)
+function ldiv!(transA::Transpose{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasFloat}
+    A = transA.parent
+    m = size(A.factors,1)
+    l,u = bandwidths(A.factors)
+    data = bandeddata(A.factors)
+    LAPACK.gbtrs!('T', l, u-l, m, data, A.ipiv, B)
 end
 
+function ldiv!(transA::Transpose{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
+    A = transA.parent
+    ldiv!(transpose(UnitLowerTriangular(A.factors)), ldiv!(transpose(UpperTriangular(A.factors)), B))
+    _apply_inverse_ipiv!(A, B)
+end
+
+ldiv!(adjF::Adjoint{T,<:BandedLU{T,<:BandedMatrix}}, B::AbstractVecOrMat{T}) where {T<:Real} =
+    (F = adjF.parent; ldiv!(transpose(F), B))
+function ldiv!(adjA::Adjoint{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasComplex}
+    A = adjA.parent
+    m = size(A.factors,1)
+    l,u = bandwidths(A.factors)
+    data = bandeddata(A.factors)
+    LAPACK.gbtrs!('C', l, u-l, m, data, A.ipiv, B)
+end
+
+function ldiv!(adjA::Adjoint{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
+    error("Implement")
+    A = adjA.parent
+    ldiv!(adjoint(UnitLowerTriangular(A.factors)), ldiv!(adjoint(UpperTriangular(A.factors)), B))
+    _apply_inverse_ipiv!(A, B)
+end
+
+\(A::Adjoint{<:Any,<:BandedLU}, B::Adjoint{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
+\(A::Transpose{<:Any,<:BandedLU}, B::Transpose{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
 
 factorize(A::BandedMatrix) = lu(A)

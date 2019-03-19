@@ -10,7 +10,7 @@ import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
             qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
-            svdvals, svdvals!, QRPackedQ
+            svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, _apply_ipiv!
 import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
 
