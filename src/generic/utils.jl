@@ -1,16 +1,3 @@
-# BLAS/linear algebra overrides
-
-@inline dot(x...) = LinearAlgebra.dot(x...)
-
-dotu(f::StridedVector{T},g::StridedVector{T}) where {T<:Union{ComplexF32,ComplexF64}} =
-    BLAS.dotu(f,g)
-dotu(f::AbstractVector{Complex{Float64}},g::AbstractVector{N}) where {N<:Real} = dot(conj(f),g)
-dotu(f::AbstractVector{N},g::AbstractVector{T}) where {N<:Real,T<:Number} = dot(f,g)
-
-
-normalize!(w::AbstractVector) = rmul!(w,inv(norm(w)))
-normalize!(w::Vector{T}) where {T<:BlasFloat} = normalize!(length(w),w)
-
 
 # check dimensions of inputs
 checkdimensions(sizedest::Tuple{Int, Vararg{Int}}, sizesrc::Tuple{Int, Vararg{Int}}) =
