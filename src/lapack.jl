@@ -14,7 +14,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                         m::Int, k::Int, A::AbstractMatrix{$elty},
                         d::AbstractVector{$elty}, e::AbstractVector{$elty}, Q::AbstractMatrix{$elty},
                         work::AbstractVector{$elty})
-            @assert !has_offset_axes(A)
+            require_one_based_indexing(A)
             chkstride1(A)
             chkuplo(uplo)
             chkvect(vect)
@@ -121,7 +121,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
                 # DOUBLE PRECISION   AB( LDAB, * )
 
         function pbtrf!(uplo::Char, m::Int, kd::Int, A::AbstractMatrix{$elty})
-            @assert !has_offset_axes(A)
+            require_one_based_indexing(A)
             chkstride1(A)
             chkuplo(uplo)
             info = Ref{BlasInt}()
@@ -152,7 +152,7 @@ for (fname, elty) in ((:dpbtrs_,:Float64),
 
         function pbtrs!(uplo::Char, m::Int, kd::Int, A::AbstractMatrix{$elty},
                         B::AbstractVecOrMat{$elty})
-            @assert !has_offset_axes(A)
+            require_one_based_indexing(A)
             chkstride1(A)
             chkuplo(uplo)
             info = Ref{BlasInt}()
@@ -188,7 +188,7 @@ for (fname, elty) in ((:dpbstf_,:Float64),
                 # DOUBLE PRECISION   AB( LDAB, * )
 
         function pbstf!(uplo::Char, m::Int, kd::Int, A::AbstractMatrix{$elty})
-            @assert !has_offset_axes(A)
+            require_one_based_indexing(A)
             chkstride1(A)
             chkuplo(uplo)
             info = Ref{BlasInt}()
@@ -222,7 +222,7 @@ for (fname, elty) in ((:dsbgst_,:Float64),
         function sbgst!(vect::Char, uplo::Char, n::Int, ka::Int, kb::Int,
                          AB::AbstractMatrix{$elty}, BB::AbstractMatrix{$elty},
                          X::AbstractVecOrMat{$elty}, work::AbstractVector{$elty})
-            @assert !has_offset_axes(AB, BB, X, work)
+            require_one_based_indexing(AB, BB, X, work)
             chkstride1(AB, BB)
             chkuplo(uplo)
             chkvect(vect)

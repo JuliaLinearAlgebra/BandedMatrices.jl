@@ -83,7 +83,7 @@ for (fname, elty) in ((:dtbmv_,:Float64),
                 #       DOUBLE PRECISION A(LDA,*),X(*)
         function tbmv!(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar,
                        m::Int, k::Int, A::AbstractMatrix{$elty}, x::AbstractVector{$elty})
-            @assert !has_offset_axes(A, x)
+            require_one_based_indexing(A, x)
             n = size(A,2)
             size(A,1) ≥ k+1 || throw(ArgumentError("triangular banded data missing"))
             n == m || throw(DimensionMismatch("matrix is not square: dimensions are $n, $m"))
@@ -122,7 +122,7 @@ for (fname, elty) in ((:dtbsv_,:Float64),
                 #       DOUBLE PRECISION A(LDA,*),X(*)
         function tbsv!(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar,
                         m::Int, k::Int, A::AbstractMatrix{$elty}, x::AbstractVector{$elty})
-            @assert !has_offset_axes(A, x)
+            require_one_based_indexing(A, x)
             n = size(A,2)
             size(A,1) ≥ k+1 || throw(ArgumentError("triangular banded data missing"))
             n == m || throw(DimensionMismatch("matrix is not square: dimensions are $n, $m"))

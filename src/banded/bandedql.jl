@@ -27,7 +27,7 @@ function banded_ql!(L::BandedMatrix{T}) where T
 end
 
 function lmul!(A::QLPackedQ{<:Any,<:BandedMatrix}, B::AbstractVecOrMat)
-    @assert !has_offset_axes(B)
+    require_one_based_indexing(B)
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
     if mA != mB
@@ -57,7 +57,7 @@ end
 
 
 function lmul!(adjA::Adjoint{<:Any,<:QLPackedQ{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
-    @assert !has_offset_axes(B)
+    require_one_based_indexing(B)
     A = adjA.parent
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)

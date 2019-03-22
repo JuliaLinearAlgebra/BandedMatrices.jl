@@ -8,7 +8,7 @@ import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular, has_offset_axes,
+            qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
             svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, _apply_ipiv!
 import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
@@ -57,7 +57,12 @@ export BandedMatrix,
        Eye
 
 
-
+if VERSION < v"1.2-"
+    import Base: has_offset_axes
+    require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
+else
+    import Base: require_one_based_indexing    
+end             
 
 include("blas.jl")
 include("lapack.jl")

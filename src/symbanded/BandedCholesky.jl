@@ -13,7 +13,7 @@ end
 
 ## Non BLAS/LAPACK element types (generic)
 function banded_chol!(_, A::AbstractMatrix, ::Type{UpperTriangular})
-    @assert !has_offset_axes(A)
+    require_one_based_indexing(A)
     n = checksquare(A)
     u = bandwidth(A,2)
     @inbounds begin
@@ -38,7 +38,7 @@ function banded_chol!(_, A::AbstractMatrix, ::Type{UpperTriangular})
     return UpperTriangular(A), convert(BlasInt, 0)
 end
 function banded_chol!(_, A::AbstractMatrix, ::Type{LowerTriangular})
-    @assert !has_offset_axes(A)
+    require_one_based_indexing(A)
     n = checksquare(A)
     l = bandwidth(A,1)
     @inbounds begin

@@ -127,7 +127,7 @@ end
 # replacing repeated references to A.data[j,j] with [Ajj = A.data[j,j] and references to Ajj]
 # does not significantly impact performance as of Dec 2015
 function banded_naivesub!(::TriangularLayout{'U','N'}, A, b::AbstractVector, x::AbstractVector = b)
-    @assert !has_offset_axes(A, b, x)
+    require_one_based_indexing(A, b, x)
     n = size(A, 2)
     if !(n == length(b) == length(x))
         throw(DimensionMismatch("second dimension of left hand side A, $n, length of output x, $(length(x)), and length of right hand side b, $(length(b)), must be equal"))
@@ -144,7 +144,7 @@ function banded_naivesub!(::TriangularLayout{'U','N'}, A, b::AbstractVector, x::
     x
 end
 function banded_naivesub!(::TriangularLayout{'U','U'}, A, b::AbstractVector, x::AbstractVector = b)
-    @assert !has_offset_axes(A, b, x)
+    require_one_based_indexing(A, b, x)
     n = size(A, 2)
     if !(n == length(b) == length(x))
         throw(DimensionMismatch("second dimension of left hand side A, $n, length of output x, $(length(x)), and length of right hand side b, $(length(b)), must be equal"))
@@ -160,7 +160,7 @@ function banded_naivesub!(::TriangularLayout{'U','U'}, A, b::AbstractVector, x::
     x
 end
 function banded_naivesub!(::TriangularLayout{'L','N'}, A, b::AbstractVector, x::AbstractVector = b)
-    @assert !has_offset_axes(A, b, x)
+    require_one_based_indexing(A, b, x)
     n = size(A, 2)
     if !(n == length(b) == length(x))
         throw(DimensionMismatch("second dimension of left hand side A, $n, length of output x, $(length(x)), and length of right hand side b, $(length(b)), must be equal"))
@@ -177,7 +177,7 @@ function banded_naivesub!(::TriangularLayout{'L','N'}, A, b::AbstractVector, x::
     x
 end
 function banded_naivesub!(::TriangularLayout{'L','U'}, A, b::AbstractVector, x::AbstractVector = b)
-    @assert !has_offset_axes(A, b, x)
+    require_one_based_indexing(A, b, x)
     n = size(A, 2)
     if !(n == length(b) == length(x))
         throw(DimensionMismatch("second dimension of left hand side A, $n, length of output x, $(length(x)), and length of right hand side b, $(length(b)), must be equal"))

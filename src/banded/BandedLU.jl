@@ -13,7 +13,7 @@ struct BandedLU{T,S<:AbstractMatrix{T}} <: Factorization{T}
     info::BlasInt
 
     function BandedLU{T,S}(factors, ipiv, info) where {T,S<:AbstractMatrix{T}}
-        @assert !has_offset_axes(factors)
+        require_one_based_indexing(factors)
         new{T,S}(factors, ipiv, info)
     end
 end
