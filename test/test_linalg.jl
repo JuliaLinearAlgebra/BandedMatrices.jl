@@ -1,5 +1,5 @@
 using BandedMatrices, LazyArrays, LinearAlgebra, Test
-import Base.Broadcast: materialize
+import Base.Broadcast: materialize, broadcasted
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -221,4 +221,24 @@ import Base.Broadcast: materialize
         B = BandedMatrix{Float64}(undef,(2,2),(-1,-1))
         @test copyto!(fill(NaN,2), Mul(B,ones(2))) == [0.0,0.0]
     end
+
+    @testset "NaN Bug" begin
+        C = BandedMatrix{Float64}(undef, (1,2), (0,2)); C.data .= NaN;
+        A = brand(1,1,0,1)
+        B = brand(1,2,0,2)
+        C .= Mul(A,B)
+        @test C == A*B
+
+        @test broadcasted(identity, Mul(A,B)) isa LazyArrays.BArrayMulArray
+        @test broadcasted(*, 1.0, Mul(A,B)) isa LazyArrays.BConstArrayMulArray
+        @test broadcasted(+, Mul(A,B), C) isa LazyArrays.BArrayMulArrayPlusArray
+        @test broadcasted(+, Mul(A,B), broadcasted(*, 0.0, C)) isa LazyArrays.BArrayMulArrayPlusConstArray
+        @test broadcasted(+, broadcasted(*, 1.0, Mul(A,B)), C) isa LazyArrays.BConstArrayMulArrayPlusArray
+        @test broadcasted(+, broadcasted(*, 1.0, Mul(A,B)), broadcasted(*, 0.0, C)) isa LazyArrays.BConstArrayMulArrayPlusConstArray
+
+        C.data .= NaN
+        C .= 1.0 .* Mul(A,B) .+ 0.0 .* C
+        @test C == A*B
+    end
 end
+
