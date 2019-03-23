@@ -13,14 +13,14 @@ function banded_ql!(L::BandedMatrix{T}) where T
     m,n=size(L)
     τ = zeros(T, min(m,n))
 
-    for k = min(m, n):-1:(1 + (T<:Real))
-        ν = k+n-min(m,n)
-        x = view(D,u+1+k-ν:-1:max(1,u-ν+2), ν)
+    for k = n:-1:max((n - m + 1 + (T<:Real)),1)
+        μ = m+k-n
+        x = view(D,u+1+μ-k:-1:max(1,u-k+2), k)
         τk = reflector!(x)
-        τ[k] = τk
+        τ[k-n+min(m,n)] = τk
         N = length(x)
-        for j = max(1,k-l):ν-1
-            reflectorApply!(x, τk, view(D, u+1+k-j:-1:u+2+k-j-N,j))
+        for j = max(1,μ-l):k-1
+            reflectorApply!(x, τk, view(D, u+1+μ-j:-1:u+2+μ-j-N,j))
         end
     end
     QL(L, τ)
@@ -37,17 +37,17 @@ function lmul!(A::QLPackedQ{<:Any,<:BandedMatrix}, B::AbstractVecOrMat)
     l,u = bandwidths(Afactors)
     D = Afactors.data
     begin
-        for k = 1:min(mA,nA)
-            ν = k+nA-min(mA,nA)
+        for k = max(nA - mA + 1,1):nA
+            μ = mA+k-nA
             for j = 1:nB
-                vBj = B[k,j]
-                for i = max(1,ν-u):k-1
-                    vBj += conj(D[i-ν+u+1,ν])*B[i,j]
+                vBj = B[μ,j]
+                for i = max(1,k-u):μ-1
+                    vBj += conj(D[i-k+u+1,k])*B[i,j]
                 end
-                vBj = A.τ[k]*vBj
-                B[k,j] -= vBj
-                for i = max(1,ν-u):k-1
-                    B[i,j] -= D[i-ν+u+1,ν]*vBj
+                vBj = A.τ[k-nA+min(mA,nA)]*vBj
+                B[μ,j] -= vBj
+                for i = max(1,k-u):μ-1
+                    B[i,j] -= D[i-k+u+1,k]*vBj
                 end
             end
         end
@@ -68,17 +68,17 @@ function lmul!(adjA::Adjoint{<:Any,<:QLPackedQ{<:Any,<:BandedMatrix}}, B::Abstra
     l,u = bandwidths(Afactors)
     D = Afactors.data
     @inbounds begin
-        for k = min(mA,nA):-1:1
-            ν = k+nA-min(mA,nA)
+        for k = nA:-1:max(nA - mA + 1,1)
+            μ = mA+k-nA
             for j = 1:nB
-                vBj = B[k,j]
-                for i = max(1,ν-u):k-1
-                    vBj += conj(D[i-ν+u+1,ν])*B[i,j]
+                vBj = B[μ,j]
+                for i = max(1,k-u):μ-1
+                    vBj += conj(D[i-k+u+1,k])*B[i,j]
                 end
-                vBj = conj(A.τ[k])*vBj
-                B[k,j] -= vBj
-                for i = max(1,ν-u):k-1
-                    B[i,j] -= D[i-ν+u+1,ν]*vBj
+                vBj = conj(A.τ[k-nA+min(mA,nA)])*vBj
+                B[μ,j] -= vBj
+                for i = max(1,k-u):μ-1
+                    B[i,j] -= D[i-k+u+1,k]*vBj
                 end
             end
         end
@@ -97,17 +97,17 @@ function rmul!(A::AbstractMatrix,Q::QLPackedQ{<:Any,<:BandedMatrix})
     l,u = bandwidths(Qfactors)
     D = Qfactors.data
     @inbounds begin
-        for k = min(mQ,nQ):-1:1
-            ν = k+nQ-min(mQ,nQ)
+        for k = nQ:-1:max(nQ - mQ + 1,1)
+            μ = mQ+k-nQ
             for i = 1:mA
-                vAi = A[i,k]
-                for j = max(1,ν-u):k-1
-                    vAi += A[i,j]*D[j-ν+u+1,ν]
+                vAi = A[i,μ]
+                for j = max(1,k-u):μ-1
+                    vAi += A[i,j]*D[j-k+u+1,k]
                 end
-                vAi = vAi*Q.τ[k]
-                A[i,k] -= vAi
-                for j = max(1,ν-u):k-1
-                    A[i,j] -= vAi*conj(D[j-ν+u+1,ν])
+                vAi = vAi*Q.τ[k-nQ+min(mQ,nQ)]
+                A[i,μ] -= vAi
+                for j = max(1,k-u):μ-1
+                    A[i,j] -= vAi*conj(D[j-k+u+1,k])
                 end
             end
         end
@@ -127,17 +127,17 @@ function rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QLPackedQ{<:Any,<:Banded
     l,u = bandwidths(Qfactors)
     D = Qfactors.data
     @inbounds begin
-        for k = 1:min(mQ,nQ)
-            ν = k+nQ-min(mQ,nQ)
+        for k = max(nQ - mQ + 1,1):nQ
+            μ = mQ+k-nQ
             for i = 1:mA
-                vAi = A[i,k]
-                for j = max(1,ν-u):k-1
-                    vAi += A[i,j]*D[j-ν+u+1,ν]
+                vAi = A[i,μ]
+                for j = max(1,k-u):μ-1
+                    vAi += A[i,j]*D[j-k+u+1,k]
                 end
-                vAi = vAi*conj(Q.τ[k])
-                A[i,k] -= vAi
-                for j = max(1,ν-u):k-1
-                    A[i,j] -= vAi*conj(D[j-ν+u+1,ν])
+                vAi = vAi*conj(Q.τ[k-nQ+min(mQ,nQ)])
+                A[i,μ] -= vAi
+                for j = max(1,k-u):μ-1
+                    A[i,j] -= vAi*conj(D[j-k+u+1,k])
                 end
             end
         end
