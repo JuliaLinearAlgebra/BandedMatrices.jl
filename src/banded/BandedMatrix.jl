@@ -640,6 +640,7 @@ function diag(A::BandedMatrix{T}) where {T}
 end
 
 
+
 #implements fliplr(flipud(A))
 function fliplrud(A::BandedMatrix)
     n,m=size(A)

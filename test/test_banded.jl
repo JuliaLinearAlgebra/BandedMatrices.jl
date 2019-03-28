@@ -394,4 +394,15 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
 	    @test opnorm(A) ≈ opnorm(B)
 	    @test cond(A) ≈ cond(B)
     end
+
+    @testset "triu/tril" begin
+        n = 20; A = brand(n,n,2,3); B = Matrix(A);
+        @test triu(A) == triu(B)
+        @test tril(A) == tril(B)
+        for j = -5:5
+            @test triu(A,j) == triu(B,j)
+            @test tril(A,j) == tril(B,j)
+        end
+    end
 end
+

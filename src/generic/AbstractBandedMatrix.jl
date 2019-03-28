@@ -90,6 +90,20 @@ function Base.maximum(B::AbstractBandedMatrix)
     m
 end
 
+function tril!(A::AbstractBandedMatrix{T}, k::Integer) where T
+    for b = max(k+1,-bandwidth(A,1)):bandwidth(A,2)
+        A[band(b)] .= zero(T)
+    end
+    A
+end
+
+function triu!(A::AbstractBandedMatrix{T}, k::Integer) where T
+    for b = -bandwidth(A,1):min(k-1,bandwidth(A,2))
+        A[band(b)] .= zero(T)
+    end
+    A
+end
+
 ## Show
 
 
