@@ -78,6 +78,11 @@ Random.seed!(0)
         b=rand(10)
         Q,R=qr(A)
         @test R\(Q'*b) ≈ qr(A)\b ≈ Matrix(A)\b
+
+        A = BandedMatrix{Int}(undef, (2,1), (4,4))
+        A.data .= 1:length(A.data)
+        Q, R = qr(A)
+        @test Q*R ≈ A
     end
 end
 
@@ -194,10 +199,14 @@ end
         Q,L=ql(A)
         @test L\(Q'*b) ≈ ql(A)\b ≈ Matrix(A)\b
 
-
         A=brand(ComplexF64,10,10,3,2)
         b=rand(10)
         Q,L=ql(A)
         @test L\(Q'*b) ≈ ql(A)\b ≈ Matrix(A)\b
+
+        A = BandedMatrix{Int}(undef, (2,1), (4,4))
+        A.data .= 1:length(A.data)
+        Q, L = ql(A)
+        @test Q*L ≈ A
     end
 end
