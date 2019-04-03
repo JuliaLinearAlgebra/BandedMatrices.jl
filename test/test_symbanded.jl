@@ -45,6 +45,9 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     Λ, Q = eigen(A)
     @test Q'A*Q ≈ Diagonal(Λ)
 
+    Λ, Q = bandedeigen(A)
+    @test Q'A*Q ≈ Diagonal(Λ)
+
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
         for n = 0:N-1
@@ -150,29 +153,29 @@ end
 
 
 @testset "Cholesky" begin
-    for T in (Float64, BigFloat) 
+    for T in (Float64, BigFloat)
         A = Symmetric(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],
                                 1 => ones(T,4) ./ 24))
         Ac = cholesky(A)
 
-        @test Ac isa Cholesky{T,<:BandedMatrix{T}}                           
+        @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.U ≈ cholesky(Matrix(A)).U
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
         @test_broken Ac\b ≈ A\b
-    end 
-    
-    for T in (Float64, BigFloat) 
+    end
+
+    for T in (Float64, BigFloat)
         A = Symmetric(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],
                                 -1 => ones(T,4) ./ 24), :L)
         Ac = cholesky(A)
 
-        @test Ac isa Cholesky{T,<:BandedMatrix{T}}                           
+        @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.L ≈ cholesky(Matrix(A)).L
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
         @test_broken Ac\b ≈ A\b
-    end 
+    end
 end

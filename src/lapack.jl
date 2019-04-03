@@ -6,6 +6,85 @@ function chkvect(vect::AbstractChar)
     vect
 end
 
+for (fname, elty) in ((:dlargv_,:Float64),
+                      (:slargv_,:Float32),
+                      (:zlargv_,:ComplexF64),
+                      (:clargv_,:ComplexF32))
+    @eval begin
+        #       SUBROUTINE DLARGV( N, X, INCX, Y, INCY, C, INCC )
+        #       .. Scalar Arguments ..
+        #       INTEGER INCC, INCX, INCY, N
+        #       .. Array Arguments ..
+        #       DOUBLE PRECISION C( * ), X( * ), Y( * )
+        function largv!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::Ptr{$elty}, incc::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}), n, x, incx, y, incy, c, incc)
+        end
+    end
+end
+
+for (fname, elty) in ((:dlartv_,:Float64),
+                      (:slartv_,:Float32),
+                      (:zlartv_,:ComplexF64),
+                      (:clartv_,:ComplexF32))
+    @eval begin
+        #       SUBROUTINE DLARTV( N, X, INCX, Y, INCY, C, S, INCC )
+        #       .. Scalar Arguments ..
+        #       INTEGER INCC, INCX, INCY, N
+        #       .. Array Arguments ..
+        #       DOUBLE PRECISION C( * ), S( * ), X( * ), Y( * )
+        function lartv!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::Ptr{$elty}, s::Ptr{$elty}, incc::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}), n, x, incx, y, incy, c, s, incc)
+        end
+    end
+end
+
+for (fname, elty) in ((:drot_,:Float64),
+                      (:srot_,:Float32),
+                      (:zrot_,:ComplexF64),
+                      (:crot_,:ComplexF32))
+    @eval begin
+        #       SUBROUTINE DROT(N,DX,INCX,DY,INCY,C,S)
+        #       .. Scalar Arguments ..
+        #       DOUBLE PRECISION C,S
+        #       INTEGER INCX,INCY,N
+        #       .. Array Arguments ..
+        #       DOUBLE PRECISION DX(*),DY(*)
+        function rot!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::$elty, s::$elty)
+            ccall((@blasfunc($fname), libblas), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ref{$elty}, Ref{$elty}), n, x, incx, y, incy, c, s)
+        end
+    end
+end
+
+for (fname, elty) in ((:dlartg_,:Float64),
+                      (:slartg_,:Float32),
+                      (:zlartg_,:ComplexF64),
+                      (:clartg_,:ComplexF32))
+    @eval begin
+        #       SUBROUTINE DLARTG( F, G, CS, SN, R )
+        #       .. Scalar Arguments ..
+        #       DOUBLE PRECISION CS, F, G, R, SN
+        function lartg!(f::$elty, g::$elty, cs::Ref{$elty}, sn::Ref{$elty}, r::Ref{$elty})
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{$elty}, Ref{$elty}, Ref{$elty}, Ref{$elty}, Ref{$elty}), f, g, cs, sn, r)
+        end
+    end
+end
+
+for (fname, elty) in ((:dlar2v_,:Float64),
+                      (:slar2v_,:Float32),
+                      (:zlar2v_,:ComplexF64),
+                      (:clar2v_,:ComplexF32))
+    @eval begin
+        #       SUBROUTINE DLAR2V( N, X, Y, Z, INCX, C, S, INCC )
+        #       .. Scalar Arguments ..
+        #       INTEGER INCC, INCX, N
+        #       .. Array Arguments ..
+        #       DOUBLE PRECISION C( * ), S( * ), X( * ), Y( * ), Z( * )
+        function lar2v!(n::Int, x::Ptr{$elty}, y::Ptr{$elty}, z::Ptr{$elty}, incx::Int, c::Ptr{$elty}, s::Ptr{$elty}, incc::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}), n, x, y, z, incx, c, s, incc)
+        end
+    end
+end
+
 ## Symmetric tridiagonalization
 for (fname, elty) in ((:dsbtrd_,:Float64),
                       (:ssbtrd_,:Float32))
