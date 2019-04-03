@@ -42,11 +42,12 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     A = Symmetric(brand(Float64, 10, 10, 0, 4))
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
-    Λ, Q = eigen(A)
+    F = eigen(A)
+    Λ, Q = F
     @test Q'A*Q ≈ Diagonal(Λ)
+    FD = convert(Eigen{Float64, Float64, Matrix{Float64}, Vector{Float64}}, F)
+    @test FD.vectors'A*FD.vectors ≈ Diagonal(F.values)
 
-    Λ, Q = bandedeigen(A)
-    @test Q'A*Q ≈ Diagonal(Λ)
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))

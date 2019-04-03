@@ -7,7 +7,9 @@ size(B::BandedEigenvectors) = size(B.Q)
 
 getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i, j]
 
-function bandedeigen(A::Symmetric{T,M}) where {T,M<:BandedMatrix{T}}
+convert(::Type{Eigen{T, T, Matrix{T}, Vector{T}}}, F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = Eigen(F.values, Matrix(F.vectors))
+
+function eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)

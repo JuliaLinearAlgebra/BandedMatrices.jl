@@ -145,18 +145,6 @@ end
 
 eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix}) = eigvals!(copy(A), copy(B))
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
-    n = size(A, 1)
-    w = Vector{T}(undef, n)
-    Z = Matrix{T}(undef, n, n)
-    kd = bandwidth(A)
-    work = Vector{T}(undef, max(1, 3*n-2))
-    sbev!('V', A.uplo, n, kd, symbandeddata(A), w, Z, work)
-    Eigen(w, Z)
-end
-
-eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
-
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     n = size(A, 1)
     @assert n == size(B, 1)
