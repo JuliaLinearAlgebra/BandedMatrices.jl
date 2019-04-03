@@ -59,6 +59,11 @@ function mul!(y::Array{T,N}, B::Transpose{T,BandedEigenvectors{T}}, x::Array{T,N
 end
 
 
+
+#
+# The following is a Julia translation of *SBTRD.f in LAPACK that allows
+# extraction of the Givens rotations.
+#
 #  Definition:
 #  ===========
 #
