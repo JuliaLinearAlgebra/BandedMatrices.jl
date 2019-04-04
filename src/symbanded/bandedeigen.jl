@@ -9,14 +9,18 @@ getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i, j]
 
 convert(::Type{Eigen{T, T, Matrix{T}, Vector{T}}}, F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = Eigen(F.values, Matrix(F.vectors))
 
-function eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+compress(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = convert(Eigen{T, T, Matrix{T}, Vector{T}}, F)
+
+eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
+
+function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
     E = Vector{T}(undef, N-1)
     G = Vector{Givens{T}}(undef, 0)
     WORK = Vector{T}(undef, N)
-    AB = Matrix(symbandeddata(A))
+    AB = symbandeddata(A)
     sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
     F = eigen(SymTridiagonal(D, E))
     Eigen(F.values, BandedEigenvectors(F.vectors, G))
@@ -31,6 +35,16 @@ function Matrix(B::BandedEigenvectors)
     return Q
 end
 
+function compress!(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T
+    Q = F.vectors.Q
+    G = F.vectors.G
+    for k in length(G):-1:1
+        lmul!(G[k]', Q)
+        pop!(G)
+    end
+    F
+end
+
 function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Array{T,N}) where {T,N}
     mul!(y, B.Q, x)
     G = B.G
@@ -41,23 +55,40 @@ function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Array{T,N}) where {T,N
 end
 
 function mul!(y::Array{T,N}, B::Adjoint{T,BandedEigenvectors{T}}, x::Array{T,N}) where {T,N}
-    z = copy(x)
+    Q = B.parent.Q
     G = B.parent.G
-    for k in 1:length(G)
-        lmul!(G[k], z)
+    if length(G) > 0
+        z = copy(x)
+        for k in 1:length(G)
+            lmul!(G[k], z)
+        end
+        mul!(y, Q', z)
+    else
+        mul!(y, Q', x)
     end
-    mul!(y, B.parent.Q', z)
     y
 end
 
 function mul!(y::Array{T,N}, B::Transpose{T,BandedEigenvectors{T}}, x::Array{T,N}) where {T,N}
-    z = copy(x)
+    Q = B.parent.Q
     G = B.parent.G
-    for k in 1:length(G)
-        lmul!(G[k], z)
+    if length(G) > 0
+        z = copy(x)
+        for k in 1:length(G)
+            lmul!(G[k], z)
+        end
+        mul!(y, transpose(Q), z)
+    else
+        mul!(y, transpose(Q), x)
     end
-    mul!(y, transpose(B.parent.Q), z)
     y
+end
+
+function mul!(y::Array{T,N}, x::Array{T,N}, B::BandedEigenvectors{T}) where {T,N}
+    x .= x'
+    mul!(y, B', x)
+    x .= x'
+    y .= y'
 end
 
 
@@ -92,7 +123,13 @@ function sbtrd!(VECT::Char, UPLO::Char,
     M ≠ N && throw(ArgumentError("Matrix must be square"))
     size(AB,1) < KD+1 && throw(ArgumentError("Not enough bands"))
 
-    LDAB = max(1, stride(AB, 2))
+    # In Julia, pointers to entries of a SubArray ignore stride.
+    # For example, if `A = view(Matrix{Float64}(I, 10, 10), 1:2:9, 1:2:9)`,
+    # then `unsafe_load(pointer(A, 3+5*2)) == 1`, even if `stride(A, 2) == 20.`
+    # Beyond the use of `LDAB` in Julia pointers, there are two uses of the
+    # actual (Fortran) `LDABF` for increment-setting in the LAPACK calls.
+    LDAB = size(AB, 1)
+    LDABF = max(1, stride(AB, 2))
 
     ZERO = zero(T)
     TEMP = Ref{T}()
@@ -100,9 +137,9 @@ function sbtrd!(VECT::Char, UPLO::Char,
     refWORK = Ref{T}()
     KD1 = KD + 1
     KDM1 = KD - 1
-    INCX = LDAB - 1
+    INCX = LDABF - 1
 
-    INCA = KD1*LDAB
+    INCA = KD1*LDABF
     KDN = min(N-1, KD)
 
     UPPER = UPLO == 'U'

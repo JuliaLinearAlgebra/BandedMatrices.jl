@@ -39,7 +39,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = Symmetric(brand(Float64, 10, 10, 0, 4))
+    A = Symmetric(brand(Float64, 10, 10, 2, 4))
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
     F = eigen(A)
