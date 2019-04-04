@@ -129,6 +129,7 @@ eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(copy(A))
 function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
     n = size(A, 1)
     @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
     # compute split-Cholesky factorization of B.
     kb = bandwidth(B)
     B_data = symbandeddata(B)
