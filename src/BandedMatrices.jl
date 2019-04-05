@@ -87,6 +87,7 @@ include("banded/linalg.jl")
 include("symbanded/symbanded.jl")
 include("symbanded/ldlt.jl")
 include("symbanded/BandedCholesky.jl")
+include("symbanded/SplitCholesky.jl")
 include("symbanded/bandedeigen.jl")
 
 include("tribanded.jl")
