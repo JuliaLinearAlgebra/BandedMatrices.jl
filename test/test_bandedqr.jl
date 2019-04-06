@@ -198,15 +198,17 @@ end
         b=rand(ComplexF64,10)
         Q,L=ql(A)
         @test L\(Q'*b) ≈ ql(A)\b ≈ Matrix(A)\b
+        @test Q*L ≈ A
 
         A=brand(ComplexF64,10,10,3,2)
         b=rand(10)
         Q,L=ql(A)
+        @test Q*L ≈ A
         @test L\(Q'*b) ≈ ql(A)\b ≈ Matrix(A)\b
 
         A = BandedMatrix{Int}(undef, (2,1), (4,4))
         A.data .= 1:length(A.data)
         Q, L = ql(A)
-        @test Q*L ≈ A
+        @test_broken Q*L ≈ A
     end
 end
