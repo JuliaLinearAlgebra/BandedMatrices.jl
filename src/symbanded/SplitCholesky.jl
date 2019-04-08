@@ -75,6 +75,34 @@ function lmul!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where
     B
 end
 
+function ldiv!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+    require_one_based_indexing(B)
+    n, nrhs = size(B, 1), size(B, 2)
+    if size(S, 1) != n
+        throw(DimensionMismatch("Matrix has dimensions $(size(S)) but right hand side has first dimension $n"))
+    end
+    A = S.factors
+    b = bandwidth(A, 1)
+    m = (n+b)÷2
+    @inbounds for l = 1:nrhs
+        for j = m:-1:1
+            t = zero(T)
+            @simd for k = j+1:min(j+b,m)
+                t += A[j,k]*B[k,l]
+            end
+            B[j,l] = (B[j,l]-t)/A[j,j]
+        end
+        for j = m+1:n
+            t = zero(T)
+            @simd for k = j-b:j-1
+                t += A[j,k]*B[k,l]
+            end
+            B[j,l] = (B[j,l]-t)/A[j,j]
+        end
+    end
+    B
+end
+
 function lmul!(S::Adjoint{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
@@ -105,6 +133,41 @@ function lmul!(S::Adjoint{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMa
                 t += A[k,j]*B[k,l]
             end
             B[j,l] = t
+        end
+    end
+    B
+end
+
+function ldiv!(S::Adjoint{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+    require_one_based_indexing(B)
+    n, nrhs = size(B, 1), size(B, 2)
+    if size(S, 1) != n
+        throw(DimensionMismatch("Matrix has dimensions $(size(S)) but right hand side has first dimension $n"))
+    end
+    A = S.parent.factors
+    b = bandwidth(A, 1)
+    m = (n+b)÷2
+    @inbounds for l = 1:nrhs
+        for j = n:-1:m+1
+            t = zero(T)
+            @simd for k = j+1:min(j+b,n)
+                t += A[k,j]*B[k,l]
+            end
+            B[j,l] = (B[j,l]-t)/A[j,j]
+        end
+        for j = m:-1:m-b+1
+            t = zero(T)
+            @simd for k = m+1:j+b
+                t += A[k,j]*B[k,l]
+            end
+            B[j,l] -= t
+        end
+        for j = 1:m
+            t = zero(T)
+            @simd for k = max(1,j-b):j-1
+                t += A[k,j]*B[k,l]
+            end
+            B[j,l] = (B[j,l]-t)/A[j,j]
         end
     end
     B
