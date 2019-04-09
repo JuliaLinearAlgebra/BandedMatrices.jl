@@ -39,14 +39,14 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = Symmetric(brand(Float64, 10, 10, 2, 4))
+    A = Symmetric(brand(Float64, 100, 100, 2, 4))
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
     F = eigen(A)
     Λ, Q = F
-    @test Q'A*Q ≈ Diagonal(Λ)
+    @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
     FD = convert(Eigen{Float64, Float64, Matrix{Float64}, Vector{Float64}}, F)
-    @test FD.vectors'A*FD.vectors ≈ Diagonal(F.values)
+    @test FD.vectors'Matrix(A)*FD.vectors ≈ Diagonal(F.values)
 
 
     function An(::Type{T}, N::Int) where {T}
@@ -80,8 +80,8 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
         @test norm(err[1:40]) < 100eps(T)
 
         Λ, V = eigen(A, B)
-        @test V'A*V ≈ Diagonal(Λ)
-        @test V'B*V ≈ I
+        @test V'Matrix(A)*V ≈ Diagonal(Λ)
+        @test V'Matrix(B)*V ≈ I
     end
 end
 
