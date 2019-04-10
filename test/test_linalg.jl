@@ -240,5 +240,11 @@ import Base.Broadcast: materialize, broadcasted
         C .= 1.0 .* Mul(A,B) .+ 0.0 .* C
         @test C == A*B
     end
+
+    @testset "x' ambiguity (#102)" begin
+        x = randn(10)
+        A = brand(10,10,1,1)
+        @test x'A ≈ x'Matrix(A) ≈ transpose(x)A
+    end
 end
 
