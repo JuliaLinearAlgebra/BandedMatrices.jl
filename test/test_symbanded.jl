@@ -39,11 +39,15 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = Symmetric(brand(Float64, 10, 10, 0, 4))
+    A = Symmetric(brand(Float64, 100, 100, 2, 4))
     @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
 
-    Λ, Q = eigen(A)
-    @test Q'A*Q ≈ Diagonal(Λ)
+    F = eigen(A)
+    Λ, Q = F
+    @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
+    FD = convert(Eigen{Float64, Float64, Matrix{Float64}, Vector{Float64}}, F)
+    @test FD.vectors'Matrix(A)*FD.vectors ≈ Diagonal(F.values)
+
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
@@ -76,8 +80,8 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
         @test norm(err[1:40]) < 100eps(T)
 
         Λ, V = eigen(A, B)
-        @test V'A*V ≈ Diagonal(Λ)
-        @test V'B*V ≈ I
+        @test V'Matrix(A)*V ≈ Diagonal(Λ)
+        @test V'Matrix(B)*V ≈ I
     end
 end
 
@@ -150,29 +154,29 @@ end
 
 
 @testset "Cholesky" begin
-    for T in (Float64, BigFloat) 
+    for T in (Float64, BigFloat)
         A = Symmetric(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],
                                 1 => ones(T,4) ./ 24))
         Ac = cholesky(A)
 
-        @test Ac isa Cholesky{T,<:BandedMatrix{T}}                           
+        @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.U ≈ cholesky(Matrix(A)).U
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
         @test_broken Ac\b ≈ A\b
-    end 
-    
-    for T in (Float64, BigFloat) 
+    end
+
+    for T in (Float64, BigFloat)
         A = Symmetric(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],
                                 -1 => ones(T,4) ./ 24), :L)
         Ac = cholesky(A)
 
-        @test Ac isa Cholesky{T,<:BandedMatrix{T}}                           
+        @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.L ≈ cholesky(Matrix(A)).L
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
         @test_broken Ac\b ≈ A\b
-    end 
+    end
 end

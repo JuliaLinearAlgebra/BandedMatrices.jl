@@ -11,7 +11,7 @@ import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigva
             qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
             svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, _apply_ipiv!, tril!,
-            triu!
+            triu!, Givens
 import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
 
@@ -62,8 +62,8 @@ if VERSION < v"1.2-"
     import Base: has_offset_axes
     require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
 else
-    import Base: require_one_based_indexing    
-end             
+    import Base: require_one_based_indexing
+end
 
 include("blas.jl")
 include("lapack.jl")
@@ -86,6 +86,8 @@ include("banded/linalg.jl")
 include("symbanded/symbanded.jl")
 include("symbanded/ldlt.jl")
 include("symbanded/BandedCholesky.jl")
+include("symbanded/SplitCholesky.jl")
+include("symbanded/bandedeigen.jl")
 
 include("tribanded.jl")
 

@@ -129,6 +129,7 @@ eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(copy(A))
 function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
     n = size(A, 1)
     @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
     # compute split-Cholesky factorization of B.
     kb = bandwidth(B)
     B_data = symbandeddata(B)
@@ -139,35 +140,8 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     X = Array{T}(undef,0,0)
     work = Vector{T}(undef,2n)
     sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
-    # compute eigenvalues (and eigenvectors) of symmetric eigenvalue problem.
+    # compute eigenvalues of symmetric eigenvalue problem.
     eigvals!(A)
 end
 
 eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix}) = eigvals!(copy(A), copy(B))
-
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
-    n = size(A, 1)
-    w = Vector{T}(undef, n)
-    Z = Matrix{T}(undef, n, n)
-    kd = bandwidth(A)
-    work = Vector{T}(undef, max(1, 3*n-2))
-    sbev!('V', A.uplo, n, kd, symbandeddata(A), w, Z, work)
-    Eigen(w, Z)
-end
-
-eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
-
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
-    n = size(A, 1)
-    @assert n == size(B, 1)
-    @assert A.uplo == B.uplo
-    w = Vector{T}(undef, n)
-    Z = Matrix{T}(undef, n, n)
-    ka = bandwidth(A)
-    kb = bandwidth(B)
-    work = Vector{T}(undef, 3*n)
-    sbgv!('V', A.uplo, n, ka, kb, symbandeddata(A), symbandeddata(B), w, Z, work)
-    GeneralizedEigen(w, Z)
-end
-
-eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A), copy(B))
