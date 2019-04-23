@@ -177,7 +177,10 @@ end
 
 BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} = BandedMatrix{T,C}(A, bandwidths(A))
 BandedMatrix{T}(A::AbstractMatrix) where T = BandedMatrix{T}(A, bandwidths(A))
-BandedMatrix(A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
+
+_BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
+_BandedMatrix(_, A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
+BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 
 
 """
