@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
-    import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
-    import Base: BroadcastStyle
-    import BandedMatrices: BandedStyle, BandedRows
+import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
+import Base: BroadcastStyle
+import BandedMatrices: BandedStyle, BandedRows
 
 @testset "broadcasting" begin
     @testset "general" begin
@@ -238,6 +238,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
         C .= 2.0 .* A .+ B
         @test C == 2A+B == 2.0.*A .+ B
+        @test all(BLAS.axpy!(2.0, A, copy(B)) .=== C)
 
         @test 2A + B isa BandedMatrix
         @test 2.0.*A .+ B isa BandedMatrix

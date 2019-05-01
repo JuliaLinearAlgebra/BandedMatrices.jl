@@ -512,3 +512,5 @@ function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
     Bl,Bu = bandwidths(B)
     similar(A, T, n, m, max(Al,Bl), max(Au,Bu))
 end
+
+axpy!(α, A::AbstractBandedMatrix, dest::AbstractMatrix) = banded_axpy!(α, A, dest)
