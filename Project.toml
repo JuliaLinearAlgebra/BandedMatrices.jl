@@ -14,5 +14,5 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 FillArrays = "≥ 0.5.0"
 LazyArrays = "0.8, 0.9"
-MatrixFactorizations = "0.1"
+MatrixFactorizations = "0.0.4"
 julia = "0.7, 1"
