@@ -17,10 +17,11 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         @test A*x ≈ BandedMatrix(A)*x ≈ Matrix(A)*x
         @test all(A*x .=== lmul!(A, copy(x)) .=== (similar(x) .= Mul(A,x)) .=== copyto!(similar(x), Mul(A,copy(x))) .===
                     BandedMatrices.tbmv!('U', 'N', 'N', 10, 2, parent(A).data, copy(x)))
-
+        @test_throws DimensionMismatch BandedMatrices.tbmv('U', 'N', 'N', 10, 2, parent(A).data, rand(9))
         @test A\x ≈ Matrix(A) \ x ≈ BandedMatrix(A) \ x
         @test all((A \ x) .=== ldiv!(A, copy(x)) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
                     BandedMatrices.tbsv!('U', 'N', 'N', 10, 2, parent(A).data, copy(x)))
+        @test_throws DimensionMismatch BandedMatrices.tbsv('U', 'N', 'N', 10, 2, parent(A).data, rand(9))
 
         A = UnitUpperTriangular(brand(10,10,1,2))
         @test isbanded(A)
@@ -53,10 +54,12 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         @test A*x ≈ Matrix(A)*x
         @test all(A*x .=== lmul!(A, copy(x)) .=== copyto!(similar(x), Mul(A,copy(x))) .=== (similar(x) .= Mul(A,x)) .===
                     BandedMatrices.tbmv!('L', 'N', 'N', 10, 1, view(parent(A).data, 3:4,:), copy(x)))
+        @test_throws DimensionMismatch BandedMatrices.tbmv('L', 'N', 'N', 10, 1, view(parent(A).data, 3:4,:), rand(9))
 
         @test A\x ≈ Matrix(A) \ x ≈ BandedMatrix(A) \ x
         @test all((A \ x) .=== ldiv!(A, copy(x)) .=== copyto!(similar(x), Ldiv(A, x)) .=== (similar(x) .= Ldiv(A, x)) .===
                     BandedMatrices.tbsv!('L', 'N', 'N', 10, 1, view(parent(A).data, 3:4,:), copy(x)))
+        @test_throws DimensionMismatch BandedMatrices.tbsv('L', 'N', 'N', 10, 1, view(parent(A).data, 3:4,:), rand(9))
 
         A = UnitLowerTriangular(brand(10,10,1,2))
         @test isbanded(A)

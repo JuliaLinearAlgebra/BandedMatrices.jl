@@ -53,7 +53,7 @@ size(A::BandedLU, i) = size(getfield(A, :factors), i)
 Base.propertynames(F::BandedLU, private::Bool=false) =
     (:L, :U, :p, :P, (private ? fieldnames(typeof(F)) : ())...)
 
-issuccess(F::BandedLU) = F.info == 0
+LinearAlgebra.issuccess(F::BandedLU) = F.info == 0
 
 function show(io::IO, mime::MIME{Symbol("text/plain")}, F::BandedLU)
     if issuccess(F)
