@@ -23,7 +23,8 @@ import Base: convert, size, view, unsafe_indices,
                 to_indices, to_index, show, fill!, promote_op,
                 MultiplicativeInverses, OneTo, ReshapedArray,
                                similar, copy, convert, promote_rule, rand,
-                            IndexStyle, real, imag, Slice, pointer, unsafe_convert, copyto!
+                            IndexStyle, real, imag, Slice, pointer, unsafe_convert, copyto!,
+                            hcat, vcat, hvcat
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
                         materialize, materialize!

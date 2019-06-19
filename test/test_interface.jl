@@ -207,3 +207,33 @@ end
     @test bandwidths(M) == (3,3)
     @test BandedMatrix(M) ≈ A*B*C
 end
+
+
+@testset "Cat" begin
+    A = brand(6,5,2,1)
+    H = Hcat(A,A)
+    @test bandwidths(H) == (2,6)
+    @test BandedMatrix(H) == hcat(A,A) == hcat(A,Matrix(A)) == hcat(Matrix(A),A) == hcat(Matrix(A),Matrix(A))
+    @test hcat(A,A) isa BandedMatrix
+    @test hcat(A,Matrix(A)) isa Matrix
+    @test hcat(Matrix(A),A) isa Matrix
+
+    H = Hcat(A,A,A)
+    @test bandwidths(H) == (2,11)
+    @test BandedMatrix(H) == hcat(A,A,A) == hcat(A,Matrix(A),A) == hcat(Matrix(A),A,A) == 
+            hcat(Matrix(A),Matrix(A),A) == hcat(Matrix(A),Matrix(A),Matrix(A))
+    @test hcat(A,A,A) isa BandedMatrix 
+    
+    V = Vcat(A,A)
+    @test bandwidths(V) == (8,1)
+    @test BandedMatrix(V) == vcat(A,A) == vcat(A,Matrix(A)) == vcat(Matrix(A),A) == vcat(Matrix(A),Matrix(A))
+    @test vcat(A,A) isa BandedMatrix
+    @test vcat(A,Matrix(A)) isa Matrix
+    @test vcat(Matrix(A),A) isa Matrix
+
+    V = Vcat(A,A,A)
+    @test bandwidths(V) == (14,1)
+    @test BandedMatrix(V) == vcat(A,A,A) == vcat(A,Matrix(A),A) == vcat(Matrix(A),A,A) == 
+            vcat(Matrix(A),Matrix(A),A) == vcat(Matrix(A),Matrix(A),Matrix(A))
+    @test vcat(A,A,A) isa BandedMatrix 
+end
