@@ -135,3 +135,34 @@ MemoryLayout(V::SubArray{T,2,<:MulBandedMatrix,I}) where {T,I<:Tuple{Vararg{Abst
 @inline getindex(A::MulBandedMatrix, kr::Colon, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
 @inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::Colon) = _lazy_getindex(A, kr, jr)
 @inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
+
+
+
+######
+# Concat banded matrix
+######
+
+bandwidths(M::Hcat) = (bandwidth(M.arrays[1],1),sum(size.(M.arrays[1:end-1],2)) + bandwidth(M.arrays[end],2))
+isbanded(M::Hcat) = all(isbanded, M.arrays)
+
+bandwidths(M::Vcat) = (sum(size.(M.arrays[1:end-1],1)) + bandwidth(M.arrays[end],1), bandwidth(M.arrays[1],2))
+isbanded(M::Vcat) = all(isbanded, M.arrays)
+
+
+const HcatBandedMatrix{T,N} = Hcat{T,NTuple{N,BandedMatrix{T,Matrix{T},OneTo{Int}}}}
+const VcatBandedMatrix{T,N} = Vcat{T,2,NTuple{N,BandedMatrix{T,Matrix{T},OneTo{Int}}}}
+
+BroadcastStyle(::Type{HcatBandedMatrix{T,N}}) where {T,N} = BandedStyle()
+BroadcastStyle(::Type{VcatBandedMatrix{T,N}}) where {T,N} = BandedStyle()
+
+Base.replace_in_print_matrix(A::HcatBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
+    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
+Base.replace_in_print_matrix(A::VcatBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
+    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)    
+
+hcat(A::BandedMatrix...) = BandedMatrix(Hcat(A...))    
+hcat(A::BandedMatrix, B::AbstractMatrix...) = Matrix(Hcat(A, B...))    
+
+vcat(A::BandedMatrix...) = BandedMatrix(Vcat(A...))    
+vcat(A::BandedMatrix, B::AbstractMatrix...) = Matrix(Vcat(A, B...))    
+

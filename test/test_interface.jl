@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Test
+using BandedMatrices, LinearAlgebra, LazyArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle
 import LazyArrays: MemoryLayout
 
@@ -206,4 +206,50 @@ end
     @test @inferred(eltype(M)) == Float64
     @test bandwidths(M) == (3,3)
     @test BandedMatrix(M) ≈ A*B*C
+end
+
+
+@testset "Cat" begin
+    A = brand(6,5,2,1)
+    H = Hcat(A,A)
+    @test isbanded(H)
+    @test bandwidths(H) == (2,6)
+    @test BandedMatrix(H) == hcat(A,A) == hcat(A,Matrix(A)) == hcat(Matrix(A),A) == hcat(Matrix(A),Matrix(A))
+    @test hcat(A,A) isa BandedMatrix
+    @test hcat(A,Matrix(A)) isa Matrix
+    @test hcat(Matrix(A),A) isa Matrix
+    @test isone.(H) isa BandedMatrix
+    @test bandwidths(isone.(H)) == (2,6)
+    @test Base.replace_in_print_matrix(H,4,1,"0") == "⋅"
+
+    H = Hcat(A,A,A)
+    @test isbanded(H)
+    @test bandwidths(H) == (2,11)
+    @test BandedMatrix(H) == hcat(A,A,A) == hcat(A,Matrix(A),A) == hcat(Matrix(A),A,A) == 
+            hcat(Matrix(A),Matrix(A),A) == hcat(Matrix(A),Matrix(A),Matrix(A))
+    @test hcat(A,A,A) isa BandedMatrix 
+    @test isone.(H) isa BandedMatrix
+    @test bandwidths(isone.(H)) == (2,11)
+    
+    V = Vcat(A,A)
+    @test V isa BandedMatrices.VcatBandedMatrix
+    @test isbanded(V)
+    @test bandwidths(V) == (8,1)
+    @test BandedMatrix(V) == vcat(A,A) == vcat(A,Matrix(A)) == vcat(Matrix(A),A) == vcat(Matrix(A),Matrix(A))
+    @test vcat(A,A) isa BandedMatrix
+    @test vcat(A,Matrix(A)) isa Matrix
+    @test vcat(Matrix(A),A) isa Matrix
+    @test isone.(V) isa BandedMatrix
+    @test bandwidths(isone.(V)) == (8,1)
+    @test Base.replace_in_print_matrix(V,1,3,"0") == "⋅"
+
+    V = Vcat(A,A,A)
+    @test bandwidths(V) == (14,1)
+    @test BandedMatrix(V) == vcat(A,A,A) == vcat(A,Matrix(A),A) == vcat(Matrix(A),A,A) == 
+            vcat(Matrix(A),Matrix(A),A) == vcat(Matrix(A),Matrix(A),Matrix(A))
+    @test vcat(A,A,A) isa BandedMatrix 
+    @test isone.(V) isa BandedMatrix
+    @test bandwidths(isone.(V)) == (14,1)
+
+
 end
