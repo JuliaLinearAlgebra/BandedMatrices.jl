@@ -150,10 +150,10 @@ isbanded(M::Vcat) = all(isbanded, M.arrays)
 
 
 const HcatBandedMatrix{T,N} = Hcat{T,NTuple{N,BandedMatrix{T,Matrix{T},OneTo{Int}}}}
-const VcatBandedMatrix{T,N} = Vcat{T,NTuple{N,BandedMatrix{T,Matrix{T},OneTo{Int}}}}
+const VcatBandedMatrix{T,N} = Vcat{T,2,NTuple{N,BandedMatrix{T,Matrix{T},OneTo{Int}}}}
 
-BroadcastStyle(::Type{<:HcatBandedMatrix}) = BandedStyle()
-BroadcastStyle(::Type{<:VcatBandedMatrix}) = BandedStyle()
+BroadcastStyle(::Type{HcatBandedMatrix{T,N}}) where {T,N} = BandedStyle()
+BroadcastStyle(::Type{VcatBandedMatrix{T,N}}) where {T,N} = BandedStyle()
 
 Base.replace_in_print_matrix(A::HcatBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
     -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
