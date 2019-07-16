@@ -699,14 +699,26 @@ bandeddata(V::BandedSubBandedMatrix) = view(bandeddata(parent(V)), :, parentindi
 bandwidths(S::SubArray{T,2,<:AbstractMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
     bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)
 
-@inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
-    @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)
-    r
-end
+if VERSION < v"1.2-"
+    @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
+        @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)
+        r
+    end
 
-@inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
-    @inbounds r = inbands_setindex!(parent(S), v, reindex(S, parentindices(S), (k, j))...)
-    r
+    @inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
+        @inbounds r = inbands_setindex!(parent(S), v, reindex(S, parentindices(S), (k, j))...)
+        r
+    end
+else
+    @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
+        @inbounds r = inbands_getindex(parent(S), reindex(parentindices(S), (k, j))...)
+        r
+    end
+    
+    @inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
+        @inbounds r = inbands_setindex!(parent(S), v, reindex(parentindices(S), (k, j))...)
+        r
+    end
 end
 
 

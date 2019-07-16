@@ -675,8 +675,16 @@ import LazyArrays: MemoryLayout, DenseColumnMajor
 
     @testset "Sub-banded views" begin
         A = brand(10,10,2,1)
-        V = view(A,Base.OneTo(5),Base.OneTo(6))
-        @test MemoryLayout(V) == BandedColumns(DenseColumnMajor())
+        for V in (view(A,Base.OneTo(5),Base.OneTo(6)), view(A,1:5,1:6))
+            @test MemoryLayout(V) == BandedColumns(DenseColumnMajor())
+            @test V isa BandedMatrices.BandedSubBandedMatrix
+            @test V[3,3] == BandedMatrices.inbands_getindex(V,3,3) == A[3,3]
+            V[3,3] = 2
+            @test V[3,3] == BandedMatrices.inbands_getindex(V,3,3) == A[3,3] == 2
+            BandedMatrices.inbands_setindex!(V,5,3,3)
+            @test V[3,3] == BandedMatrices.inbands_getindex(V,3,3) == A[3,3] == 5
+        end
+
         @test A[Base.OneTo(5),Base.OneTo(6)] isa BandedMatrix
         @test A[2:5,Base.OneTo(6)] isa BandedMatrix
         @test A[2:2:5,Base.OneTo(6)] isa Matrix
