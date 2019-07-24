@@ -27,7 +27,7 @@ bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
 
 Returns the lower bandwidth (`i==1`) or the upper bandwidth (`i==2`).
 """
-bandwidth(A::AbstractVecOrMat, k::Integer) = bandwidths(A)[k]
+bandwidth(A, k::Integer) = bandwidths(A)[k]
 
 """
     bandrange(A)
@@ -39,22 +39,25 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 
 
 # start/stop indices of the i-th column/row, bounded by actual matrix size
-@inline colstart(A::AbstractVecOrMat, i::Integer) = max(i-bandwidth(A,2), 1)
-@inline  colstop(A::AbstractVecOrMat, i::Integer) = max(min(i+bandwidth(A,1), size(A, 1)), 0)
-@inline rowstart(A::AbstractVecOrMat, i::Integer) = max(i-bandwidth(A,1), 1)
-@inline  rowstop(A::AbstractVecOrMat, i::Integer) = max(min(i+bandwidth(A,2), size(A, 2)), 0)
+@inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1)
+@inline  colstop(A, i::Integer) = max(min(i+bandwidth(A,1), size(A, 1)), 0)
+@inline rowstart(A, i::Integer) = max(i-bandwidth(A,1), 1)
+@inline  rowstop(A, i::Integer) = max(min(i+bandwidth(A,2), size(A, 2)), 0)
 
 
-@inline colrange(A::AbstractVecOrMat, i::Integer) = colstart(A,i):colstop(A,i)
-@inline rowrange(A::AbstractVecOrMat, i::Integer) = rowstart(A,i):rowstop(A,i)
+@inline colrange(A, i::Integer) = colstart(A,i):colstop(A,i)
+@inline rowrange(A, i::Integer) = rowstart(A,i):rowstop(A,i)
 
 
 # length of i-the column/row
-@inline collength(A::AbstractVecOrMat, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
-@inline rowlength(A::AbstractVecOrMat, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
+@inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
+@inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
-@inline colsupport(::AbstractBandedLayout, A, j) = colrange(A, j)
-@inline rowsupport(::AbstractBandedLayout, A, j) = rowrange(A, j)
+@inline banded_colsupport(A, j) = colrange(A, j)
+@inline banded_rowsupport(A, j) = rowrange(A, j)
+
+@inline colsupport(::AbstractBandedLayout, A, j) = banded_colsupport(A, j)
+@inline rowsupport(::AbstractBandedLayout, A, j) = banded_rowsupport(A, j)
 
 """
     isbanded(A)

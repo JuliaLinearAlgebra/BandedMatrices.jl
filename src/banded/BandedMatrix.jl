@@ -288,13 +288,16 @@ IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
     r
 end
 
+# work around for Any matrices
+_zero(T) = zero(T)
+_zero(::Type{Any}) = nothing
 
 # banded get index, used for banded matrices with other data types
 @inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
         inbands_getindex(data, u, k, j)
     else
-        zero(eltype(data))
+        _zero(eltype(data)) 
     end
 end
 

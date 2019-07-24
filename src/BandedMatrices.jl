@@ -15,7 +15,7 @@ import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigva
 import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
 
-import Base: getindex, setindex!, *, +, -, ==, <, <=, >,
+import Base: getindex, setindex!, *, +, -, ==, <, <=, >, isassigned,
                 >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
 
 import Base: convert, size, view, unsafe_indices,
