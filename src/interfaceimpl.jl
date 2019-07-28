@@ -98,7 +98,8 @@ end
 ###
 
 bandwidths(M::MulMatrix) = bandwidths(M.applied)
-isbanded(M::MulMatrix) = all(isbanded, M.applied.args)
+isbanded(M::Mul) = all(isbanded, M.args)
+isbanded(M::MulMatrix) = isbanded(M.applied)
 
 const MulBanded = Mul{<:LayoutApplyStyle{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
 const MulBandedMatrix{T} = MulMatrix{T, <:MulBanded}

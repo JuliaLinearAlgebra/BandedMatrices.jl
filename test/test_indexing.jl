@@ -1,7 +1,8 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
 
 import BandedMatrices: rowstart, rowstop, colstart, colstop,
-                       rowlength, collength, diaglength, BandedColumns
+                       rowlength, collength, diaglength, BandedColumns,
+                       rowsupport, colsupport
 import LazyArrays: MemoryLayout, DenseColumnMajor
 
 @testset "Indexing" begin
@@ -55,13 +56,13 @@ import LazyArrays: MemoryLayout, DenseColumnMajor
         # 0.0  1.0  1.0  0.0
         # 0.0  0.0  1.0  1.0
         # 0.0  0.0  0.0  1.0
-        @test rowrange(A, 1) == 2:3
-        @test rowrange(A, 2) == 3:4
-        @test rowrange(A, 3) == 4:4
-        @test colrange(A, 1) == 1:0
-        @test colrange(A, 2) == 1:1
-        @test colrange(A, 3) == 1:2
-        @test colrange(A, 4) == 2:3
+        @test rowrange(A,1) == rowsupport(A,1) == 2:3
+        @test rowrange(A,2) == rowsupport(A,2) == 3:4
+        @test rowrange(A,3) == rowsupport(A,3) == 4:4
+        @test colrange(A,1) == colsupport(A,1) == 1:0
+        @test colrange(A,2) == colsupport(A,2) == 1:1
+        @test colrange(A,3) == colsupport(A,3) == 1:2
+        @test colrange(A,4) == colsupport(A,4) == 2:3
     end
 
     @testset "test length of diagonal" begin
