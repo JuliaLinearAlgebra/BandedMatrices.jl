@@ -406,7 +406,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
 
     @testset "BandedMatrix{Any}" begin
         A = BandedMatrix{Any}(undef, (10,10), (1,1))
-        @test isnothing(A[1,3])
+        @test A[1,3] === nothing
     end
 end
 
