@@ -98,11 +98,18 @@ end
 ###
 
 bandwidths(M::MulMatrix) = bandwidths(M.applied)
-isbanded(M::MulMatrix) = all(isbanded, M.applied.args)
+isbanded(M::Mul) = all(isbanded, M.args)
+isbanded(M::MulMatrix) = isbanded(M.applied)
 
-const MulBandedMatrix{T} = MulMatrix{T, <:Mul{<:LayoutApplyStyle{<:Tuple{Vararg{<:AbstractBandedLayout}}}}}
+const MulBanded = Mul{<:LayoutApplyStyle{<:Tuple{Vararg{<:AbstractBandedLayout}}}}
+const MulBandedMatrix{T} = MulMatrix{T, <:MulBanded}
 
 BroadcastStyle(::Type{<:MulBandedMatrix}) = BandedStyle()
+
+@inline colsupport(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, A, j) = banded_colsupport(A, j)
+@inline rowsupport(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, A, j) = banded_rowsupport(A, j)
+@inline colsupport(::MulLayout{<:Tuple{<:AbstractBandedLayout,<:AbstractStridedLayout}}, A, j) = banded_colsupport(A, j)
+
 
 Base.replace_in_print_matrix(A::MulBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
     -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
@@ -117,6 +124,7 @@ function _banded_mul_getindex(::Type{T}, (A, B), k::Integer, j::Integer) where T
     end
     ret
 end
+
 
 
 getindex(M::MatMulMat{<:AbstractBandedLayout,<:AbstractBandedLayout}, k::Integer, j::Integer) =

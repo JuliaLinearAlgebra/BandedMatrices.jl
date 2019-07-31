@@ -152,7 +152,6 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
         end
 
-
         @testset "BigFloat" begin
             let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
                 for j = 1:size(B,2), k = colrange(B,j)
@@ -403,6 +402,11 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test triu(A,j) == triu(B,j)
             @test tril(A,j) == tril(B,j)
         end
+    end
+
+    @testset "BandedMatrix{Any}" begin
+        A = BandedMatrix{Any}(undef, (10,10), (1,1))
+        @test A[1,3] === nothing
     end
 end
 

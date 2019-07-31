@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Test, Base64
+using BandedMatrices, LinearAlgebra, LazyArrays, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle
 import LazyArrays: MemoryLayout
 
@@ -177,9 +177,11 @@ end
     B = brand(5,5,1,0)
     M = MulArray(A,B)
 
-    @test isbanded(M)
+    @test isbanded(M) && isbanded(M.applied)
     @test bandwidths(M) == bandwidths(M.applied)
     @test BandedMatrix(M) == A*B
+    @test colsupport(M,1) == colsupport(M.applied,1) == 1:2
+    @test rowsupport(M,1) == rowsupport(M.applied,1) == 1:2
 
     @test M .+ A isa BandedMatrix
 
@@ -206,8 +208,11 @@ end
     @test @inferred(eltype(M)) == Float64
     @test bandwidths(M) == (3,3)
     @test BandedMatrix(M) ≈ A*B*C
-end
 
+    M = MulArray(A, Zeros(5))
+    @test colsupport(M,1) == colsupport(M.applied,1)
+    @test_skip colsupport(M,1) == 1:0
+end
 
 @testset "Cat" begin
     A = brand(6,5,2,1)
@@ -250,6 +255,4 @@ end
     @test vcat(A,A,A) isa BandedMatrix 
     @test isone.(V) isa BandedMatrix
     @test bandwidths(isone.(V)) == (14,1)
-
-
 end
