@@ -96,7 +96,7 @@ interface consists of the following:
 | :--------------- | :--------------- |
 | `bandwidths(A)` | Returns a tuple containing the sub-diagonal and super-diagonal bandwidth |
 | `isbanded(A)`    | Override to return `true` |
-| :--------------- | :--------------- |
+
 | Optional methods | Brief description |
 | :--------------- | :--------------- |
 | `inbands_getindex(A, k, j)` | Unsafe: return `A[k,j]`, without the need to check if we are inside the bands |
