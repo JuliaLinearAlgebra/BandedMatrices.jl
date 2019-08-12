@@ -29,7 +29,7 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
-MemoryLayout(A::BandedMatrix) = BandedColumns(MemoryLayout(A.data))
+MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = BandedColumns{typeof(MemoryLayout(Cont))}()
 
 
 ## Constructors
@@ -616,7 +616,7 @@ function _bidiagonalize!(A::AbstractMatrix{T}, M::BandedColumnMajor) where T
     Bidiagonal(d, e, :U)
 end
 
-bidiagonalize!(A::AbstractMatrix) = _bidiagonalize!(A, MemoryLayout(A))
+bidiagonalize!(A::AbstractMatrix) = _bidiagonalize!(A, MemoryLayout(typeof(A)))
 bidiagonalize(A::AbstractMatrix) = bidiagonalize!(copy(A))
 
 svdvals!(A::BandedMatrix) = svdvals!(bidiagonalize!(A))
@@ -678,11 +678,12 @@ bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
 
 
 # BandedMatrix with unit range indexes is also banded
-const BandedSubBandedMatrix{T, C, R} =
-    SubArray{T,2,BandedMatrix{T, C, R},I} where I<:Tuple{Vararg{AbstractUnitRange}}
+const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRange, t} =
+    SubArray{T,2,BandedMatrix{T, C, R},Tuple{I1,I2},t}
 
 isbanded(::BandedSubBandedMatrix) = true
-MemoryLayout(V::BandedSubBandedMatrix) = BandedColumns(MemoryLayout(bandeddata(V)))
+MemoryLayout(::Type{BandedSubBandedMatrix{T,C,R,I1,I2,t}}) where {T,C,R,I1,I2,t} = 
+    BandedColumns{typeof(MemoryLayout(SubArray{T,2,C,Tuple{Slice{OneTo{Int}},I2},t}))}()
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)

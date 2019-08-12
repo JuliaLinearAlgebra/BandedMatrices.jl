@@ -359,23 +359,23 @@ end
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
     (A,) = bc.args
-    _banded_broadcast!(dest, bc.f, A, MemoryLayout(dest), MemoryLayout(A))
+    _banded_broadcast!(dest, bc.f, A, MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
 end
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}})
     (A,x) = bc.args
-    _banded_broadcast!(dest, bc.f, (A, x), MemoryLayout(dest), MemoryLayout(A))
+    _banded_broadcast!(dest, bc.f, (A, x), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
 end
 
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}})
     (x,A) = bc.args
-    _banded_broadcast!(dest, bc.f, (x,A), MemoryLayout(dest), MemoryLayout(A))
+    _banded_broadcast!(dest, bc.f, (x,A), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
 end
 
 
 function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}})
-    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(dest), MemoryLayout.(bc.args))
+    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
 end
 
 _bandwidths(::Number) = (-720,-720)

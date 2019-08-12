@@ -74,7 +74,7 @@ banded_sbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
 end
 
 
-function materialize!(M::BlasMatMulVec{<:SymmetricLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+function materialize!(M::BlasMatMulVecAdd{<:SymmetricLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
     S, α, A, x, β, y = M.style_A, M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
@@ -96,7 +96,7 @@ banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
     end
 end
 
-function materialize!(M::BlasMatMulVec{<:HermitianLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+function materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
     S, α, A, x, β, y = M.style_A, M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))

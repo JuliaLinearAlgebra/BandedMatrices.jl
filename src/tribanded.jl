@@ -43,36 +43,28 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
 @lazylmul UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
 
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
-                                   <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbmv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), dest)
+@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
+                                                <:AbstractStridedLayout}) where UNIT
+    A,x = M.A,M.B
+    tbmv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), x)
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
-                                   <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbmv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), dest)
+@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
+                                                <:AbstractStridedLayout}) where UNIT
+    A,x = M.A,M.B
+    tbmv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), x)
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
-                                   <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbmv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), dest)
+@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
+                                                <:AbstractStridedLayout}) where {UPLO,UNIT}
+    A,x = M.A,M.B
+    tbmv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), x)
 end
 
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatMulVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
-                                   <:AbstractStridedLayout, T, T}) where {UPLO,UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
+@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
+                                                <:AbstractStridedLayout}) where {UPLO,UNIT}
+    A,x = M.A,M.B
     tbmv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
 end
 
@@ -82,37 +74,29 @@ end
 @lazyldiv LowerTriangular{T, <:AbstractBandedMatrix{T}} where T
 @lazyldiv UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector{T},
-         M::MatLdivVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
-                                   <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbsv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), dest)
+@inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
+                                   <:AbstractStridedLayout}) where UNIT
+    A,x = M.A,M.B
+    tbsv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), x)
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
-                                   <:AbstractStridedLayout,T,T}) where {UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbsv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), dest)
+@inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
+                                                <:AbstractStridedLayout}) where UNIT
+    A,x = M.A,M.B
+    tbsv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), x)
 end
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
-                                   <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbsv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), dest)
+@inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
+                                              <:AbstractStridedLayout}) where {UPLO,UNIT}
+    A,x = M.A,M.B
+    tbsv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), x)
 end
 
 
-@inline function _copyto!(::AbstractStridedLayout, dest::AbstractVector,
-         M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
-                                   <:AbstractStridedLayout,T,T}) where {UPLO,UNIT,T <: BlasFloat}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
-    tbsv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
+@inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
+                                              <:AbstractStridedLayout}) where {UPLO,UNIT}
+    A,x = M.A,M.B
+    tbsv!(UPLO, 'C', UNIT, tribandeddata(A)', x)
 end
 
 
@@ -193,9 +177,8 @@ function banded_naivesub!(::TriangularLayout{'L','U'}, A, b::AbstractVector, x::
     x
 end
 
-function _copyto!(_, dest::AbstractVector,
-                M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBandedLayout}}) where {UPLO,UNIT}
+function materialize!(M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBandedLayout}}) where {UPLO,UNIT}
     A,x = M.args
     x ≡ dest || copyto!(dest, x)
-    banded_naivesub!(MemoryLayout(A), A, x)
+    banded_naivesub!(MemoryLayout(typeof(A)), A, x)
 end
