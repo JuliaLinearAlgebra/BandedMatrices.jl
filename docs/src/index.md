@@ -67,7 +67,18 @@ Try to use abstract arrays to get around this:
 julia> @time BandedMatrix(Ones(10000,10000),(0,0));
 0.000074 seconds (9 allocations: 78.469 KiB)
 ```
-See [BlockArrays](https://github.com/JuliaArrays/BlockArrays.jl), [BlockBandedMatrices](https://github.com/JuliaMatrices/BlockBandedMatrices.jl) for other implemented abstract arrays.
+
+Another example:
+```jldoctest
+julia> @time BandedMatrix([Ones(10000,5000) Zeros(10000,5000)],(1,1));
+0.346918 seconds (22 allocations: 763.169 MiB, 8.38% gc time)
+
+julia> using LazyArrays
+julia> @time BandedMatrix(Hcat(Ones(10000,5000),Zeros(10000,5000)),(1,1));
+0.012627 seconds (30.01 k allocations: 1.374 MiB, 92.24% gc time)
+```
+
+See [LazyArrays](https://github.com/JuliaArrays/LazyArrays.jl), [FillArrays](https://github.com/JuliaArrays/FillArrays.jl) for other implemented abstract arrays.
 
 ## Accessing banded matrices
 
