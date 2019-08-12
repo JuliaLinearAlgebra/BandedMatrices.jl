@@ -57,6 +57,18 @@ A[band(0)] .= -2/h^2
 A[band(1)] .= A[band(-1)] .= 1/h^2
 ```
 
+Creating a large banded matrix from a dense matrix should be avoided because that costs time and memory:
+```jldoctest
+julia> @time BandedMatrix(ones(10000,10000),(0,0));
+0.775120 seconds (10 allocations: 763.016 MiB, 28.04% gc time)
+```
+Try to use abstract arrays to get around this:
+```jldoctest
+julia> @time BandedMatrix(Ones(10000,10000),(0,0));
+0.000074 seconds (9 allocations: 78.469 KiB)
+```
+See [BlockArrays](https://github.com/JuliaArrays/BlockArrays.jl), [BlockBandedMatrices](https://github.com/JuliaMatrices/BlockBandedMatrices.jl) for other implemented abstract arrays.
+
 ## Accessing banded matrices
 
 ```@docs
