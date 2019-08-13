@@ -7,21 +7,17 @@
 ####
 
 
-struct BandedColumns{ML} <: AbstractBandedLayout
-    layout::ML
-end
-struct BandedRows{ML} <: AbstractBandedLayout
-    layout::ML
-end
+struct BandedColumns{ML} <: AbstractBandedLayout end
+struct BandedRows{ML} <: AbstractBandedLayout end
 
 const BandedColumnMajor = BandedColumns{<:AbstractColumnMajor}
 const BandedRowMajor = BandedRows{<:AbstractColumnMajor}
-BandedColumnMajor() = BandedColumns(DenseColumnMajor())
-BandedRowMajor() = Bandeds(DenseRowMajor())
+BandedColumnMajor() = BandedColumns{DenseColumnMajor}()
+BandedRowMajor() = BandedRows{DenseRowMajor}()
 
-transposelayout(M::BandedColumns) = BandedRows(M.layout)
-transposelayout(M::BandedRows) = BandedColumns(M.layout)
-conjlayout(::Type{<:Complex}, M::AbstractBandedLayout) = ConjLayout(M)
+transposelayout(M::BandedColumns{ML}) where ML = BandedRows{ML}()
+transposelayout(M::BandedRows{ML}) where ML = BandedColumns{ML}()
+conjlayout(::Type{<:Complex}, ::M) where M<:AbstractBandedLayout = ConjLayout{M}()
 
 # Here we override broadcasting for banded matrices.
 # The design is to to exploit the broadcast machinery so that

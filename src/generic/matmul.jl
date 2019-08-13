@@ -52,7 +52,7 @@ end
 
 
 
-function materialize!(M::BlasMatMulVecAdd{<:BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout})
+function materialize!(M::BlasMatMulVecAdd{<:BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
@@ -70,7 +70,7 @@ function materialize!(M::BlasMatMulVecAdd{<:BandedColumnMajor,<:AbstractStridedL
     end
 end
 
-function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout})
+function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     At = transpose(A)
     m, n = size(A)
@@ -183,7 +183,7 @@ end
 const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBandedLayout}}
 const ConjOrBandedColumnMajor = Union{<:BandedColumnMajor,ConjLayout{<:BandedColumnMajor}}
 
-function materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor})
+function materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor,T}) where T<:BlasFloat
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
 
     Am, An = size(A)
