@@ -424,8 +424,8 @@ function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumns)
     A
 end
 
-banded_lmul!(α, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(A))
-banded_rmul!(A::AbstractMatrix, α) = _banded_rmul!(A, α, MemoryLayout(A))
+banded_lmul!(α, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(typeof(A)))
+banded_rmul!(A::AbstractMatrix, α) = _banded_rmul!(A, α, MemoryLayout(typeof(A)))
 
 lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
 rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
@@ -436,7 +436,7 @@ rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
 ##
 
 # these are the routines of the banded interface of other AbstractMatrices
-banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(X), MemoryLayout(Y))
+banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix) = _banded_axpy!(a, X, Y, MemoryLayout(typeof(X)), MemoryLayout(typeof(Y)))
 _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, ::BandedColumns, ::BandedColumns) =
     banded_generic_axpy!(a, X, Y)
 _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notbandedY) =

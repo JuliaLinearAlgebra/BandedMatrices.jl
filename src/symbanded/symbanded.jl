@@ -18,13 +18,13 @@
 
 
 
-symmetriclayout(layout::BandedColumns, uplo) = SymmetricLayout(layout,uplo)
-symmetriclayout(layout::BandedRows, uplo) = SymmetricLayout(layout,uplo)
+symmetriclayout(::BandedColumns) = SymmetricLayout{BandedColumns}()
+symmetriclayout(::BandedRows) = SymmetricLayout{BandedRows}()
 
-hermitianlayout(::Type{<:Complex}, layout::BandedColumns, uplo) = HermitianLayout(layout,uplo)
-hermitianlayout(::Type{<:Real}, layout::BandedColumns, uplo) = SymmetricLayout(layout,uplo)
-hermitianlayout(::Type{<:Complex}, layout::BandedRows, uplo) = HermitianLayout(layout,uplo)
-hermitianlayout(::Type{<:Real}, layout::BandedRows, uplo) = SymmetricLayout(layout,uplo)
+hermitianlayout(::Type{<:Complex}, ::BandedColumns) = HermitianLayout{BandedColumns}()
+hermitianlayout(::Type{<:Real}, ::BandedColumns) = SymmetricLayout{BandedColumns}()
+hermitianlayout(::Type{<:Complex}, ::BandedRows) = HermitianLayout{BandedRows}()
+hermitianlayout(::Type{<:Real}, ::BandedRows) = SymmetricLayout{BandedRows}()
 
 
 isbanded(A::HermOrSym) = isbanded(parent(A))
@@ -36,7 +36,7 @@ Base.replace_in_print_matrix(A::HermOrSym{<:Any,<:AbstractBandedMatrix}, i::Inte
     -bandwidth(A) ≤ j-i ≤ bandwidth(A) ? s : Base.replace_with_centered_mark(s)
 
 function symbandeddata(A)
-    M = MemoryLayout(A)
+    M = MemoryLayout(typeof(A))
     B = symmetricdata(A)
     l,u = bandwidths(B)
     D = bandeddata(B)
@@ -49,7 +49,7 @@ function symbandeddata(A)
 end
 
 function hermbandeddata(A)
-    M = MemoryLayout(A)
+    M = MemoryLayout(typeof(A))
     B = hermitiandata(A)
     l,u = bandwidths(B)
     D = bandeddata(B)

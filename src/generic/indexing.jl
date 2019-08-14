@@ -26,7 +26,7 @@ inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
 
 @inline _sub_materialize(_, V) = Array(V)
 @inline _sub_materialize(::AbstractBandedLayout, V) = BandedMatrix(V)
-@inline _materialize(V::SubArray) = _sub_materialize(MemoryLayout(V), V)
+@inline _materialize(V::SubArray) = _sub_materialize(MemoryLayout(typeof(V)), V)
 
 @inline _lazy_getindex(A, I...) = _materialize(view(A, I...))
 @inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::Colon) = _lazy_getindex(A, kr, jr)
