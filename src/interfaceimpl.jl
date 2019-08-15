@@ -69,7 +69,17 @@ end
 # needed for ∞-dimensional banded linear algebra
 ###
 
-function materialze!(M::MulAdd{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}},<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
+struct PaddedMulAddStyle <: AbstractMulAddStyle end
+mulapplystyle(::AbstractBandedLayout, ::VcatLayout{<:Tuple{<:Any,ZerosLayout}}) = PaddedMulAddStyle()
+
+function similar(M::Mul{PaddedMulAddStyle}, ::Type{T}, axes) where T
+    A,x = M.args
+    xf,_ = x.arrays
+    n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
+    Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
+end
+
+function materialze!(M::MatMulVecAdd{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}},<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}})
     α,A,x,β,y = M.α,Μ.A,Μ.B,Μ.β,M.C
     length(y) == size(A,1) || throw(DimensionMismatch())
     length(x) == size(A,2) || throw(DimensionMismatch())
@@ -84,12 +94,7 @@ function materialze!(M::MulAdd{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any
     y
 end
 
-function mulsimilar(::Tuple{<:AbstractBandedLayout,<:VcatLayout{<:Tuple{<:Any,ZerosLayout}}}, M, ::Type{T}, axes) where T
-    A,x = M.args
-    xf,_ = x.arrays
-    n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
-    Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
-end
+
 
 
 ###
@@ -100,28 +105,19 @@ bandwidths(M::MulMatrix) = bandwidths(M.applied)
 isbanded(M::Mul) = all(isbanded, M.args)
 isbanded(M::MulMatrix) = isbanded(M.applied)
 
-const MulBanded = Mul{BandedMulAddStyle}
-const MulBandedMatrix{T} = MulMatrix{T, <:MulBanded}
+const MulBandedLayout = MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}
 
-BroadcastStyle(::Type{<:MulBandedMatrix}) = BandedStyle()
+applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulBandedLayout) = BandedStyle()
 
-@inline colsupport(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, A, j) = banded_colsupport(A, j)
-@inline rowsupport(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, A, j) = banded_rowsupport(A, j)
+@inline colsupport(::MulBandedLayout, A, j) = banded_colsupport(A, j)
+@inline rowsupport(::MulBandedLayout, A, j) = banded_rowsupport(A, j)
 @inline colsupport(::MulLayout{<:Tuple{<:AbstractBandedLayout,<:AbstractStridedLayout}}, A, j) = banded_colsupport(A, j)
 
 
-Base.replace_in_print_matrix(A::MulBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
-    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
 
-@inline _sub_materialize(::MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}, V) = BandedMatrix(V)
+@inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
 
-MemoryLayout(::Type{<:SubArray{T,2,P,I}}) where {T,P<:MulBandedMatrix,I<:Tuple{Vararg{AbstractUnitRange}}} =
-    MemoryLayout(P)
-
-@inline getindex(A::MulBandedMatrix, kr::Colon, jr::Colon) = _lazy_getindex(A, kr, jr)
-@inline getindex(A::MulBandedMatrix, kr::Colon, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
-@inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::Colon) = _lazy_getindex(A, kr, jr)
-@inline getindex(A::MulBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
+subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
 
 
 

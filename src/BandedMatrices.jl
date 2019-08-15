@@ -40,7 +40,9 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     VcatLayout, ZerosLayout,
                     AbstractColumnMajor, MulLayout, colsupport, rowsupport,
                     DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
-                    mulapplystyle, AbstractMulAddStyle
+                    mulapplystyle, AbstractMulAddStyle, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
+                    _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex
+
 import FillArrays: AbstractFill
 
 export BandedMatrix,

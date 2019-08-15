@@ -25,7 +25,7 @@ function tribandeddata(::TriangularLayout{'L'}, A)
     view(D, u+1:l+u+1, :)
 end
 
-tribandeddata(A) = tribandeddata(MemoryLayout(A), A)
+tribandeddata(A) = tribandeddata(MemoryLayout(typeof(A)), A)
 
 
 Base.replace_in_print_matrix(A::Union{UpperTriangular{<:Any,<:AbstractBandedMatrix},
@@ -178,7 +178,6 @@ function banded_naivesub!(::TriangularLayout{'L','U'}, A, b::AbstractVector, x::
 end
 
 function materialize!(M::MatLdivVec{<:TriangularLayout{UPLO,UNIT,<:AbstractBandedLayout}}) where {UPLO,UNIT}
-    A,x = M.args
-    x ≡ dest || copyto!(dest, x)
+    A,x = M.A, M.B
     banded_naivesub!(MemoryLayout(typeof(A)), A, x)
 end

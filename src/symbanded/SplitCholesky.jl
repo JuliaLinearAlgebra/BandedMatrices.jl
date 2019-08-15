@@ -31,7 +31,7 @@ size(S::SplitCholesky) = size(S.factors)
 size(S::SplitCholesky, i::Integer) = size(S.factors, i)
 
 splitcholesky!(A::Symmetric{T,<:BandedMatrix{T}}) where T = splitcholesky!(A, A.uplo == 'U' ? UpperTriangular : LowerTriangular)
-splitcholesky!(A::Symmetric{T,<:BandedMatrix{T}}, ::Type{Tr}) where {T,Tr} = splitcholesky!(MemoryLayout(A), A, Tr)
+splitcholesky!(A::Symmetric{T,<:BandedMatrix{T}}, ::Type{Tr}) where {T,Tr} = splitcholesky!(MemoryLayout(typeof(A)), A, Tr)
 
 function splitcholesky!(::SymmetricLayout{<:BandedColumnMajor},
                        A::AbstractMatrix{T}, ::Type{UpperTriangular}) where T<:BlasFloat

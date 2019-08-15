@@ -66,8 +66,8 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test Matrix(A.*B) ≈ (Matrix(A).*Matrix(B))
         end
 
-        ## UniformScaling
-        let A = brand(10,10,1,2)
+        @testset "UniformScaling" begin
+            A = brand(10,10,1,2)
             @test A+I isa BandedMatrix
             @test bandwidths(A+I) == (1,2)
             @test Matrix(A+I) ≈ Matrix(A)+I
@@ -102,9 +102,9 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "Banded * Dense" begin
-        # big banded * dense
-
-        let A=brand(1000,1000,200,300), B=rand(1000,1000)
+        @testset "big banded * dense" begin
+            A=brand(1000,1000,200,300)
+            B=rand(1000,1000)
             @test A*B ≈ Matrix(A)*B
             @test B*A ≈ B*Matrix(A)
         end
@@ -113,7 +113,8 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         # @test A*B' ≈ Matrix(A)*B'
         # @test A'*B' ≈ Matrix(A)'*B'
 
-        let A=brand(1200,1000,200,300), B=rand(1000,1000), C=rand(1200,1200)
+        let 
+            A=brand(1200,1000,200,300); B=rand(1000,1000); C=rand(1200,1200)
             @test A*B ≈ Matrix(A)*B
             @test C*A ≈ C*Matrix(A)
         end

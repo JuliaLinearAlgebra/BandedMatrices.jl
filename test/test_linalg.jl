@@ -24,7 +24,7 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied
         @test bandwidths(A'*A) == (3,3)
 
         @test applied(*,Symmetric(A),A) isa Applied{BandedMulAddStyle}
-        @test MemoryLayout(typeof(Symmetric(A))) == SymmetricLayout{BandedColumns}()
+        @test MemoryLayout(typeof(Symmetric(A))) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
         @test Symmetric(A)*A isa BandedMatrix
         @test Symmetric(A)*A ≈ Symmetric(Matrix(A))*Matrix(A)
         @test bandwidths(Symmetric(A)*A) == (3,4)

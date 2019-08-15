@@ -8,7 +8,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         for (t, ud) in ((UpperTriangular, 'N'), (UnitUpperTriangular, 'U'))
             A = t(brand(10,10,1,2))
             @test isbanded(A)
-            @test MemoryLayout(A) == TriangularLayout{'U',ud}(BandedColumns(DenseColumnMajor()))
+            @test MemoryLayout(typeof(A)) == TriangularLayout{'U',ud,BandedColumns{DenseColumnMajor}}()
             @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (0,2)
             @test bandwidth(A,2) == 2
             @test BandedMatrix(A) == A
@@ -33,7 +33,7 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Test
         for (t, ud) in ((LowerTriangular, 'N'), (UnitLowerTriangular, 'U'))
             A = t(brand(10,10,1,2))
             @test isbanded(A)
-            @test MemoryLayout(A) == TriangularLayout{'L', ud}(BandedColumns(DenseColumnMajor()))
+            @test MemoryLayout(typeof(A)) == TriangularLayout{'L', ud,BandedColumns{DenseColumnMajor}}()
             @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,0)
             @test bandwidth(A,2) == 0
             @test BandedMatrix(A) == A

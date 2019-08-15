@@ -188,8 +188,6 @@ end
 #            c+sz*(j-1)*stc)
 # end
 
-_fill_lmul!(β, A::AbstractArray{T}) where T = β == zero(T) ? fill!(A, β) : lmul!(β, A)
-
 function _num_zeroband_u(A)
     Al, Au = bandwidths(A)
     for b = 0:Al+Au

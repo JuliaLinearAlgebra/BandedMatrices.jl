@@ -114,33 +114,75 @@ end
 # Non-BLAS mat vec
 ##
 
-
-@inline function materialize!(M::MulAdd{<:AbstractBandedLayout})
+@inline function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout})
     α,A,B,β,C = M.α,M.A,M.B,M.β,M.C
-    lmul!(β,C)
-    @inbounds for p = 1:size(C,2), j = 1:size(A,2), k = colrange(A,j)
-        C[k,p] += α*inbands_getindex(A,k,j)*B[j,p]
+    _fill_lmul!(β, C)
+    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+        C[k] += α*inbands_getindex(A,k,j)*B[j]
     end
     C  
 end
 
-@inline function materialize!(M::MulAdd{<:BandedRowMajor})
+@inline function materialize!(M::MatMulVecAdd{<:BandedRowMajor})
     α,At,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = transpose(At)
-    lmul!(β,C)
+    _fill_lmul!(β, C)
 
-    @inbounds for p = 1:size(C,2), j = 1:size(A,2), k = colrange(A,j)
-        C[j,p] +=  α*transpose(inbands_getindex(A,k,j))*B[k,p]
+    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+        C[j] +=  α*transpose(inbands_getindex(A,k,j))*B[k]
     end
     C
 end
 
-@inline function materialize!(M::MulAdd{<:ConjLayout{<:BandedRowMajor}})
+@inline function materialize!(M::MatMulVecAdd{<:ConjLayout{<:BandedRowMajor}})
     α,Ac,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = Ac'
-    lmul!(β,C)
-    @inbounds for p = 1:size(C,2), j = 1:size(A,2), k = colrange(A,j)
-        C[j,p] += inbands_getindex(A,k,j)'*B[k,p]
+    _fill_lmul!(β, C)
+    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+        C[j] += α*inbands_getindex(A,k,j)'*B[k]
+    end
+    C
+end
+
+@inline function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout})
+    α,A,B,β,C = M.α,M.A,M.B,M.β,M.C
+    _fill_lmul!(β, C)
+    @inbounds for k = 1:size(C,1), j = rowrange(C,k)
+        Ctmp = zero(eltype(C))
+        for ν = rowsupport(A, k) ∩ colsupport(B,j)
+            Ctmp = muladd(inbands_getindex(A,k,ν), B[ν, j], Ctmp)
+        end
+        C[k,j] = muladd(α,Ctmp, C[k,j])
+    end
+    C  
+end
+
+@inline function materialize!(M::MatMulMatAdd{<:BandedRowMajor})
+    α,At,B,β,C = M.α,M.A,M.B,M.β,M.C
+    A = transpose(At)
+    _fill_lmul!(β, C)
+
+    @inbounds for k = 1:size(C,1), j = rowrange(C,k)
+        Ctmp = zero(eltype(C))
+        for ν = colsupport(A, k) ∩ colsupport(B,j)
+            Ctmp = muladd(transpose(inbands_getindex(A,ν,k)), B[ν, j], Ctmp)
+        end
+        C[k,j] = muladd(α,Ctmp, C[k,j])
+    end
+    C
+end
+
+@inline function materialize!(M::MatMulMatAdd{<:ConjLayout{<:BandedRowMajor}})
+    α,Ac,B,β,C = M.α,M.A,M.B,M.β,M.C
+    A = Ac'
+    _fill_lmul!(β, C)
+
+    @inbounds for k = 1:size(C,1), j = rowrange(C,k)
+        Ctmp = zero(eltype(C))
+        for ν = colsupport(A, k) ∩ colsupport(B,j)
+            Ctmp = muladd(inbands_getindex(A,ν,k)', B[ν, j], Ctmp)
+        end
+        C[k,j] = muladd(α,Ctmp, C[k,j])
     end
     C
 end
