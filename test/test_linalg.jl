@@ -1,5 +1,7 @@
 using BandedMatrices, LazyArrays, LinearAlgebra, Test
 import Base.Broadcast: materialize, broadcasted
+import BandedMatrices: BandedMulAddStyle, BandedColumns
+import LazyArrays: SymmetricLayout, MemoryLayout, Applied
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -21,6 +23,8 @@ import Base.Broadcast: materialize, broadcasted
         @test A'*A ≈ Matrix(A)'*Matrix(A)
         @test bandwidths(A'*A) == (3,3)
 
+        @test applied(*,Symmetric(A),A) isa Applied{BandedMulAddStyle}
+        @test MemoryLayout(typeof(Symmetric(A))) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
         @test Symmetric(A)*A isa BandedMatrix
         @test Symmetric(A)*A ≈ Symmetric(Matrix(A))*Matrix(A)
         @test bandwidths(Symmetric(A)*A) == (3,4)
@@ -38,7 +42,7 @@ import Base.Broadcast: materialize, broadcasted
         @test UpperTriangular(A)*A ≈ UpperTriangular(Matrix(A))*Matrix(A)
         @test bandwidths(UpperTriangular(A)*A) == (1,4)
 
-        B = materialize(Mul(A,A,A))
+        B = apply(*,A,A,A)
         @test B isa BandedMatrix
         @test all(B .=== (A*A)*A)
         @test bandwidths(B) == (3,6)
@@ -229,15 +233,8 @@ import Base.Broadcast: materialize, broadcasted
         C .= Mul(A,B)
         @test C == A*B
 
-        @test broadcasted(identity, Mul(A,B)) isa LazyArrays.BArrayMulArray
-        @test broadcasted(*, 1.0, Mul(A,B)) isa LazyArrays.BConstArrayMulArray
-        @test broadcasted(+, Mul(A,B), C) isa LazyArrays.BArrayMulArrayPlusArray
-        @test broadcasted(+, Mul(A,B), broadcasted(*, 0.0, C)) isa LazyArrays.BArrayMulArrayPlusConstArray
-        @test broadcasted(+, broadcasted(*, 1.0, Mul(A,B)), C) isa LazyArrays.BConstArrayMulArrayPlusArray
-        @test broadcasted(+, broadcasted(*, 1.0, Mul(A,B)), broadcasted(*, 0.0, C)) isa LazyArrays.BConstArrayMulArrayPlusConstArray
-
         C.data .= NaN
-        C .= 1.0 .* Mul(A,B) .+ 0.0 .* C
+        C .= @~ 1.0 * A*B + 0.0 * C
         @test C == A*B
     end
 

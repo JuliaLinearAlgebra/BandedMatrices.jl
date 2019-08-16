@@ -18,29 +18,28 @@
 
 
 
-symmetriclayout(layout::BandedColumns, uplo) = SymmetricLayout(layout,uplo)
-symmetriclayout(layout::BandedRows, uplo) = SymmetricLayout(layout,uplo)
+symmetriclayout(::ML) where ML<:BandedColumns = SymmetricLayout{ML}()
+symmetriclayout(::ML) where ML<:BandedRows = SymmetricLayout{ML}()
 
-hermitianlayout(::Type{<:Complex}, layout::BandedColumns, uplo) = HermitianLayout(layout,uplo)
-hermitianlayout(::Type{<:Real}, layout::BandedColumns, uplo) = SymmetricLayout(layout,uplo)
-hermitianlayout(::Type{<:Complex}, layout::BandedRows, uplo) = HermitianLayout(layout,uplo)
-hermitianlayout(::Type{<:Real}, layout::BandedRows, uplo) = SymmetricLayout(layout,uplo)
+hermitianlayout(::Type{<:Complex}, ::ML) where ML<:BandedColumns = HermitianLayout{ML}()
+hermitianlayout(::Type{<:Real}, ::ML) where ML<:BandedColumns = SymmetricLayout{ML}()
+hermitianlayout(::Type{<:Complex}, ::ML) where ML<:BandedRows = HermitianLayout{ML}()
+hermitianlayout(::Type{<:Real}, ::ML) where ML<:BandedRows = SymmetricLayout{ML}()
 
 
 isbanded(A::HermOrSym) = isbanded(parent(A))
 
-bandwidth(A::HermOrSym) = ifelse(A.uplo == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
+bandwidth(A::HermOrSym) = ifelse(symmetricuplo(A) == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
 bandwidths(A::HermOrSym) = (bandwidth(A), bandwidth(A))
 
 Base.replace_in_print_matrix(A::HermOrSym{<:Any,<:AbstractBandedMatrix}, i::Integer, j::Integer, s::AbstractString) =
     -bandwidth(A) ≤ j-i ≤ bandwidth(A) ? s : Base.replace_with_centered_mark(s)
 
 function symbandeddata(A)
-    M = MemoryLayout(A)
     B = symmetricdata(A)
     l,u = bandwidths(B)
     D = bandeddata(B)
-    if M.uplo == 'U'
+    if symmetricuplo(A) == 'U'
         view(D, 1:u+1, :)
     else
         m = size(D,1)
@@ -49,11 +48,10 @@ function symbandeddata(A)
 end
 
 function hermbandeddata(A)
-    M = MemoryLayout(A)
     B = hermitiandata(A)
     l,u = bandwidths(B)
     D = bandeddata(B)
-    if M.uplo == 'U'
+    if symmetricuplo(A) == 'U'
         view(D, 1:u+1, :)
     else
         m = size(D,1)
@@ -74,14 +72,14 @@ banded_sbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
 end
 
 
-function materialize!(M::BlasMatMulVec{<:SymmetricLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
-    S, α, A, x, β, y = M.style_A, M.α, M.A, M.B, M.β, M.C
+function materialize!(M::BlasMatMulVecAdd{<:SymmetricLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout})
+    α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l = bandwidth(A)
     l ≥ 0 || return lmul!(β, y)
-    _banded_sbmv!(S.uplo, α, A, x, β, y)
+    _banded_sbmv!(symmetricuplo(A), α, A, x, β, y)
 end
 
 banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::AbstractVector{T}) where {T<:BlasFloat} =
@@ -96,31 +94,31 @@ banded_hbmv!(uplo, α::T, A::AbstractMatrix{T}, x::AbstractVector{T}, β::T, y::
     end
 end
 
-function materialize!(M::BlasMatMulVec{<:HermitianLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
-    S, α, A, x, β, y = M.style_A, M.α, M.A, M.B, M.β, M.C
+function materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:BandedColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout})
+    α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l = bandwidth(A)
     l ≥ 0 || return lmul!(β, y)
-    _banded_hbmv!(S.uplo, α, A, x, β, y)
+    _banded_hbmv!(symmetricuplo(A), α, A, x, β, y)
 end
 
 
 ## eigvals routine
 
 
-function _tridiagonalize!(A::AbstractMatrix{T}, S::SymmetricLayout{<:BandedColumnMajor}) where T
+function _tridiagonalize!(A::AbstractMatrix{T}, ::SymmetricLayout{<:BandedColumnMajor}) where T
     n=size(A, 1)
     d = Vector{T}(undef,n)
     e = Vector{T}(undef,n-1)
     Q = Matrix{T}(undef,0,0)
     work = Vector{T}(undef,n)
-    sbtrd!('N', S.uplo, size(A,1), bandwidth(A), symbandeddata(A), d, e, Q, work)
+    sbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), symbandeddata(A), d, e, Q, work)
     SymTridiagonal(d,e)
 end
 
-tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(A))
+tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(typeof(A)))
 tridiagonalize(A::AbstractMatrix) = tridiagonalize!(copy(A))
 
 eigvals!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))

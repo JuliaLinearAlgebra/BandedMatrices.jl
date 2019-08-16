@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, FillArrays, Test, Base64
-import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, rowsupport, colsupport
 import LazyArrays: MemoryLayout
 
 
@@ -30,11 +30,12 @@ end
 
 struct PseudoBandedLayout <: AbstractBandedLayout end
 Base.BroadcastStyle(::Type{<:PseudoBandedMatrix}) = BandedStyle()
-BandedMatrices.MemoryLayout(::PseudoBandedMatrix) = PseudoBandedLayout()
+BandedMatrices.MemoryLayout(::Type{<:PseudoBandedMatrix}) = PseudoBandedLayout()
 BandedMatrices.isbanded(::PseudoBandedMatrix) = true
 BandedMatrices.bandwidths(A::PseudoBandedMatrix) = (A.l , A.u)
 BandedMatrices.inbands_getindex(A::PseudoBandedMatrix, j::Int, k::Int) = A.data[j, k]
 BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = setindex!(A.data, v, j, k)
+LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
 @testset "banded matrix interface" begin
     @test isbanded(Zeros(5,6))
@@ -161,21 +162,21 @@ end
 @testset "Vcat Zeros special case" begin
     A = BandedMatrices._BandedMatrix((1:10)', 10, -1,1)
     x = Vcat(1:3, Zeros(10-3))
-    @test typeof(A*x) <: Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
+    @test A*x isa Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
     @test length((A*x).arrays[1]) == length(x.arrays[1]) + bandwidth(A,1) == 2
     @test A*x == A*Vector(x)
 
     A = BandedMatrices._BandedMatrix(randn(3,10), 10, 1,1)
     x = Vcat(randn(10), Zeros(0))
-    @test typeof(A*x) <: Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
+    @test A*x isa Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
     @test length((A*x).arrays[1]) == 10
-    @test A*x == A*Vector(x)
+    @test A*x ≈ A*Vector(x)
 end
 
 @testset "MulMatrix" begin
     A = brand(6,5,0,1)
     B = brand(5,5,1,0)
-    M = MulArray(A,B)
+    M = ApplyArray(*,A,B)
 
     @test isbanded(M) && isbanded(M.applied)
     @test bandwidths(M) == bandwidths(M.applied)
@@ -183,18 +184,17 @@ end
     @test colsupport(M,1) == colsupport(M.applied,1) == 1:2
     @test rowsupport(M,1) == rowsupport(M.applied,1) == 1:2
 
+    @test Base.BroadcastStyle(typeof(M)) isa BandedStyle
     @test M .+ A isa BandedMatrix
-
-    @test M isa BandedMatrices.MulBandedMatrix
 
     V = view(M,1:4,1:4)
     @test bandwidths(V) == (1,1)
-    @test MemoryLayout(V) == MemoryLayout(M)
+    @test MemoryLayout(typeof(V)) == MemoryLayout(typeof(M))
     @test M[1:4,1:4] isa BandedMatrix
 
     A = brand(5,5,0,1)
     B = brand(6,5,1,0)
-    @test_throws DimensionMismatch MulArray(A,B)
+    @test_throws DimensionMismatch ApplyArray(*,A,B)
 
     A = brand(6,5,0,1)
     B = brand(5,5,1,0)
@@ -204,12 +204,12 @@ end
     @test bandwidths(M) == (3,3)
     @test M[1,1] ≈ (A*B*C)[1,1]
 
-    M = @inferred(MulArray(A,B,C))
+    M = @inferred(ApplyArray(*,A,B,C))
     @test @inferred(eltype(M)) == Float64
     @test bandwidths(M) == (3,3)
     @test BandedMatrix(M) ≈ A*B*C
 
-    M = MulArray(A, Zeros(5))
+    M = ApplyArray(*, A, Zeros(5))
     @test colsupport(M,1) == colsupport(M.applied,1)
     @test_skip colsupport(M,1) == 1:0
 end

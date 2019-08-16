@@ -1,6 +1,6 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
-    import LazyArrays: DenseColumnMajor
-    import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
+import LazyArrays: DenseColumnMajor, MulAdd, materialize!
+import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
 
 
 @testset "Symmetric" begin
@@ -9,13 +9,14 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
-    @test MemoryLayout(A) == SymmetricLayout(BandedColumns(DenseColumnMajor()), 'U')
+    @test MemoryLayout(typeof(A)) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
 
     @test A[1,2] == A[2,1]
     @test A[1,4] == 0
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
+    y = similar(x)
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ 1.0*A*x + 0.0*y) .===
                 BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
 
     A = Symmetric(brand(10,10,1,2),:L)
@@ -23,14 +24,14 @@ using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
-    @test MemoryLayout(A) == SymmetricLayout(BandedColumns(DenseColumnMajor()), 'L')
+    @test MemoryLayout(typeof(A)) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
 
     @test A[1,2] == A[2,1]
     @test A[1,3] == 0
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
-
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
+    y = similar(x)
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ 1.0*A*x + 0.0*y) .===
                 BLAS.sbmv!('L', 1, 1.0, view(parent(A).data,3:4,:), x, 0.0, similar(x)))
 
     @test norm(A) ≈ norm(Matrix(A))
@@ -94,13 +95,15 @@ end
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  2
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (2,2)
-    @test MemoryLayout(A) == HermitianLayout(BandedColumns(DenseColumnMajor()), 'U')
+    @test MemoryLayout(typeof(A)) == HermitianLayout{BandedColumns{DenseColumnMajor}}()
 
     @test A[1,2] == conj(A[2,1])
     @test A[1,4] == 0
     x=rand(T,10)
     @test A*x ≈ Matrix(A)*x
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= T(1.0).*Mul(A,x) .+ T(0.0).*similar(x)) .===
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== 
+                (similar(x) .= applied(+, applied(*,T(1.0),A,x), applied(*,T(0.0),x))) .===
+                materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('U', 2, T(1.0), parent(A).data, x, T(0.0), similar(x)))
 
     A = Hermitian(brand(T,10,10,1,2),:L)
@@ -108,14 +111,15 @@ end
     @test BandedMatrix(A) == A
     @test bandwidth(A) == bandwidth(A,1) == bandwidth(A,2) ==  1
     @test bandwidths(A) == bandwidths(BandedMatrix(A)) == (1,1)
-    @test MemoryLayout(A) == HermitianLayout(BandedColumns(DenseColumnMajor()), 'L')
+    @test MemoryLayout(typeof(A)) == HermitianLayout{BandedColumns{DenseColumnMajor}}()
 
     @test A[1,2] == conj(A[2,1])
     @test A[1,3] == 0
     x=rand(T, 10)
     @test A*x ≈ Matrix(A)*x
 
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= one(T).*Mul(A,x) .+ zero(T).*similar(x)) .===
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ one(T)*A*x + zero(T)*x) .===
+                materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
 end
 
@@ -151,7 +155,6 @@ end
         @test eltype(F) == float(T)
     end
 end
-
 
 @testset "Cholesky" begin
     for T in (Float64, BigFloat)

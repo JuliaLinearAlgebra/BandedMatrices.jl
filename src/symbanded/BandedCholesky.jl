@@ -65,7 +65,7 @@ function banded_chol!(_, A::AbstractMatrix, ::Type{LowerTriangular})
     return LowerTriangular(A), convert(BlasInt, 0)
 end
 
-banded_chol!(A, ::Type{T}) where T = banded_chol!(MemoryLayout(A), A, T)
+banded_chol!(A, ::Type{T}) where T = banded_chol!(MemoryLayout(typeof(A)), A, T)
 _chol!(A::AbstractBandedMatrix, ::Type{UpperTriangular}) = banded_chol!(A, UpperTriangular)
 _chol!(A::AbstractBandedMatrix, ::Type{LowerTriangular}) = banded_chol!(A, LowerTriangular)
 
@@ -88,7 +88,7 @@ function _ldiv!(::AbstractBandedLayout, _, C::Cholesky, B::AbstractMatrix)
 end    
 
 ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:BlasFloat = 
-    _ldiv!(MemoryLayout(A.factors), MemoryLayout(B), A, B)
+    _ldiv!(MemoryLayout(typeof(A.factors)), MemoryLayout(typeof(B)), A, B)
 
 
 

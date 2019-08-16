@@ -24,16 +24,13 @@ inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
 # on the memory layout
 ###
 
-@inline _sub_materialize(_, V) = Array(V)
-@inline _sub_materialize(::AbstractBandedLayout, V) = BandedMatrix(V)
-@inline _materialize(V::SubArray) = _sub_materialize(MemoryLayout(V), V)
+sub_materialize(::AbstractBandedLayout, V) = BandedMatrix(V)
 
-@inline _lazy_getindex(A, I...) = _materialize(view(A, I...))
-@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::Colon) = _lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::AbstractUnitRange, jr::Colon) = _lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = _lazy_getindex(A, kr, jr)
+@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::Colon) = lazy_getindex(A, kr, jr)
+@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::AbstractUnitRange) = lazy_getindex(A, kr, jr)
+@inline getindex(A::AbstractBandedMatrix, kr::AbstractUnitRange, jr::Colon) = lazy_getindex(A, kr, jr)
+@inline getindex(A::AbstractBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = lazy_getindex(A, kr, jr)
 
-@inline getindex(A::AbstractMatrix, b::Band) = _lazy_getindex(A, b)
-@inline getindex(A::AbstractMatrix, kr::BandRangeType, j::Integer) = _lazy_getindex(A, kr, j)
-@inline getindex(A::AbstractMatrix, k::Integer, jr::BandRangeType) = _lazy_getindex(A, k, jr)
+@inline getindex(A::AbstractMatrix, b::Band) = lazy_getindex(A, b)
+@inline getindex(A::AbstractMatrix, kr::BandRangeType, j::Integer) = lazy_getindex(A, kr, j)
+@inline getindex(A::AbstractMatrix, k::Integer, jr::BandRangeType) = lazy_getindex(A, k, jr)

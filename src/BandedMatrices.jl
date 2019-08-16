@@ -31,14 +31,18 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Br
 
 import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
-                    _copyto!, MatMulVec, MatMulMat, transposelayout, triangulardata,
+                    transposelayout, triangulardata,
                     ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
-                    triangularlayout, MatMulVec, MatLdivVec, TriangularLayout,
-                    AbstractBandedLayout, DiagonalLayout, LayoutApplyStyle,
-                    ArrayMulArrayStyle, HermitianLayout, hermitianlayout, hermitiandata,
-                    MulAdd, materialize!, BlasMatMulMat, BlasMatMulVec, VcatLayout, ZerosLayout,
+                    triangularlayout, MatLdivVec, TriangularLayout,
+                    AbstractBandedLayout, DiagonalLayout,
+                    HermitianLayout, hermitianlayout, hermitiandata,
+                    MulAdd, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
+                    VcatLayout, ZerosLayout,
                     AbstractColumnMajor, MulLayout, colsupport, rowsupport,
-                    DenseColumnMajor, DenseRowMajor, ArrayLdivArray
+                    DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
+                    mulapplystyle, AbstractMulAddStyle, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
+                    _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex
+
 import FillArrays: AbstractFill
 
 export BandedMatrix,
