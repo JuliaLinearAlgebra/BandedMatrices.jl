@@ -6,9 +6,9 @@ bandwidths(A::Union{UpperTriangular,UnitUpperTriangular}) =
 bandwidths(A::Union{LowerTriangular,UnitLowerTriangular}) =
     (bandwidth(parent(A),1), min(0,bandwidth(parent(A),2)))
 
-triangularlayout(::Type{Tri}, ML::BandedColumns) where {Tri} = Tri(ML)
-triangularlayout(::Type{Tri}, ML::BandedRows) where {Tri} = Tri(ML)
-triangularlayout(::Type{Tri}, ML::ConjLayout{<:BandedRows}) where {Tri} = Tri(ML)
+triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:BandedColumns} = Tri{ML}()
+triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:BandedRows} = Tri{ML}()
+triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:ConjLayout{<:BandedRows}} = Tri{ML}()
 
 
 function tribandeddata(::TriangularLayout{'U'}, A)
