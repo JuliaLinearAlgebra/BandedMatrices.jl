@@ -15,7 +15,8 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test A[1,4] == 0
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
+    y = similar(x)
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ 1.0*A*x + 0.0*y) .===
                 BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
 
     A = Symmetric(brand(10,10,1,2),:L)
@@ -29,8 +30,8 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test A[1,3] == 0
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
-
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= 1.0.*Mul(A,x) .+ 0.0.*similar(x)) .===
+    y = similar(x)
+    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ 1.0*A*x + 0.0*y) .===
                 BLAS.sbmv!('L', 1, 1.0, view(parent(A).data,3:4,:), x, 0.0, similar(x)))
 
     @test norm(A) ≈ norm(Matrix(A))
