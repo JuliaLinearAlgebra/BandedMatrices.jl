@@ -1,4 +1,4 @@
-using BandedMatrices, LazyArrays, LinearAlgebra, Test
+using BandedMatrices, LazyArrays, LinearAlgebra, FillArrays, Test
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedMulAddStyle, BandedColumns
 import LazyArrays: SymmetricLayout, MemoryLayout, Applied
@@ -242,6 +242,13 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied
         x = randn(10)
         A = brand(10,10,1,1)
         @test x'A ≈ x'Matrix(A) ≈ transpose(x)A
+    end
+
+    @testset "mismatched dimensions (#118)" begin
+        m = BandedMatrix(Eye(3), (0,0))
+        @test_throws DimensionMismatch m * [1,2]
+        @test_throws DimensionMismatch m * [1, 2, 3, 4]
+        @test_throws DimensionMismatch m \ [1, 2]
     end
 end
 
