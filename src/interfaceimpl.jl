@@ -149,3 +149,30 @@ hcat(A::BandedMatrix, B::AbstractMatrix...) = Matrix(Hcat(A, B...))
 vcat(A::BandedMatrix...) = BandedMatrix(Vcat(A...))    
 vcat(A::BandedMatrix, B::AbstractMatrix...) = Matrix(Vcat(A, B...))    
 
+
+
+#######
+# CachedArray
+#######
+
+bandwidths(B::CachedMatrix) = bandwidths(B.data)
+isbanded(B::CachedMatrix) = isbanded(B.data)
+
+function resizedata!(B::CachedMatrix{T,BandedMatrix{T,Matrix{T},OneTo{Int}}}, n::Integer, m::Integer) where T<:Number
+    @boundscheck checkbounds(Bool, B, n, m) || throw(ArgumentError("Cannot resize beyound size of operator"))
+
+    # increase size of array if necessary
+    olddata = B.data
+    ν,μ = size(olddata)
+    n,m = max(ν,n), max(μ,m)
+    if (ν,μ) ≠ (n,m)
+        B.data = BandedMatrix{T}(undef, (n,m), bandwidths(olddata))
+        B.data.data[:,1:μ] .= olddata.data
+        bd = bandeddata(B.array)
+        B.data.data[:,μ+1:end] .= view(bd,:,μ+1:m)
+    end
+
+    B.datasize = (n,m)
+
+    B
+end

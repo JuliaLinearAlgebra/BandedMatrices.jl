@@ -41,7 +41,8 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractColumnMajor, MulLayout, colsupport, rowsupport,
                     DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
                     mulapplystyle, AbstractMulAddStyle, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
-                    _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex
+                    _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex,
+                    resizedata!, CachedMatrix
 
 import FillArrays: AbstractFill
 

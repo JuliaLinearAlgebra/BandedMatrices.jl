@@ -5,12 +5,11 @@ qr(A::Tridiagonal{T}) where T = qr!(BandedMatrix{float(T)}(A, (1,2)))
 qr!(A::BandedMatrix) = banded_qr!(A)
 
 
-function banded_qr!(R::BandedMatrix{T}) where T
+function banded_qr!(R::AbstractMatrix{T}, τ) where T
     D = bandeddata(R)
     l,u = bandwidths(R)
     ν = l+u+1
     m,n=size(R)
-    τ = zeros(T, min(m,n))
 
     for k = 1:min(m - 1 + !(T<:Real), n)
         x = view(D,u+1:min(ν,m-k+u+1), k)
@@ -22,6 +21,8 @@ function banded_qr!(R::BandedMatrix{T}) where T
     end
     QR(R, τ)
 end
+
+banded_qr!(R::AbstractMatrix{T}) where T = banded_qr!(R, zeros(T, min(size(R)...)))
 
 function lmul!(A::QRPackedQ{<:Any,<:BandedMatrix}, B::AbstractVecOrMat)
     require_one_based_indexing(B)
