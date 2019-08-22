@@ -168,7 +168,7 @@ end
     end
 
     @testset "lmul!/rmul!" begin
-        for T in (:Float32, :Float64, :ComplexF32, :ComplexF64)
+        for T in (Float32, Float64, ComplexF32, ComplexF64)
             A = brand(T,100,100,3,4)
             Q,R = qr(A)
             x = randn(T,100)
