@@ -138,7 +138,8 @@ end
 # rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BandedMatrix}}) = banded_rmul!(A, adjA)
 # rmul!(A::StridedMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:BandedMatrix}}) = banded_rmul!(A, adjA)
 rmul!(A::StridedVecOrMat{T}, Q::QRPackedQ{T,B}) where {T<:BlasFloat,B<:BandedMatrix{T}} = banded_rmul!(A, Q)
-rmul!(A::StridedVecOrMat{T}, adjQ::Adjoint{T,QRPackedQ{T,B}}) where {T<:BlasFloat,B<:BandedMatrix{T}} = banded_rmul!(A, adjQ)
+rmul!(A::StridedVecOrMat{T}, adjQ::Adjoint{<:Any,QRPackedQ{T,B}}) where {T<:BlasComplex,B<:BandedMatrix{T}} = banded_rmul!(A, adjQ)
+rmul!(A::StridedVecOrMat{T}, adjQ::Adjoint{<:Any,QRPackedQ{T,B}}) where {T<:BlasReal,B<:BandedMatrix{T}} = banded_rmul!(A, adjQ)
 
 
 function _banded_widerect_ldiv!(A::QR{T}, B) where T

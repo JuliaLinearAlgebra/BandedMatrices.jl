@@ -29,7 +29,7 @@ function ldiv!(A::BandedLU{T,<:BandedMatrix}, B::StridedVecOrMat{T}) where {T<:B
 end
 
 function ldiv!(A::BandedLU, B::AbstractVecOrMat)
-    _apply_ipiv!(A, B)
+    _apply_ipiv_rows!(A, B)
     ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
 
