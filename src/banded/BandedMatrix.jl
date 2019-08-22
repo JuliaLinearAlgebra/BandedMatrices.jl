@@ -260,7 +260,7 @@ end
 similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), m, n)
 similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
     similar(bm, eltype(bm), m, n, l, u)
-
+similar(bm::AbstractBandedMatrix, nm::Tuple{<:Integer,<:Integer}) = similar(bm, nm...)
 
 
 ## Abstract Array Interface

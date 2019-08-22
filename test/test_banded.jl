@@ -339,6 +339,9 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test size(similar(banded)) == size(banded)
             @test similar(banded).l == banded.l
             @test similar(banded).u == banded.u
+            @test @inferred(similar(banded,(5,5))) isa BandedMatrix{Int32, Matrix{Int32}}
+            @test @inferred(similar(banded,5,5)) isa BandedMatrix{Int32, Matrix{Int32}}
+            @test @inferred(similar(banded,5,5,1,1)) isa BandedMatrix{Int32, Matrix{Int32}}
 
             banded = convert(BandedMatrix{<:, MyMatrix}, brand(Int32, 10, 12, 1, 2))
             @test banded isa BandedMatrix{Int32, MyMatrix{Int32}}

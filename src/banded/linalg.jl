@@ -28,11 +28,6 @@ function ldiv!(A::BandedLU{T,<:BandedMatrix}, B::StridedVecOrMat{T}) where {T<:B
     LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
 end
 
-function ldiv!(A::BandedLU, B::AbstractVecOrMat)
-    _apply_ipiv!(A, B)
-    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
-end
-
 function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real
     # c2r = reshape(transpose(reinterpret(T, reshape(B, (1, length(B))))), size(B, 1), 2*size(B, 2))
     a = real.(B)

@@ -10,7 +10,7 @@ import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
             qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
-            svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, _apply_ipiv!, tril!,
+            svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, tril!,
             triu!, Givens
 import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
@@ -68,6 +68,12 @@ if VERSION < v"1.2-"
     require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
 else
     import Base: require_one_based_indexing
+end
+
+if VERSION < v"1.3-"
+    const _apply_ipiv_rows! = LinearAlgebra._apply_ipiv!
+else
+    import LinearAlgebra: _apply_ipiv_rows!
 end
 
 include("blas.jl")
