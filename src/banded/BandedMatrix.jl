@@ -664,9 +664,6 @@ end
 
 ## BandedSubBandedMatrix routines
 
-
-# getindex(A::AbstractBandedMatrix, I...) = _materialize(view(A, I...))
-
 # gives the band which is diagonal for the parent
 bandshift(a::AbstractRange, b::AbstractRange) = first(a)-first(b)
 bandshift(::Slice{OneTo{Int}}, b::AbstractRange) = 1-first(b)
