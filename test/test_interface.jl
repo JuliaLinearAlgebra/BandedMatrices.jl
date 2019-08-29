@@ -1,6 +1,6 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, rowsupport, colsupport, _BandedMatrix
-import LazyArrays: MemoryLayout
+import LazyArrays: MemoryLayout, Applied
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -111,7 +111,6 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
             bandwidths(A)
 end
 
-
 @testset "Diagonal interface" begin
     D = Diagonal(randn(5))
     @test bandwidths(D) == (0,0)
@@ -163,13 +162,13 @@ end
     A = BandedMatrices._BandedMatrix((1:10)', 10, -1,1)
     x = Vcat(1:3, Zeros(10-3))
     @test A*x isa Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
-    @test length((A*x).arrays[1]) == length(x.arrays[1]) + bandwidth(A,1) == 2
+    @test length((A*x).args[1]) == length(x.args[1]) + bandwidth(A,1) == 2
     @test A*x == A*Vector(x)
 
     A = BandedMatrices._BandedMatrix(randn(3,10), 10, 1,1)
     x = Vcat(randn(10), Zeros(0))
     @test A*x isa Vcat{Float64,1,<:Tuple{<:Vector,<:Zeros}}
-    @test length((A*x).arrays[1]) == 10
+    @test length((A*x).args[1]) == 10
     @test A*x ≈ A*Vector(x)
 end
 
@@ -178,11 +177,11 @@ end
     B = brand(5,5,1,0)
     M = ApplyArray(*,A,B)
 
-    @test isbanded(M) && isbanded(M.applied)
-    @test bandwidths(M) == bandwidths(M.applied)
+    @test isbanded(M) && isbanded(Applied(M))
+    @test bandwidths(M) == bandwidths(Applied(M))
     @test BandedMatrix(M) == A*B
-    @test colsupport(M,1) == colsupport(M.applied,1) == 1:2
-    @test rowsupport(M,1) == rowsupport(M.applied,1) == 1:2
+    @test colsupport(M,1) == colsupport(Applied(M),1) == 1:2
+    @test rowsupport(M,1) == rowsupport(Applied(M),1) == 1:2
 
     @test Base.BroadcastStyle(typeof(M)) isa BandedStyle
     @test M .+ A isa BandedMatrix
@@ -210,7 +209,7 @@ end
     @test BandedMatrix(M) ≈ A*B*C
 
     M = ApplyArray(*, A, Zeros(5))
-    @test colsupport(M,1) == colsupport(M.applied,1)
+    @test colsupport(M,1) == colsupport(Applied(M),1)
     @test_skip colsupport(M,1) == 1:0
 end
 

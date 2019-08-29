@@ -29,7 +29,13 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
-MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = BandedColumns{typeof(MemoryLayout(Cont))}()
+bandedcolumns(_) = BandedColumns{UnknownLayout}()
+bandedcolumns(::ML) where ML<:AbstractStridedLayout = BandedColumns{ML}()
+bandedcolumns(::ML) where ML<:AbstractFillLayout = BandedColumns{ML}()
+bandedcolumns(::ML) where ML<:LazyLayout = BandedColumns{ML}()
+
+
+MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = bandedcolumns(MemoryLayout(Cont))
 
 
 ## Constructors
