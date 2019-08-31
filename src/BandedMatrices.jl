@@ -41,11 +41,12 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     ZerosLayout,
                     AbstractColumnMajor, MulLayout, colsupport, rowsupport,
                     DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
-                    mulapplystyle, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
+                    symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex,
-                    resizedata!, CachedMatrix, ApplyLayout
+                    resizedata!, CachedMatrix, ApplyLayout,
+                    combine_mul_styles, LazyArrayApplyStyle, QLayout, mulapplystyle
 
-import FillArrays: AbstractFill
+import FillArrays: AbstractFill, getindex_value
 
 export BandedMatrix,
        bandrange,

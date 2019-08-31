@@ -91,7 +91,8 @@ end
 lu!(A::AbstractBandedMatrix, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true) =
     banded_lufact!(A, pivot; check = check)
 
-function lu(A::Union{AbstractBandedMatrix{T}, AbstractBandedMatrix{Complex{T}}},
+function lu(A::Union{AbstractBandedMatrix{T}, AbstractBandedMatrix{Complex{T}}, Adjoint{T,<:AbstractBandedMatrix{T}}, Adjoint{Complex{T},<:AbstractBandedMatrix{Complex{T}}},
+                    Transpose{T,<:AbstractBandedMatrix{T}}, Transpose{Complex{T},<:AbstractBandedMatrix{Complex{T}}}},
     pivot::Union{Val{false}, Val{true}} = Val(true);
     check::Bool = true) where {T<:Real}
     l,u = bandwidths(A)

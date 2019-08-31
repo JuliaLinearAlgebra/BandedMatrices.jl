@@ -6,7 +6,11 @@ BroadcastStyle(::BandedStyle, M::ApplyArrayBroadcastStyle{2}) = M
 bandwidths(M::Mul) = prodbandwidths(M.args...)
 
 bandwidths(M::MulAdd) = prodbandwidths(M.A,M.B)
+similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+    BandedMatrix{T}(undef, axes, bandwidths(M))
 similar(M::MulAdd{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+    BandedMatrix{T}(undef, axes, bandwidths(M))
+similar(M::MulAdd{<:AbstractBandedLayout,<:DiagonalLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T = 
     BandedMatrix{T}(undef, axes, bandwidths(M))
 similar(M::MulAdd{<:SymmetricLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
     BandedMatrix{T}(undef, axes, bandwidths(M))    
@@ -273,3 +277,20 @@ end
 #     end
 #     C
 # end
+
+
+
+###
+# Special Fill Diagonal
+####
+
+function materialize!(M::MatMulMatAdd{<:DiagonalLayout{<:AbstractFillLayout},<:AbstractBandedLayout})
+    M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
+    M.C
+end
+
+function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:AbstractFillLayout}})
+    M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
+    M.C
+end
+
