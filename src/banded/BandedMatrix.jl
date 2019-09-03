@@ -29,7 +29,18 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
-MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = BandedColumns{typeof(MemoryLayout(Cont))}()
+bandedcolumns(_) = BandedColumns{UnknownLayout}()
+bandedcolumns(::ML) where ML<:AbstractStridedLayout = BandedColumns{ML}()
+bandedcolumns(::ML) where ML<:AbstractFillLayout = BandedColumns{ML}()
+bandedcolumns(::ML) where ML<:LazyLayout = BandedColumns{ML}()
+bandedcolumns(::ML) where ML<:ApplyLayout = BandedColumns{LazyLayout}()
+
+combine_mul_styles(::BandedColumns{LazyLayout}) = LazyArrayApplyStyle()
+combine_mul_styles(::BandedRows{LazyLayout}) = LazyArrayApplyStyle()
+
+mulapplystyle(::QLayout, ::BandedColumns{LazyLayout}) = LazyArrayApplyStyle()
+
+MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = bandedcolumns(MemoryLayout(Cont))
 
 
 ## Constructors
@@ -257,11 +268,10 @@ function similar(bm::BandedMatrix, T::Type=eltype(bm),
     _BandedMatrix(data, n, l, u)
 end
 
-similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), m, n)
+similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(bm), n, m)
 similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
     similar(bm, eltype(bm), m, n, l, u)
 similar(bm::AbstractBandedMatrix, nm::Tuple{<:Integer,<:Integer}) = similar(bm, nm...)
-
 
 ## Abstract Array Interface
 
@@ -664,9 +674,6 @@ end
 
 ## BandedSubBandedMatrix routines
 
-
-# getindex(A::AbstractBandedMatrix, I...) = _materialize(view(A, I...))
-
 # gives the band which is diagonal for the parent
 bandshift(a::AbstractRange, b::AbstractRange) = first(a)-first(b)
 bandshift(::Slice{OneTo{Int}}, b::AbstractRange) = 1-first(b)
@@ -682,7 +689,7 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
     SubArray{T,2,BandedMatrix{T, C, R},Tuple{I1,I2},t}
 
 isbanded(::BandedSubBandedMatrix) = true
-MemoryLayout(::Type{BandedSubBandedMatrix{T,C,R,I1,I2,t}}) where {T,C,R,I1,I2,t} = 
+MemoryLayout(::Type{BandedSubBandedMatrix{T,C,R,I1,I2,t}}) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange,t} = 
     BandedColumns{typeof(MemoryLayout(SubArray{T,2,C,Tuple{Slice{OneTo{Int}},I2},t}))}()
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 

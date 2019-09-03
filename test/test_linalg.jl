@@ -1,7 +1,7 @@
 using BandedMatrices, LazyArrays, LinearAlgebra, FillArrays, Test
 import Base.Broadcast: materialize, broadcasted
-import BandedMatrices: BandedMulAddStyle, BandedColumns
-import LazyArrays: SymmetricLayout, MemoryLayout, Applied
+import BandedMatrices: BandedColumns
+import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseColumnMajor
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -23,7 +23,7 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied
         @test A'*A ≈ Matrix(A)'*Matrix(A)
         @test bandwidths(A'*A) == (3,3)
 
-        @test applied(*,Symmetric(A),A) isa Applied{BandedMulAddStyle}
+        @test applied(*,Symmetric(A),A) isa Applied{MulAddStyle}
         @test MemoryLayout(typeof(Symmetric(A))) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
         @test Symmetric(A)*A isa BandedMatrix
         @test Symmetric(A)*A ≈ Symmetric(Matrix(A))*Matrix(A)
@@ -47,7 +47,6 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied
         @test all(B .=== (A*A)*A)
         @test bandwidths(B) == (3,6)
     end
-
 
     @testset "gbmm!" begin
         # test gbmm! subpieces step by step and column by column

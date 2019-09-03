@@ -5,30 +5,19 @@ BroadcastStyle(::BandedStyle, M::ApplyArrayBroadcastStyle{2}) = M
 
 bandwidths(M::Mul) = prodbandwidths(M.args...)
 
-struct BandedMulAddStyle <: AbstractMulAddStyle end
-
-similar(M::Mul{BandedMulAddStyle}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+bandwidths(M::MulAdd) = prodbandwidths(M.A,M.B)
+similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
     BandedMatrix{T}(undef, axes, bandwidths(M))
-
-mulapplystyle(A::AbstractBandedLayout, B::AbstractBandedLayout) = BandedMulAddStyle()
-
-### Symmetric
-
-for Lay in (:SymmetricLayout, :HermitianLayout)
-    @eval begin
-        mulapplystyle(::$Lay{<:AbstractBandedLayout}, ::$Lay{<:AbstractBandedLayout}) = BandedMulAddStyle()
-        mulapplystyle(::$Lay{<:AbstractBandedLayout}, ::AbstractBandedLayout) = BandedMulAddStyle()
-        mulapplystyle(::AbstractBandedLayout, ::$Lay{<:AbstractBandedLayout}) = BandedMulAddStyle()
-    end
-end
-
-### Triangular
-
-mulapplystyle(::TriangularLayout{uplo1,unit1,<:AbstractBandedLayout}, ::TriangularLayout{uplo2,unit2,<:AbstractBandedLayout}) where {uplo1,uplo2,unit1,unit2} = BandedMulAddStyle()
-mulapplystyle(::TriangularLayout{uplo,unit,<:AbstractBandedLayout}, ::AbstractBandedLayout) where {uplo,unit} = BandedMulAddStyle()
-mulapplystyle(::AbstractBandedLayout, ::TriangularLayout{uplo,unit,<:AbstractBandedLayout}) where {uplo,unit} = BandedMulAddStyle()
-
-
+similar(M::MulAdd{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+    BandedMatrix{T}(undef, axes, bandwidths(M))
+similar(M::MulAdd{<:AbstractBandedLayout,<:DiagonalLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T = 
+    BandedMatrix{T}(undef, axes, bandwidths(M))
+similar(M::MulAdd{<:SymmetricLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+    BandedMatrix{T}(undef, axes, bandwidths(M))    
+similar(M::MulAdd{<:HermitianLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
+    BandedMatrix{T}(undef, axes, bandwidths(M))    
+similar(M::MulAdd{<:TriangularLayout{uplo,trans,<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where {uplo,trans,T} =
+    BandedMatrix{T}(undef, axes, bandwidths(M))    
 ##
 # BLAS routines
 ##
@@ -288,3 +277,20 @@ end
 #     end
 #     C
 # end
+
+
+
+###
+# Special Fill Diagonal
+####
+
+function materialize!(M::MatMulMatAdd{<:DiagonalLayout{<:AbstractFillLayout},<:AbstractBandedLayout})
+    M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
+    M.C
+end
+
+function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:AbstractFillLayout}})
+    M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
+    M.C
+end
+
