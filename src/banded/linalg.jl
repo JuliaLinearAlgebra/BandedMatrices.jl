@@ -5,7 +5,7 @@
 function materialize!(L::Ldiv{<:BandedColumnMajor})
     A, B = L.A, L.B
     checksquare(A)
-    ldiv!(factorize(A), dest)
+    ldiv!(factorize(A), B)
 end
 
 function copyto!(dest::AbstractVecOrMat, L::Ldiv{<:BandedRowMajor})
