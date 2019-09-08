@@ -107,6 +107,10 @@ include("tribanded.jl")
 
 include("interfaceimpl.jl")
 
-precompile(*, (BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}},BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}))
+# function _precompile_()
+#     precompile(Tuple{typeof(gbmm!), Char, Char, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}})
+# end
+
+# _precompile_()
 
 end #module

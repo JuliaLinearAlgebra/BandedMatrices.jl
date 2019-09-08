@@ -226,23 +226,8 @@ function _banded_muladd!(α::T, A, B::AbstractMatrix, β, C) where T
     Al, Au = bandwidths(A)
     Bl, Bu = bandwidths(B)
 
-    if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
-        fill!(C, zero(T))
-    elseif Al < 0
-        _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
-        _banded_muladd!(α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C)
-    elseif Au < 0
-        _fill_lmul!(β, @views(C[1:-Au,:]))
-        _banded_muladd!(α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:))
-    elseif Bl < 0
-        _fill_lmul!(β, @views(C[:, 1:-Bl]))
-        _banded_muladd!(α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn))
-    elseif Bu < 0
-        _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
-        _banded_muladd!(α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C)
-    else
-        gbmm!('N', 'N', α, A, B, β, C)
-    end
+    gbmm!('N', 'N', α, A, B, β, C)
+
     C
 end
 
