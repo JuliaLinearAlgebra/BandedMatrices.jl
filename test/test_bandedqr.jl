@@ -1,5 +1,5 @@
 using BandedMatrices, MatrixFactorizations, LinearAlgebra, Test, Random
-
+import BandedMatrices: banded_qr!
 Random.seed!(0)
 
 
@@ -83,6 +83,36 @@ Random.seed!(0)
         A.data .= 1:length(A.data)
         Q, R = qr(A)
         @test Q*R ≈ A
+    end
+
+    @testset "banded Views" begin
+        # this test adaptive QR essentially as implemented in InfiniteLinearAlgebra.jl
+        A = brand(100,100,1,1)
+        V = view(copy(A),1:5,1:6)
+        @test qr(V) isa QR{Float64,<:BandedMatrix{Float64}}
+        @test qr(V).R ≈ qr(Matrix(V)).R
+        @test qr(V).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(V)).τ
+        @test qr(V).Q ≈ qr(Matrix(V)).Q
+        @test Matrix(qr(V)) ≈ V
+        B = BandedMatrix(A,(1,2)) # pad
+        V = view(copy(B),1:5,1:6)
+        @test qr!(V) isa QR{Float64,<:SubArray{Float64,2,<:BandedMatrix{Float64}}}
+        τ = Array{Float64}(undef,100)
+        B = BandedMatrix(A,(1,2)) # pad
+        V = view(B,1:6,1:5)
+        F1 = qr(V)
+        F2 = banded_qr!(V, view(τ,1:size(V,2)))
+        @test F1.factors ≈ F2.factors ≈ B[1:6,1:5]
+        @test F1.τ ≈ F2.τ
+        F = qr(A)
+        @test τ[1:size(V,2)]  ≈ F.τ[1:5]
+        
+        lmul!(F1.Q', view(B,1:6,6:7))
+        @test B[1:5,6:7] ≈ F.factors[1:5,6:7]
+        banded_qr!(view(B,6:100,6:100), view(τ,6:100))
+        τ[end] = 0
+        @test B ≈ F.factors
+        @test τ ≈ F.τ
     end
 end
 

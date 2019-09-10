@@ -107,15 +107,10 @@ include("tribanded.jl")
 
 include("interfaceimpl.jl")
 
-@deprecate setindex!(A::BandedMatrix, v, b::Band) A[b] .= v
-@deprecate setindex!(A::BandedMatrix, v, ::BandRangeType, j::Integer) A[BandRange,j] .= v
-@deprecate setindex!(A::BandedMatrix, v, kr::Colon, j::Integer) A[:,j] .= v
-@deprecate setindex!(A::BandedMatrix, v, kr::AbstractRange, j::Integer) A[kr,j] .= v
-@deprecate setindex!(A::BandedMatrix, v, ::Colon, ::Colon) A[:,:] .= v
-@deprecate setindex!(A::BandedMatrix, v, ::Colon) A[:] .= v
-@deprecate setindex!(A::BandedMatrix, v, k::Integer, ::BandRangeType) A[k,BandRange] .= v
-@deprecate setindex!(A::BandedMatrix, v, k::Integer, jr::AbstractRange) A[k,jr] .= v
-@deprecate setindex!(A::BandedMatrix, v, kr::AbstractRange, jr::AbstractRange) A[kr,jr] .= v
-@deprecate setindex!(A::BandedMatrix, v, ::BandRangeType) BandedMatrices.bandeddata(A) .= v
+# function _precompile_()
+#     precompile(Tuple{typeof(gbmm!), Char, Char, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}})
+# end
+
+# _precompile_()
 
 end #module

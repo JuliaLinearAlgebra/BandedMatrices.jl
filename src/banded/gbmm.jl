@@ -211,6 +211,9 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     n,ν = size(A)
     m = size(B,2)
 
+    Am, An = size(A)
+    Bm, Bn = size(B)
+
     @assert n == size(C,1)
     @assert ν == size(B,1)
     @assert m == size(C,2)
@@ -221,7 +224,26 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     Cl,Cu = Al+Bl,Au+Bu
 
     # prune zero bands
-    if C̃u < Cu
+    if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
+        fill!(C, zero(T))
+        return C
+    elseif Al < 0
+        _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
+        gbmm!('N', 'N', α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C)
+        return C
+    elseif Au < 0
+        _fill_lmul!(β, @views(C[1:-Au,:]))
+        gbmm!('N', 'N', α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:))
+        return C
+    elseif Bl < 0
+        _fill_lmul!(β, @views(C[:, 1:-Bl]))
+        gbmm!('N', 'N', α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn))
+        return C
+    elseif Bu < 0
+        _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
+        gbmm!('N', 'N', α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C)
+        return C
+    elseif C̃u < Cu
         Au_r, Bu_r = _num_zeroband_u(A), _num_zeroband_u(B)
         C̃u ≥  Cu - Au_r - Bu_r || throw(BandError(C, Cu - Au_r - Bu_r))
         A_data = bandeddata(A)
@@ -234,10 +256,9 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
         Ã = _BandedMatrix(@views(A_data[Au_r+1:end,:]), n, Al, Au-Au_r)
         B̃ = _BandedMatrix(@views(B_data[Bu_r+1:end,:]), ν, Bl, Bu-Bu_r)
-        return materialize!(MulAdd(α, Ã, B̃, β, C))
-    end
-
-    if C̃l < Cl
+        gbmm!('N', 'N', α, Ã, B̃, β, C)
+        return C
+    elseif C̃l < Cl
         Al_r, Bl_r = _num_zeroband_l(A), _num_zeroband_l(B)
         C̃l ≥  Cl - Al_r - Bl_r || throw(BandError(C, Cl - Al_r - Bl_r))
         A_data = bandeddata(A)
@@ -250,7 +271,8 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
         Ã = _BandedMatrix(@views(A_data[1:end-Al_r,:]), n, Al-Al_r, Au)
         B̃ = _BandedMatrix(@views(B_data[1:end-Bl_r,:]), ν, Bl-Bl_r, Bu)
-        return materialize!(MulAdd(α, Ã, B̃, β, C))
+        gbmm!('N', 'N', α, Ã, B̃, β, C)
+        return C
     end
 
     A_data = bandeddata(A)
