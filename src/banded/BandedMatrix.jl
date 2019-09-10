@@ -80,14 +80,25 @@ convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.raxis, M.l, M.u)
 convert(::Type{BandedMatrix}, M::BandedMatrix) = M
-function convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C
+
+convert(::Type{BandedMatrix{<:,C}}, M::BandedMatrix{<:,C}) where C =
+    M
+convert(BM::Type{BandedMatrix{T,C}}, M::BandedMatrix{T,C}) where {T,C<:AbstractMatrix{T}} =
+    M
+convert(BM::Type{BandedMatrix{T,C,AXIS}}, M::BandedMatrix{T,C,AXIS}) where {T,C<:AbstractMatrix{T},AXIS} =
+    M
+
+function convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C 
     M.data isa C && return M
     _BandedMatrix(convert(C, M.data), M.raxis, M.l, M.u)
 end
-function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}}
+function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}} 
     M.data isa C && return M
     _BandedMatrix(convert(C, M.data), M.raxis, M.l, M.u)
 end
+convert(BM::Type{BandedMatrix{T, C, AXIS}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}, AXIS} =
+    _BandedMatrix(convert(C, M.data), convert(AXIS, M.raxis), M.l, M.u)
+
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin

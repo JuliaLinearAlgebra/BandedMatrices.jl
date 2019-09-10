@@ -331,6 +331,14 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
                 @test newbanded isa BandedMatrix{eltype(Final), Final}
                 @test newbanded == banded
             end
+
+            @testset "banded to banded" begin
+                A = BandedMatrix{Int}(undef, (5,5), (1,1)); A.data[:] .= 1:length(A.data)           
+                @test convert(BandedMatrix, A) === convert(BandedMatrix{Int}, A) === 
+                    convert(BandedMatrix{Int,Matrix{Int}}, A) === convert(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}, A) === A
+                @test convert(BandedMatrix{Float64}, A) ==
+                    convert(BandedMatrix{Float64,Matrix{Float64}}, A) == convert(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}, A) == A                    
+            end
         end
 
         @testset "similar" begin
