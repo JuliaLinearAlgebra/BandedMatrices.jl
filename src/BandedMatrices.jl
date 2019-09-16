@@ -44,7 +44,7 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex,
                     resizedata!, CachedMatrix, ApplyLayout,
-                    combine_mul_styles, LazyArrayApplyStyle, QLayout, mulapplystyle
+                    combine_mul_styles, LazyArrayApplyStyle, QLayout, mulapplystyle, LazyArrayStyle
 
 import FillArrays: AbstractFill, getindex_value
 
