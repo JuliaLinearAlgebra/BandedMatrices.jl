@@ -395,7 +395,6 @@ function _banded_broadcast(f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::Bande
     _BandedMatrix(f.(x, bandeddata(src)), axes(src,1), bandwidths(src)...)
 end
 
-
 function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
     (A,) = bc.args
     _banded_broadcast(bc.f, A, MemoryLayout(typeof(A)))
@@ -417,13 +416,20 @@ function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatri
     _banded_broadcast(bc.f, bc.args, MemoryLayout.(typeof.(bc.args)))
 end
 
+###
+# broadcast bandwidths
+###
+
 
 _bandwidths(::Number) = (-720,-720)
-_bandwidths(A) = bandwidths(A)
+_bandwidths(A::AbstractMatrix) = bandwidths(A)
+_bandwidths(A::Broadcasted{BandedStyle}) = bandwidths(A)
+_bandwidths(A::AbstractVector) = (-720,-720) # broadcasting of vectors doesn't modify bandwidth
 
 _band_eval_args() = ()
 _band_eval_args(a::Number, b...) = (a, _band_eval_args(b...)...)
-_band_eval_args(a::AbstractArray{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
+_band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
+_band_eval_args(a::AbstractVector{T}, b...) where T = (one(T), _band_eval_args(b...)...)
 _band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.args)), _band_eval_args(b...)...)
 
 function bandwidths(bc::Broadcasted{BandedStyle})

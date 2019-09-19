@@ -351,4 +351,30 @@ import BandedMatrices: BandedStyle, BandedRows
         @test bandwidths(A .+ B) == (2,1)
         @test A .+ B == Matrix(A) + Matrix(B)
     end
+
+    @testset "vector and matrix broadcastring" begin
+        n = 10
+        A = brand(n,n,1,2)
+        b = randn(n)
+
+        @test b .* A == b .* Matrix(A)
+        @test b .* A isa BandedMatrix
+        @test bandwidths(b .* A) == bandwidths(A)
+        @test b .\ A == b .\ Matrix(A)
+        @test b .\ A isa BandedMatrix
+        @test bandwidths(b .\ A) == bandwidths(A)
+        @test isinf((b ./ A)[4,1])
+        
+
+        @test A .* b == Matrix(A) .* b
+        @test bandwidths(A .* b) == bandwidths(A)
+        @test A ./ b == Matrix(A) ./ b
+        @test bandwidths(A ./ b) == bandwidths(A)
+        @test isinf((A .\ b)[4,1])
+        
+        @test b .+ A == b .+ Matrix(A) == A .+ b
+
+        @test A .+ b' == Matrix(A) .+ b'
+        
+    end
 end
