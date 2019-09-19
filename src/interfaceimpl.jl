@@ -107,6 +107,8 @@ isbanded(M::MulMatrix) = isbanded(Applied(M))
 const MulBandedLayout = MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}
 
 applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulBandedLayout) = BandedStyle()
+applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulLayout{<:Tuple{BandedColumns{LazyLayout},Vararg{<:AbstractBandedLayout}}}) = LazyArrayStyle{2}()
+BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 
 @inline colsupport(::MulBandedLayout, A, j) = banded_colsupport(A, j)
 @inline rowsupport(::MulBandedLayout, A, j) = banded_rowsupport(A, j)
