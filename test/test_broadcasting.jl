@@ -360,10 +360,20 @@ import BandedMatrices: BandedStyle, BandedRows
         @test b .* A == b .* Matrix(A)
         @test b .* A isa BandedMatrix
         @test bandwidths(b .* A) == bandwidths(A)
+        @test A .* b == Matrix(A) .* b
+        @test A .* b isa BandedMatrix
+        @test bandwidths(A .* b) == bandwidths(A)
         @test b .\ A == b .\ Matrix(A)
         @test b .\ A isa BandedMatrix
         @test bandwidths(b .\ A) == bandwidths(A)
+        @test A ./ b == Matrix(A) ./ b
+        @test A ./ b isa BandedMatrix
+        @test bandwidths(A ./ b) == bandwidths(A)
+
+        @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
         @test isinf((b ./ A)[4,1])
+        @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
+        @test isinf((A .\ b)[4,1])
         
 
         @test A .* b == Matrix(A) .* b
@@ -372,9 +382,17 @@ import BandedMatrices: BandedStyle, BandedRows
         @test bandwidths(A ./ b) == bandwidths(A)
         @test isinf((A .\ b)[4,1])
         
+        @test reshape(b,10,1) .* A isa BandedMatrix
+        @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
+        @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
+        @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
+        
         @test b .+ A == b .+ Matrix(A) == A .+ b
 
-        @test A .+ b' == Matrix(A) .+ b'
-        
+        @test bandwidths(Base.broadcasted(+, A, b')) == (9,9)
+        @test A .+ b' == b' .+ A == Matrix(A) .+ b'
+        @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
+        @test A .* b' == b' .* A == Matrix(A) .* b'
+        @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
     end
 end

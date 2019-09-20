@@ -53,10 +53,10 @@ copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
 copyto!(dest::AbstractMatrix, src::AbstractBandedMatrix) =  (dest .= src)
 
 
-function checkbroadcastband(dest, src::AbstractMatrix)
-    (size(src,1) ≤ bandwidth(src,1)+1 && size(src,2) ≤ bandwidth(src,2)+1) ||
-        (size(dest,1) ≤ bandwidth(dest,1)+1 && size(dest,2) ≤ bandwidth(dest,2)+1) || throw(BandError(dest,size(dest,2)-1))
-    size(dest) == size(src) || throw(DimensionMismatch())
+function checkbroadcastband(dest, sizesrc, bndssrc)
+    size(dest) == sizesrc || throw(DimensionMismatch())
+    min(sizesrc[1],bndssrc[1]+1) ≤ min(bandwidth(dest,1)+1,size(dest,1))  && 
+        min(sizesrc[2],bndssrc[2]+1) ≤ min(bandwidth(dest,2)+2,size(dest,2)) || throw(BandError(dest,size(dest,2)-1))
 end
 
 ###########
@@ -65,7 +65,7 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1, _2) where T
     z = f(zero(T))
-    iszero(z) || checkbroadcastband(dest, src)
+    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src)))
     m,n = size(dest)
 
     d_l, d_u = bandwidths(dest)
@@ -88,7 +88,7 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::BandedColumns, ::BandedColumns) where T
     z = f(zero(T))
-    iszero(z) || checkbroadcastband(dest, A)
+    iszero(z) || checkbroadcastband(dest, size(A), bandwidths(broadcasted(f, A)))
 
     A_l,A_u = bandwidths(A)
     d_l,d_u = bandwidths(dest)
@@ -108,6 +108,12 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     dest
 end
 
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
+    (A,) = bc.args
+    _banded_broadcast!(dest, bc.f, A, MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
+end
+
+
 ###########
 # matrix-number broadcast
 ###########
@@ -115,7 +121,7 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, _1, _2) where T
     z = f(zero(T), x)
-    iszero(z) || checkbroadcastband(dest, src)
+    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
     m,n = size(dest)
 
     d_l, d_u = bandwidths(dest)
@@ -138,7 +144,7 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,AbstractMatrix{T}}, _1, _2) where T
     z = f(x, zero(T))
-    iszero(z) || checkbroadcastband(dest, src)
+    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, x,src)))
     m,n = size(dest)
 
     d_l, d_u = bandwidths(dest)
@@ -159,10 +165,9 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     dest
 end
 
-
 function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns, ::BandedColumns) where T
     z = f(zero(T),x)
-    iszero(z) || checkbroadcastband(dest, src)
+    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
 
     l,u = bandwidths(src)
     λ,μ = bandwidths(dest)
@@ -201,7 +206,7 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::BandedColumns, ::BandedColumns) where T
     z = f(x, zero(T))
-    iszero(z) || checkbroadcastband(dest, src)
+    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, x,src)))
 
     l,u = bandwidths(src)
     λ,μ = bandwidths(dest)
@@ -238,9 +243,182 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,Abst
     dest
 end
 
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}})
+    (A,x) = bc.args
+    _banded_broadcast!(dest, bc.f, (A, x), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
+end
+
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}})
+    (x,A) = bc.args
+    _banded_broadcast!(dest, bc.f, (x,A), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
+end
+
 ###############
 # matrix-vector broadcast
 ###############
+
+function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractVector{T},AbstractMatrix{V}}, _1, _2) where {T,V}
+    z = f(zero(T), zero(V))
+    bc = broadcasted(f, A, B)
+    l, u = bandwidths(bc)
+    iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
+    m,n = size(dest)
+
+    d_l, d_u = bandwidths(dest)
+    A_l, A_u = _broadcast_bandwidths((m-1,n-1),A)
+    B_l, B_u = bandwidths(B)
+    (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
+
+    for j=1:n
+        for k = max(1,j-d_u):min(j-u-1,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+        for k = max(1,j-d_u,j-A_u):min(j-B_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(A[k], zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j-B_u):min(j-A_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j-min(A_u,B_u)):min(j+min(A_l,B_l),m)
+            inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j-d_u,j+B_l+1):min(j+A_l,j+d_l,m)
+            inbands_setindex!(dest, f(A[k], zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j+A_l+1):min(j+B_l,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j+l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+    end
+    dest
+end
+
+function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractVector{V}}, _1, _2) where {T,V}
+    z = f(zero(T), zero(V))
+    bc = broadcasted(f, A, B)
+    l, u = bandwidths(bc)
+    iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
+    m,n = size(dest)
+
+    d_l, d_u = bandwidths(dest)
+    A_l, A_u = bandwidths(A)
+    B_l, B_u = _broadcast_bandwidths((m-1,n-1),B)
+    (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
+
+    for j=1:n
+        for k = max(1,j-d_u):min(j-u-1,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+        for k = max(1,j-d_u,j-A_u):min(j-B_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j-B_u):min(j-A_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), B[k]), k, j)
+        end
+        for k = max(1,j-min(A_u,B_u)):min(j+min(A_l,B_l),m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
+        end
+        for k = max(1,j-d_u,j+B_l+1):min(j+A_l,j+d_l,m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j+A_l+1):min(j+B_l,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), B[k]), k, j)
+        end
+        for k = max(1,j+l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+    end
+    dest
+end
+
+function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
+    @assert size(A,1) == 1
+    z = f(zero(T), zero(V))
+    bc = broadcasted(f, A, B)
+    l, u = bandwidths(bc)
+    iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
+    m,n = size(dest)
+
+    d_l, d_u = bandwidths(dest)
+    A_l, A_u = _broadcast_bandwidths((m-1,n-1),A)
+    B_l, B_u = bandwidths(B)
+    (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
+
+    for j=1:n
+        for k = max(1,j-d_u):min(j-u-1,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+        for k = max(1,j-d_u,j-A_u):min(j-B_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(A[j], zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j-B_u):min(j-A_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j-min(A_u,B_u)):min(j+min(A_l,B_l),m)
+            inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j-d_u,j+B_l+1):min(j+A_l,j+d_l,m)
+            inbands_setindex!(dest, f(A[j], zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j+A_l+1):min(j+B_l,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j+l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+    end
+    dest
+end
+
+function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
+    @assert size(B,1) == 1
+    z = f(zero(T), zero(V))
+    bc = broadcasted(f, A, B)
+    l, u = bandwidths(bc)
+    iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
+    m,n = size(dest)
+
+    d_l, d_u = bandwidths(dest)
+    A_l, A_u = bandwidths(A)
+    B_l, B_u = _broadcast_bandwidths((m-1,n-1),B)
+    (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
+
+    for j=1:n
+        for k = max(1,j-d_u):min(j-u-1,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+        for k = max(1,j-d_u,j-A_u):min(j-B_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j-B_u):min(j-A_u-1,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), B[j]), k, j)
+        end
+        for k = max(1,j-min(A_u,B_u)):min(j+min(A_l,B_l),m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
+        end
+        for k = max(1,j-d_u,j+B_l+1):min(j+A_l,j+d_l,m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+        end
+        for k = max(1,j-d_u,j+A_l+1):min(j+B_l,j+d_l,m)
+            inbands_setindex!(dest, f(zero(T), B[j]), k, j)
+        end
+        for k = max(1,j+l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+    end
+    dest
+end
+
+
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractVector,<:AbstractMatrix}}) =
+    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
+
+
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractVector}}) =
+    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
+    
 
 ################
 # matrix-matrix broadcast
@@ -249,21 +427,22 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
     z = f(zero(T), zero(V))
-    iszero(z) || (checkbroadcastband(dest, A) && checkbroadcastband(dest, B))
+    bc = broadcasted(f, A, B)
+    l, u = bandwidths(bc)
+    iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
     m,n = size(dest)
     if size(A) ≠ (m,n)
-        size(A,2) == 1 && return broadcast!(dest, f, (vec(A),B))
-        return _left_rowvec_banded_broadcast!(dest, f, (A,B))
+        size(A,2) == 1 && return broadcast!(f, dest, vec(A), B)
+        return _left_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2)
     end
     if size(B) ≠ (m,n)
-        size(B,2) == 1 && return broadcast!(dest, f, (A,vec(B)))
-        return _right_rowvec_banded_broadcast!(dest, f, (A,B))
+        size(B,2) == 1 && return broadcast!(f, dest, A, vec(B))
+        return _right_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2)
     end
 
     d_l, d_u = bandwidths(dest)
     A_l, A_u = bandwidths(A)
     B_l, B_u = bandwidths(B)
-    l, u = max(A_l,B_l), max(A_u,B_u)
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     for j=1:n
@@ -328,8 +507,9 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumns, ::Tuple{<:BandedColumns,<:BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
-    iszero(z) || checkbroadcastband(dest, A)
-    iszero(z) || checkbroadcastband(dest, B)
+    bc = broadcasted(f, A, B)
+    l, u = bandwidths(bc)
+    iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
 
     A_l,A_u = bandwidths(A)
     B_l,B_u = bandwidths(B)
@@ -379,26 +559,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
 end
 
 
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
-    (A,) = bc.args
-    _banded_broadcast!(dest, bc.f, A, MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
-end
-
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}})
-    (A,x) = bc.args
-    _banded_broadcast!(dest, bc.f, (A, x), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
-end
-
-
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}})
-    (x,A) = bc.args
-    _banded_broadcast!(dest, bc.f, (x,A), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
-end
-
-
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}})
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) =
     _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
-end
 
 # override copy in case data has special broadcast
 _default_banded_broadcast(bc::Broadcasted{Style}) where Style = Base.invoke(copy, Tuple{Broadcasted{Style}}, bc)
@@ -463,10 +625,15 @@ _band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.
 
 
 # zero dominates. Take the minimum bandwidth
-for op in (:*, :/, :\)
-    @eval _isstrongzero(::typeof($op), args...) = true
-end
-_isstrongzero(f, args...) = false
+_bnds(bc::Broadcasted) = size(bc).-1
+    
+bandwidths(bc::Broadcasted{BandedStyle,<:Any,typeof(*)}) =
+    min.(_broadcast_bandwidths.(Ref(_bnds(bc)), bc.args)...)
+
+bandwidths(bc::Broadcasted{BandedStyle,<:Any,typeof(/)}) = _broadcast_bandwidths(_bnds(bc), first(bc.args))
+bandwidths(bc::Broadcasted{BandedStyle,<:Any,typeof(\)}) = _broadcast_bandwidths(_bnds(bc), last(bc.args))
+
+
 # zero is preserved. Take the maximum bandwidth
 _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
 
@@ -474,13 +641,8 @@ _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
 function bandwidths(bc::Broadcasted{BandedStyle})
     (a,b) = size(bc)
     bnds = (a-1,b-1)
-    if _isstrongzero(bc.f, bc.args...)
-        min.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
-    elseif _isweakzero(bc.f, bc.args...)
-        max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
-    else
-        bnds
-    end
+    _isweakzero(bc.f, bc.args...) && return max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
+    bnds
 end
 
 similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), bandwidths(bc))
