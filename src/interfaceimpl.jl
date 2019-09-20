@@ -133,6 +133,7 @@ const BroadcastBandedLayout = BroadcastLayout{<:Any,<:Tuple{Vararg{<:AbstractBan
 @inline rowsupport(::BroadcastBandedLayout, A, j) = banded_rowsupport(A, j)
 
 
+
 ######
 # Concat banded matrix
 ######

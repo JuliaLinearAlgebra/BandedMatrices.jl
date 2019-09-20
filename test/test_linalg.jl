@@ -255,7 +255,6 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         D= Diagonal(randn(4))
         @test A*D*A isa BandedMatrix
         @test Matrix(A)*D*Matrix(A) ≈ A*D*A
-        @which Base.BroadcastStyle(typeof(A))
         @test D*A' isa BandedMatrix
         @test A'D isa BandedMatrix
         @test A'*D*A isa BandedMatrix

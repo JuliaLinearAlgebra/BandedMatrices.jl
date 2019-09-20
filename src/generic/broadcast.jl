@@ -632,18 +632,18 @@ _band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.
 # zero dominates. Take the minimum bandwidth
 _bnds(bc::Broadcasted) = size(bc).-1
     
-bandwidths(bc::Broadcasted{BandedStyle,<:Any,typeof(*)}) =
+bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
     min.(_broadcast_bandwidths.(Ref(_bnds(bc)), bc.args)...)
 
-bandwidths(bc::Broadcasted{BandedStyle,<:Any,typeof(/)}) = _broadcast_bandwidths(_bnds(bc), first(bc.args))
-bandwidths(bc::Broadcasted{BandedStyle,<:Any,typeof(\)}) = _broadcast_bandwidths(_bnds(bc), last(bc.args))
+bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(/)}) = _broadcast_bandwidths(_bnds(bc), first(bc.args))
+bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(\)}) = _broadcast_bandwidths(_bnds(bc), last(bc.args))
 
 
 # zero is preserved. Take the maximum bandwidth
 _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
 
 
-function bandwidths(bc::Broadcasted{BandedStyle})
+function bandwidths(bc::Broadcasted)
     (a,b) = size(bc)
     bnds = (a-1,b-1)
     _isweakzero(bc.f, bc.args...) && return max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
