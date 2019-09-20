@@ -30,6 +30,8 @@ conjlayout(::Type{<:Complex}, ::M) where M<:AbstractBandedLayout = ConjLayout{M}
 struct BandedStyle <: AbstractArrayStyle{2} end
 BandedStyle(::Val{2}) = BandedStyle()
 BroadcastStyle(::Type{<:AbstractBandedMatrix}) = BandedStyle()
+BroadcastStyle(::Type{<:Adjoint{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
+BroadcastStyle(::Type{<:Transpose{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
 BroadcastStyle(::DefaultArrayStyle{2}, ::BandedStyle) = BandedStyle()
 BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = BandedStyle()
 
@@ -513,6 +515,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
 
     A_l,A_u = bandwidths(A)
     B_l,B_u = bandwidths(B)
+    -A_l > A_u && return broadcast!(f, dest, zero(eltype(A)), B)
+    -B_l > B_u && return broadcast!(f, dest, A, zero(eltype(B)))
     d_l,d_u = bandwidths(dest)
     m,n = size(A)
     data_d,data_A, data_B = bandeddata(dest), bandeddata(A), bandeddata(B)
