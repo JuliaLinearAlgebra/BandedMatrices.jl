@@ -249,7 +249,7 @@ end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
     z = f(zero(T), zero(V))
-    iszero(z) || checkbroadcastband(dest, (A,B))
+    iszero(z) || (checkbroadcastband(dest, A) && checkbroadcastband(dest, B))
     m,n = size(dest)
     if size(A) ≠ (m,n)
         size(A,2) == 1 && return broadcast!(dest, f, (vec(A),B))
@@ -316,10 +316,10 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
     l, u = max(A_l,B_l), max(A_u,B_u)
 
     for j = 1:n
-        for k = max(1,j-u) : min(j-d_u-1,n)
+        for k = max(1,j-u) : min(j-d_u-1,m)
             iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,b))
         end
-        for k = max(1,j+d_l+1) : min(j+l,n)
+        for k = max(1,j+d_l+1) : min(j+l,m)
             iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,b))
         end
     end
@@ -349,7 +349,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         fill!(view(data_d,d_u+max(A_l,B_l)+2:size(data_d,1),:), z)
 
         # construct where B upper is zero
-        data_d_u_A = view(data_d,d_u-max(A_u,B_u)+1:d_u-B_u, :)
+        data_d_u_A = view(data_d,max(1,d_u-max(A_u,B_u)+1):d_u-B_u, :)
         data_A_u_A = view(data_A, 1:A_u-B_u, :)
         data_d_u_A .= f.(data_A_u_A, zero(eltype(B)))
 
@@ -463,7 +463,9 @@ _band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.
 
 
 # zero dominates. Take the minimum bandwidth
-_isstrongzero(::typeof(*), args...) = true
+for op in (:*, :/, :\)
+    @eval _isstrongzero(::typeof($op), args...) = true
+end
 _isstrongzero(f, args...) = false
 # zero is preserved. Take the maximum bandwidth
 _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
@@ -472,7 +474,7 @@ _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
 function bandwidths(bc::Broadcasted{BandedStyle})
     (a,b) = size(bc)
     bnds = (a-1,b-1)
-    if isstrongzero(bc.f, bc.args...)
+    if _isstrongzero(bc.f, bc.args...)
         min.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
     elseif _isweakzero(bc.f, bc.args...)
         max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
@@ -481,7 +483,7 @@ function bandwidths(bc::Broadcasted{BandedStyle})
     end
 end
 
-similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), _broadcast_bandwidths(bc))
+similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), bandwidths(bc))
 
 
 

@@ -203,7 +203,7 @@ import BandedMatrices: BandedStyle, BandedRows
         C .= A .* B
         @test C == A .* B  == Matrix(A) .* Matrix(B)
         @test A .* B isa BandedMatrix
-        @test bandwidths(A.*B) == (2,2)
+        @test bandwidths(A.*B) == (1,1)
         @time B .= A .* B
         @test B == C
 
