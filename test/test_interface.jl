@@ -117,11 +117,12 @@ end
 
     A =  brand(5,5,1,1)
 
+    @test D*A isa BandedMatrix
+    @test D*A == D*Matrix(A)
+
     @test A*D isa BandedMatrix
     @test A*D == Matrix(A)*D
 
-    @test D*A isa BandedMatrix
-    @test D*A == D*Matrix(A)
 
     D = Diagonal(rand(Int,10))
     B = brand(10,10,-1,2)
