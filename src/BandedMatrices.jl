@@ -38,12 +38,12 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     AbstractBandedLayout, DiagonalLayout, AbstractFillLayout,
                     HermitianLayout, hermitianlayout, hermitiandata,
                     MulAdd, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
-                    ZerosLayout,
+                    ZerosLayout, BroadcastLayout,
                     AbstractColumnMajor, MulLayout, colsupport, rowsupport,
                     DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
                     symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex,
-                    resizedata!, CachedMatrix, ApplyLayout,
+                    resizedata!, CachedMatrix, ApplyLayout, BroadcastMatrix,
                     combine_mul_styles, LazyArrayApplyStyle, QLayout, mulapplystyle, LazyArrayStyle
 
 import FillArrays: AbstractFill, getindex_value

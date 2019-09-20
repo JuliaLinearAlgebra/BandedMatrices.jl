@@ -257,6 +257,17 @@ end
     @test bandwidths(isone.(V)) == (14,1)
 end
 
+@testset "BroadcastMatrix" begin
+    A = BroadcastMatrix(*, brand(5,5,1,2), brand(5,5,2,1))
+    @test eltype(A) == Float64
+    @test bandwidths(A) == (1,1)
+    @test LazyArrays.colsupport(A, 1) == 1:2
+    @test A == broadcast(*, A.args...)
+
+    B = BroadcastMatrix(+, brand(5,5,1,2), 2)
+    @test B == broadcast(+, B.args...)
+end
+
 @testset "Cache" begin
     A = _BandedMatrix(Fill(1,3,10_000), 10_000, 1, 1)
     C = cache(A)

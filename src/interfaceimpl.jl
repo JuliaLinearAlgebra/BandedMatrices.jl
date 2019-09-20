@@ -120,6 +120,17 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 
 subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
 
+###
+# BroadcastMatrix
+###
+
+bandwidths(M::BroadcastMatrix) = bandwidths(Broadcasted(M))
+isbanded(M::BroadcastMatrix) = isbanded(Broadcasted(M))
+
+const BroadcastBandedLayout = BroadcastLayout{<:Any,<:Tuple{Vararg{<:AbstractBandedLayout}}}
+
+@inline colsupport(::BroadcastBandedLayout, A, j) = banded_colsupport(A, j)
+@inline rowsupport(::BroadcastBandedLayout, A, j) = banded_rowsupport(A, j)
 
 
 ######
