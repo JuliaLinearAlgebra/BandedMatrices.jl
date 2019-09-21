@@ -127,7 +127,22 @@ subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) =
 bandwidths(M::BroadcastMatrix) = bandwidths(Broadcasted(M))
 isbanded(M::BroadcastMatrix) = isbanded(Broadcasted(M))
 
-const BroadcastBandedLayout = BroadcastLayout{<:Any,<:Tuple{Vararg{<:AbstractBandedLayout}}}
+struct BroadcastBandedLayout <: AbstractBandedLayout end
+struct LazyBandedLayout <: AbstractBandedLayout end
+
+broadcastlayout(::Type, ::Type{<:Tuple{Vararg{<:AbstractBandedLayout}}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:AbstractBandedLayout}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:AbstractBandedLayout}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:AbstractBandedLayout}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:Any}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Type{<:Tuple{<:Any,<:AbstractBandedLayout}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:Any}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::Type{<:Tuple{<:Any,<:AbstractBandedLayout}}) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:LazyLayout}}) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Type{<:Tuple{<:LazyLayout,<:AbstractBandedLayout}}) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::Type{<:Tuple{<:AbstractBandedLayout,<:LazyLayout}}) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::Type{<:Tuple{<:LazyLayout,<:AbstractBandedLayout}}) = LazyBandedLayout()
+
 
 @inline colsupport(::BroadcastBandedLayout, A, j) = banded_colsupport(A, j)
 @inline rowsupport(::BroadcastBandedLayout, A, j) = banded_rowsupport(A, j)
