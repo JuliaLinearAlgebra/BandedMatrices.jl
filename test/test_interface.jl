@@ -181,6 +181,7 @@ end
     @test isbanded(M) && isbanded(Applied(M))
     @test bandwidths(M) == bandwidths(Applied(M))
     @test BandedMatrix(M) == A*B
+    MemoryLayout(typeof(M))
     @test colsupport(M,1) == colsupport(Applied(M),1) == 1:2
     @test rowsupport(M,1) == rowsupport(Applied(M),1) == 1:2
 
