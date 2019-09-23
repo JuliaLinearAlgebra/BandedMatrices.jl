@@ -103,7 +103,7 @@ isbanded(M::Mul) = all(isbanded, M.args)
 isbanded(M::MulMatrix) = isbanded(Applied(M))
 
 struct MulBandedLayout <: MemoryLayout end
-applylayout(::typeof(*), ::Type{<:AbstractBandedLayout}...) = MulBandedLayout()    
+applylayout(::Type{typeof(*)}, ::AbstractBandedLayout...) = MulBandedLayout()    
 
 applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulBandedLayout) = BandedStyle()
 # applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulLayout{<:Tuple{BandedColumns{LazyLayout},Vararg{<:AbstractBandedLayout}}}) = LazyArrayStyle{2}()
@@ -129,18 +129,18 @@ isbanded(M::BroadcastMatrix) = isbanded(Broadcasted(M))
 struct BroadcastBandedLayout <: AbstractBandedLayout end
 struct LazyBandedLayout <: AbstractBandedLayout end
 
-broadcastlayout(_, ::Type{<:Tuple{Vararg{<:AbstractBandedLayout}}}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(*), ::Type{<:AbstractBandedLayout}, ::Type{<:AbstractBandedLayout}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(/), ::Type{<:AbstractBandedLayout}, ::Type{<:AbstractBandedLayout}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(\), ::Type{<:AbstractBandedLayout}, ::Type{<:AbstractBandedLayout}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(*), ::Type{<:AbstractBandedLayout}, ::Type{<:Any}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(*), ::Type{<:Any}, ::Type{<:AbstractBandedLayout}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(/), ::Type{<:AbstractBandedLayout}, ::Type{<:Any}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(\), ::Type{<:Any}, ::Type{<:AbstractBandedLayout}) = BroadcastBandedLayout()
-broadcastlayout(::typeof(*), ::Type{<:AbstractBandedLayout}, ::Type{LazyLayout}) = LazyBandedLayout()
-broadcastlayout(::typeof(*), ::Type{LazyLayout}, ::Type{<:AbstractBandedLayout}) = LazyBandedLayout()
-broadcastlayout(::typeof(/), ::Type{<:AbstractBandedLayout}, ::Type{LazyLayout}) = LazyBandedLayout()
-broadcastlayout(::typeof(\), ::Type{LazyLayout}, ::Type{<:AbstractBandedLayout}) = LazyBandedLayout()
+broadcastlayout(::Type, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
 
 
 @inline colsupport(::BroadcastBandedLayout, A, j) = banded_colsupport(A, j)
