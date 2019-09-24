@@ -1,6 +1,7 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
 import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
 import Base: BroadcastStyle
+import Broadcast: broadcasted
 import BandedMatrices: BandedStyle, BandedRows
 
 @testset "broadcasting" begin
@@ -389,7 +390,7 @@ import BandedMatrices: BandedStyle, BandedRows
         
         @test b .+ A == b .+ Matrix(A) == A .+ b
 
-        @test bandwidths(Base.broadcasted(+, A, b')) == (9,9)
+        @test bandwidths(broadcasted(+, A, b')) == (9,9)
         @test A .+ b' == b' .+ A == Matrix(A) .+ b'
         @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
         @test A .* b' == b' .* A == Matrix(A) .* b'
