@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
 import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
 import Base: BroadcastStyle
-import Broadcast: broadcasted
+import Base.Broadcast: broadcasted
 import BandedMatrices: BandedStyle, BandedRows
 
 @testset "broadcasting" begin
