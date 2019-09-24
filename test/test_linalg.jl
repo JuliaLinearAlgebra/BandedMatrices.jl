@@ -249,5 +249,16 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         @test_throws DimensionMismatch m * [1, 2, 3, 4]
         @test_throws DimensionMismatch m \ [1, 2]
     end
+
+    @testset "Banded*Diagonal*Banded" begin
+        A = brand(4,4,1,1)
+        D= Diagonal(randn(4))
+        @test A*D*A isa BandedMatrix
+        @test Matrix(A)*D*Matrix(A) ≈ A*D*A
+        @test D*A' isa BandedMatrix
+        @test A'D isa BandedMatrix
+        @test A'*D*A isa BandedMatrix
+        @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
+    end
 end
 

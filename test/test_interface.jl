@@ -117,11 +117,12 @@ end
 
     A =  brand(5,5,1,1)
 
+    @test D*A isa BandedMatrix
+    @test D*A == D*Matrix(A)
+
     @test A*D isa BandedMatrix
     @test A*D == Matrix(A)*D
 
-    @test D*A isa BandedMatrix
-    @test D*A == D*Matrix(A)
 
     D = Diagonal(rand(Int,10))
     B = brand(10,10,-1,2)
@@ -180,6 +181,7 @@ end
     @test isbanded(M) && isbanded(Applied(M))
     @test bandwidths(M) == bandwidths(Applied(M))
     @test BandedMatrix(M) == A*B
+    MemoryLayout(typeof(M))
     @test colsupport(M,1) == colsupport(Applied(M),1) == 1:2
     @test rowsupport(M,1) == rowsupport(Applied(M),1) == 1:2
 
@@ -254,6 +256,17 @@ end
     @test vcat(A,A,A) isa BandedMatrix 
     @test isone.(V) isa BandedMatrix
     @test bandwidths(isone.(V)) == (14,1)
+end
+
+@testset "BroadcastMatrix" begin
+    A = BroadcastMatrix(*, brand(5,5,1,2), brand(5,5,2,1))
+    @test eltype(A) == Float64
+    @test bandwidths(A) == (1,1)
+    @test LazyArrays.colsupport(A, 1) == 1:2
+    @test A == broadcast(*, A.args...)
+
+    B = BroadcastMatrix(+, brand(5,5,1,2), 2)
+    @test B == broadcast(+, B.args...)
 end
 
 @testset "Cache" begin

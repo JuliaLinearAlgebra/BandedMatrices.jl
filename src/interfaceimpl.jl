@@ -69,16 +69,14 @@ end
 # needed for ∞-dimensional banded linear algebra
 ###
 
-function similar(M::MulAdd{<:AbstractBandedLayout,<:ApplyLayout{typeof(vcat),<:Tuple{<:Any,ZerosLayout}}}, ::Type{T}, axes) where T
+function similar(M::MulAdd{<:AbstractBandedLayout,<:PaddedLayout}, ::Type{T}, axes) where T
     A,x = M.A,M.B
     xf,_ = x.args
     n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
     Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
 end
 
-function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout,
-                                    <:ApplyLayout{typeof(vcat),<:Tuple{<:Any,ZerosLayout}},
-                                     <:ApplyLayout{typeof(vcat),<:Tuple{<:Any,ZerosLayout}}})
+function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout,<:PaddedLayout,<:PaddedLayout})
     α,A,x,β,y = M.α,M.A,M.B,M.β,M.C
     length(y) == size(A,1) || throw(DimensionMismatch())
     length(x) == size(A,2) || throw(DimensionMismatch())
@@ -104,21 +102,49 @@ bandwidths(M::MulMatrix) = bandwidths(Applied(M))
 isbanded(M::Mul) = all(isbanded, M.args)
 isbanded(M::MulMatrix) = isbanded(Applied(M))
 
-const MulBandedLayout = MulLayout{<:Tuple{Vararg{<:AbstractBandedLayout}}}
+struct MulBandedLayout <: MemoryLayout end
+applylayout(::Type{typeof(*)}, ::AbstractBandedLayout...) = MulBandedLayout()    
 
 applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulBandedLayout) = BandedStyle()
-applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulLayout{<:Tuple{BandedColumns{LazyLayout},Vararg{<:AbstractBandedLayout}}}) = LazyArrayStyle{2}()
+# applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulLayout{<:Tuple{BandedColumns{LazyLayout},Vararg{<:AbstractBandedLayout}}}) = LazyArrayStyle{2}()
 BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 
 @inline colsupport(::MulBandedLayout, A, j) = banded_colsupport(A, j)
 @inline rowsupport(::MulBandedLayout, A, j) = banded_rowsupport(A, j)
-@inline colsupport(::MulLayout{<:Tuple{<:AbstractBandedLayout,<:AbstractStridedLayout}}, A, j) = banded_colsupport(A, j)
+# @inline colsupport(::MulLayout{<:Tuple{<:AbstractBandedLayout,<:AbstractStridedLayout}}, A, j) = banded_colsupport(A, j)
 
 
 
 @inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
 
 subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
+
+###
+# BroadcastMatrix
+###
+
+bandwidths(M::BroadcastMatrix) = bandwidths(Broadcasted(M))
+isbanded(M::BroadcastMatrix) = isbanded(Broadcasted(M))
+
+struct BroadcastBandedLayout <: AbstractBandedLayout end
+struct LazyBandedLayout <: AbstractBandedLayout end
+
+broadcastlayout(::Type, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(*)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
+broadcastlayout(::Type{typeof(\)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
+
+
+@inline colsupport(::BroadcastBandedLayout, A, j) = banded_colsupport(A, j)
+@inline rowsupport(::BroadcastBandedLayout, A, j) = banded_rowsupport(A, j)
 
 
 

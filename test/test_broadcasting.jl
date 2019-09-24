@@ -1,6 +1,7 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, Test
 import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
 import Base: BroadcastStyle
+import Base.Broadcast: broadcasted
 import BandedMatrices: BandedStyle, BandedRows
 
 @testset "broadcasting" begin
@@ -203,7 +204,7 @@ import BandedMatrices: BandedStyle, BandedRows
         C .= A .* B
         @test C == A .* B  == Matrix(A) .* Matrix(B)
         @test A .* B isa BandedMatrix
-        @test bandwidths(A.*B) == (2,2)
+        @test bandwidths(A.*B) == (1,1)
         @time B .= A .* B
         @test B == C
 
@@ -360,10 +361,20 @@ import BandedMatrices: BandedStyle, BandedRows
         @test b .* A == b .* Matrix(A)
         @test b .* A isa BandedMatrix
         @test bandwidths(b .* A) == bandwidths(A)
+        @test A .* b == Matrix(A) .* b
+        @test A .* b isa BandedMatrix
+        @test bandwidths(A .* b) == bandwidths(A)
         @test b .\ A == b .\ Matrix(A)
         @test b .\ A isa BandedMatrix
         @test bandwidths(b .\ A) == bandwidths(A)
+        @test A ./ b == Matrix(A) ./ b
+        @test A ./ b isa BandedMatrix
+        @test bandwidths(A ./ b) == bandwidths(A)
+
+        @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
         @test isinf((b ./ A)[4,1])
+        @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
+        @test isinf((A .\ b)[4,1])
         
 
         @test A .* b == Matrix(A) .* b
@@ -372,9 +383,17 @@ import BandedMatrices: BandedStyle, BandedRows
         @test bandwidths(A ./ b) == bandwidths(A)
         @test isinf((A .\ b)[4,1])
         
+        @test reshape(b,10,1) .* A isa BandedMatrix
+        @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
+        @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
+        @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
+        
         @test b .+ A == b .+ Matrix(A) == A .+ b
 
-        @test A .+ b' == Matrix(A) .+ b'
-        
+        @test bandwidths(broadcasted(+, A, b')) == (9,9)
+        @test A .+ b' == b' .+ A == Matrix(A) .+ b'
+        @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
+        @test A .* b' == b' .* A == Matrix(A) .* b'
+        @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
     end
 end
