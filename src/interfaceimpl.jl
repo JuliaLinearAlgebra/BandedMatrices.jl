@@ -115,10 +115,6 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 
 
 
-@inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
-
-subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
-
 ###
 # BroadcastMatrix
 ###
@@ -152,6 +148,14 @@ end
 @inline rowsupport(::BroadcastBandedLayout, A, j) = banded_rowsupport(A, j)
 
 
+###
+# sub materialize
+###
+@inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
+@inline sub_materialize(::BroadcastBandedLayout, V) = BandedMatrix(V)
+
+subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
+subarraylayout(M::BroadcastBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
 
 ######
 # Concat banded matrix
@@ -203,13 +207,14 @@ function resizedata!(B::CachedMatrix{T,BandedMatrix{T,Matrix{T},OneTo{Int}}}, n:
     if (ν,μ) ≠ (n,m)
         B.data = BandedMatrix{T}(undef, (n,m), bandwidths(olddata))
         B.data.data[:,1:μ] .= olddata.data
-        bd = bandeddata(B.array)
-        B.data.data[1:(ω-u),μ+1:end] .= zero(T)
-        B.data.data[ω-u+1:ω+l+1,μ+1:end] .= view(bd,:,μ+1:m)
-        B.data.data[ω+l+2:end,μ+1:end] .= zero(T)
+        view(B.data, 1:ν, μ+1:m) .= view(B.array, 1:ν, μ+1:m)
+        view(B.data, ν+1:n, μ+1:m) .= view(B.array, ν+1:n, μ+1:m)
+        view(B.data, ν+1:n, 1:μ) .= view(B.array, ν+1:n, 1:μ)
     end
 
     B.datasize = (n,m)
 
     B
 end
+
+

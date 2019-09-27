@@ -684,8 +684,8 @@ function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumns)
     A
 end
 
-banded_lmul!(α, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(typeof(A)))
-banded_rmul!(A::AbstractMatrix, α) = _banded_rmul!(A, α, MemoryLayout(typeof(A)))
+banded_lmul!(α::Number, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(typeof(A)))
+banded_rmul!(A::AbstractMatrix, α::Number) = _banded_rmul!(A, α, MemoryLayout(typeof(A)))
 
 lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
 rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
