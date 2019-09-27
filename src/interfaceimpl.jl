@@ -102,7 +102,7 @@ bandwidths(M::MulMatrix) = bandwidths(Applied(M))
 isbanded(M::Mul) = all(isbanded, M.args)
 isbanded(M::MulMatrix) = isbanded(Applied(M))
 
-struct MulBandedLayout <: MemoryLayout end
+struct MulBandedLayout <: AbstractBandedLayout end
 applylayout(::Type{typeof(*)}, ::AbstractBandedLayout...) = MulBandedLayout()    
 
 applybroadcaststyle(::Type{<:AbstractMatrix}, ::MulBandedLayout) = BandedStyle()
@@ -141,6 +141,11 @@ broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::LazyLayout) = LazyB
 broadcastlayout(::Type{typeof(*)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
 broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
 broadcastlayout(::Type{typeof(\)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
+
+# functions that satisfy f(0,0) == 0
+for op in (:+, :-)
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+end
 
 
 @inline colsupport(::BroadcastBandedLayout, A, j) = banded_colsupport(A, j)

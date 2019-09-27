@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, FillArrays, Test, Base64
-import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, rowsupport, colsupport, _BandedMatrix
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, rowsupport, colsupport, _BandedMatrix, BroadcastBandedLayout
 import LazyArrays: MemoryLayout, Applied
 
 
@@ -267,6 +267,12 @@ end
 
     B = BroadcastMatrix(+, brand(5,5,1,2), 2)
     @test B == broadcast(+, B.args...)
+
+    C = BroadcastMatrix(+, brand(5,5,1,2), brand(5,5,3,1))
+    @test bandwidths(C) == (3,2)
+    @test MemoryLayout(typeof(C)) == BroadcastBandedLayout()
+    @test isbanded(C) == true
+    @test BandedMatrix(C) == C
 end
 
 @testset "Cache" begin

@@ -39,6 +39,7 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{1}) = LazyArrayStyle{2}()
 
 
 size(bc::Broadcasted{BandedStyle}) = length.(axes(bc))
+isbanded(bc::Broadcasted{BandedStyle}) = true
 
 ####
 # Default to standard Array broadcast
