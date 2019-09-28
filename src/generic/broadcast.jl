@@ -100,12 +100,21 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     data_d,data_A = bandeddata(dest), bandeddata(A)
 
     if (A_l,A_u) == (d_l,d_u)
-        data_d .= f.(data_A)
+        for j = max(1,1-d_l):min(n,d_u)
+            kr = d_u-j+2:size(data_d,1)
+            data_d[kr,j] .= f.(view(data_A,kr,j))
+        end
+        jr = d_u+1:min(m-A_l,n) # overlapping bands
+        data_d[:,jr] .= f.(view(data_A,:,jr))
+        for j = max(1,m-A_l+1):n
+            kr = 1:(d_u+m+1-j)
+            data_d[kr,j] .= f.(view(data_A,kr,j))
+        end
     else
         checkzerobands(dest, f, A)
         fill!(view(data_d,1:(d_u-A_u),:), z)
         fill!(view(data_d,d_u+A_l+2:size(data_d,1),:), z)
-        view(data_d,max(d_u-A_u+1,1):min(d_u+A_l+1,size(data_d,1)),:) .=
+        data_d[max(d_u-A_u+1,1):min(d_u+A_l+1,size(data_d,1)),:] .=
             f.(view(data_A,max(1,A_u-d_u+1):min(A_u+d_l+1,size(data_A,1)),:))
     end
 

@@ -396,4 +396,14 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A .* b' == b' .* A == Matrix(A) .* b'
         @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
     end
+
+    @testset "views" begin
+        A = BandedMatrix(Ones(10,10),(1,1))
+        B = 2A
+        view(A,8:10,:) .= view(B,8:10,:)
+        @test A[1,1] == 1.0
+        @test A[6,7] == 1.0
+        @test A[7,7] == 1.0
+        @test A[8,7] == 2.0
+    end
 end
