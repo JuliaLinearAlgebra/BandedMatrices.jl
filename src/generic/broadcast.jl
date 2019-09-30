@@ -67,6 +67,23 @@ end
 # matrix broadcast
 ###########
 
+function checkzerobands(dest, f, A::AbstractMatrix)
+    m,n = size(A)
+    d_l, d_u = bandwidths(dest)
+    l, u = bandwidths(A)
+
+    if (l,u) ≠ (d_l,d_u)
+        for j = 1:n
+            for k = max(1,j-u) : min(j-d_u-1,n)
+                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+            end
+            for k = max(1,j+d_l+1) : min(j+l,n)
+                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+            end
+        end
+    end
+end
+
 function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1, _2) where T
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src)))
@@ -99,23 +116,35 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     m,n = size(A)
     data_d,data_A = bandeddata(dest), bandeddata(A)
 
-    if (A_l,A_u) == (d_l,d_u)
-        for j = max(1,1-d_l):min(n,d_u)
-            kr = d_u-j+2:size(data_d,1)
-            data_d[kr,j] .= f.(view(data_A,kr,j))
-        end
-        jr = d_u+1:min(m-A_l,n) # overlapping bands
-        data_d[:,jr] .= f.(view(data_A,:,jr))
-        for j = max(1,m-A_l+1):n
-            kr = 1:(d_u+m+1-j)
-            data_d[kr,j] .= f.(view(data_A,kr,j))
-        end
-    else
-        checkzerobands(dest, f, A)
-        fill!(view(data_d,1:(d_u-A_u),:), z)
-        fill!(view(data_d,d_u+A_l+2:size(data_d,1),:), z)
-        data_d[max(d_u-A_u+1,1):min(d_u+A_l+1,size(data_d,1)),:] .=
-            f.(view(data_A,max(1,A_u-d_u+1):min(A_u+d_l+1,size(data_A,1)),:))
+    checkzerobands(dest, f, A)
+    # populate rows before we get to A
+    for j = max(1,1-d_l):-A_l
+        kr_d2 = d_u-j+2:d_l+d_u+1
+        data_d[kr_d2,j] .= z
+    end
+
+    # copy top left entries
+    for j = max(1,1-A_l):min(n,d_u)
+        kr_A = max(1,A_u-j+2):min(A_l+A_u+1,d_l+A_u+1)
+        kr_d = range(max(1,d_u-j+2); length=length(kr_A))
+        data_d[kr_d,j] .= f.(view(data_A,kr_A,j))
+        kr_d2 = d_u-j+2+length(kr_A):size(data_d,1)
+        data_d[kr_d2,j] .= z
+    end
+
+    # the bulk
+    jr = max(1,d_u+1):min(m-A_l,n) 
+    data_d[1:(d_u-A_u),jr] .= z
+    data_d[max(d_u-A_u+1,1):min(d_u+A_l+1,size(data_d,1)),jr] .=
+        f.(view(data_A,max(1,A_u-d_u+1):min(A_u+d_l+1,size(data_A,1)),jr))
+    data_d[d_u+A_l+2:size(data_d,1),jr] .= z
+
+    # bottom right
+    for j = max(1,m-A_l+1):n
+        kr_A = max(1,A_u-d_u+1):(A_u+m+1-j)
+        kr_d = range(max(1,d_u-A_u+1); length=length(kr_A))
+        data_d[1:first(kr_d)-1,j] .= z
+        data_d[kr_d,j] .= f.(view(data_A,kr_A,j))
     end
 
     dest
@@ -482,22 +511,6 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         end
     end
     dest
-end
-
-
-function checkzerobands(dest, f, A::AbstractMatrix)
-    m,n = size(A)
-    d_l, d_u = bandwidths(dest)
-    l, u = bandwidths(A)
-
-    for j = 1:n
-        for k = max(1,j-u) : min(j-d_u-1,n)
-            iszero(f(A[k,j])) || throw(BandError(dest,b))
-        end
-        for k = max(1,j+d_l+1) : min(j+l,n)
-            iszero(f(A[k,j])) || throw(BandError(dest,b))
-        end
-    end
 end
 
 function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})

@@ -405,5 +405,20 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A[6,7] == 1.0
         @test A[7,7] == 1.0
         @test A[8,7] == 2.0
+
+        A = BandedMatrix{Int}(undef,(10,10),(2,2));  vec(A.data) .= (1:length(A.data));
+        B = BandedMatrix{Int}(undef,(10,10),(1,1));  vec(B.data) .= (1:length(B.data));
+        Ã = Matrix(A); B̃ = Matrix(B)
+        view(A,5:10,:) .= view(B,5:10,:)
+        view(Ã,5:10,:) .= view(B̃,5:10,:)
+        @test Ã == A
+
+        A = BandedMatrix{Int}(undef,(10,10),(2,1));  vec(A.data) .= (1:length(A.data));
+        B = BandedMatrix{Int}(undef,(10,10),(1,2));  vec(B.data) .= (1:length(B.data));
+        @test_throws BandError view(A,5:10,:) .= view(B,5:10,:)
+        
+        A = BandedMatrix{Int}(undef,(10,10),(1,2));  vec(A.data) .= (1:length(A.data));
+        B = BandedMatrix{Int}(undef,(10,10),(2,1));  vec(B.data) .= (1:length(B.data));
+        @test_throws BandError view(A,5:10,:) .= view(B,5:10,:)
     end
 end
