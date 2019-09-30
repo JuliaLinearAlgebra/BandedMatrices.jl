@@ -107,6 +107,59 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
     dest
 end
 
+# columns to the left (start) and right (stop) of the non-zero columns _nzcols
+@inline _startzcols((m,n), (l,u)) = 1:-l
+@inline _nzcols((m,n), (l,u)) = max(1-l,1):min(m+u,n)
+@inline _stopzcols((m,n), (l,u)) = m+u+1:n
+
+# columns in the "start up", bulk and "stop
+@inline _startcols((m,n), (l,u)) = max(1-l,1):min(u,n)
+@inline _bulkcols((m,n), (l,u)) = max(u+1,1):min(m-l,n)
+@inline _stopcols((m,n), (l,u)) = max(m-l+1,u+1,1):min(m+u,n)
+
+# the non-zero rows in the data in column j
+@inline _startcolrange((m,n), (l,u), j) = u-j+2:l+u+1
+@inline _bulkcolrange((m,n), (l,u), j) = 1:l+u+1
+@inline _stopcolrange((m,n), (l,u), j) = 1:(u+m+1-j)
+
+# how many rows we shift down
+@inline _bulkshift((l,u), j) = j-u-1
+
+@inline _startzcols(A) = _startzcols(size(A), bandwidths(A))
+@inline _nzcols(A) = _nzcols(size(A), bandwidths(A))
+@inline _stopzcols(A) = _stopzcols(size(A), bandwidths(A))
+@inline _startcols(A) = _startcols(size(A), bandwidths(A))
+@inline _bulkcols(A) = _bulkcols(size(A), bandwidths(A))
+@inline _stopcols(A) = _stopcols(size(A), bandwidths(A))
+@inline _startcolrange(A, j) = _startcolrange(size(A), bandwidths(A), j)
+@inline _bulkcolrange(A, j) = _bulkcolrange(size(A), bandwidths(A), j)
+@inline _stopcolrange(A, j) = _stopcolrange(size(A), bandwidths(A), j)
+@inline _colrange(A, j) = _colrange(size(A), bandwidths(A), j)
+@inline _colshift(A::AbstractMatrix, j) = _colshift(bandwidths(A), j)
+@inline _bulkshift(A::AbstractMatrix, j) = _bulkshift(bandwidths(A), j)
+
+@inline function _colrange((m,n), (l,u), j) 
+    j ≤ u && return _startcolrange((m,n), (l,u), j)
+    j ≤ m-l && return _bulkcolrange((m,n), (l,u), j)
+    return _stopcolrange((m,n), (l,u), j)
+end
+@inline function _colshift((l,u), j)
+    j ≤ u && return 0
+    _bulkshift((l,u),j)
+end
+
+
+function _intersectcolrange(kr_A,kr_d,sh)
+    if sh ≤ 0
+        kr_dA = first(kr_d):min(last(kr_d),first(kr_d)+length(kr_A)+sh-1)
+        kr_Ad = range(first(kr_A)-sh; length=length(kr_dA))
+    else
+        kr_dA = first(kr_d)+sh:min(last(kr_d),first(kr_d)+length(kr_A)+sh-1)
+        kr_Ad = range(first(kr_A); length=length(kr_dA))
+    end
+    kr_dA, kr_Ad
+end
+
 function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::BandedColumns, ::BandedColumns) where T
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, size(A), bandwidths(broadcasted(f, A)))
@@ -118,33 +171,45 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
 
     checkzerobands(dest, f, A)
     # populate rows before we get to A
-    for j = max(1,1-d_l):-A_l
-        kr_d2 = d_u-j+2:d_l+d_u+1
-        data_d[kr_d2,j] .= z
+    for j = _startzcols(A) ∩ _startcols(dest)
+        data_d[_startcolrange(A,j),j] .= z
+    end
+    data_d[:,_startzcols(A) ∩ _bulkcols(dest)] .= z
+    for j = _startzcols(A) ∩ _stopcols(dest)
+        data_d[_stopcolrange(A,j),j] .= z
     end
 
     # copy top left entries
-    for j = max(1,1-A_l):min(n,d_u)
-        kr_A = max(1,A_u-j+2):min(A_l+A_u+1,d_l+A_u+1)
-        kr_d = range(max(1,d_u-j+2); length=length(kr_A))
-        data_d[kr_d,j] .= f.(view(data_A,kr_A,j))
-        kr_d2 = d_u-j+2+length(kr_A):size(data_d,1)
-        data_d[kr_d2,j] .= z
+    jr = _bulkcols(A) ∩ _bulkcols(dest)
+    for j = 1:first(jr)-1
+        # don't bother optimising
+        kr_A = _colrange(A,j)
+        kr_d = _colrange(dest,j)
+        sh = _colshift(A,j)-_colshift(dest,j)
+        kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
+        data_d[first(kr_d):first(kr_dA)-1,j] .= z
+        data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
+        data_d[last(kr_dA)+1:last(kr_d),j] .= z
     end
 
     # the bulk
-    jr = max(1,d_u+1):min(m-A_l,n) 
-    data_d[1:(d_u-A_u),jr] .= z
-    data_d[max(d_u-A_u+1,1):min(d_u+A_l+1,size(data_d,1)),jr] .=
-        f.(view(data_A,max(1,A_u-d_u+1):min(A_u+d_l+1,size(data_A,1)),jr))
-    data_d[d_u+A_l+2:size(data_d,1),jr] .= z
+    kr_A = _bulkcolrange(A,first(jr))
+    kr_d = _bulkcolrange(dest,first(jr))
+    sh = _bulkshift(A,first(jr))-_bulkshift(dest,first(jr))
+    kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
+    data_d[first(kr_d):first(kr_dA)-1,jr] .= z
+    data_d[kr_dA,jr] .= f.(view(data_A,kr_Ad,jr))
+    data_d[last(kr_dA)+1:last(kr_d),jr] .= z
 
     # bottom right
-    for j = max(1,m-A_l+1):n
-        kr_A = max(1,A_u-d_u+1):(A_u+m+1-j)
-        kr_d = range(max(1,d_u-A_u+1); length=length(kr_A))
-        data_d[1:first(kr_d)-1,j] .= z
-        data_d[kr_d,j] .= f.(view(data_A,kr_A,j))
+    for j = last(jr)+1:last(_stopcols(dest))
+        kr_A = _colrange(A,j)
+        kr_d = _colrange(dest,j)
+        sh = _colshift(A,j)-_colshift(dest,j)
+        kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
+        data_d[first(kr_d):first(kr_dA)-1,j] .= z
+        data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
+        data_d[last(kr_dA)+1:last(kr_d),j] .= z
     end
 
     dest

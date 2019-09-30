@@ -18,21 +18,27 @@ import BandedMatrices: BandedStyle, BandedRows
         C = similar(A)
         @test_throws BandError C .= exp.(A)
 
+        @test identity.(A) == A
         @test identity.(A) isa BandedMatrix
         @test bandwidths(identity.(A)) == bandwidths(A)
 
+        @test (z -> exp(z)-1).(A) == (z -> exp(z)-1).(Matrix(A))
         @test (z -> exp(z)-1).(A) isa BandedMatrix
         @test bandwidths((z -> exp(z)-1).(A)) == bandwidths(A)
 
+        @test A .+ 1 == Matrix(A) .+ 1
         @test A .+ 1 isa BandedMatrix
         @test (A .+ 1) == Matrix(A) .+ 1
 
+        @test A ./ 1 == Matrix(A) ./ 1
         @test A ./ 1 isa BandedMatrix
         @test bandwidths(A ./ 1) == bandwidths(A)
 
+        @test 1 .+ A == 1 .+ Matrix(A)
         @test 1 .+ A isa BandedMatrix
         @test (1 .+ A) == 1 .+ Matrix(A)
 
+        @test 1 .\ A == 1 .\ Matrix(A)
         @test 1 .\ A isa BandedMatrix
         @test bandwidths(1 .\ A) == bandwidths(A)
 
