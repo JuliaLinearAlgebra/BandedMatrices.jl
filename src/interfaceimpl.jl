@@ -71,7 +71,7 @@ end
 
 function similar(M::MulAdd{<:AbstractBandedLayout,<:PaddedLayout}, ::Type{T}, axes) where T
     A,x = M.A,M.B
-    xf,_ = x.args
+    xf = paddeddata(x)
     n = max(0,min(length(xf) + bandwidth(A,1),length(M)))
     Vcat(Vector{T}(undef, n), Zeros{T}(size(A,1)-n))
 end
@@ -81,8 +81,8 @@ function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout,<:PaddedLayout,<:Pa
     length(y) == size(A,1) || throw(DimensionMismatch())
     length(x) == size(A,2) || throw(DimensionMismatch())
 
-    ỹ,_ = y.args
-    x̃,_ = x.args
+    ỹ = paddeddata(y)
+    x̃ = paddeddata(x)
 
     length(ỹ) ≥ min(length(M),length(x̃)+bandwidth(A,1)) ||
         throw(InexactError("Cannot assign non-zero entries to Zero"))
