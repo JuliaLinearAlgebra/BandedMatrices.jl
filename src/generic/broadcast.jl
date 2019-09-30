@@ -166,7 +166,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
 
     A_l,A_u = bandwidths(A)
     d_l,d_u = bandwidths(dest)
-    m,n = size(A)
+    m,n = size(dest)
+    (m == 0 || n == 0) && return dest
     data_d,data_A = bandeddata(dest), bandeddata(A)
 
     checkzerobands(dest, f, A)

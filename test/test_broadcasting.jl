@@ -426,5 +426,10 @@ import BandedMatrices: BandedStyle, BandedRows
         A = BandedMatrix{Int}(undef,(10,10),(1,2));  vec(A.data) .= (1:length(A.data));
         B = BandedMatrix{Int}(undef,(10,10),(2,1));  vec(B.data) .= (1:length(B.data));
         @test_throws BandError view(A,5:10,:) .= view(B,5:10,:)
+
+        A = BandedMatrix{Int}(undef,(1,1),(1,1)); vec(A.data) .= 2(1:length(B.data));
+        B = BandedMatrix{Int}(undef,(1,1),(1,1)); vec(B.data) .= (1:length(B.data));
+        view(A,2:1,2:1) .= view(B,2:1,2:1)
+        @test A[1,1] == 4
     end
 end

@@ -1,6 +1,6 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, rowsupport, colsupport, _BandedMatrix, BroadcastBandedLayout
-import LazyArrays: MemoryLayout, Applied
+import LazyArrays: MemoryLayout, Applied, resizedata!
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -277,11 +277,12 @@ end
 
 @testset "Cache" begin
     A = _BandedMatrix(Fill(1,3,10_000), 10_000, 1, 1)
-    C = cache(A)
+    C = cache(A);
     @test C.data isa BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}
     @test colsupport(C,1) == rowsupport(C,1) == 1:2
     @test bandwidths(C) == bandwidths(A) == (1,1)
     @test isbanded(C) 
+    resizedata!(C,1,1);
     @test C[1:10,1:10] == A[1:10,1:10]
     @test C[1:10,1:10] isa BandedMatrix
 end
