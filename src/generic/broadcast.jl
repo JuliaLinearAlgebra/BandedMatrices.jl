@@ -74,10 +74,10 @@ function checkzerobands(dest, f, A::AbstractMatrix)
 
     if (l,u) ≠ (d_l,d_u)
         for j = 1:n
-            for k = max(1,j-u) : min(j-d_u-1,n)
+            for k = max(1,j-u) : min(j-d_u-1,m)
                 iszero(f(A[k,j])) || throw(BandError(dest,j-k))
             end
-            for k = max(1,j+d_l+1) : min(j+l,n)
+            for k = max(1,j+d_l+1) : min(j+l,m)
                 iszero(f(A[k,j])) || throw(BandError(dest,j-k))
             end
         end
@@ -164,8 +164,6 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, size(A), bandwidths(broadcasted(f, A)))
 
-    A_l,A_u = bandwidths(A)
-    d_l,d_u = bandwidths(dest)
     m,n = size(dest)
     (m == 0 || n == 0) && return dest
     data_d,data_A = bandeddata(dest), bandeddata(A)
@@ -179,9 +177,13 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
         kr_d = _colrange(dest,j)
         sh = _colshift(A,j)-_colshift(dest,j)
         kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
-        data_d[first(kr_d):first(kr_dA)-1,j] .= z
-        data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
-        data_d[last(kr_dA)+1:last(kr_d),j] .= z
+        if isempty(kr_Ad)
+            data_d[kr_d,j] .= z
+        else
+            data_d[first(kr_d):first(kr_dA)-1,j] .= z
+            data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
+            data_d[last(kr_dA)+1:last(kr_d),j] .= z
+        end
     end
 
     # the bulk
@@ -189,9 +191,13 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     kr_d = _bulkcolrange(dest,first(jr))
     sh = _bulkshift(A,first(jr))-_bulkshift(dest,first(jr))
     kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
-    data_d[first(kr_d):first(kr_dA)-1,jr] .= z
-    data_d[kr_dA,jr] .= f.(view(data_A,kr_Ad,jr))
-    data_d[last(kr_dA)+1:last(kr_d),jr] .= z
+    if isempty(kr_Ad)
+        data_d[kr_d,jr] .= z
+    else
+        data_d[first(kr_d):first(kr_dA)-1,jr] .= z
+        data_d[kr_dA,jr] .= f.(view(data_A,kr_Ad,jr))
+        data_d[last(kr_dA)+1:last(kr_d),jr] .= z
+    end
 
     # bottom right
     for j = last(jr)+1:min(last(_stopcols(dest)),n)
@@ -199,9 +205,13 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
         kr_d = _colrange(dest,j)
         sh = _colshift(A,j)-_colshift(dest,j)
         kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
-        data_d[first(kr_d):first(kr_dA)-1,j] .= z
-        data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
-        data_d[last(kr_dA)+1:last(kr_d),j] .= z
+        if isempty(kr_Ad)
+            data_d[kr_d,j] .= z
+        else
+            data_d[first(kr_d):first(kr_dA)-1,j] .= z
+            data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
+            data_d[last(kr_dA)+1:last(kr_d),j] .= z
+        end
     end
 
     dest

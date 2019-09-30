@@ -433,6 +433,11 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A[3:4,2:6] == zeros(Int,2,5)
         @test A[5,4] == 16
 
+        A = BandedMatrix{Int}(undef,(10,10),(1,2));  vec(A.data) .= (1:length(A.data));
+        B = BandedMatrix{Int}(undef,(10,10),(2,1));  vec(B.data) .= (1:length(B.data));
+        view(A,3:4,2:6) .= view(B,1:2,4:8)
+        @test A[3:4,:] == zeros(Int,2,10)
+
         A = BandedMatrix{Int}(undef,(1,1),(1,1)); vec(A.data) .= 2*(1:length(A.data));
         B = BandedMatrix{Int}(undef,(1,1),(1,1)); vec(B.data) .= (1:length(B.data));
         view(A,2:1,2:1) .= view(B,2:1,2:1)
