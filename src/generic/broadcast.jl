@@ -118,9 +118,9 @@ end
 @inline _stopcols((m,n), (l,u)) = max(m-l+1,u+1,1):min(m+u,n)
 
 # the non-zero rows in the data in column j
-@inline _startcolrange((m,n), (l,u), j) = u-j+2:l+u+1
+@inline _startcolrange((m,n), (l,u), j) = u-j+2:min(u+m+1-j,l+u+1)
 @inline _bulkcolrange((m,n), (l,u), j) = 1:l+u+1
-@inline _stopcolrange((m,n), (l,u), j) = 1:(u+m+1-j)
+@inline _stopcolrange((m,n), (l,u), j) = 1:u+m+1-j
 
 # how many rows we shift down
 @inline _bulkshift((l,u), j) = j-u-1
@@ -171,18 +171,9 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     data_d,data_A = bandeddata(dest), bandeddata(A)
 
     checkzerobands(dest, f, A)
-    # populate rows before we get to A
-    for j = _startzcols(A) ∩ _startcols(dest)
-        data_d[_startcolrange(A,j),j] .= z
-    end
-    data_d[:,_startzcols(A) ∩ _bulkcols(dest)] .= z
-    for j = _startzcols(A) ∩ _stopcols(dest)
-        data_d[_stopcolrange(A,j),j] .= z
-    end
-
     # copy top left entries
     jr = _bulkcols(A) ∩ _bulkcols(dest)
-    for j = 1:first(jr)-1
+    for j = last(_startzcols(dest))+1:min(first(jr)-1,n)
         # don't bother optimising
         kr_A = _colrange(A,j)
         kr_d = _colrange(dest,j)
@@ -203,7 +194,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     data_d[last(kr_dA)+1:last(kr_d),jr] .= z
 
     # bottom right
-    for j = last(jr)+1:last(_stopcols(dest))
+    for j = last(jr)+1:min(last(_stopcols(dest)),n)
         kr_A = _colrange(A,j)
         kr_d = _colrange(dest,j)
         sh = _colshift(A,j)-_colshift(dest,j)
