@@ -413,7 +413,7 @@ end
 @inline @propagate_inbounds function banded_setindex!(data::AbstractMatrix, l::Integer, u::Integer, v, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
         inbands_setindex!(data, u, v, k, j)
-    elseif v ≠ 0  # allow setting outside bands to zero
+    elseif !iszero(v)  # allow setting outside bands to zero
         throw(BandError(data,j-k))
     else # v == 0
         v

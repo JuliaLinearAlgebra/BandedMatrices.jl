@@ -39,6 +39,7 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{1}) = LazyArrayStyle{2}()
 
 
 size(bc::Broadcasted{BandedStyle}) = length.(axes(bc))
+isbanded(bc::Broadcasted{BandedStyle}) = true
 
 ####
 # Default to standard Array broadcast
@@ -66,6 +67,23 @@ end
 # matrix broadcast
 ###########
 
+function checkzerobands(dest, f, A::AbstractMatrix)
+    m,n = size(A)
+    d_l, d_u = bandwidths(dest)
+    l, u = bandwidths(A)
+
+    if (l,u) ≠ (d_l,d_u)
+        for j = 1:n
+            for k = max(1,j-u) : min(j-d_u-1,m)
+                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+            end
+            for k = max(1,j+d_l+1) : min(j+l,m)
+                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+            end
+        end
+    end
+end
+
 function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1, _2) where T
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src)))
@@ -89,23 +107,111 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
     dest
 end
 
+# columns to the left (start) and right (stop) of the non-zero columns _nzcols
+@inline _startzcols((m,n), (l,u)) = 1:-l
+@inline _nzcols((m,n), (l,u)) = max(1-l,1):min(m+u,n)
+@inline _stopzcols((m,n), (l,u)) = m+u+1:n
+
+# columns in the "start up", bulk and "stop
+@inline _startcols((m,n), (l,u)) = max(1-l,1):min(u,n)
+@inline _bulkcols((m,n), (l,u)) = max(u+1,1):min(m-l,n)
+@inline _stopcols((m,n), (l,u)) = max(m-l+1,u+1,1):min(m+u,n)
+
+# the non-zero rows in the data in column j
+@inline _startcolrange((m,n), (l,u), j) = u-j+2:min(u+m+1-j,l+u+1)
+@inline _bulkcolrange((m,n), (l,u), j) = 1:l+u+1
+@inline _stopcolrange((m,n), (l,u), j) = 1:u+m+1-j
+
+# how many rows we shift down
+@inline _bulkshift((l,u), j) = j-u-1
+
+@inline _startzcols(A) = _startzcols(size(A), bandwidths(A))
+@inline _nzcols(A) = _nzcols(size(A), bandwidths(A))
+@inline _stopzcols(A) = _stopzcols(size(A), bandwidths(A))
+@inline _startcols(A) = _startcols(size(A), bandwidths(A))
+@inline _bulkcols(A) = _bulkcols(size(A), bandwidths(A))
+@inline _stopcols(A) = _stopcols(size(A), bandwidths(A))
+@inline _startcolrange(A, j) = _startcolrange(size(A), bandwidths(A), j)
+@inline _bulkcolrange(A, j) = _bulkcolrange(size(A), bandwidths(A), j)
+@inline _stopcolrange(A, j) = _stopcolrange(size(A), bandwidths(A), j)
+@inline _colrange(A, j) = _colrange(size(A), bandwidths(A), j)
+@inline _colshift(A::AbstractMatrix, j) = _colshift(bandwidths(A), j)
+@inline _bulkshift(A::AbstractMatrix, j) = _bulkshift(bandwidths(A), j)
+
+@inline function _colrange((m,n), (l,u), j) 
+    j ≤ u && return _startcolrange((m,n), (l,u), j)
+    j ≤ m-l && return _bulkcolrange((m,n), (l,u), j)
+    return _stopcolrange((m,n), (l,u), j)
+end
+@inline function _colshift((l,u), j)
+    j ≤ u && return 0
+    _bulkshift((l,u),j)
+end
+
+
+function _intersectcolrange(kr_A,kr_d,sh)
+    if sh ≤ 0
+        kr_dA = first(kr_d):min(last(kr_d),first(kr_d)+length(kr_A)+sh-1)
+        kr_Ad = range(first(kr_A)-sh; length=length(kr_dA))
+    else
+        kr_dA = first(kr_d)+sh:min(last(kr_d),first(kr_d)+length(kr_A)+sh-1)
+        kr_Ad = range(first(kr_A); length=length(kr_dA))
+    end
+    kr_dA, kr_Ad
+end
+
 function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::BandedColumns, ::BandedColumns) where T
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, size(A), bandwidths(broadcasted(f, A)))
 
-    A_l,A_u = bandwidths(A)
-    d_l,d_u = bandwidths(dest)
-    m,n = size(A)
+    m,n = size(dest)
+    (m == 0 || n == 0) && return dest
     data_d,data_A = bandeddata(dest), bandeddata(A)
 
-    if (A_l,A_u) == (d_l,d_u)
-        data_d .= f.(data_A)
+    checkzerobands(dest, f, A)
+    # copy top left entries
+    jr = _bulkcols(A) ∩ _bulkcols(dest)
+    for j = last(_startzcols(dest))+1:min(first(jr)-1,n)
+        # don't bother optimising
+        kr_A = _colrange(A,j)
+        kr_d = _colrange(dest,j)
+        sh = _colshift(A,j)-_colshift(dest,j)
+        kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
+        if isempty(kr_Ad)
+            data_d[kr_d,j] .= z
+        else
+            data_d[first(kr_d):first(kr_dA)-1,j] .= z
+            data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
+            data_d[last(kr_dA)+1:last(kr_d),j] .= z
+        end
+    end
+
+    # the bulk
+    kr_A = _bulkcolrange(A,first(jr))
+    kr_d = _bulkcolrange(dest,first(jr))
+    sh = _bulkshift(A,first(jr))-_bulkshift(dest,first(jr))
+    kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
+    if isempty(kr_Ad)
+        data_d[kr_d,jr] .= z
     else
-        checkzerobands(dest, f, A)
-        fill!(view(data_d,1:(d_u-A_u),:), z)
-        fill!(view(data_d,d_u+A_l+2:size(data_d,1),:), z)
-        view(data_d,max(d_u-A_u+1,1):min(d_u+A_l+1,size(data_d,1)),:) .=
-            f.(view(data_A,max(1,A_u-d_u+1):min(A_u+d_l+1,size(data_A,1)),:))
+        data_d[first(kr_d):first(kr_dA)-1,jr] .= z
+        data_d[kr_dA,jr] .= f.(view(data_A,kr_Ad,jr))
+        data_d[last(kr_dA)+1:last(kr_d),jr] .= z
+    end
+
+    # bottom right
+    for j = last(jr)+1:min(last(_stopcols(dest)),n)
+        kr_A = _colrange(A,j)
+        kr_d = _colrange(dest,j)
+        sh = _colshift(A,j)-_colshift(dest,j)
+        kr_dA,kr_Ad = _intersectcolrange(kr_A,kr_d,sh)
+        if isempty(kr_Ad)
+            data_d[kr_d,j] .= z
+        else
+            data_d[first(kr_d):first(kr_dA)-1,j] .= z
+            data_d[kr_dA,j] .= f.(view(data_A,kr_Ad,j))
+            data_d[last(kr_dA)+1:last(kr_d),j] .= z
+        end
     end
 
     dest
@@ -474,22 +580,6 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     dest
 end
 
-
-function checkzerobands(dest, f, A::AbstractMatrix)
-    m,n = size(A)
-    d_l, d_u = bandwidths(dest)
-    l, u = bandwidths(A)
-
-    for j = 1:n
-        for k = max(1,j-u) : min(j-d_u-1,n)
-            iszero(f(A[k,j])) || throw(BandError(dest,b))
-        end
-        for k = max(1,j+d_l+1) : min(j+l,n)
-            iszero(f(A[k,j])) || throw(BandError(dest,b))
-        end
-    end
-end
-
 function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
     m,n = size(A)
     d_l, d_u = bandwidths(dest)
@@ -683,8 +773,8 @@ function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumns)
     A
 end
 
-banded_lmul!(α, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(typeof(A)))
-banded_rmul!(A::AbstractMatrix, α) = _banded_rmul!(A, α, MemoryLayout(typeof(A)))
+banded_lmul!(α::Number, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(typeof(A)))
+banded_rmul!(A::AbstractMatrix, α::Number) = _banded_rmul!(A, α, MemoryLayout(typeof(A)))
 
 lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
 rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
