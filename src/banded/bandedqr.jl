@@ -44,7 +44,7 @@ end
 
 banded_qr!(R::AbstractMatrix{T}) where T = banded_qr!(R, zeros(T, min(size(R)...)))
 
-for QTyp in (:QRPackedQ, )# :(MatrixFactorizations.QRPackedQ))
+for QTyp in (:QRPackedQ, :(MatrixFactorizations.QRPackedQ))
     @eval begin
         function banded_lmul!(A::$QTyp, B::AbstractVecOrMat)
             require_one_based_indexing(B)
