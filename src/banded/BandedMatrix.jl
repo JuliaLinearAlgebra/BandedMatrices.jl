@@ -705,7 +705,7 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
 
 isbanded(::BandedSubBandedMatrix) = true
 MemoryLayout(::Type{BandedSubBandedMatrix{T,C,R,I1,I2,t}}) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange,t} = 
-    BandedColumns{typeof(MemoryLayout(SubArray{T,2,C,Tuple{Slice{OneTo{Int}},I2},t}))}()
+    bandedcolumns(MemoryLayout(SubArray{T,2,C,Tuple{Slice{OneTo{Int}},I2},t}))
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)
