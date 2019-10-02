@@ -66,8 +66,8 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test Matrix(A.*B) ≈ (Matrix(A).*Matrix(B))
         end
 
-        ## UniformScaling
-        let A = brand(10,10,1,2)
+        @testset "UniformScaling" begin
+            A = brand(10,10,1,2)
             @test A+I isa BandedMatrix
             @test bandwidths(A+I) == (1,2)
             @test Matrix(A+I) ≈ Matrix(A)+I
@@ -102,9 +102,9 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "Banded * Dense" begin
-        # big banded * dense
-
-        let A=brand(1000,1000,200,300), B=rand(1000,1000)
+        @testset "big banded * dense" begin
+            A=brand(1000,1000,200,300)
+            B=rand(1000,1000)
             @test A*B ≈ Matrix(A)*B
             @test B*A ≈ B*Matrix(A)
         end
@@ -113,7 +113,8 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         # @test A*B' ≈ Matrix(A)*B'
         # @test A'*B' ≈ Matrix(A)'*B'
 
-        let A=brand(1200,1000,200,300), B=rand(1000,1000), C=rand(1200,1200)
+        let 
+            A=brand(1200,1000,200,300); B=rand(1000,1000); C=rand(1200,1200)
             @test A*B ≈ Matrix(A)*B
             @test C*A ≈ C*Matrix(A)
         end
@@ -151,7 +152,6 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
             @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
         end
-
 
         @testset "BigFloat" begin
             let A = brand(5, 5, 1, 2), B = BandedMatrix(Zeros{BigFloat}(5,5),(2,3)), D = rand(5, 5)
@@ -331,6 +331,14 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
                 @test newbanded isa BandedMatrix{eltype(Final), Final}
                 @test newbanded == banded
             end
+
+            @testset "banded to banded" begin
+                A = BandedMatrix{Int}(undef, (5,5), (1,1)); A.data[:] .= 1:length(A.data)           
+                @test convert(BandedMatrix, A) === convert(BandedMatrix{Int}, A) === 
+                    convert(BandedMatrix{Int,Matrix{Int}}, A) === convert(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}, A) === A
+                @test convert(BandedMatrix{Float64}, A) ==
+                    convert(BandedMatrix{Float64,Matrix{Float64}}, A) == convert(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}, A) == A                    
+            end
         end
 
         @testset "similar" begin
@@ -339,6 +347,10 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test size(similar(banded)) == size(banded)
             @test similar(banded).l == banded.l
             @test similar(banded).u == banded.u
+            @test @inferred(similar(banded,(5,5))) isa BandedMatrix{Int32, Matrix{Int32}}
+            @test @inferred(similar(banded,5,5)) isa BandedMatrix{Int32, Matrix{Int32}}
+            @test @inferred(similar(banded,5,5,1,1)) isa BandedMatrix{Int32, Matrix{Int32}}
+
 
             banded = convert(BandedMatrix{<:, MyMatrix}, brand(Int32, 10, 12, 1, 2))
             @test banded isa BandedMatrix{Int32, MyMatrix{Int32}}
@@ -403,6 +415,11 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test triu(A,j) == triu(B,j)
             @test tril(A,j) == tril(B,j)
         end
+    end
+
+    @testset "BandedMatrix{Any}" begin
+        A = BandedMatrix{Any}(undef, (10,10), (1,1))
+        @test A[1,3] === nothing
     end
 end
 

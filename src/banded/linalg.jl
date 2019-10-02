@@ -2,20 +2,19 @@
 
 # Direct and transposed algorithms
 
-function _copyto!(_, dest::AbstractVecOrMat, L::ArrayLdivArray{<:BandedColumnMajor})
-    A, B = L.args
+function materialize!(L::Ldiv{<:BandedColumnMajor})
+    A, B = L.A, L.B
     checksquare(A)
-    dest ≡ B || copyto!(dest, B)
-    ldiv!(factorize(A), dest)
+    ldiv!(factorize(A), B)
 end
 
-function _copyto!(_, dest::AbstractVecOrMat, L::ArrayLdivArray{<:BandedRowMajor})
-    A, B = L.args
+function copyto!(dest::AbstractVecOrMat, L::Ldiv{<:BandedRowMajor})
+    A, B = L.A, L.B
     copyto!(dest, Mul(transpose(factorize(transpose(A))), B))
 end
 
-function _copyto!(_, dest::AbstractVecOrMat, L::ArrayLdivArray{<:ConjLayout{<:BandedRowMajor}})
-    A, B = L.args
+function copyto!(dest::AbstractVecOrMat, L::Ldiv{<:ConjLayout{<:BandedRowMajor}})
+    A, B = L.A, L.B
     copyto!(dest, Mul(factorize(A')', B))
 end
 
@@ -27,11 +26,6 @@ function ldiv!(A::BandedLU{T,<:BandedMatrix}, B::StridedVecOrMat{T}) where {T<:B
     l,u = bandwidths(A.factors)
     data = bandeddata(A.factors)
     LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
-end
-
-function ldiv!(A::BandedLU, B::AbstractVecOrMat)
-    _apply_ipiv!(A, B)
-    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
 
 function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real

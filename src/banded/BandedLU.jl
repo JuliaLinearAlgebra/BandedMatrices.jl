@@ -53,7 +53,7 @@ size(A::BandedLU, i) = size(getfield(A, :factors), i)
 Base.propertynames(F::BandedLU, private::Bool=false) =
     (:L, :U, :p, :P, (private ? fieldnames(typeof(F)) : ())...)
 
-issuccess(F::BandedLU) = F.info == 0
+LinearAlgebra.issuccess(F::BandedLU) = F.info == 0
 
 function show(io::IO, mime::MIME{Symbol("text/plain")}, F::BandedLU)
     if issuccess(F)
@@ -91,7 +91,8 @@ end
 lu!(A::AbstractBandedMatrix, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true) =
     banded_lufact!(A, pivot; check = check)
 
-function lu(A::Union{AbstractBandedMatrix{T}, AbstractBandedMatrix{Complex{T}}},
+function lu(A::Union{AbstractBandedMatrix{T}, AbstractBandedMatrix{Complex{T}}, Adjoint{T,<:AbstractBandedMatrix{T}}, Adjoint{Complex{T},<:AbstractBandedMatrix{Complex{T}}},
+                    Transpose{T,<:AbstractBandedMatrix{T}}, Transpose{Complex{T},<:AbstractBandedMatrix{Complex{T}}}},
     pivot::Union{Val{false}, Val{true}} = Val(true);
     check::Bool = true) where {T<:Real}
     l,u = bandwidths(A)

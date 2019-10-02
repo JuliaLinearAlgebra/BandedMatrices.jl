@@ -1,5 +1,7 @@
-using BandedMatrices, LazyArrays, LinearAlgebra, Test
+using BandedMatrices, LazyArrays, LinearAlgebra, FillArrays, Test
 import Base.Broadcast: materialize, broadcasted
+import BandedMatrices: BandedColumns
+import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseColumnMajor
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -21,6 +23,8 @@ import Base.Broadcast: materialize, broadcasted
         @test A'*A ≈ Matrix(A)'*Matrix(A)
         @test bandwidths(A'*A) == (3,3)
 
+        @test applied(*,Symmetric(A),A) isa Applied{MulAddStyle}
+        @test MemoryLayout(typeof(Symmetric(A))) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
         @test Symmetric(A)*A isa BandedMatrix
         @test Symmetric(A)*A ≈ Symmetric(Matrix(A))*Matrix(A)
         @test bandwidths(Symmetric(A)*A) == (3,4)
@@ -38,12 +42,11 @@ import Base.Broadcast: materialize, broadcasted
         @test UpperTriangular(A)*A ≈ UpperTriangular(Matrix(A))*Matrix(A)
         @test bandwidths(UpperTriangular(A)*A) == (1,4)
 
-        B = materialize(Mul(A,A,A))
+        B = apply(*,A,A,A)
         @test B isa BandedMatrix
         @test all(B .=== (A*A)*A)
         @test bandwidths(B) == (3,6)
     end
-
 
     @testset "gbmm!" begin
         # test gbmm! subpieces step by step and column by column
@@ -229,15 +232,8 @@ import Base.Broadcast: materialize, broadcasted
         C .= Mul(A,B)
         @test C == A*B
 
-        @test broadcasted(identity, Mul(A,B)) isa LazyArrays.BArrayMulArray
-        @test broadcasted(*, 1.0, Mul(A,B)) isa LazyArrays.BConstArrayMulArray
-        @test broadcasted(+, Mul(A,B), C) isa LazyArrays.BArrayMulArrayPlusArray
-        @test broadcasted(+, Mul(A,B), broadcasted(*, 0.0, C)) isa LazyArrays.BArrayMulArrayPlusConstArray
-        @test broadcasted(+, broadcasted(*, 1.0, Mul(A,B)), C) isa LazyArrays.BConstArrayMulArrayPlusArray
-        @test broadcasted(+, broadcasted(*, 1.0, Mul(A,B)), broadcasted(*, 0.0, C)) isa LazyArrays.BConstArrayMulArrayPlusConstArray
-
         C.data .= NaN
-        C .= 1.0 .* Mul(A,B) .+ 0.0 .* C
+        C .= @~ 1.0 * A*B + 0.0 * C
         @test C == A*B
     end
 
@@ -245,6 +241,24 @@ import Base.Broadcast: materialize, broadcasted
         x = randn(10)
         A = brand(10,10,1,1)
         @test x'A ≈ x'Matrix(A) ≈ transpose(x)A
+    end
+
+    @testset "mismatched dimensions (#118)" begin
+        m = BandedMatrix(Eye(3), (0,0))
+        @test_throws DimensionMismatch m * [1,2]
+        @test_throws DimensionMismatch m * [1, 2, 3, 4]
+        @test_throws DimensionMismatch m \ [1, 2]
+    end
+
+    @testset "Banded*Diagonal*Banded" begin
+        A = brand(4,4,1,1)
+        D= Diagonal(randn(4))
+        @test A*D*A isa BandedMatrix
+        @test Matrix(A)*D*Matrix(A) ≈ A*D*A
+        @test D*A' isa BandedMatrix
+        @test A'D isa BandedMatrix
+        @test A'*D*A isa BandedMatrix
+        @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
     end
 end
 

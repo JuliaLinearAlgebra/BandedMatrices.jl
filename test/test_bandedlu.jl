@@ -5,9 +5,6 @@ import BandedMatrices: _BandedMatrix
 Random.seed!(0)
 struct _foo <: Number end
 
-tldiv!(A, b) = ldiv!(transpose(A), b)
-cldiv!(A, b) = ldiv!(adjoint(A), b)
-
 
 @testset "Banded A\\b" begin
     @testset "banded" begin
@@ -37,12 +34,20 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         @test L ≈ Lf # storage format is different
         @test U ≈ Uf
         @test p ≈ pf
+        lua = lu(A)
+        @test lu(lua) === lua
+        @test Factorization{Float64}(lua) === lua
+        @test Matrix(Factorization{Float32}(lua)) ≈ convert(Matrix{Float32}, Af)
+        @test Matrix(copy(lua)) ≈ Af
+        @test issuccess(lua)
 
         # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
         @test Af\bf ≈ lu(A)\copy(b)
         @test Af\bf ≈ ldiv!(A, copy(b))
         @test Af\bf ≈ ldiv!(lu(A), copy(b))
+        @test transpose(Af)\bf ≈ transpose(lu(A))\copy(b)
+        @test adjoint(Af)\bf ≈ adjoint(lu(A))\copy(b)
     end
 
     @testset "conversion of inputs if needed" begin
@@ -91,7 +96,7 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
 
         # note lu makes copies; these need revision
         # once the lapack storage is built in to a BandedMatrix
-        @test Af'\bf ≈ tldiv!(lu(A),  copy(b))
+        @test Af'\bf ≈ ldiv!(transpose(lu(A)),  copy(b))
         @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
     end
 
@@ -112,9 +117,9 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         @test Af'\bf ≈ lu(A')\copy(b)
         @test Af\bf  ≈ ldiv!(lu(A),  copy(b))
         @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
-        @test transpose(Af)\bf ≈ tldiv!(lu(A),  copy(b))
-        @test adjoint(Af)\bf ≈ ldiv!(lu(adjoint(A)), copy(b))
-        @test adjoint(Af)\bf ≈ cldiv!(lu(A), copy(b))
+        @test transpose(Af)\bf ≈ ldiv!(transpose(lu(A)),  copy(b))
+        @test adjoint(Af)\bf ≈ ldiv!(lu(A'), copy(b))
+        @test adjoint(Af)\bf ≈ ldiv!(lu(A)', copy(b))
     end
 
     @testset "multiple rhs" begin
@@ -134,7 +139,7 @@ cldiv!(A, b) = ldiv!(adjoint(A), b)
         @test Af'\bf ≈ lu(A')\copy(b)
         @test Af\bf  ≈ ldiv!(lu(A),  copy(b))
         @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
-        @test Af'\bf ≈ tldiv!(lu(A),  copy(b))
+        @test Af'\bf ≈ ldiv!(transpose(lu(A)),  copy(b))
         @test Af'\bf ≈ ldiv!(lu(A'), copy(b))
     end
 

@@ -1135,7 +1135,7 @@ function sbgst!(VECT::Char, UPLO::Char,
             end
             for J = I1:I
                 for K = I+1:min(J+KA, I+KBT)
-                    AB[K-J+1, J] = A[K-J+1, J] - BB[K-I+1, I]*AB[I-J+1, J]
+                    AB[K-J+1, J] = AB[K-J+1, J] - BB[K-I+1, I]*AB[I-J+1, J]
                 end
             end
             # store a(i,i1) in RA1 for use in next loop over K
@@ -1235,7 +1235,7 @@ function sbgst!(VECT::Char, UPLO::Char,
                 WORK[M-KB+J] = WORK[M-KB+J+KA]
                 WORK[N+M-KB+J] = WORK[N+M-KB+J+KA]
             end
-            for J = J1:KA2:J2
+            for J = J1:KA1:J2
                 # create nonzero element a(j+ka,j-1) outside the band
                 # and store it in WORK(m-kb+j)
                 WORK[M-KB+J] = WORK[M-KB+J]*AB[KA1, J-1]

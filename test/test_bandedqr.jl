@@ -1,5 +1,5 @@
 using BandedMatrices, MatrixFactorizations, LinearAlgebra, Test, Random
-
+import BandedMatrices: banded_qr!
 Random.seed!(0)
 
 
@@ -83,6 +83,36 @@ Random.seed!(0)
         A.data .= 1:length(A.data)
         Q, R = qr(A)
         @test Q*R ≈ A
+    end
+
+    @testset "banded Views" begin
+        # this test adaptive QR essentially as implemented in InfiniteLinearAlgebra.jl
+        A = brand(100,100,1,1)
+        V = view(copy(A),1:5,1:6)
+        @test qr(V) isa QR{Float64,<:BandedMatrix{Float64}}
+        @test qr(V).R ≈ qr(Matrix(V)).R
+        @test qr(V).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(V)).τ
+        @test qr(V).Q ≈ qr(Matrix(V)).Q
+        @test Matrix(qr(V)) ≈ V
+        B = BandedMatrix(A,(1,2)) # pad
+        V = view(copy(B),1:5,1:6)
+        @test qr!(V) isa QR{Float64,<:SubArray{Float64,2,<:BandedMatrix{Float64}}}
+        τ = Array{Float64}(undef,100)
+        B = BandedMatrix(A,(1,2)) # pad
+        V = view(B,1:6,1:5)
+        F1 = qr(V)
+        F2 = banded_qr!(V, view(τ,1:size(V,2)))
+        @test F1.factors ≈ F2.factors ≈ B[1:6,1:5]
+        @test F1.τ ≈ F2.τ
+        F = qr(A)
+        @test τ[1:size(V,2)]  ≈ F.τ[1:5]
+        
+        lmul!(F1.Q', view(B,1:6,6:7))
+        @test B[1:5,6:7] ≈ F.factors[1:5,6:7]
+        banded_qr!(view(B,6:100,6:100), view(τ,6:100))
+        τ[end] = 0
+        @test B ≈ F.factors
+        @test τ ≈ F.τ
     end
 end
 
@@ -168,29 +198,31 @@ end
     end
 
     @testset "lmul!/rmul!" begin
-        A = brand(100,100,3,4)
-        Q,R = qr(A)
-        x = randn(100)
-        b = randn(100,2)
-        @test lmul!(Q, copy(x)) ≈ Matrix(Q)*x
-        @test lmul!(Q, copy(b)) ≈ Matrix(Q)*b
-        @test lmul!(Q', copy(x)) ≈ Matrix(Q)'*x
-        @test lmul!(Q', copy(b)) ≈ Matrix(Q)'*b
-        c = randn(2,100)
-        @test rmul!(copy(c), Q) ≈ c*Matrix(Q)
-        @test rmul!(copy(c), Q') ≈ c*Matrix(Q')
+        for T in (Float32, Float64, ComplexF32, ComplexF64)
+            A = brand(T,100,100,3,4)
+            Q,R = qr(A)
+            x = randn(T,100)
+            b = randn(T,100,2)
+            @test lmul!(Q, copy(x)) ≈ Matrix(Q)*x
+            @test lmul!(Q, copy(b)) ≈ Matrix(Q)*b
+            @test lmul!(Q', copy(x)) ≈ Matrix(Q)'*x
+            @test lmul!(Q', copy(b)) ≈ Matrix(Q)'*b
+            c = randn(T,2,100)
+            @test rmul!(copy(c), Q) ≈ c*Matrix(Q)
+            @test rmul!(copy(c), Q') ≈ c*Matrix(Q')
 
-        A = brand(100,100,3,4)
-        Q,L = ql(A)
-        x = randn(100)
-        b = randn(100,2)
-        @test lmul!(Q, copy(x)) ≈ Matrix(Q)*x
-        @test lmul!(Q, copy(b)) ≈ Matrix(Q)*b
-        @test lmul!(Q', copy(x)) ≈ Matrix(Q)'*x
-        @test lmul!(Q', copy(b)) ≈ Matrix(Q)'*b
-        c = randn(2,100)
-        @test rmul!(copy(c), Q) ≈ c*Matrix(Q)
-        @test rmul!(copy(c), Q') ≈ c*Matrix(Q')
+            A = brand(T,100,100,3,4)
+            Q,L = ql(A)
+            x = randn(T,100)
+            b = randn(T,100,2)
+            @test lmul!(Q, copy(x)) ≈ Matrix(Q)*x
+            @test lmul!(Q, copy(b)) ≈ Matrix(Q)*b
+            @test lmul!(Q', copy(x)) ≈ Matrix(Q)'*x
+            @test lmul!(Q', copy(b)) ≈ Matrix(Q)'*b
+            c = randn(T,2,100)
+            @test rmul!(copy(c), Q) ≈ c*Matrix(Q)
+            @test rmul!(copy(c), Q') ≈ c*Matrix(Q')
+        end
     end
 
     @testset "Mixed types" begin
