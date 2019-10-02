@@ -35,10 +35,14 @@ bandedcolumns(::ML) where ML<:AbstractFillLayout = BandedColumns{ML}()
 bandedcolumns(::ML) where ML<:LazyLayout = BandedColumns{ML}()
 bandedcolumns(::ML) where ML<:ApplyLayout = BandedColumns{LazyLayout}()
 
-combine_mul_styles(::BandedColumns{LazyLayout}) = LazyArrayApplyStyle()
-combine_mul_styles(::BandedRows{LazyLayout}) = LazyArrayApplyStyle()
-
-mulapplystyle(::QLayout, ::BandedColumns{LazyLayout}) = LazyArrayApplyStyle()
+for LazyLay in (:(BandedColumns{LazyLayout}), :(BandedRows{LazyLayout}), 
+                :(TriangularLayout{UPLO,UNIT,BandedRows{LazyLayout}} where {UPLO,UNIT}),
+                :(TriangularLayout{UPLO,UNIT,BandedColumns{LazyLayout}} where {UPLO,UNIT}))
+    @eval begin
+        combine_mul_styles(::$LazyLay) = LazyArrayApplyStyle()
+        mulapplystyle(::QLayout, ::$LazyLay) = LazyArrayApplyStyle()
+    end
+end
 
 MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = bandedcolumns(MemoryLayout(Cont))
 
