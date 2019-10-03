@@ -366,7 +366,10 @@ end
 # matrix-vector broadcast
 ###############
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractVector{T},AbstractMatrix{V}}, _1, _2) where {T,V}
+_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractVector{T},AbstractMatrix{V}}, _1, _2) where {T,V} =
+    _left_colvec_banded_broadcast!(dest, f, (A,B), _1, _2)
+
+function _left_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractVecOrMat{T},AbstractMatrix{V}}, _1, _2) where {T,V}
     z = f(zero(T), zero(V))
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
@@ -404,7 +407,10 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractVector
     dest
 end
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractVector{V}}, _1, _2) where {T,V}
+_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractVector{V}}, _1, _2) where {T,V} = 
+    _right_colvec_banded_broadcast!(dest, f, (A,B), _1, _2)
+
+function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractVecOrMat{V}}, _1, _2) where {T,V}
     z = f(zero(T), zero(V))
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
@@ -541,11 +547,11 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
     m,n = size(dest)
     if size(A) ≠ (m,n)
-        size(A,2) == 1 && return broadcast!(f, dest, vec(A), B)
+        size(A,2) == 1 && return _left_colvec_banded_broadcast!(dest, f, (A,B), _1, _2)
         return _left_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2)
     end
     if size(B) ≠ (m,n)
-        size(B,2) == 1 && return broadcast!(f, dest, A, vec(B))
+        size(B,2) == 1 && return _right_colvec_banded_broadcast!(dest, f, (A,B), _1, _2)
         return _right_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2)
     end
 
@@ -603,6 +609,11 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
     iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
+
+    if size(A) ≠ size(dest) || size(B) ≠ size(dest)
+        # special broadcast
+        return _banded_broadcast!(dest, f, (A,B), UnknownLayout(), UnknownLayout())
+    end
 
     A_l,A_u = bandwidths(A)
     B_l,B_u = bandwidths(B)
