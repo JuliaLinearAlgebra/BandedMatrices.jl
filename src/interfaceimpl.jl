@@ -122,17 +122,19 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 bandwidths(M::BroadcastMatrix) = bandwidths(Broadcasted(M))
 isbanded(M::BroadcastMatrix) = isbanded(Broadcasted(M))
 
-struct BroadcastBandedLayout <: AbstractBandedLayout end
+struct BroadcastBandedLayout{F} <: AbstractBandedLayout end
 struct LazyBandedLayout <: AbstractBandedLayout end
 
-broadcastlayout(::Type, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(\)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(*)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(\)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{F}, ::AbstractBandedLayout) where F = BroadcastBandedLayout{F}()
+for op in (:*, :/, :\)
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
+end
+for op in (:*, :/)
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout{typeof($op)}()
+end
+for op in (:*, :\)
+    @eval broadcastlayout(::Type{typeof($op)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
+end
 broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
 broadcastlayout(::Type{typeof(*)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
 broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
@@ -140,7 +142,7 @@ broadcastlayout(::Type{typeof(\)}, ::LazyLayout, ::AbstractBandedLayout) = LazyB
 
 # functions that satisfy f(0,0) == 0
 for op in (:+, :-)
-    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
 end
 
 
@@ -171,8 +173,21 @@ function arguments(::MulBandedLayout, V::SubArray)
     view.(as, (kr, kjr...), (kjr..., jr))
 end
 
-@inline sub_materialize(::MulBandedLayout, V) = apply(*, BandedMatrix.(arguments(V))...)
+@inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
 @inline sub_materialize(::BroadcastBandedLayout, V) = BandedMatrix(V)
+
+_BandedMatrix(::MulBandedLayout, V::AbstractMatrix) = apply(*, map(BandedMatrix,arguments(V))...)
+for op in (:+, :-)
+    @eval @inline _BandedMatrix(::BroadcastBandedLayout{typeof($op)}, V::AbstractMatrix) = apply($op, map(BandedMatrix,arguments(V))...)
+end
+
+function arguments(::BroadcastBandedLayout, V::SubArray)
+    A = parent(V)
+    kr, jr = parentindices(V)
+    view.(arguments(A), Ref(kr), Ref(jr))
+end
+
+
 
 subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
 subarraylayout(M::BroadcastBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
