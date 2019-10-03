@@ -151,11 +151,33 @@ end
 ###
 # sub materialize
 ###
-@inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
+
+# determine rows/cols of multiplication
+__mul_args_rows(kr, a) = (kr,)
+__mul_args_rows(kr, a, b...) = 
+    (kr, __mul_args_rows(rowstart(a,first(kr)):rowstop(a,last(kr)), b...)...)
+_mul_args_rows(kr, a, b...) = __mul_args_rows(rowstart(a,first(kr)):rowstop(a,last(kr)), b...)
+__mul_args_cols(jr, z) = (jr,)
+__mul_args_cols(jr, z, y...) = 
+    (__mul_args_cols(colstart(z,first(jr)):colstop(z,last(jr)), y...)..., jr)
+_mul_args_cols(jr, z, y...) = __mul_args_cols(colstart(z,first(jr)):colstop(z,last(jr)), y...)
+    
+
+function arguments(::MulBandedLayout, V::SubArray)
+    P = parent(V)
+    kr, jr = parentindices(V)
+    as = arguments(P)
+    kjr = intersect.(_mul_args_rows(kr, as...), _mul_args_cols(jr, reverse(as)...))
+    view.(as, (kr, kjr...), (kjr..., jr))
+end
+
+@inline sub_materialize(::MulBandedLayout, V) = apply(*, BandedMatrix.(arguments(V))...)
 @inline sub_materialize(::BroadcastBandedLayout, V) = BandedMatrix(V)
 
 subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
 subarraylayout(M::BroadcastBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
+
+
 
 ######
 # Concat banded matrix
