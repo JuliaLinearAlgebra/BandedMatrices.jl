@@ -448,9 +448,14 @@ import BandedMatrices: BandedStyle, BandedRows
         A = brand(5,5,1,1)
         b = brand(5,1,1,1)
         B = brand(1,5,1,1)
-        @test A .+ b' == Matrix(A) .+ Matrix(b)'
-        @test A .+ B == Matrix(A) .+ Matrix(B)
-        @test_broken A .+ b == Matrix(A) .+ Matrix(b)
-        @test_broken A .+ B' == Matrix(A) .+ Matrix(B)'
+        @test A .+ b == b .+ A == Matrix(A) .+ Matrix(b)
+        @test A .+ B' == B' .+ A == Matrix(A) .+ Matrix(B)'        
+        @test A .+ b' == b' .+ A == Matrix(A) .+ Matrix(b)'
+        @test A .+ B == B .+ A == Matrix(A) .+ Matrix(B)
+
+        @test bandwidths(A .* b) == bandwidths(A .* b') == bandwidths(b .* A) == bandwidths(b' .* A) == (1,1)
+        @test A .* b == b .* A == Matrix(A) .* Matrix(b)
+        @test A .* b' == b' .* A == Matrix(A) .* Matrix(b')
+        @test A .* B == B .* A == Matrix(A) .* Matrix(B)
     end
 end
