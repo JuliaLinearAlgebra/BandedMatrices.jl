@@ -270,7 +270,7 @@ end
 
     C = BroadcastMatrix(+, brand(5,5,1,2), brand(5,5,3,1))
     @test bandwidths(C) == (3,2)
-    @test MemoryLayout(typeof(C)) == BroadcastBandedLayout()
+    @test MemoryLayout(typeof(C)) == BroadcastBandedLayout{typeof(+)}()
     @test isbanded(C) == true
     @test BandedMatrix(C) == C
 end
