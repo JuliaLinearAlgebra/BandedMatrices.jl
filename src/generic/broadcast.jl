@@ -604,6 +604,11 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     l, u = bandwidths(bc)
     iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
 
+    if size(A) ≠ size(dest) || size(B) ≠ size(dest)
+        # special broadcast
+        return _banded_broadcast!(dest, f, (A,B), UnknownLayout(), UnknownLayout())
+    end
+
     A_l,A_u = bandwidths(A)
     B_l,B_u = bandwidths(B)
     -A_l > A_u && return broadcast!(f, dest, zero(eltype(A)), B)

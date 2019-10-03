@@ -443,4 +443,14 @@ import BandedMatrices: BandedStyle, BandedRows
         view(A,2:1,2:1) .= view(B,2:1,2:1)
         @test A[1,1] == 4
     end
+
+    @testset "special broasdcast" begin
+        A = brand(5,5,1,1)
+        b = brand(5,1,1,1)
+        B = brand(1,5,1,1)
+        @test A .+ b' == Matrix(A) .+ Matrix(b)'
+        @test A .+ B == Matrix(A) .+ Matrix(B)
+        @test_broken A .+ b == Matrix(A) .+ Matrix(b)
+        @test_broken A .+ B' == Matrix(A) .+ Matrix(B)'
+    end
 end
