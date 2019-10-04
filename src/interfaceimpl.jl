@@ -238,18 +238,22 @@ function resizedata!(B::CachedMatrix{T,BandedMatrix{T,Matrix{T},OneTo{Int}}}, n:
     olddata = B.data
     ν,μ = size(olddata)
     n,m = max(ν,n), max(μ,m)
-    l,u = bandwidths(B.array)
-    λ,ω = bandwidths(B.data)
 
     if (ν,μ) ≠ (n,m)
+        l,u = bandwidths(B.array)
+        λ,ω = bandwidths(B.data)
+
         B.data = BandedMatrix{T}(undef, (n,m), bandwidths(olddata))
         B.data.data[:,1:μ] .= olddata.data
-        view(B.data, 1:ν, μ+1:m) .= view(B.array, 1:ν, μ+1:m)
-        view(B.data, ν+1:n, μ+1:m) .= view(B.array, ν+1:n, μ+1:m)
-        view(B.data, ν+1:n, 1:μ) .= view(B.array, ν+1:n, 1:μ)
+        if ν > 0
+            view(B.data, 1:ν, μ+1:m) .= B.array[1:ν, μ+1:m]
+        end
+        view(B.data, ν+1:n, μ+1:m) .= B.array[ν+1:n, μ+1:m]
+        if μ > 0
+            view(B.data, ν+1:n, 1:μ) .= B.array[ν+1:n, 1:μ]
+        end
+        B.datasize = (n,m)
     end
-
-    B.datasize = (n,m)
 
     B
 end
