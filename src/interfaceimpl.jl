@@ -122,17 +122,19 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 bandwidths(M::BroadcastMatrix) = bandwidths(Broadcasted(M))
 isbanded(M::BroadcastMatrix) = isbanded(Broadcasted(M))
 
-struct BroadcastBandedLayout <: AbstractBandedLayout end
+struct BroadcastBandedLayout{F} <: AbstractBandedLayout end
 struct LazyBandedLayout <: AbstractBandedLayout end
 
-broadcastlayout(::Type, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(\)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(*)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout()
-broadcastlayout(::Type{typeof(\)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout()
+broadcastlayout(::Type{F}, ::AbstractBandedLayout) where F = BroadcastBandedLayout{F}()
+for op in (:*, :/, :\)
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
+end
+for op in (:*, :/)
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::Any) = BroadcastBandedLayout{typeof($op)}()
+end
+for op in (:*, :\)
+    @eval broadcastlayout(::Type{typeof($op)}, ::Any, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
+end
 broadcastlayout(::Type{typeof(*)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
 broadcastlayout(::Type{typeof(*)}, ::LazyLayout, ::AbstractBandedLayout) = LazyBandedLayout()
 broadcastlayout(::Type{typeof(/)}, ::AbstractBandedLayout, ::LazyLayout) = LazyBandedLayout()
@@ -140,7 +142,7 @@ broadcastlayout(::Type{typeof(\)}, ::LazyLayout, ::AbstractBandedLayout) = LazyB
 
 # functions that satisfy f(0,0) == 0
 for op in (:+, :-)
-    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout()
+    @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
 end
 
 
@@ -151,11 +153,46 @@ end
 ###
 # sub materialize
 ###
+
+# determine rows/cols of multiplication
+__mul_args_rows(kr, a) = (kr,)
+__mul_args_rows(kr, a, b...) = 
+    (kr, __mul_args_rows(rowstart(a,first(kr)):rowstop(a,last(kr)), b...)...)
+_mul_args_rows(kr, a, b...) = __mul_args_rows(rowstart(a,first(kr)):rowstop(a,last(kr)), b...)
+__mul_args_cols(jr, z) = (jr,)
+__mul_args_cols(jr, z, y...) = 
+    (__mul_args_cols(colstart(z,first(jr)):colstop(z,last(jr)), y...)..., jr)
+_mul_args_cols(jr, z, y...) = __mul_args_cols(colstart(z,first(jr)):colstop(z,last(jr)), y...)
+    
+
+function arguments(::MulBandedLayout, V::SubArray)
+    P = parent(V)
+    kr, jr = parentindices(V)
+    as = arguments(P)
+    kjr = intersect.(_mul_args_rows(kr, as...), _mul_args_cols(jr, reverse(as)...))
+    view.(as, (kr, kjr...), (kjr..., jr))
+end
+
 @inline sub_materialize(::MulBandedLayout, V) = BandedMatrix(V)
 @inline sub_materialize(::BroadcastBandedLayout, V) = BandedMatrix(V)
 
+_BandedMatrix(::MulBandedLayout, V::AbstractMatrix) = apply(*, map(BandedMatrix,arguments(V))...)
+for op in (:+, :-)
+    @eval @inline _BandedMatrix(::BroadcastBandedLayout{typeof($op)}, V::AbstractMatrix) = apply($op, map(BandedMatrix,arguments(V))...)
+end
+
+function arguments(::BroadcastBandedLayout, V::SubArray)
+    A = parent(V)
+    kr, jr = parentindices(V)
+    view.(arguments(A), Ref(kr), Ref(jr))
+end
+
+
+
 subarraylayout(M::MulBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
 subarraylayout(M::BroadcastBandedLayout, ::Type{<:Tuple{Vararg{AbstractUnitRange}}}) = M
+
+
 
 ######
 # Concat banded matrix
@@ -201,18 +238,22 @@ function resizedata!(B::CachedMatrix{T,BandedMatrix{T,Matrix{T},OneTo{Int}}}, n:
     olddata = B.data
     ν,μ = size(olddata)
     n,m = max(ν,n), max(μ,m)
-    l,u = bandwidths(B.array)
-    λ,ω = bandwidths(B.data)
 
     if (ν,μ) ≠ (n,m)
+        l,u = bandwidths(B.array)
+        λ,ω = bandwidths(B.data)
+
         B.data = BandedMatrix{T}(undef, (n,m), bandwidths(olddata))
         B.data.data[:,1:μ] .= olddata.data
-        view(B.data, 1:ν, μ+1:m) .= view(B.array, 1:ν, μ+1:m)
-        view(B.data, ν+1:n, μ+1:m) .= view(B.array, ν+1:n, μ+1:m)
-        view(B.data, ν+1:n, 1:μ) .= view(B.array, ν+1:n, 1:μ)
+        if ν > 0
+            view(B.data, 1:ν, μ+1:m) .= B.array[1:ν, μ+1:m]
+        end
+        view(B.data, ν+1:n, μ+1:m) .= B.array[ν+1:n, μ+1:m]
+        if μ > 0
+            view(B.data, ν+1:n, 1:μ) .= B.array[ν+1:n, 1:μ]
+        end
+        B.datasize = (n,m)
     end
-
-    B.datasize = (n,m)
 
     B
 end

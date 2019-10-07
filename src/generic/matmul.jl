@@ -231,7 +231,10 @@ function _banded_muladd!(α::T, A, B::AbstractMatrix, β, C) where T
     C
 end
 
-materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor,T}) where T<:BlasFloat = 
+materialize!(M::BlasMatMulMatAdd{<:AbstractBandedLayout,<:AbstractBandedLayout,<:BandedColumnMajor}) = 
+    materialize!(MulAdd(M.α, BandedMatrix(M.A), BandedMatrix(M.B), M.β, M.C))
+
+materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor}) = 
     _banded_muladd!(M.α, M.A, M.B, M.β, M.C)
 
 
