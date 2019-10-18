@@ -247,11 +247,19 @@ function resizedata!(B::CachedMatrix{T,BandedMatrix{T,Matrix{T},OneTo{Int}}}, n:
             B.data = _BandedMatrix(reshape(resize!(vec(olddata.data), (λ+ω+1)*M), λ+ω+1, M), M+λ, λ,ω)
         end
         if ν > 0 # upper-right
-            view(B.data, max(1,μ+1-ω):ν, μ+1:min(m,ν+ω)) .= B.array[max(1,μ+1-ω):ν, μ+1:min(m,ν+ω)]
+            kr = max(1,μ+1-ω):ν
+            jr = μ+1:min(m,ν+ω)
+            if !isempty(kr) && !isempty(jr)
+                view(B.data, kr, jr) .= B.array[kr, jr]
+            end
         end
         view(B.data, ν+1:n, μ+1:m) .= B.array[ν+1:n, μ+1:m]
         if μ > 0
-            view(B.data, ν+1:min(n,μ+λ), max(1,ν+1-λ):μ) .= B.array[ν+1:min(n,μ+λ), max(1,ν+1-λ):μ]
+            kr = ν+1:min(n,μ+λ)
+            jr = max(1,ν+1-λ):μ
+            if !isempty(kr) && !isempty(jr)
+                view(B.data, kr, jr) .= B.array[kr, jr]
+            end
         end
         B.datasize = (n,m)
     end
