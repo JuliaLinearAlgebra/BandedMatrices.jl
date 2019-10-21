@@ -3,9 +3,9 @@ BroadcastStyle(::BandedStyle, M::ApplyArrayBroadcastStyle{2}) = M
 
 @lazymul AbstractBandedMatrix
 
-bandwidths(M::Mul) = prodbandwidths(M.args...)
+bandwidths(M::Mul) = min.(_bnds(M), prodbandwidths(M.args...))
 
-bandwidths(M::MulAdd) = prodbandwidths(M.A,M.B)
+bandwidths(M::MulAdd) = min.(_bnds(M), prodbandwidths(M.A,M.B))
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
     BandedMatrix{T}(undef, axes, bandwidths(M))
 similar(M::MulAdd{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =

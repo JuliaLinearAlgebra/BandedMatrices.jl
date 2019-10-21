@@ -236,21 +236,30 @@ function resizedata!(B::CachedMatrix{T,BandedMatrix{T,Matrix{T},OneTo{Int}}}, n:
 
     # increase size of array if necessary
     olddata = B.data
-    ν,μ = size(olddata)
+    ν,μ = B.datasize
     n,m = max(ν,n), max(μ,m)
 
     if (ν,μ) ≠ (n,m)
         l,u = bandwidths(B.array)
         λ,ω = bandwidths(B.data)
-
-        B.data = BandedMatrix{T}(undef, (n,m), bandwidths(olddata))
-        B.data.data[:,1:μ] .= olddata.data
-        if ν > 0
-            view(B.data, 1:ν, μ+1:m) .= B.array[1:ν, μ+1:m]
+        if n ≥ size(B.data,1) || m ≥ size(B.data,2)
+            M = 2*max(m,n+u)
+            B.data = _BandedMatrix(reshape(resize!(vec(olddata.data), (λ+ω+1)*M), λ+ω+1, M), M+λ, λ,ω)
+        end
+        if ν > 0 # upper-right
+            kr = max(1,μ+1-ω):ν
+            jr = μ+1:min(m,ν+ω)
+            if !isempty(kr) && !isempty(jr)
+                view(B.data, kr, jr) .= B.array[kr, jr]
+            end
         end
         view(B.data, ν+1:n, μ+1:m) .= B.array[ν+1:n, μ+1:m]
         if μ > 0
-            view(B.data, ν+1:n, 1:μ) .= B.array[ν+1:n, 1:μ]
+            kr = ν+1:min(n,μ+λ)
+            jr = max(1,ν+1-λ):μ
+            if !isempty(kr) && !isempty(jr)
+                view(B.data, kr, jr) .= B.array[kr, jr]
+            end
         end
         B.datasize = (n,m)
     end

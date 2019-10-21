@@ -221,7 +221,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     Al, Au = bandwidths(A)
     Bl, Bu = bandwidths(B)
     C̃l, C̃u = bandwidths(C)
-    Cl,Cu = Al+Bl,Au+Bu
+    Cl,Cu = min.(_bnds(C), (Al+Bl,Au+Bu))
 
     # prune zero bands
     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands

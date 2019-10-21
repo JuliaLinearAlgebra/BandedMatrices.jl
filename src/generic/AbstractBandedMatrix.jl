@@ -53,8 +53,10 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 @inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
 @inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
-@inline banded_colsupport(A, j) = colrange(A, j)
-@inline banded_rowsupport(A, j) = rowrange(A, j)
+@inline banded_colsupport(A, j::Integer) = colrange(A, j)
+@inline banded_rowsupport(A, j::Integer) = rowrange(A, j)
+
+@inline banded_colsupport(A, j) = colstart(A,minimum(j)):colstop(A,maximum(j))
 
 @inline colsupport(::AbstractBandedLayout, A, j) = banded_colsupport(A, j)
 @inline rowsupport(::AbstractBandedLayout, A, j) = banded_rowsupport(A, j)

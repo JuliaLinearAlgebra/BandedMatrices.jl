@@ -608,6 +608,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     z = f(zero(eltype(A)), zero(eltype(B)))
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
+    (-u ≥ size(dest,1) || -l ≥ size(dest,2)) && return fill!(dest, z)
     iszero(z) || checkbroadcastband(dest, size(bc), (l,u))
 
     if size(A) ≠ size(dest) || size(B) ≠ size(dest)
@@ -731,7 +732,7 @@ _band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.
 
 
 # zero dominates. Take the minimum bandwidth
-_bnds(bc::Broadcasted) = size(bc).-1
+_bnds(bc) = size(bc).-1
     
 bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
     min.(_broadcast_bandwidths.(Ref(_bnds(bc)), bc.args)...)
@@ -747,7 +748,7 @@ _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
 function bandwidths(bc::Broadcasted)
     (a,b) = size(bc)
     bnds = (a-1,b-1)
-    _isweakzero(bc.f, bc.args...) && return max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...)
+    _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...))
     bnds
 end
 
