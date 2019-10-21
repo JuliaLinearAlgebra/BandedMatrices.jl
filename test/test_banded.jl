@@ -124,17 +124,15 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         # @test A'*C' ≈ Matrix(A)'*C'
     end
 
-    # banded * banded
     @testset "Banded * Banded" begin
         for n in (1,5), ν in (1,5), m in (1,5), Al in (0,1,3), Au in (0,1,3),
                 Bl in (0,1,3), Bu in (0,1,3)
-            let A = brand(n, ν, Al, Au), B = brand(ν, m, Bl, Bu),
-                    C = brand(ν, n, Al, Bu), D = brand(m, ν, Al, Bu)
-                @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
-                @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
-                @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
-                @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
-            end
+            A = brand(n, ν, Al, Au); B = brand(ν, m, Bl, Bu)
+            C = brand(ν, n, Al, Bu); D = brand(m, ν, Al, Bu)
+            @test Matrix(A*B) ≈ Matrix(A)*Matrix(B)
+            @test Matrix(C'*B) ≈ Matrix(C)'*Matrix(B)
+            @test Matrix(A*D') ≈ Matrix(A)*Matrix(D)'
+            @test Matrix(C'*D') ≈ Matrix(C)'*Matrix(D)'
         end
 
         let A = brand(ComplexF64, 5, 4, 2, 3), B = brand(ComplexF64, 4, 6, 3, 1),
