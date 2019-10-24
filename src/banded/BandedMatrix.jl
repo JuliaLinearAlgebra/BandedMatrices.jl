@@ -29,6 +29,8 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
+const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
+
 bandedcolumns(_) = BandedColumns{UnknownLayout}()
 bandedcolumns(::ML) where ML<:AbstractStridedLayout = BandedColumns{ML}()
 bandedcolumns(::ML) where ML<:AbstractFillLayout = BandedColumns{ML}()
@@ -113,7 +115,7 @@ for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     end
 end
 
-function convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
+function convert(::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
     ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
@@ -123,7 +125,7 @@ function convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
     ret
 end
 
-function convert(BM::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
+function convert(::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
     ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
     for k=1:size(M,1),j=1:size(M,2)
@@ -132,10 +134,12 @@ function convert(BM::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
     ret
 end
 
-convert(BM::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
+convert(::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
     convert(BandedMatrix{T, typeof(similar(M, T, 0, 0))}, M)
 
-convert(BM::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
+convert(::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
+convert(::Type{DefaultBandedMatrix}, M::DefaultBandedMatrix) = M
+convert(::Type{DefaultBandedMatrix}, M::BandedMatrix) = _BandedMatrix(convert(Matrix, M.data), convert(OneTo{Int}, M.raxis), M.l, M.u)
 
 copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.raxis, B.l, B.u)
 

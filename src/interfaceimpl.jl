@@ -112,8 +112,7 @@ BroadcastStyle(::BandedStyle, ::LazyArrayStyle{2}) = LazyArrayStyle{2}()
 @inline colsupport(::MulBandedLayout, A, j) = banded_colsupport(A, j)
 @inline rowsupport(::MulBandedLayout, A, j) = banded_rowsupport(A, j)
 # @inline colsupport(::MulLayout{<:Tuple{<:AbstractBandedLayout,<:AbstractStridedLayout}}, A, j) = banded_colsupport(A, j)
-
-
+@inline _arguments(::MulBandedLayout, A) = arguments(A)
 
 ###
 # BroadcastMatrix
@@ -144,6 +143,9 @@ broadcastlayout(::Type{typeof(\)}, ::LazyLayout, ::AbstractBandedLayout) = LazyB
 for op in (:+, :-)
     @eval broadcastlayout(::Type{typeof($op)}, ::AbstractBandedLayout, ::AbstractBandedLayout) = BroadcastBandedLayout{typeof($op)}()
 end
+
+mulapplystyle(::LazyBandedLayout, ::MulBandedLayout) = FlattenMulStyle()
+mulapplystyle(::MulBandedLayout, ::LazyBandedLayout) = FlattenMulStyle()
 
 
 @inline colsupport(::BroadcastBandedLayout, A, j) = banded_colsupport(A, j)
