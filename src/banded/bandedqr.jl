@@ -5,8 +5,8 @@ factorizestyle(::AbstractBandedLayout) = BandedFactorizationStyle()
 qr(A::AbstractBandedMatrix) = apply(qr,A)
 qr(A::BandedSubBandedMatrix) = apply(qr,A)
 
-copy(A::Applied{BandedFactorizationStyle,typeof(qr)}) = 
-    banded_qr(A.args...)
+copy(A::Applied{BandedFactorizationStyle,typeof(qr)}) = banded_qr(A.args...)
+copy(A::Applied{BandedFactorizationStyle,typeof(factorize)}) = banded_qr(A.args...)
 
 
 banded_qr(A) = _banded_qr(axes(A), A)
