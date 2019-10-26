@@ -29,6 +29,8 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
 
+const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
+
 bandedcolumns(_) = BandedColumns{UnknownLayout}()
 bandedcolumns(::ML) where ML<:AbstractStridedLayout = BandedColumns{ML}()
 bandedcolumns(::ML) where ML<:AbstractFillLayout = BandedColumns{ML}()
@@ -54,43 +56,41 @@ MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = bandedcol
 
 returns an uninitialized `n`×`m` banded matrix of type `T` with bandwidths `(l,u)`.
 """
-BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T<:BlasFloat, C<:AbstractMatrix{T}} =
+BandedMatrix{T, C, OneTo{Int}}(::UndefInitializer, (n,m)::NTuple{2,Integer}, (a,b)::NTuple{2,Integer}) where {T<:BlasFloat, C<:AbstractMatrix{T}} =
     _BandedMatrix(C(undef,max(0,b+a+1),m), n, a, b)
-BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} =
+BandedMatrix{T, C, OneTo{Int}}(::UndefInitializer, (n,m)::NTuple{2,Integer}, (a,b)::NTuple{2,Integer}) where {T, C<:AbstractMatrix{T}} =
     _BandedMatrix(C(undef,max(0,b+a+1),m),n,a,b)
-BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T<:Number, C<:AbstractMatrix{T}} =
+BandedMatrix{T, C, OneTo{Int}}(::UndefInitializer, (n,m)::NTuple{2,Integer}, (a,b)::NTuple{2,Integer})  where {T<:Number, C<:AbstractMatrix{T}} =
     _BandedMatrix(fill!(similar(C, max(0,b+a+1),m), zero(T)),n,a,b)
-BandedMatrix{T, C}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where {T, C<:AbstractMatrix{T}} =
-    BandedMatrix{T,C}(undef, nm..., ab...)
-BandedMatrix{T, C}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T, C<:AbstractMatrix{T}} =
-    BandedMatrix{T,C}(undef,n,n+b,a,b)
 
-BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} =
-    BandedMatrix{T, Matrix{T}}(undef,n,m,a,b)
+BandedMatrix{T, C}(::UndefInitializer, (n,m)::NTuple{2,Integer}, (a,b)::NTuple{2,Integer}) where {T<:BlasFloat, C<:AbstractMatrix{T}} =
+    _BandedMatrix(C(undef,max(0,b+a+1),m), n, a, b)
+BandedMatrix{T, C}(::UndefInitializer, (n,m)::NTuple{2,Integer}, (a,b)::NTuple{2,Integer}) where {T, C<:AbstractMatrix{T}} =
+    _BandedMatrix(C(undef,max(0,b+a+1),m),n,a,b)
+BandedMatrix{T, C}(::UndefInitializer, (n,m)::NTuple{2,Integer}, (a,b)::NTuple{2,Integer})  where {T<:Number, C<:AbstractMatrix{T}} =
+    _BandedMatrix(fill!(similar(C, max(0,b+a+1),m), zero(T)),n,a,b)
+
 BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}) where T =
-    BandedMatrix{T}(undef, nm..., ab...)
+BandedMatrix{T, Matrix{T}}(undef,nm,ab)
 BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,OneTo{Int}}, ab::NTuple{2,Integer}) where T =
     BandedMatrix{T}(undef, length.(nm), ab)
-BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} =
-    BandedMatrix{T}(undef,n,n+b,a,b)
 
+@deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T, C<:AbstractMatrix{T}} BandedMatrix{T,C}(undef,n,n+b,a,b)
+@deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} BandedMatrix{T, C}(undef, (n,m), (a,b))    
+@deprecate BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} BandedMatrix{T}(undef,(n,m),(a,b))    
+@deprecate BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} BandedMatrix{T}(undef,(n,n+b),(a,b))
 
-BandedMatrix{V}(M::BandedMatrix) where {V} =
-        _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
-BandedMatrix(M::BandedMatrix{V}) where {V} =
-        _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
+BandedMatrix{V}(M::BandedMatrix) where {V} = _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
+BandedMatrix(M::BandedMatrix{V}) where {V} = _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
 
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.raxis, M.l, M.u)
 convert(::Type{BandedMatrix}, M::BandedMatrix) = M
 
-convert(::Type{BandedMatrix{<:,C}}, M::BandedMatrix{<:,C}) where C =
-    M
-convert(BM::Type{BandedMatrix{T,C}}, M::BandedMatrix{T,C}) where {T,C<:AbstractMatrix{T}} =
-    M
-convert(BM::Type{BandedMatrix{T,C,AXIS}}, M::BandedMatrix{T,C,AXIS}) where {T,C<:AbstractMatrix{T},AXIS} =
-    M
+convert(BM::Type{BandedMatrix{T,C}}, M::BandedMatrix{T,C}) where {T,C<:AbstractMatrix{T}} = M
+convert(BM::Type{BandedMatrix{T,C,AXIS}}, M::BandedMatrix{T,C,AXIS}) where {T,C<:AbstractMatrix{T},AXIS} = M
+convert(BM::Type{BandedMatrix{T,C,OneTo{Int}}}, M::BandedMatrix{T,C,OneTo{Int}}) where {T,C<:AbstractMatrix{T}} = M
 
 function convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C 
     M.data isa C && return M
@@ -102,7 +102,8 @@ function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: A
 end
 convert(BM::Type{BandedMatrix{T, C, AXIS}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}, AXIS} =
     _BandedMatrix(convert(C, M.data), convert(AXIS, M.raxis), M.l, M.u)
-
+convert(BM::Type{BandedMatrix{T, C, OneTo{Int}}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}} =
+    _BandedMatrix(convert(C, M.data), convert(OneTo{Int}, M.raxis), M.l, M.u)
 
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin
@@ -113,29 +114,42 @@ for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     end
 end
 
-function convert(BM::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C}
+function convert(::Type{BandedMatrix{<:,C,OneTo{Int}}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
-    ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
+    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
     ret
 end
 
-function convert(BM::Type{BandedMatrix{T, C}}, M::AbstractMatrix) where {T, C}
+function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M)..., bandwidths(M)...)
+    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
     for k=1:size(M,1),j=1:size(M,2)
         ret[k,j] = convert(T, M[k,j])
     end
     ret
 end
 
-convert(BM::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
+function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C<:AbstractMatrix{T}}
+    Container = typeof(convert(C, similar(M, T, 0, 0)))
+    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
+    for k=1:size(M,1),j=1:size(M,2)
+        ret[k,j] = convert(T, M[k,j])
+    end
+    ret
+end
+
+convert(::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C} = convert(BandedMatrix{<:,C,OneTo{Int}}, M)
+convert(::Type{BandedMatrix{T,C}}, M::AbstractMatrix) where {T, C} = convert(BandedMatrix{T,C,OneTo{Int}}, M)
+
+convert(::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
     convert(BandedMatrix{T, typeof(similar(M, T, 0, 0))}, M)
 
-convert(BM::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
+convert(::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
+convert(::Type{DefaultBandedMatrix}, M::AbstractMatrix{T}) where T = convert(DefaultBandedMatrix{T}, M)
 
 copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.raxis, B.l, B.u)
 
@@ -179,7 +193,7 @@ BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Integer}) where T =
 function BandedMatrix{T, C}(A::AbstractMatrix, bnds::NTuple{2,Integer}) where {T, C <: AbstractMatrix{T}}
     (n,m) = size(A)
     (l,u) = bnds
-    ret = BandedMatrix{T, C}(undef, n, m, l, u)
+    ret = BandedMatrix{T, C}(undef, (n, m), (l, u))
     @inbounds for j = 1:m, k = max(1,j-u):min(n,j+l)
         inbands_setindex!(ret, A[k,j], k, j)
     end

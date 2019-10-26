@@ -42,10 +42,10 @@ import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
                     ApplyStyle, factorizestyle, paddeddata, arguments,
                     AbstractColumnMajor, colsupport, rowsupport,
                     DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
-                    symmetricuplo, MatMulMatAdd, MatMulVecAdd,
+                    symmetricuplo, MatMulMatAdd, MatMulVecAdd, _arguments,
                     _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex,
-                    resizedata!, CachedMatrix, ApplyLayout, PaddedLayout, BroadcastMatrix,
-                    combine_mul_styles, LazyArrayApplyStyle, QLayout, mulapplystyle, LazyArrayStyle
+                    resizedata!, CachedMatrix, ApplyLayout, FlattenMulStyle, PaddedLayout, BroadcastMatrix,
+                    combine_mul_styles, result_mul_style, LazyArrayApplyStyle, QLayout, mulapplystyle, LazyArrayStyle
 
 import FillArrays: AbstractFill, getindex_value
 

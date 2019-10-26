@@ -27,6 +27,18 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
 
 
 @testset "BandedMatrix" begin
+    @testset "Undef BandedMatrix" begin
+        @test typeof(BandedMatrix{Float64}(undef,(10,10),(1,1))) ==
+            typeof(BandedMatrix{Float64,Matrix{Float64}}(undef,(10,10),(1,1))) ==
+            typeof(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}(undef,(10,10),(1,1))) 
+        @test typeof(BandedMatrix{Int}(undef,(10,10),(1,1))) ==
+            typeof(BandedMatrix{Int,Matrix{Int}}(undef,(10,10),(1,1))) ==
+            typeof(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}(undef,(10,10),(1,1)))
+@test typeof(BandedMatrix{Vector{Int}}(undef,(10,10),(1,1))) ==
+            typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}}}(undef,(10,10),(1,1))) ==
+            typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}},Base.OneTo{Int}}(undef,(10,10),(1,1)))                
+    end
+
     @testset "Creating BandedMatrix" begin
         @test BandedMatrix(Zeros(5,5), (1,1)) == _BandedMatrix(zeros(3,5), 5, 1, 1)
         @test BandedMatrix(Zeros{Int32}(5,5), (1,1)) isa BandedMatrix{Int32, Matrix{Int32}}
