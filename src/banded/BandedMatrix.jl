@@ -88,7 +88,6 @@ convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.raxis, M.l, M.u)
 convert(::Type{BandedMatrix}, M::BandedMatrix) = M
 
-convert(::Type{BandedMatrix{<:,C}}, M::BandedMatrix{<:,C}) where C = M
 convert(BM::Type{BandedMatrix{T,C}}, M::BandedMatrix{T,C}) where {T,C<:AbstractMatrix{T}} = M
 convert(BM::Type{BandedMatrix{T,C,AXIS}}, M::BandedMatrix{T,C,AXIS}) where {T,C<:AbstractMatrix{T},AXIS} = M
 convert(BM::Type{BandedMatrix{T,C,OneTo{Int}}}, M::BandedMatrix{T,C,OneTo{Int}}) where {T,C<:AbstractMatrix{T}} = M
@@ -151,8 +150,6 @@ convert(::Type{BandedMatrix{T}}, M::AbstractMatrix) where {T} =
 
 convert(::Type{BandedMatrix}, M::AbstractMatrix) = convert(BandedMatrix{eltype(M)}, M)
 convert(::Type{DefaultBandedMatrix}, M::AbstractMatrix{T}) where T = convert(DefaultBandedMatrix{T}, M)
-convert(::Type{DefaultBandedMatrix}, M::DefaultBandedMatrix) = M
-convert(::Type{DefaultBandedMatrix}, M::BandedMatrix) = _BandedMatrix(convert(Matrix, M.data), convert(OneTo{Int}, M.raxis), M.l, M.u)
 
 copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.raxis, B.l, B.u)
 
