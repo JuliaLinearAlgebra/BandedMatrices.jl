@@ -26,6 +26,13 @@ isbanded(::Diagonal) = true
 bandwidths(::Diagonal) = (0,0)
 inbands_getindex(D::Diagonal, k::Integer, j::Integer) = D.diag[k]
 inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
+bandeddata(D::Diagonal) = reshape(D.diag, 1, length(D.diag))
+
+# treat subinds as banded
+subarraylayout(::DiagonalLayout{L}, inds::Type) where L =
+    subarraylayout(bandedcolumns(L()), inds)
+
+# bandeddata(V::SubArray{<:Any,2,<:Diagonal}) = view(bandeddata(parent(V)), :, parentindices(V)[2])
 
 isbanded(::SymTridiagonal) = true
 bandwidths(::SymTridiagonal) = (1,1)

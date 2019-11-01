@@ -738,7 +738,7 @@ function similar(bm::BandedSubBandedMatrix, T::Type=eltype(bm),
     similar(bm.parent, T, n, m, l, u)
 end
 
-bandeddata(V::BandedSubBandedMatrix) = view(bandeddata(parent(V)), :, parentindices(V)[2])
+bandeddata(V::SubArray) = view(bandeddata(parent(V)), :, parentindices(V)[2])
 
 bandwidths(S::SubArray{T,2,<:AbstractMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
     bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)

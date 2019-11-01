@@ -1,6 +1,8 @@
 using BandedMatrices, LinearAlgebra, LazyArrays, FillArrays, Test, Base64
-import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, rowsupport, colsupport, _BandedMatrix, BroadcastBandedLayout
-import LazyArrays: MemoryLayout, Applied, resizedata!
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, 
+                        rowsupport, colsupport, _BandedMatrix, BroadcastBandedLayout,
+                        BandedColumns
+import LazyArrays: MemoryLayout, Applied, resizedata!, FillLayout
 
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -38,13 +40,22 @@ BandedMatrices.inbands_setindex!(A::PseudoBandedMatrix, v, j::Int, k::Int) = set
 LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
 @testset "banded matrix interface" begin
-    @test isbanded(Zeros(5,6))
-    @test bandwidths(Zeros(5,6)) == (0,0)
-    @test BandedMatrices.inbands_getindex(Zeros(5,6), 1,2) == 0
+    @testset "Zeros" begin
+        @test isbanded(Zeros(5,6))
+        @test bandwidths(Zeros(5,6)) == (0,0)
+        @test BandedMatrices.inbands_getindex(Zeros(5,6), 1,2) == 0
+    end
 
-    @test isbanded(Eye(5))
-    @test bandwidths(Eye(5)) == (0,0)
-    @test BandedMatrices.inbands_getindex(Eye(5), 1,1) == 1
+    @testset "Eye" begin
+        @test isbanded(Eye(5))
+        @test bandwidths(Eye(5)) == (0,0)
+        @test BandedMatrices.inbands_getindex(Eye(5), 1,1) == 1
+
+        V = view(Eye(5),2:3,:)
+        @test bandwidths(V) == (-1,1)
+        @test MemoryLayout(typeof(V)) isa BandedColumns{FillLayout}
+        @test BandedMatrix(V) == [0 1 0 0 0; 0 0 1 0 0]
+    end
 
     A = Diagonal(ones(5,5))
     @test isbanded(A)
