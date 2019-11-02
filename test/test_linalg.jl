@@ -1,7 +1,6 @@
-using BandedMatrices, LazyArrays, LinearAlgebra, FillArrays, Test
+using BandedMatrices, ArrayLayouts, LinearAlgebra, FillArrays, Test
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns
-import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseColumnMajor
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -226,11 +225,7 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         C = BandedMatrix{Float64}(undef, (1,2), (0,2)); C.data .= NaN;
         A = brand(1,1,0,1)
         B = brand(1,2,0,2)
-        C .= Mul(A,B)
-        @test C == A*B
-
-        C.data .= NaN
-        C .= @~ 1.0 * A*B + 0.0 * C
+        muladd!(1.0,A,B,0.0,C)
         @test C == A*B
     end
 

@@ -1,5 +1,4 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
-import LazyArrays: DenseColumnMajor, MulAdd, materialize!
+using BandedMatrices, LinearAlgebra, ArrayLayouts, Random, Test
 import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
 
 

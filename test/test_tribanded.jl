@@ -1,6 +1,5 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Test
-    import LazyArrays: DenseColumnMajor
-    import BandedMatrices: MemoryLayout, TriangularLayout, BandedColumns
+using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
+import BandedMatrices: BandedColumns
 
 
 @testset "Triangular" begin

@@ -1,6 +1,5 @@
-using BandedMatrices, FillArrays, Test
+using BandedMatrices, FillArrays, ArrayLayouts, Test
 import LinearAlgebra: axpy!
-import LazyArrays: DenseColumnMajor
 import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedMatrix, _BandedMatrix
 
 @testset "BandedMatrix SubArray" begin

@@ -34,8 +34,6 @@ BroadcastStyle(::Type{<:Adjoint{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
 BroadcastStyle(::Type{<:Transpose{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
 BroadcastStyle(::DefaultArrayStyle{2}, ::BandedStyle) = BandedStyle()
 BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = BandedStyle()
-BroadcastStyle(::LazyArrayStyle{1}, ::BandedStyle) = LazyArrayStyle{2}()
-BroadcastStyle(::BandedStyle, ::LazyArrayStyle{1}) = LazyArrayStyle{2}()
 
 
 size(bc::Broadcasted{BandedStyle}) = length.(axes(bc))
