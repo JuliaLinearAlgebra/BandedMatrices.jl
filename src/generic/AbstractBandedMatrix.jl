@@ -56,6 +56,7 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 @inline banded_colsupport(A, j::Integer) = colrange(A, j)
 @inline banded_rowsupport(A, j::Integer) = rowrange(A, j)
 
+@inline banded_rowsupport(A, j) = rowstart(A,minimum(j)):rowstop(A,maximum(j))
 @inline banded_colsupport(A, j) = colstart(A,minimum(j)):colstop(A,maximum(j))
 
 @inline colsupport(::AbstractBandedLayout, A, j) = banded_colsupport(A, j)
