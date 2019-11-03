@@ -37,7 +37,7 @@ end
 banded_qr!(R::AbstractMatrix{T}) where T = banded_qr!(R, zeros(T, min(size(R)...)))
 
 
-function banded_lmul!(A::QRPackedQ, B::AbstractVecOrMat)
+function banded_qr_lmul!(A, B::AbstractVecOrMat)
     require_one_based_indexing(B)
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
@@ -65,7 +65,7 @@ function banded_lmul!(A::QRPackedQ, B::AbstractVecOrMat)
     B
 end
 
-function banded_lmul!(adjA::Adjoint{<:Any,<:QRPackedQ}, B::AbstractVecOrMat)
+function banded_qr_lmul!(adjA::Adjoint, B)
     require_one_based_indexing(B)
     A = adjA.parent
     mA, nA = size(A.factors)
@@ -95,7 +95,7 @@ function banded_lmul!(adjA::Adjoint{<:Any,<:QRPackedQ}, B::AbstractVecOrMat)
     B
 end
 
-function banded_rmul!(A::AbstractMatrix,Q::QRPackedQ)
+function banded_qr_rmul!(A::AbstractMatrix, Q)
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
     if nA != mQ
@@ -121,7 +121,7 @@ function banded_rmul!(A::AbstractMatrix,Q::QRPackedQ)
     end
     A
 end
-function banded_rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ})
+function banded_qr_rmul!(A::AbstractMatrix, adjQ::Adjoint)
     Q = adjQ.parent
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
@@ -148,6 +148,12 @@ function banded_rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ})
     end
     A
 end
+
+banded_lmul!(A::QRPackedQ, B::AbstractVecOrMat) = banded_qr_lmul!(A, B)
+banded_lmul!(adjA::Adjoint{<:Any,<:QRPackedQ}, B::AbstractVecOrMat) = banded_qr_lmul!(adjA, B)
+banded_rmul!(A::AbstractMatrix, Q::QRPackedQ) = banded_qr_rmul!(A, Q)
+banded_rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ}) = banded_qr_rmul!(A, adjQ)
+
 lmul!(A::QRPackedQ{<:Any,<:AbstractBandedMatrix}, B::AbstractVecOrMat) = banded_lmul!(A,B)
 lmul!(adjA::Adjoint{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::AbstractVecOrMat) = banded_lmul!(adjA,B)
 lmul!(A::QRPackedQ{<:Any,BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractVecOrMat) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} = 

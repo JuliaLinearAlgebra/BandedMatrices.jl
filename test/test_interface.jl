@@ -1,7 +1,6 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, 
-                        rowsupport, colsupport, _BandedMatrix, BroadcastBandedLayout,
-                        BandedColumns
+                        rowsupport, colsupport, _BandedMatrix, BandedColumns
 
 
 
