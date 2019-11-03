@@ -1,8 +1,6 @@
 qr(A::AbstractBandedMatrix) = banded_qr(A)
 qr(A::BandedSubBandedMatrix) = banded_qr(A)
 
-
-
 banded_qr(A) = _banded_qr(axes(A), A)
 _banded_qr(_, A) = qr!(BandedMatrix{float(eltype(A))}(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
 

@@ -275,7 +275,7 @@ import BandedMatrices: BandedStyle, BandedRows
         @test 2Matrix(A')*x + 3y ≈ z
         @test all(BLAS.gbmv!('T', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
         @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
-        y .= Mul(transpose(A),x)
+        muladd!(1.0,transpose(A),x,0.0,y)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
 

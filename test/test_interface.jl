@@ -104,7 +104,7 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
     y = rand(4)
     z = zeros(5)
-    z .= Mul(A, y)
+    muladd!(1.0, A, y, 0.0, z)
     @test z ≈ A*y ≈ Matrix(A)*y
 
     @test bandwidths(BandedMatrix(A)) ==
