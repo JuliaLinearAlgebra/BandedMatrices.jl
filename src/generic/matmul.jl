@@ -278,3 +278,5 @@ function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:
     M.C
 end
 
+
+@lazymul AbstractBandedMatrix
