@@ -37,7 +37,7 @@ end
 banded_qr!(R::AbstractMatrix{T}) where T = banded_qr!(R, zeros(T, min(size(R)...)))
 
 
-function banded_qr_lmul!(A, B::AbstractVecOrMat)
+function banded_qr_lmul!(A, B)
     require_one_based_indexing(B)
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
@@ -95,7 +95,7 @@ function banded_qr_lmul!(adjA::Adjoint, B)
     B
 end
 
-function banded_qr_rmul!(A::AbstractMatrix, Q)
+function banded_qr_rmul!(A, Q)
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
     if nA != mQ
@@ -121,7 +121,7 @@ function banded_qr_rmul!(A::AbstractMatrix, Q)
     end
     A
 end
-function banded_qr_rmul!(A::AbstractMatrix, adjQ::Adjoint)
+function banded_qr_rmul!(A, adjQ::Adjoint)
     Q = adjQ.parent
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
