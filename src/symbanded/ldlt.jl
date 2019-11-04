@@ -4,7 +4,7 @@
 
 factorize(S::Symmetric{<:Any,<:BandedMatrix}) = ldlt(S)
 
-function ldlt!(F::Symmetric{T,M}) where {T<:Real,M<:BandedMatrix{T}}
+function ldlt!(F::Symmetric{T,M}) where {T,M<:BandedMatrix{T}}
     A = F.data
     n = size(A, 1)
     b = bandwidth(F)
@@ -36,7 +36,7 @@ function ldlt!(F::Symmetric{T,M}) where {T<:Real,M<:BandedMatrix{T}}
     return LDLt{T,Symmetric{T,M}}(F)
 end
 
-function ldlt(A::Symmetric{T,M}) where {T<:Real,M<:BandedMatrix{T}}
+function ldlt(A::Symmetric{T,M}) where {T,M<:BandedMatrix{T}}
     S = typeof(zero(T)/one(T))
     uplo = A.uplo == 'U' ? :U : :L
     return S == T ? ldlt!(copy(A)) : ldlt!(Symmetric(BandedMatrix{S}(A), uplo))

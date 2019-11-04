@@ -636,12 +636,12 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         fill!(view(data_d,d_u+max(A_l,B_l)+2:size(data_d,1),:), z)
 
         # construct where B upper is zero
-        data_d_u_A = view(data_d,max(1,d_u-max(A_u,B_u)+1):d_u-B_u, :)
-        data_A_u_A = view(data_A, 1:A_u-B_u, :)
+        data_d_u_A = view(data_d,max(1,d_u-max(A_u,B_u)+1):min(d_u-B_u,size(data_d,1)), :)
+        data_A_u_A = view(data_A, 1:min(A_u-B_u,size(data_d_u_A,1)), :)
         data_d_u_A .= f.(data_A_u_A, zero(eltype(B)))
 
         # construct where A upper is zero
-        data_d_u_B = view(data_d,max(1,d_u-max(A_u,B_u)+1):d_u-A_u, :)
+        data_d_u_B = view(data_d,max(1,d_u-max(A_u,B_u)+1):min(d_u-A_u,size(data_d,1)), :)
         data_B_u_B = view(data_B, 1:B_u-A_u, :)
         data_d_u_B .= f.(zero(eltype(A)), data_B_u_B)
 
@@ -670,7 +670,8 @@ copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{
     _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
 
 # override copy in case data has special broadcast
-_default_banded_broadcast(bc::Broadcasted{Style}) where Style = Base.invoke(copy, Tuple{Broadcasted{Style}}, bc)
+_default_banded_broadcast(bc::Broadcasted{Style}, _) where Style = Base.invoke(copy, Tuple{Broadcasted{Style}}, bc)
+_default_banded_broadcast(bc::Broadcasted) = _default_banded_broadcast(bc, axes(bc))
 
 _banded_broadcast(f, args::Tuple, _...) = _default_banded_broadcast(broadcasted(f, args...))
 _banded_broadcast(f, arg, _...) = _default_banded_broadcast(broadcasted(f, arg))

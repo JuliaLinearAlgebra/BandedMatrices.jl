@@ -232,7 +232,7 @@ function _banded_muladd!(α::T, A, B::AbstractMatrix, β, C) where T
 end
 
 materialize!(M::BlasMatMulMatAdd{<:AbstractBandedLayout,<:AbstractBandedLayout,<:BandedColumnMajor}) = 
-    materialize!(MulAdd(M.α, BandedMatrix(M.A), BandedMatrix(M.B), M.β, M.C))
+    materialize!(MulAdd(M.α, convert(DefaultBandedMatrix,M.A), convert(DefaultBandedMatrix,M.B), M.β, M.C))
 
 materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor}) = 
     _banded_muladd!(M.α, M.A, M.B, M.β, M.C)

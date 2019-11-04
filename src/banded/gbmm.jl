@@ -280,7 +280,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     C̃_data = bandeddata(C)
 
     # scale extra bands
-    _fill_lmul!(β, view(C̃_data, 1:C̃u-Cu,:))
+    _fill_lmul!(β, view(C̃_data, 1:min(C̃u-Cu,size(C̃_data,1)),:))
     _fill_lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:))
     C_data = view(C̃_data, (C̃u-Cu+1):(C̃u+Cl+1), :) # shift to bands we will write to
     _gbmm!(α, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu))
