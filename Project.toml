@@ -12,7 +12,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 FillArrays = "0.8"
-LazyArrays = "0.13"
+LazyArrays = "0.13, 0.14"
 MatrixFactorizations = "0.2"
 julia = "1"
 
