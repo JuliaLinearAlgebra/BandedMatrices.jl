@@ -1,7 +1,6 @@
-using BandedMatrices, LazyArrays, LinearAlgebra, FillArrays, Test
+using BandedMatrices, ArrayLayouts, LinearAlgebra, FillArrays, Test
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns
-import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseColumnMajor
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -23,7 +22,6 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         @test A'*A ≈ Matrix(A)'*Matrix(A)
         @test bandwidths(A'*A) == (3,3)
 
-        @test applied(*,Symmetric(A),A) isa Applied{MulAddStyle}
         @test MemoryLayout(typeof(Symmetric(A))) == SymmetricLayout{BandedColumns{DenseColumnMajor}}()
         @test Symmetric(A)*A isa BandedMatrix
         @test Symmetric(A)*A ≈ Symmetric(Matrix(A))*Matrix(A)
@@ -41,11 +39,6 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         @test UpperTriangular(A)*A isa BandedMatrix
         @test UpperTriangular(A)*A ≈ UpperTriangular(Matrix(A))*Matrix(A)
         @test bandwidths(UpperTriangular(A)*A) == (1,4)
-
-        B = apply(*,A,A,A)
-        @test B isa BandedMatrix
-        @test all(B .=== (A*A)*A)
-        @test bandwidths(B) == (3,4)
     end
 
     @testset "gbmm!" begin
@@ -139,43 +132,43 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         A = brand(10,10,2,2)
         B = brand(10,10,-2,2)
         C = BandedMatrix(Fill(NaN,10,10),(0,4))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,-2,2)
         B = brand(10,10,-2,2)
         C = BandedMatrix(Fill(NaN,10,10),(-4,4))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,-2,2)
         B = brand(10,10,2,2)
         C = BandedMatrix(Fill(NaN,10,10),(0,4))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,2,2)
         B = brand(10,10,2,-2)
         C = BandedMatrix(Fill(NaN,10,10),(4,0))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,2,-2)
         B = brand(10,10,2,-2)
         C = BandedMatrix(Fill(NaN,10,10),(4,-4))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(10,10,2,-2)
         B = brand(10,10,2,2)
         C = BandedMatrix(Fill(NaN,10,10),(4,0))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
 
         A = brand(30,1,0,0)
         B = brand(1,30,17,17)
         C = BandedMatrix(Fill(NaN, 30,30), (17,17))
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
     end
 
@@ -185,12 +178,12 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         B = BandedMatrix(randn(10,10), (1,1))
         C = BandedMatrix(Zeros(10,10), (1,1))
 
-        C .= Mul(A,B)
+        mul!(C,A,B)
 
         @test all(C .=== A*B)
 
         A[band(1)] .= randn(9)
-        @test_throws BandError C .= Mul(A,B)
+        @test_throws BandError mul!(C,A,B)
 
         A = BandedMatrix(randn(2,1), (2,0))
         A[1,1] = 0
@@ -209,7 +202,7 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
         A = SymTridiagonal(randn(10),randn(9))
         B = BandedMatrix((-1 => Ones{Int}(8),), (10,8))
 
-        M = Mul(A,B)
+        M = MulAdd(A,B)
         C = Matrix{Float64}(undef,10,8)
 
         C .= M
@@ -219,18 +212,14 @@ import LazyArrays: SymmetricLayout, MemoryLayout, Applied, MulAddStyle, DenseCol
 
     @testset "Overwrite NaN" begin
         B = BandedMatrix{Float64}(undef,(2,2),(-1,-1))
-        @test copyto!(fill(NaN,2), Mul(B,ones(2))) == [0.0,0.0]
+        @test copyto!(fill(NaN,2), MulAdd(B,ones(2))) == [0.0,0.0]
     end
 
     @testset "NaN Bug" begin
         C = BandedMatrix{Float64}(undef, (1,2), (0,2)); C.data .= NaN;
         A = brand(1,1,0,1)
         B = brand(1,2,0,2)
-        C .= Mul(A,B)
-        @test C == A*B
-
-        C.data .= NaN
-        C .= @~ 1.0 * A*B + 0.0 * C
+        muladd!(1.0,A,B,0.0,C)
         @test C == A*B
     end
 

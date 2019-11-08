@@ -1,10 +1,3 @@
-BroadcastStyle(M::ApplyArrayBroadcastStyle{2}, ::BandedStyle) = M
-BroadcastStyle(::BandedStyle, M::ApplyArrayBroadcastStyle{2}) = M
-
-@lazymul AbstractBandedMatrix
-
-bandwidths(M::Mul) = min.(_bnds(M), prodbandwidths(M.args...))
-
 bandwidths(M::MulAdd) = min.(_bnds(M), prodbandwidths(M.A,M.B))
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
     BandedMatrix{T}(undef, axes, bandwidths(M))
@@ -285,3 +278,5 @@ function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:
     M.C
 end
 
+
+@lazymul AbstractBandedMatrix

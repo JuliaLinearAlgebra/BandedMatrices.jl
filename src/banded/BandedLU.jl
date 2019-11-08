@@ -169,6 +169,4 @@ end
 #     return BandedLU{T,typeof(A)}(A, ipiv, convert(BlasInt, info))
 # end
 
-
 @lazyldiv BandedMatrix
-# @lazyldiv BandedLU

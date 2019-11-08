@@ -34,17 +34,6 @@ const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
 bandedcolumns(_) = BandedColumns{UnknownLayout}()
 bandedcolumns(::ML) where ML<:AbstractStridedLayout = BandedColumns{ML}()
 bandedcolumns(::ML) where ML<:AbstractFillLayout = BandedColumns{ML}()
-bandedcolumns(::ML) where ML<:LazyLayout = BandedColumns{ML}()
-bandedcolumns(::ML) where ML<:ApplyLayout = BandedColumns{LazyLayout}()
-
-for LazyLay in (:(BandedColumns{LazyLayout}), :(BandedRows{LazyLayout}), 
-                :(TriangularLayout{UPLO,UNIT,BandedRows{LazyLayout}} where {UPLO,UNIT}),
-                :(TriangularLayout{UPLO,UNIT,BandedColumns{LazyLayout}} where {UPLO,UNIT}))
-    @eval begin
-        combine_mul_styles(::$LazyLay) = LazyArrayApplyStyle()
-        mulapplystyle(::QLayout, ::$LazyLay) = LazyArrayApplyStyle()
-    end
-end
 
 MemoryLayout(A::Type{BandedMatrix{T,Cont,Axes}}) where {T,Cont,Axes} = bandedcolumns(MemoryLayout(Cont))
 
@@ -722,8 +711,8 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
     SubArray{T,2,BandedMatrix{T, C, R},Tuple{I1,I2},t}
 
 isbanded(::BandedSubBandedMatrix) = true
-subarraylayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} = 
-    bandedcolumns(subarraylayout(L(),Tuple{Slice{OneTo{Int}},J}))
+sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} = 
+    bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J}))
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)

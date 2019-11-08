@@ -1,5 +1,5 @@
 module BandedMatrices
-using Base, FillArrays, LazyArrays, MatrixFactorizations, LinearAlgebra, SparseArrays, Random
+using Base, FillArrays, ArrayLayouts, LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
@@ -12,7 +12,6 @@ import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigva
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
             svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, tril!,
             triu!, Givens
-import MatrixFactorizations: ql, ql!, QLPackedQ, reflector!, reflectorApply!
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >, isassigned,
@@ -29,23 +28,13 @@ import Base: convert, size, view, unsafe_indices,
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
                         materialize, materialize!
 
-import LazyArrays: MemoryLayout, @lazymul, @lazylmul, @lazyldiv,
-                    AbstractStridedLayout, AbstractColumnMajor, AbstractRowMajor,
-                    LazyLayout, UnknownLayout,
-                    transposelayout, triangulardata,
-                    ConjLayout, conjlayout, SymmetricLayout, symmetriclayout, symmetricdata,
-                    triangularlayout, MatLdivVec, TriangularLayout,
-                    AbstractBandedLayout, DiagonalLayout, AbstractFillLayout,
-                    HermitianLayout, hermitianlayout, hermitiandata,
-                    MulAdd, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
-                    ZerosLayout, broadcastlayout, applylayout, 
-                    ApplyStyle, factorizestyle, paddeddata, arguments,
-                    AbstractColumnMajor, colsupport, rowsupport,
-                    DenseColumnMajor, DenseRowMajor, ApplyArrayBroadcastStyle,
-                    symmetricuplo, MatMulMatAdd, MatMulVecAdd, _arguments,
-                    _fill_lmul!, applybroadcaststyle, subarraylayout, sub_materialize, lazy_getindex,
-                    resizedata!, CachedMatrix, ApplyLayout, FlattenMulStyle, PaddedLayout, BroadcastMatrix,
-                    combine_mul_styles, result_mul_style, LazyArrayApplyStyle, QLayout, mulapplystyle, LazyArrayStyle
+import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
+                    conjlayout, symmetriclayout, symmetricdata,
+                    triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
+                    materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
+                    colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
+                    sublayout, sub_materialize, @lazyldiv, @lazylmul, @lazymul, _fill_lmul!,
+                    reflector!, reflectorApply!
 
 import FillArrays: AbstractFill, getindex_value
 
@@ -94,7 +83,6 @@ include("generic/indexing.jl")
 include("banded/BandedMatrix.jl")
 include("banded/BandedLU.jl")
 include("banded/bandedqr.jl")
-include("banded/bandedql.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
 

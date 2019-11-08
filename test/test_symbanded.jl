@@ -1,7 +1,5 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Random, Test
-import LazyArrays: DenseColumnMajor, MulAdd, materialize!
+using BandedMatrices, LinearAlgebra, ArrayLayouts, Random, Test
 import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
-
 
 @testset "Symmetric" begin
     A = Symmetric(brand(10,10,1,2))
@@ -16,7 +14,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
     y = similar(x)
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ 1.0*A*x + 0.0*y) .===
+    @test all(A*x .=== muladd!(1.0,A,x,0.0,similar(x)) .===
                 BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
 
     A = Symmetric(brand(10,10,1,2),:L)
@@ -31,7 +29,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
     y = similar(x)
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ 1.0*A*x + 0.0*y) .===
+    @test all(A*x .=== muladd!(1.0,A,x,0.0,y) .===
                 BLAS.sbmv!('L', 1, 1.0, view(parent(A).data,3:4,:), x, 0.0, similar(x)))
 
     @test norm(A) ≈ norm(Matrix(A))
@@ -86,8 +84,6 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     end
 end
 
-
-
 @testset "Hermitian" begin
     T = ComplexF64
     A = Hermitian(brand(T,10,10,1,2))
@@ -101,9 +97,7 @@ end
     @test A[1,4] == 0
     x=rand(T,10)
     @test A*x ≈ Matrix(A)*x
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== 
-                (similar(x) .= applied(+, applied(*,T(1.0),A,x), applied(*,T(0.0),x))) .===
-                materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
+    @test all(A*x .=== materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('U', 2, T(1.0), parent(A).data, x, T(0.0), similar(x)))
 
     A = Hermitian(brand(T,10,10,1,2),:L)
@@ -118,7 +112,7 @@ end
     x=rand(T, 10)
     @test A*x ≈ Matrix(A)*x
 
-    @test all(A*x .=== (similar(x) .= Mul(A,x)) .=== (similar(x) .= @~ one(T)*A*x + zero(T)*x) .===
+    @test all(A*x .=== muladd!(one(T),A,x,zero(T),copy(x)) .===
                 materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
 end

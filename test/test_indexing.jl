@@ -1,9 +1,8 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Test
+using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
 
 import BandedMatrices: rowstart, rowstop, colstart, colstop,
                        rowlength, collength, diaglength, BandedColumns,
                        rowsupport, colsupport
-import LazyArrays: MemoryLayout, DenseColumnMajor
 
 @testset "Indexing" begin
     @testset "BandedMatrix Indexing" begin

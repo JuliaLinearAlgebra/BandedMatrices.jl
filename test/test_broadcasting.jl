@@ -1,5 +1,4 @@
-using BandedMatrices, LinearAlgebra, LazyArrays, Test
-import LazyArrays: MemoryLayout, MulAdd, DenseColumnMajor, ConjLayout
+using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
 import Base: BroadcastStyle
 import Base.Broadcast: broadcasted
 import BandedMatrices: BandedStyle, BandedRows
@@ -259,24 +258,24 @@ import BandedMatrices: BandedStyle, BandedRows
         x = randn(n)
         A = brand(n,n,1,1)
         y = similar(x)
-        y .= Mul(A,x)
+        mul!(y,A,x)
         @test Matrix(A)*x ≈ y
         @test all(BLAS.gbmv!('N', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .===
                     Broadcast.materialize!(MulAdd(1.0,A,x,0.0,similar(y))) .=== y)
         z = similar(y)
-        z .= @~ 2.0*A*x + 3.0*y
+        z .= MulAdd(2.0,A,x,3.0,y)
         @test 2Matrix(A)*x + 3y ≈ z
         @test all(BLAS.gbmv!('N', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
         @test MemoryLayout(typeof(A')) == BandedRows{DenseColumnMajor}()
-        y .= Mul(A',x)
+        mul!(y,A',x)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
         z = similar(y)
-        z .= applied(+, applied(*, 2.0,A',x), applied(*, 3.0,y))
+        z .= MulAdd(2.0,A',x,3.0,y)
         @test 2Matrix(A')*x + 3y ≈ z
         @test all(BLAS.gbmv!('T', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
         @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
-        y .= Mul(transpose(A),x)
+        muladd!(1.0,transpose(A),x,0.0,y)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
 
@@ -284,19 +283,19 @@ import BandedMatrices: BandedStyle, BandedRows
         x = randn(ComplexF64,n)
         A = brand(ComplexF64,n,n,1,1)
         y = similar(x)
-        y .= Mul(A,x)
+        mul!(y,A,x)
         @test Matrix(A)*x ≈ y
         @test all(BLAS.gbmv!('N', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
-        @test LazyArrays.MemoryLayout(typeof(A')) == ConjLayout{BandedRows{DenseColumnMajor}}()
+        @test MemoryLayout(typeof(A')) == ConjLayout{BandedRows{DenseColumnMajor}}()
         z = similar(y)
-        z .= applied(+, applied(*,2.0+0.0im,A,x), applied(*,3.0+0.0im,y))
+        z .= MulAdd(2.0+0.0im,A,x,3.0+0.0im,y)
         @test 2Matrix(A)*x + 3y ≈ z
         @test all(BLAS.gbmv!('N', n, 1, 1, 2.0+0.0im, A.data, x, 3.0+0.0im, copy(y)) .=== z)
-        y .= Mul(A',x)
+        mul!(y,A',x)
         @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
         @test all(BLAS.gbmv!('C', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
         @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
-        y .= Mul(transpose(A),x)
+        mul!(y,transpose(A),x)
         @test Matrix(transpose(A))*x ≈ transpose(Matrix(A))*x ≈ y
         @test all(BLAS.gbmv!('T', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
     end
@@ -306,21 +305,21 @@ import BandedMatrices: BandedStyle, BandedRows
         A = brand(Int,n,n,1,1)
         x = rand(Int,n)
         y = similar(x)
-        y .= Mul(A,x)
+        mul!(y,A,x)
         @test y == Matrix(A)*x
-        y .= Mul(A',x)
+        mul!(y,A',x)
         @test y == Matrix(A')*x
-        y .= Mul(transpose(A),x)
+        mul!(y,transpose(A),x)
         @test y == Matrix(transpose(A))*x
 
         A = brand(Int,n,n,1,1) + im*brand(Int,n,n,1,1)
         x = rand(eltype(A),n)
         y = similar(x)
-        y .= Mul(A,x)
+        mul!(y,A,x)
         @test y == Matrix(A)*x
-        y .= Mul(A',x)
+        mul!(y,A',x)
         @test y == Matrix(A')*x
-        y .= Mul(transpose(A),x)
+        mul!(y,transpose(A),x)
         @test y == Matrix(transpose(A))*x
     end
 
@@ -329,21 +328,21 @@ import BandedMatrices: BandedStyle, BandedRows
         A = brand(n,n,1,1)
         B = brand(n,n,2,2)
         C = brand(n,n,3,3)
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test Matrix(C) ≈ Matrix(A)*Matrix(B)
-        C .= Mul(A',B)
+        mul!(C,A',B)
         @test Matrix(C) ≈ Matrix(A')*Matrix(B)
-        C .= Mul(A,B')
+        mul!(C,A,B')
         @test Matrix(C) ≈ Matrix(A)*Matrix(B')
         C = brand(n,n,4,4)
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test Matrix(C) ≈ Matrix(A)*Matrix(B)
         B = randn(n,n)
         C = similar(B)
 
-        C .= Mul(A,B)
+        mul!(C,A,B)
         @test C ≈ Matrix(A)*Matrix(B)
-        C .= Mul(B,A)
+        mul!(C,B,A)
         @test C ≈ Matrix(B)*Matrix(A)
     end
 
