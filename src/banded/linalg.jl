@@ -10,12 +10,12 @@ end
 
 function copyto!(dest::AbstractVecOrMat, L::Ldiv{<:BandedRowMajor})
     A, B = L.A, L.B
-    copyto!(dest, Mul(transpose(factorize(transpose(A))), B))
+    copyto!(dest, Ldiv(transpose(factorize(transpose(A))), B))
 end
 
 function copyto!(dest::AbstractVecOrMat, L::Ldiv{<:ConjLayout{<:BandedRowMajor}})
     A, B = L.A, L.B
-    copyto!(dest, Mul(factorize(A')', B))
+    copyto!(dest, Ldiv(factorize(A')', B))
 end
 
 
@@ -48,7 +48,7 @@ end
 function ldiv!(transA::Transpose{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
     A = transA.parent
     ldiv!(transpose(UnitLowerTriangular(A.factors)), ldiv!(transpose(UpperTriangular(A.factors)), B))
-    _apply_inverse_ipiv!(A, B)
+    _apply_inverse_ipiv_rows!(A, B)
 end
 
 ldiv!(adjF::Adjoint{T,<:BandedLU{T,<:BandedMatrix}}, B::AbstractVecOrMat{T}) where {T<:Real} =
