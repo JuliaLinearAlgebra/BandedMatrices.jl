@@ -170,3 +170,28 @@ end
 # end
 
 @lazyldiv BandedMatrix
+
+
+_apply_ipiv_rows!(A::BandedLU, B::AbstractVecOrMat) = _ipiv_rows!(A, 1 : length(A.ipiv), B)
+_apply_inverse_ipiv_rows!(A::BandedLU, B::AbstractVecOrMat) = _ipiv_rows!(A, length(A.ipiv) : -1 : 1, B)
+
+function _ipiv_rows!(A::BandedLU, order::OrdinalRange, B::AbstractVecOrMat)
+    for i = order
+        if i != A.ipiv[i]
+            _swap_rows!(B, i, A.ipiv[i])
+        end
+    end
+    B
+end
+
+function _swap_rows!(B::AbstractVector, i::Integer, j::Integer)
+    B[i], B[j] = B[j], B[i]
+    B
+end
+
+function _swap_rows!(B::AbstractMatrix, i::Integer, j::Integer)
+    for col = 1 : size(B, 2)
+        B[i,col], B[j,col] = B[j,col], B[i,col]
+    end
+    B
+end
