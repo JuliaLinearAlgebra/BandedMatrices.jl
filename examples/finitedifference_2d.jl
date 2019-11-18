@@ -5,7 +5,7 @@
 ###########
 
 
-using BandedMatrices, LazyArrays, LinearAlgebra
+using BandedMatrices, LazyBandedMatrices, LazyArrays, LinearAlgebra
 
 function finitedifference_2d(n)
     h = 1/n
