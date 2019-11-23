@@ -62,6 +62,8 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
         @test colrange(A,2) == colsupport(A,2) == 1:1
         @test colrange(A,3) == colsupport(A,3) == 1:2
         @test colrange(A,4) == colsupport(A,4) == 2:3
+
+        @test colsupport(A,1:0) == rowsupport(A,1:0) == 1:0
     end
 
     @testset "test length of diagonal" begin
