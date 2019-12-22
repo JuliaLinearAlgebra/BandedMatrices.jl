@@ -713,6 +713,7 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
 isbanded(::BandedSubBandedMatrix) = true
 sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} = 
     bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J}))
+getindex_value(A::SubArray) = getindex_value(parent(A))    
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)
