@@ -457,4 +457,10 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A .* b' == b' .* A == Matrix(A) .* Matrix(b')
         @test A .* B == B .* A == Matrix(A) .* Matrix(B)
     end
+
+    @testset "broadcast with Int (#154)" begin
+        b = BandedMatrix(8Ones(10,10), (2,1))
+        @test BandedMatrices._isweakzero(round,Int,b)
+        @test round.(Int, b) == round.(Int,Matrix(b))
+    end
 end
