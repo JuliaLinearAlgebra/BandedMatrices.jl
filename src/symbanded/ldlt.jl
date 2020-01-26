@@ -3,6 +3,9 @@
 @inline bandwidth(A::LDLt{T,Symmetric{T,M}}, k) where {T,M<:BandedMatrix{T}} = bandwidth(A.data, k)
 
 factorize(S::Symmetric{<:Any,<:BandedMatrix}) = ldlt(S)
+if VERSION ≥ v"1.4-"
+    LinearAlgebra._factorize(S::Symmetric{<:Any,<:BandedMatrix}; check=false) = ldlt(S)
+end
 
 function ldlt!(F::Symmetric{T,M}) where {T,M<:BandedMatrix{T}}
     A = F.data
