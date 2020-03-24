@@ -20,20 +20,12 @@ inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
 
 ###
 # Lazy getindex
-# this uses a lazy-materialize idiom to construct a matrix based
+# this uses a layout-materialize idiom to construct a matrix based
 # on the memory layout
 ###
 
 sub_materialize(::AbstractBandedLayout, V) = BandedMatrix(V)
 
-@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::Colon) = lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::AbstractUnitRange) = lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::AbstractUnitRange, jr::Colon) = lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::AbstractVector, jr::AbstractVector) = lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::Colon, jr::AbstractVector) = lazy_getindex(A, kr, jr)
-@inline getindex(A::AbstractBandedMatrix, kr::AbstractVector, jr::Colon) = lazy_getindex(A, kr, jr)
-
-@inline getindex(A::AbstractMatrix, b::Band) = lazy_getindex(A, b)
-@inline getindex(A::AbstractMatrix, kr::BandRangeType, j::Integer) = lazy_getindex(A, kr, j)
-@inline getindex(A::AbstractMatrix, k::Integer, jr::BandRangeType) = lazy_getindex(A, k, jr)
+@inline getindex(A::AbstractMatrix, b::Band) = layout_getindex(A, b)
+@inline getindex(A::AbstractMatrix, kr::BandRangeType, j::Integer) = layout_getindex(A, kr, j)
+@inline getindex(A::AbstractMatrix, k::Integer, jr::BandRangeType) = layout_getindex(A, k, jr)

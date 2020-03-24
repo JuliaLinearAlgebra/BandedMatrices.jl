@@ -37,11 +37,6 @@ Base.replace_in_print_matrix(A::Union{LowerTriangular{<:Any,<:AbstractBandedMatr
     -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
 
 # Mul
-@lazylmul UpperTriangular{T, <:AbstractBandedMatrix{T}} where T
-@lazylmul UnitUpperTriangular{T, <:AbstractBandedMatrix{T}} where T
-@lazylmul LowerTriangular{T, <:AbstractBandedMatrix{T}} where T
-@lazylmul UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
-
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                                 <:AbstractStridedLayout}) where UNIT
@@ -69,11 +64,6 @@ end
 end
 
 # Ldiv
-@lazyldiv UpperTriangular{T, <:AbstractBandedMatrix{T}} where T
-@lazyldiv UnitUpperTriangular{T, <:AbstractBandedMatrix{T}} where T
-@lazyldiv LowerTriangular{T, <:AbstractBandedMatrix{T}} where T
-@lazyldiv UnitLowerTriangular{T, <:AbstractBandedMatrix{T}} where T
-
 for UNIT in ('N', 'U')
     @eval begin
         @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:BandedColumnMajor},

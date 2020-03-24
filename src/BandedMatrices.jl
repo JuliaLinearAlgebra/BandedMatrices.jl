@@ -33,7 +33,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
                     materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
-                    sublayout, sub_materialize, @lazyldiv, @lazylmul, @lazymul, _fill_lmul!,
+                    sublayout, sub_materialize, _fill_lmul!,
                     reflector!, reflectorApply!
 
 import FillArrays: AbstractFill, getindex_value
