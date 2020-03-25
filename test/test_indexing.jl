@@ -242,6 +242,88 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test_throws DimensionMismatch a[BandRange, 1] = [1, 2]
         end
 
+        @testset "scalar integer - - BandRange/Colon" begin
+            a = BandedMatrix(Ones(5, 5), (1, 1))
+            # 1.0  1.0  0.0  0.0  0.0
+            # 1.0  1.0  1.0  0.0  0.0
+            # 0.0  1.0  1.0  1.0  0.0
+            # 0.0  0.0  1.0  1.0  1.0
+            # 0.0  0.0  0.0  1.0  1.0
+
+            # in band
+            a[1, BandRange] .= 2
+            a[2, BandRange] .= 3
+            a[3, BandRange] .= 4
+            a[4, BandRange] .= 5
+            a[5, BandRange] .= 6
+            @test a ==  [2  2  0  0  0;
+                         3  3  3  0  0;
+                         0  4  4  4  0;
+                         0  0  5  5  5;
+                         0  0  0  6  6]
+
+            @test a[1, BandRange] == [2, 2]
+            @test a[2, BandRange] == [3, 3, 3]
+            @test a[3, BandRange] == [4, 4, 4]
+            @test a[4, BandRange] == [5, 5, 5]
+            @test a[5, BandRange] == [6, 6]
+
+            @test_throws BoundsError a[0, :] .= 1
+            @test_throws BandError a[1, :] .= 1
+            @test_throws BoundsError a[0, BandRange] .= 1
+            @test_throws BoundsError a[6, BandRange] .= 1
+
+            a = BandedMatrix(Ones(5, 3), (2, -1))
+            @test isempty(a[1,BandRange])
+            a[2,BandRange] = [1]
+            a[3,BandRange] = [2, 2]
+            a[4,BandRange] = [3, 3]
+            a[5,BandRange] = [4]
+
+            @test a ==   [0 0 0;
+                          1 0 0;
+                          2 2 0;
+                          0 3 3;
+                          0 0 4]
+        end
+
+        @testset "vector - integer - BandRange/Colon" begin
+            a = BandedMatrix(Ones{Int}(7, 5), (1, 2))
+            # 5x7 BandedMatrices.BandedMatrix{Float64}:
+            #  1.0  1.0    0    0    0    0   0   0
+            #  1.0  1.0  1.0    0    0    0   0   0
+            #  1.0  1.0  1.0  1.0    0    0   0   0
+            #    0  1.0  1.0  1.0  1.0    0   0   0
+            #    0    0  1.0  1.0  1.0  1.0   0   0
+
+            # in band
+            a[1, BandRange] = [1,   2,  3]
+            a[2, BandRange] = [4,   5,  6,  7]
+            a[3, BandRange] = [8,   9, 10, 11]
+            a[4, BandRange] = [12, 13, 14]
+            a[5, BandRange] = [15, 16]
+            a[6, BandRange] = [17]
+
+            @test a == [ 1  4   0   0   0   0   0;
+                         2  5   8   0   0   0   0;
+                         3  6   9  12   0   0   0;
+                         0  7  10  13  15   0   0;
+                         0  0  11  14  16  17   0]'
+
+            @test a[1, BandRange] == [1,   2,  3]
+            @test a[2, BandRange] == [4,   5,  6,  7]
+            @test a[3, BandRange] == [8,   9, 10, 11]
+            @test a[4, BandRange] == [12, 13, 14]
+            @test a[5, BandRange] == [15, 16]
+            @test a[6, BandRange] == [17]
+
+            @test_throws BoundsError a[0, :] = [1, 2, 3]
+            @test_throws DimensionMismatch a[1, :] = [1, 2, 3]
+            @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
+            @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
+            @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
+        end        
+
 
         # scalar - range - integer
         let
