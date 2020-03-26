@@ -277,6 +277,3 @@ function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:
     M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
     M.C
 end
-
-
-@lazymul AbstractBandedMatrix

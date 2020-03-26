@@ -169,8 +169,6 @@ end
 #     return BandedLU{T,typeof(A)}(A, ipiv, convert(BlasInt, info))
 # end
 
-@lazyldiv BandedMatrix
-
 
 _apply_ipiv_rows!(A::BandedLU, B::AbstractVecOrMat) = _ipiv_rows!(A, 1 : length(A.ipiv), B)
 _apply_inverse_ipiv_rows!(A::BandedLU, B::AbstractVecOrMat) = _ipiv_rows!(A, length(A.ipiv) : -1 : 1, B)

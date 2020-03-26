@@ -1,6 +1,6 @@
 # AbstractBandedMatrix must implement
 
-abstract type AbstractBandedMatrix{T} <: AbstractSparseMatrix{T,Int} end
+abstract type AbstractBandedMatrix{T} <: LayoutMatrix{T} end
 
 
 """
