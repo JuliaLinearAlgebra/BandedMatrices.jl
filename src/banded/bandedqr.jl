@@ -1,24 +1,22 @@
-qr(A::AbstractBandedMatrix) = banded_qr(A)
-qr(A::BandedSubBandedMatrix) = banded_qr(A)
-
-banded_qr(A) = _banded_qr(axes(A), A)
+_qr(::AbstractBandedLayout, ax, A::AbstractMatrix) = _banded_qr(ax, A)
 _banded_qr(_, A) = qr!(BandedMatrix{float(eltype(A))}(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
 
-
-
 qr(A::Tridiagonal{T}) where T = qr!(BandedMatrix{float(T)}(A, (1,2)))
-
-qr!(A::BandedMatrix) = banded_qr!(A)
-qr!(A::BandedSubBandedMatrix) = banded_qr!(A)
+_qr!(::AbstractBandedLayout, _, A) = banded_qr!(A)
 
 
 function _banded_qr!(R::AbstractMatrix{T}, τ) where T
+    m,n=size(R)
+    _banded_qr!(R, τ, min(m - 1 + !(T<:Real), n))
+end
+
+function _banded_qr!(R::AbstractMatrix, τ, ncols)
     D = bandeddata(R)
     l,u = bandwidths(R)
     ν = l+u+1
     m,n=size(R)
 
-    for k = 1:min(m - 1 + !(T<:Real), n)
+    for k = 1:ncols
         x = view(D,u+1:min(ν,m-k+u+1), k)
         τk = reflector!(x)
         τ[k] = τk
@@ -79,7 +77,7 @@ function banded_qr_lmul!(adjA::Adjoint, B)
     @inbounds begin
         for j = 1:nB
             cs = colsupport(B,j)
-            for k = max(1,minimum(cs)-l):min(mA,nA,maximum(cs)+l)
+            for k = max(1,minimum(cs)-l):min(mA,nA,maximum(cs)+l,length(A.τ))
                 vBj = B[k,j]
                 for i = k+1:min(k+l,mB)
                     vBj += conj(D[i-k+u+1,k])*B[i,j]
