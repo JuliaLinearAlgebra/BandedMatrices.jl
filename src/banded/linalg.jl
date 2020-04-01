@@ -71,4 +71,4 @@ end
 \(A::Adjoint{<:Any,<:BandedLU}, B::Adjoint{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
 \(A::Transpose{<:Any,<:BandedLU}, B::Transpose{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
 
-factorize(A::BandedMatrix) = lu(A)
+_factorize(::AbstractBandedLayout, _, A) = lu(A)
