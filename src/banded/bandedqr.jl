@@ -1,4 +1,4 @@
-_qr(::AbstractBandedLayout, ax, A::AbstractMatrix) = _banded_qr(ax, A)
+_qr(::AbstractBandedLayout, ax, A) = _banded_qr(ax, A)
 _banded_qr(_, A) = qr!(BandedMatrix{float(eltype(A))}(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
 
 qr(A::Tridiagonal{T}) where T = qr!(BandedMatrix{float(T)}(A, (1,2)))
