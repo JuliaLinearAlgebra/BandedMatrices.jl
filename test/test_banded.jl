@@ -431,5 +431,12 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         A = BandedMatrix{Any}(undef, (10,10), (1,1))
         @test A[1,3] === nothing
     end
+
+    @testset "negative bands + (#164)" begin
+        A,B = BandedMatrix(-3 => 1:5) , BandedMatrix(3 => 1:5)
+        @test A + B == A .+ B == B + A == B .+ A == Matrix(A) + Matrix(B)
+        @test A - B == A .- B == Matrix(A) - Matrix(B)
+        @test B - A == B .- A == Matrix(B) - Matrix(A)
+    end
 end
 

@@ -635,13 +635,17 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         fill!(view(data_d,d_u+max(A_l,B_l)+2:size(data_d,1),:), z)
 
         # construct where B upper is zero
-        data_d_u_A = view(data_d,max(1,d_u-max(A_u,B_u)+1):min(d_u-B_u,size(data_d,1)), :)
-        data_A_u_A = view(data_A, 1:min(A_u-B_u,size(data_d_u_A,1)), :)
+        # this is from band A_u:B_u+1
+        bs = max(-d_u,-A_u):min(-1-B_u,A_l,d_l)
+        data_d_u_A = view(data_d, bs .+ d_u .+ 1, :)
+        data_A_u_A = view(data_A, bs .+ A_u .+ 1, :)
         data_d_u_A .= f.(data_A_u_A, zero(eltype(B)))
-
+        
         # construct where A upper is zero
-        data_d_u_B = view(data_d,max(1,d_u-max(A_u,B_u)+1):min(d_u-A_u,size(data_d,1)), :)
-        data_B_u_B = view(data_B, 1:B_u-A_u, :)
+        # this is from band B_u:min(A_u+1,-B_l)
+        bs = max(-d_u,-B_u):min(-1-A_u,B_l,d_l)
+        data_d_u_B = view(data_d, bs .+ d_u .+ 1, :)
+        data_B_u_B = view(data_B, bs .+ B_u .+ 1, :)
         data_d_u_B .= f.(zero(eltype(A)), data_B_u_B)
 
         # construct where A and B are non-zero
@@ -651,13 +655,15 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         data_d̃ .= f.(data_Ã,data_B̃)
 
         # construct where A lower is zero
-        data_d_l_B = view(data_d, d_u+min_l+2 : d_u+min(d_l,B_l)+1, :)
-        data_B_l_B = view(data_B, B_u+min_l+2 : B_u+min(d_l,B_l)+1, :)
+        bs = max(A_l+1,-B_u,-d_u):min(B_l,d_l)
+        data_d_l_B = view(data_d, bs .+ d_u .+ 1, :)
+        data_B_l_B = view(data_B, bs .+ B_u .+ 1, :)
         data_d_l_B .= f.(zero(eltype(A)), data_B_l_B)
 
         # construct where B lower is zero
-        data_d_l_A = view(data_d, d_u+min_l+2 : d_u+min(d_l,A_l)+1, :)
-        data_A_l_A = view(data_A, A_u+min_l+2 : A_u+min(d_l,A_l)+1, :)
+        bs = max(B_l+1,-A_u,-d_u):min(A_l,d_l)
+        data_d_l_A = view(data_d, bs .+ d_u .+ 1, :)
+        data_A_l_A = view(data_A, bs .+ A_u .+ 1, :)
         data_d_l_A .= f.(data_A_l_A, zero(eltype(B)))
     end
 
