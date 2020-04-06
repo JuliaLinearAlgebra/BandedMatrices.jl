@@ -24,7 +24,7 @@ inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
 # on the memory layout
 ###
 
-sub_materialize(::AbstractBandedLayout, V) = BandedMatrix(V)
+sub_materialize(::AbstractBandedLayout, V, _) = BandedMatrix(V)
 
 @inline getindex(A::AbstractMatrix, b::Band) = layout_getindex(A, b)
 @inline getindex(A::AbstractMatrix, kr::BandRangeType, j::Integer) = layout_getindex(A, kr, j)
