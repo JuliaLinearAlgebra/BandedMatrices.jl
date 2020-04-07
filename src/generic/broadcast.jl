@@ -52,8 +52,8 @@ copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
 # copyto!
 ##
 
-_copyto!(::AbstractBandedLayout, ::AbstractBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) =
-    (dest .= src)
+_copyto!(dest_L::AbstractBandedLayout, src_L::AbstractBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) =
+    _banded_broadcast!(dest, identity, src, dest_L, src_L)
 
 
 function checkbroadcastband(dest, sizesrc, bndssrc)

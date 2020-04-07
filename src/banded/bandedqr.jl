@@ -77,7 +77,7 @@ function banded_qr_lmul!(adjA::Adjoint, B)
     @inbounds begin
         for j = 1:nB
             cs = colsupport(B,j)
-            for k = max(1,minimum(cs)-l):min(mA,nA,maximum(cs)+l,length(A.τ))
+            for k = max(1,minimum(cs)):min(mA,nA,maximum(cs)+l,length(A.τ))
                 vBj = B[k,j]
                 for i = k+1:min(k+l,mB)
                     vBj += conj(D[i-k+u+1,k])*B[i,j]
