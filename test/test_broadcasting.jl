@@ -463,4 +463,12 @@ import BandedMatrices: BandedStyle, BandedRows
         @test BandedMatrices._isweakzero(round,Int,b)
         @test round.(Int, b) == round.(Int,Matrix(b))
     end
+
+    @testset "degnerate bands" begin
+    A = BandedMatrix(Zeros(1,1), (0,-3))
+    C = BandedMatrix(Ones(1,1), (0,0))
+    C .= 0.0 .- A
+    @test C == zeros(1,1)
+    C .= A .- 0.0
+    @test C == zeros(1,1)
 end
