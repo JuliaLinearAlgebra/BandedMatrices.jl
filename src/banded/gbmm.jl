@@ -218,7 +218,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     @assert ν == size(B,1)
     @assert m == size(C,2)
 
-    n == 0 || m == 0 && return C
+    (n == 0 || m == 0) && return C
 
     Al, Au = bandwidths(A)
     Bl, Bu = bandwidths(B)
