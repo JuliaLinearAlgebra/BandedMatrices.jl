@@ -52,8 +52,8 @@ copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle}) =
 # copyto!
 ##
 
-_copyto!(::AbstractBandedLayout, ::AbstractBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) =
-    (dest .= src)
+_copyto!(dest_L::AbstractBandedLayout, src_L::AbstractBandedLayout, dest::AbstractMatrix, src::AbstractMatrix) =
+    _banded_broadcast!(dest, identity, src, dest_L, src_L)
 
 
 function checkbroadcastband(dest, sizesrc, bndssrc)
@@ -281,14 +281,15 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     λ,μ = bandwidths(dest)
     m,n = size(src)
     data_d,data_s = bandeddata(dest), bandeddata(src)
+    d_m, d_n = size(data_d)
     if (l,u) == (λ,μ)
         data_d .= f.(data_s, x)
     elseif μ > u && λ > l
-        fill!(view(data_d,1:(μ-u),:), z)
+        fill!(view(data_d,1:min(μ-u,d_m),:), z)
         fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
         view(data_d,μ-u+1:μ+l+1,:) .= f.(data_s,x)
     elseif μ > u
-        fill!(view(data_d,1:(μ-u),:), z)
+        fill!(view(data_d,1:min(μ-u,d_m),:), z)
         for b = λ+1:l
             any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
         end
@@ -320,14 +321,15 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,Abst
     λ,μ = bandwidths(dest)
     m,n = size(src)
     data_d,data_s = bandeddata(dest), bandeddata(src)
+    d_m, d_n = size(data_d)
     if (l,u) == (λ,μ)
         data_d .= f.(x, data_s)
     elseif μ > u && λ > l
-        fill!(view(data_d,1:(μ-u),:), z)
+        fill!(view(data_d,1:min(μ-u,d_m),:), z)
         fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
         view(data_d,μ-u+1:μ+l+1,:) .= f.(x, data_s)
     elseif μ > u
-        fill!(view(data_d,1:(μ-u),:), z)
+        fill!(view(data_d,1:min(μ-u,d_m),:), z)
         for b = λ+1:l
             any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
         end

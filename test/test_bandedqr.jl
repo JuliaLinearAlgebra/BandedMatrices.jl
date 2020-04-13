@@ -113,4 +113,11 @@ Random.seed!(0)
         @test B ≈ F.factors
         @test τ ≈ F.τ
     end
+
+    @testset "banded_lmul! times degenerate" begin
+        B = brand(10,10,1,1)
+        Q,R = qr(B)
+        @test lmul!(Q', BandedMatrix(B,(size(B,1),2))) ≈ Q'*B
+        @test lmul!(Q', view(BandedMatrix(B,(size(B,1),2)),:,4:10)) ≈ Q'*B[:,4:10]
+    end
 end
