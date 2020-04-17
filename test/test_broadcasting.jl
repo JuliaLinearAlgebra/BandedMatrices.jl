@@ -474,7 +474,7 @@ import BandedMatrices: BandedStyle, BandedRows
         
         A = BandedMatrix(Eye(3,4)) 
         B = randn(3,4)
-        bc = Base.broadcasted(*, A, B)
+        bc = broadcasted(*, A, B)
         
         @test copyto!(similar(bc, Float64), bc) == A .* B == B .* A == 
             BandedMatrix(B, (0,0)) == Matrix(A) .* B
