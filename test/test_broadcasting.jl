@@ -470,6 +470,13 @@ import BandedMatrices: BandedStyle, BandedRows
 		C .= 0.0 .- A
 		@test C == zeros(1,1)
 		C .= A .- 0.0
-		@test C == zeros(1,1)
+        @test C == zeros(1,1)
+        
+        A = BandedMatrix(Eye(3,4)) 
+        B = randn(3,4)
+        bc = Base.broadcasted(*, A, B)
+        
+        @test copyto!(similar(bc, Float64), bc) == A .* B == B .* A == 
+            BandedMatrix(B, (0,0)) == Matrix(A) .* B
 	end
 end
