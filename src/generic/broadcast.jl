@@ -6,7 +6,7 @@
 # in addition to the banded matrix interface
 ####
 
-
+struct BandedLayout <: AbstractBandedLayout end
 struct BandedColumns{ML} <: AbstractBandedLayout end
 struct BandedRows{ML} <: AbstractBandedLayout end
 
