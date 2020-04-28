@@ -161,3 +161,25 @@ end
     @test bandwidths(A) == bandwidths(Ã) == (1,2)
     @test Ã == A == Matrix(B) + Matrix(T)
 end
+
+@testset "rot180" begin
+    A = brand(5,5,1,2)
+    R = rot180(A)
+    @test bandwidths(R) == (2,1)
+    @test R == rot180(Matrix(A))
+
+    A = brand(5,4,1,2)
+    R = rot180(A)
+    @test bandwidths(R) == (3,0)
+    @test R == rot180(Matrix(A))
+
+    A = brand(5,6,1,-1)
+    R = rot180(A)
+    @test bandwidths(R) == (-2,2)
+    @test R == rot180(Matrix(A))
+
+    A = brand(6,5,-1,1)
+    R = rot180(A)
+    @test bandwidths(R) == (2,-2)
+    @test R == rot180(Matrix(A))
+end

@@ -44,3 +44,13 @@ inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
 isbanded(::Tridiagonal) = true
 bandwidths(::Tridiagonal) = (1,1)
 
+###
+# rot180
+###
+
+function rot180(A::AbstractBandedMatrix)
+    m,n = size(A)
+    sh = m-n
+    l,u = bandwidths(A)
+    _BandedMatrix(bandeddata(A)[end:-1:1,end:-1:1], m, u+sh,l-sh)
+end
