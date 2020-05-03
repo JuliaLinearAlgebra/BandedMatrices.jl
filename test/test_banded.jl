@@ -34,7 +34,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test typeof(BandedMatrix{Int}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Int,Matrix{Int}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}(undef,(10,10),(1,1)))
-@test typeof(BandedMatrix{Vector{Int}}(undef,(10,10),(1,1))) ==
+        @test typeof(BandedMatrix{Vector{Int}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}},Base.OneTo{Int}}(undef,(10,10),(1,1)))                
     end
