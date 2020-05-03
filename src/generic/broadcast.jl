@@ -674,7 +674,7 @@ end
 
 
 copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) =
-    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
+    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), map(MemoryLayout,bc.args))
 
 # override copy in case data has special broadcast
 _default_banded_broadcast(bc::Broadcasted{Style}, _) where Style = Base.invoke(copy, Tuple{Broadcasted{Style}}, bc)

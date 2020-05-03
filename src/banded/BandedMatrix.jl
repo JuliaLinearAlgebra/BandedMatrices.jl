@@ -204,11 +204,14 @@ function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Integer}) where T
     ret
 end
 
-BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} = BandedMatrix{T,C}(A, bandwidths(A))
-BandedMatrix{T}(A::AbstractMatrix) where T = BandedMatrix{T}(A, bandwidths(A))
+BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} = 
+    copyto!(BandedMatrix{T, C}(undef, size(A), bandwidths(A)), A)
+BandedMatrix{T}(A::AbstractMatrix) where T = 
+    copyto!(BandedMatrix{T}(undef, size(A), bandwidths(A)), A)
 
 # use bandeddata if possible
-_BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
+_BandedMatrix(::BandedColumns, A::AbstractMatrix) = 
+    _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
 _BandedMatrix(_, A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
 BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(typeof(A)), A)
 
@@ -713,6 +716,9 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
 isbanded(::BandedSubBandedMatrix) = true
 sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} = 
     bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J}))
+sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:AbstractUnitRange} = 
+    transposelayout(bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J})))
+
 BroadcastStyle(::Type{<:BandedSubBandedMatrix}) = BandedStyle()
 
 function _shift(bm::BandedSubBandedMatrix)
@@ -727,10 +733,14 @@ function similar(bm::BandedSubBandedMatrix, T::Type=eltype(bm),
     similar(bm.parent, T, n, m, l, u)
 end
 
-bandeddata(V::SubArray) = view(bandeddata(parent(V)), :, parentindices(V)[2])
+function bandeddata(V::SubArray) 
+    l,u = bandwidths(V)
+    L,U = bandwidths(parent(V)) .+ (-1,1) .* bandshift(V)
+    view(bandeddata(parent(V)), U-u+1:U+l+1, parentindices(V)[2])
+end
 
 bandwidths(S::SubArray{T,2,<:AbstractMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
-    bandwidths(parent(S)) .+ (-1,1) .* bandshift(S)
+    min.(size(S) .- 1, bandwidths(parent(S)) .+ (-1,1) .* bandshift(S))
 
 if VERSION < v"1.2-"
     @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
