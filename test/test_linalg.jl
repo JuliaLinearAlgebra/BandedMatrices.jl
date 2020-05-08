@@ -1,6 +1,6 @@
 using BandedMatrices, ArrayLayouts, LinearAlgebra, FillArrays, Test
 import Base.Broadcast: materialize, broadcasted
-import BandedMatrices: BandedColumns
+import BandedMatrices: BandedColumns, _BandedMatrix
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -245,6 +245,11 @@ import BandedMatrices: BandedColumns
         @test A'D isa BandedMatrix
         @test A'*D*A isa BandedMatrix
         @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
+    end
+
+    @testset "muladd! throws error" begin
+        A = _BandedMatrix(Ones(3,10), 10, 1, 1)
+        @test_throws ArgumentError muladd!(1.0, A, A, 1.0, Zeros(10,10))
     end
 end
 
