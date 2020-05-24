@@ -106,29 +106,17 @@ end
 function convert(::Type{BandedMatrix{<:,C,OneTo{Int}}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
-    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
-    for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = convert(T, M[k,j])
-    end
-    ret
+    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
 end
 
 function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
-    for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = convert(T, M[k,j])
-    end
-    ret
+    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
 end
 
 function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C<:AbstractMatrix{T}}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
-    for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = convert(T, M[k,j])
-    end
-    ret
+    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
 end
 
 convert(::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C} = convert(BandedMatrix{<:,C,OneTo{Int}}, M)
