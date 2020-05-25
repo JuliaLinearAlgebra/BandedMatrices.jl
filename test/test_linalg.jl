@@ -204,7 +204,7 @@ import BandedMatrices: BandedColumns, _BandedMatrix
 
         M = MulAdd(A,B)
         C = Matrix{Float64}(undef,10,8)
-
+        fill!(C,NaN)
         C .= M
         @test C == A*B == Matrix(A)*Matrix(B)
         @test A*B isa BandedMatrix
