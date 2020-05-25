@@ -1,26 +1,33 @@
 using BandedMatrices, LinearAlgebra, FillArrays, Test
-import BandedMatrices: _BandedMatrix
-## Banded Matrix of Banded Matrix
-
-BandedMatrixWithZero = Union{BandedMatrix{Float64,Matrix{Float64}}, UniformScaling}
-# need to define the concept of zero
-Base.zero(::Type{BandedMatrixWithZero}) = 0*I
+import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
 
 @testset "misc tests" begin
-    @time @testset "BandedMatrixWithZero" begin
-        A = BandedMatrix{BandedMatrixWithZero}(undef, (1, 2), (0, 1))
+    @testset "Diagonal of banded" begin
+        D = Diagonal([BandedMatrix(Eye(5),(2,3)), BandedMatrix(Eye(6),(1,1))])
+        @test @inferred(D[1,1]) == I
+        @test @inferred(D[1,2]) == zeros(5,6)
+        @test bandwidths(D[1,2]) == (2,1)
+    end
+
+    @time @testset "BandedMatrix of BandedMatrix" begin
+        A = BandedMatrix{DefaultBandedMatrix{Float64}}(undef, (1, 2), (0, 1))
         A[1,1] = BandedMatrix(Eye(1),(0,1))
         A[1,2] = BandedMatrix(Zeros(1,2),(0,1))
         A[1,2][1,1] = -1/3
         A[1,2][1,2] = 1/3
-        B = BandedMatrix{BandedMatrixWithZero}(undef, (2, 1), (1, 1))
+        B = BandedMatrix{DefaultBandedMatrix{Float64}}(undef, (2, 1), (1, 1))
         B[1,1] = 0.2BandedMatrix(Eye(1),(0,1))
         B[2,1] = BandedMatrix(Zeros(2,1), (1,0))
         B[2,1][1,1] = -2/30
         B[2,1][2,1] = 1/3
 
-        # A*B has insane compile time in v0.7-alpha
-        @test_skip (A*B)[1,1][1,1] ≈ 1/3
+        @test (A*B)[1,1][1,1] ≈ 1/3
+
+        A = BandedMatrix(Diagonal([randn(2,3), randn(3,4)]), (0,0))
+        @test @inferred(A[1,2]) == zeros(2,4)
+
+        A = BandedMatrix(Diagonal([brand(5,6,2,1), brand(7,8,1,1)]), (0,0))
+        @test @inferred(A[1,2]) == zeros(5,8)
     end
 
     @time @testset "dense overrides" begin

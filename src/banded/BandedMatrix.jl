@@ -106,29 +106,17 @@ end
 function convert(::Type{BandedMatrix{<:,C,OneTo{Int}}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
-    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
-    for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = convert(T, M[k,j])
-    end
-    ret
+    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
 end
 
 function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
-    for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = convert(T, M[k,j])
-    end
-    ret
+    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
 end
 
 function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C<:AbstractMatrix{T}}
     Container = typeof(convert(C, similar(M, T, 0, 0)))
-    ret = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
-    for k=1:size(M,1),j=1:size(M,2)
-        ret[k,j] = convert(T, M[k,j])
-    end
-    ret
+    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
 end
 
 convert(::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C} = convert(BandedMatrix{<:,C,OneTo{Int}}, M)
@@ -193,6 +181,11 @@ BandedMatrix(A::AbstractMatrix{T}, bnds::NTuple{2,Integer}) where T =
     BandedMatrix{T}(A, bnds)
 
 
+BandedMatrix{V,C}(Z::Zeros{T,2}, bnds::NTuple{2,Integer}) where {T,C,V} =
+    _BandedMatrix(C(Zeros{T}(max(0,sum(bnds)+1),size(Z,2))),size(Z,1),bnds...)
+
+BandedMatrix{V,C,Base.OneTo{Int}}(Z::Zeros{T,2}, bnds::NTuple{2,Integer}) where {T,C,V} =
+    _BandedMatrix(C(Zeros{T}(max(0,sum(bnds)+1),size(Z,2))),size(Z,1),bnds...)
 
 BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Integer}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
@@ -324,15 +317,19 @@ IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
 end
 
 # work around for Any matrices
-_zero(T) = zero(T)
-_zero(::Type{Any}) = nothing
+_offband_zero(::AbstractMatrix{T}, _, _, _, _) where T = zero(T)
+_offband_zero(::AbstractMatrix{Any}, _, _, _, _) = nothing
+_offband_zero(data::AbstractMatrix{<:AbstractMatrix}, l, u, k, j) = 
+    diagzero(Diagonal(view(data,u+1,:)), k, j)
+diagzero(D::Diagonal{B}, i, j) where B<:BandedMatrix = 
+    B(Zeros{eltype(B)}(size(D.diag[i], 1), size(D.diag[j], 2)), (bandwidth(D.diag[i],1), bandwidth(D.diag[j],2)))
 
 # banded get index, used for banded matrices with other data types
 @inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
         inbands_getindex(data, u, k, j)
     else
-        _zero(eltype(data)) 
+        _offband_zero(data, l, u, k, j)
     end
 end
 

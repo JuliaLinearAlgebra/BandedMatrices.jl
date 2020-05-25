@@ -11,7 +11,7 @@ import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigva
             qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
             svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, tril!,
-            triu!, Givens
+            triu!, Givens, diagzero
 import SparseArrays: sparse
 
 import Base: getindex, setindex!, *, +, -, ==, <, <=, >, isassigned,
@@ -35,7 +35,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
                     sublayout, sub_materialize, _fill_lmul!,
                     reflector!, reflectorApply!, _copyto!, 
-                    _qr!, _qr, _lu!, _lu, _factorize
+                    _qr!, _qr, _lu!, _lu, _factorize, TridiagonalLayout
 
 import FillArrays: AbstractFill, getindex_value
 

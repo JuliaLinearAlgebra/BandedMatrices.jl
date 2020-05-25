@@ -110,14 +110,6 @@ function triu!(A::AbstractBandedMatrix{T}, k::Integer) where T
     A
 end
 
-## Show
-
-
-## structured matrix methods ##
-Base.replace_in_print_matrix(A::AbstractBandedMatrix, i::Integer, j::Integer, s::AbstractString) =
-    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
-Base.replace_in_print_matrix(A::AdjOrTrans{<:Any,<:AbstractBandedMatrix}, i::Integer, j::Integer, s::AbstractString) =
-    -bandwidth(A,1) ≤ j-i ≤ bandwidth(A,2) ? s : Base.replace_with_centered_mark(s)
 
 ## @inbands
 

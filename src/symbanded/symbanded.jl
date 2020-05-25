@@ -32,9 +32,6 @@ isbanded(A::HermOrSym) = isbanded(parent(A))
 bandwidth(A::HermOrSym) = ifelse(symmetricuplo(A) == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
 bandwidths(A::HermOrSym) = (bandwidth(A), bandwidth(A))
 
-Base.replace_in_print_matrix(A::HermOrSym{<:Any,<:AbstractBandedMatrix}, i::Integer, j::Integer, s::AbstractString) =
-    -bandwidth(A) ≤ j-i ≤ bandwidth(A) ? s : Base.replace_with_centered_mark(s)
-
 function symbandeddata(A)
     B = symmetricdata(A)
     l,u = bandwidths(B)
