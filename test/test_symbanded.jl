@@ -149,6 +149,13 @@ end
         F = ldlt(Symmetric(A))
         @test eltype(F) == float(T)
     end
+
+    @testset "#175" begin
+        A = BandedMatrix(0 => [1,2])
+        F = ldlt(Symmetric(A))
+        @test F.d == [1.,2.]
+        @test F.D == Diagonal([1.,2.])
+    end
 end
 
 @testset "Cholesky" begin
