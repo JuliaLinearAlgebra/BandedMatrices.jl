@@ -76,3 +76,18 @@ function logabsdet(F::LDLt{T,Symmetric{T,M}}) where {T,M<:BandedMatrix{T}}
     it = (F.data[i,i] for i in 1:size(F, 1))
     return sum(log∘abs, it), prod(sign, it)
 end
+
+function getproperty(F::LDLt{<:Any,<:Symmetric{<:Any,<:AbstractBandedMatrix}}, d::Symbol)
+    Fdata = getfield(F, :data)
+    if d === :d
+        return diag(Fdata)
+    elseif d === :D
+        return Diagonal(diag(Fdata))
+    elseif d === :L
+        return UnitLowerTriangular(Fdata)
+    elseif d === :Lt
+        return UnitUpperTriangular(Fdata)
+    else
+        return getfield(F, d)
+    end
+end
