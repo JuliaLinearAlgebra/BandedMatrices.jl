@@ -800,6 +800,39 @@ banded_rmul!(A::AbstractMatrix, α::Number) = _banded_rmul!(A, α, MemoryLayout(
 lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
 rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
 
+function lmul!(α::Number, A::Transpose{<:Any,<:AbstractBandedMatrix})
+    lmul!(α, parent(A))
+    A
+end
+function lmul!(α::Number, A::Adjoint{<:Any,<:AbstractBandedMatrix})
+    lmul!(conj(α), parent(A))
+    A
+end
+function lmul!(α::Number, A::Symmetric{<:Any,<:AbstractBandedMatrix})
+    lmul!(α, parent(A))
+    A
+end
+function lmul!(α::Real, A::Hermitian{<:Any,<:AbstractBandedMatrix})
+    lmul!(α, parent(A))
+    A
+end
+
+function rmul!(A::Transpose{<:Any,<:AbstractBandedMatrix}, α::Number)
+    rmul!(parent(A), α)
+    A
+end
+function rmul!(A::Adjoint{<:Any,<:AbstractBandedMatrix}, α::Number)
+    rmul!(parent(A), conj(α))
+    A
+end
+function rmul!(A::Symmetric{<:Any,<:AbstractBandedMatrix}, α::Number)
+    rmul!(parent(A), α)
+    A
+end
+function rmul!(A::Hermitian{<:Any,<:AbstractBandedMatrix}, α::Real)
+    rmul!(parent(A), α)
+    A
+end
 
 ##
 # axpy!
