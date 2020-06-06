@@ -188,6 +188,27 @@ import BandedMatrices: BandedStyle, BandedRows
 
         B .= 2.0 .\ A
         @test B == 2.0 \ A == 2.0 \ Matrix(A)
+
+        @testset "trans-adj" begin
+            A = brand(5,5,1,1)
+            Ã = copy(A)
+            lmul!(2.0, A')
+            @test A == 2Ã
+            lmul!(2.0, transpose(A))
+            @test A == 4Ã
+            lmul!(2.0, Symmetric(A))
+            @test A == 8Ã
+            lmul!(2.0, Hermitian(A))
+            @test A == 16Ã
+            rmul!(Hermitian(A), 1/2)
+            @test A == 8Ã
+            rmul!(Symmetric(A), 1/2)
+            @test A == 4Ã
+            rmul!(transpose(A), 1/2)
+            @test A == 2Ã
+            rmul!(A', 1/2)
+            @test A == Ã
+        end
     end
 
     @testset "axpy!" begin
