@@ -95,3 +95,6 @@ ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:Bla
 # For some bizarre reason this isnt in LinearAlgebra
 cholesky(A::Symmetric{T,<:BandedMatrix{T}},
     ::Val{false}=Val(false); check::Bool = true) where T<:Real = cholesky!(cholcopy(A); check = check)
+
+cholesky(A::Hermitian{T,<:BandedMatrix{T}},
+    ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)
