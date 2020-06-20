@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, ArrayLayouts, Random, Test
+using BandedMatrices, LinearAlgebra, ArrayLayouts, Random, Test, GenericLinearAlgebra
 import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
 
 @testset "Symmetric" begin
@@ -38,9 +38,18 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = Symmetric(brand(Float64, 100, 100, 2, 4))
-    @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
+    A = brand(Float64, 100, 100, 2, 4)
+    std = eigvals(Symmetric(Matrix(A)))
+    @test eigvals(Symmetric(A)) ≈ std
+    @test eigvals(Hermitian(A)) ≈ std
+    @test eigvals(Hermitian(big.(A))) ≈ std
+    
+    A = brand(ComplexF64, 100, 100, 4, 0)
+    std = eigvals(Hermitian(Matrix(A), :L))
+    @test eigvals(Hermitian(A, :L)) ≈ std
+    @test eigvals(Hermitian(big.(A), :L)) ≈ std
 
+    A = Symmetric(brand(Float64, 100, 100, 2, 4))
     F = eigen(A)
     Λ, Q = F
     @test Q'Matrix(A)*Q ≈ Diagonal(Λ)

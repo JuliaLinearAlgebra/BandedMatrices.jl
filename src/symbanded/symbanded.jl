@@ -116,11 +116,13 @@ function _tridiagonalize!(A::AbstractMatrix{T}, ::SymmetricLayout{<:BandedColumn
 end
 
 tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(typeof(A)))
-tridiagonalize(A::AbstractMatrix) = tridiagonalize!(copy(A))
+
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Base.IEEEFloat = eigvals!(copy(A))
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Real = eigvals!(tridiagonalize(A))
+eigvals(A::Hermitian{T,<:BandedMatrix{T}}) where T<:Real = eigvals!(tridiagonalize(A))
+eigvals(A::Hermitian{T,<:BandedMatrix{T}}) where T<:Complex = eigvals!(tridiagonalize(A))
 
 eigvals!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(copy(A))
-
 function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
     n = size(A, 1)
     @assert n == size(B, 1)
