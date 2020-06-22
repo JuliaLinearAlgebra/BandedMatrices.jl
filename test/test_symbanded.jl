@@ -184,4 +184,17 @@ end
         @test Ac\b ≈ Matrix(A)\b
         @test_broken Ac\b ≈ A\b
     end
+
+    let T = ComplexF64
+        A = Hermitian(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],
+                                   1 => ones(T,4) ./ 24))
+        Ac = cholesky(A)
+
+        @test Ac isa Cholesky{T,<:BandedMatrix{T}}
+        @test Ac.U ≈ cholesky(Matrix(A)).U
+
+        b = rand(T,size(A,1))
+        @test Ac\b ≈ Matrix(A)\b
+        @test_broken Ac\b ≈ A\b
+    end
 end
