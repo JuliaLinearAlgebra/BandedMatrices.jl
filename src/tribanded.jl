@@ -10,7 +10,7 @@ triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:BandedColumns} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:BandedRows} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:ConjLayout{<:BandedRows}} = Tri{ML}()
 
-sublayout(::TriangularLayout{UPLO,UNIT,ML}, inds) = sublayout(ML, inds)
+sublayout(::TriangularLayout{UPLO,UNIT,ML}, inds) where {UPLO,UNIT,ML} = sublayout(ML(), inds)
 
 
 function bandeddata(::TriangularLayout{'U'}, A)

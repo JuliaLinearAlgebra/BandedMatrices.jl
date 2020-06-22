@@ -54,4 +54,14 @@ import BandedMatrices: BandedColumns
             @test_throws DimensionMismatch BandedMatrices.tbsv('L', 'N', ud, 10, 1, view(parent(A).data, 3:4,:), rand(9))
         end
     end
+
+    @testset "subarray" begin
+        A = brand(6,6,2,1)
+        L = LowerTriangular(A)
+        V = view(L,2:4,1:3)
+        @test MemoryLayout(V) isa BandedColumns{DenseColumnMajor}
+        @test L[2:4,1:3] == BandedMatrix(V) == LowerTriangular(Matrix(A))[2:4,1:3]
+        @test L[2:4,1:3] isa BandedMatrix
+        @test bandwidths(L[2:4,1:3]) == bandwidths(V) == (1,1)
+    end
 end
