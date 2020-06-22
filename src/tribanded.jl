@@ -10,49 +10,48 @@ triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:BandedColumns} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:BandedRows} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri,ML<:ConjLayout{<:BandedRows}} = Tri{ML}()
 
+sublayout(::TriangularLayout{UPLO,UNIT,ML}, inds) = sublayout(ML, inds)
 
-function tribandeddata(::TriangularLayout{'U'}, A)
+
+function bandeddata(::TriangularLayout{'U'}, A)
     B = triangulardata(A)
     u = bandwidth(B,2)
     D = bandeddata(B)
     view(D, 1:u+1, :)
 end
 
-function tribandeddata(::TriangularLayout{'L'}, A)
+function bandeddata(::TriangularLayout{'L'}, A)
     B = triangulardata(A)
     l,u = bandwidths(B)
     D = bandeddata(B)
     view(D, u+1:l+u+1, :)
 end
 
-tribandeddata(A) = tribandeddata(MemoryLayout(typeof(A)), A)
-
-
 # Mul
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                                 <:AbstractStridedLayout}) where UNIT
     A,x = M.A,M.B
-    tbmv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), x)
+    tbmv!('U', 'N', UNIT, size(A,1), bandwidth(A,2), bandeddata(A), x)
 end
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'L',UNIT,<:BandedColumnMajor},
                                                 <:AbstractStridedLayout}) where UNIT
     A,x = M.A,M.B
-    tbmv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), x)
+    tbmv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), bandeddata(A), x)
 end
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
                                                 <:AbstractStridedLayout}) where {UPLO,UNIT}
     A,x = M.A,M.B
-    tbmv!(UPLO, 'T', UNIT, transpose(tribandeddata(A)), x)
+    tbmv!(UPLO, 'T', UNIT, transpose(bandeddata(A)), x)
 end
 
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
                                                 <:AbstractStridedLayout}) where {UPLO,UNIT}
     A,x = M.A,M.B
-    tbmv!(UPLO, 'C', UNIT, tribandeddata(A)', dest)
+    tbmv!(UPLO, 'C', UNIT, bandeddata(A)', dest)
 end
 
 # Ldiv
@@ -61,13 +60,13 @@ for UNIT in ('N', 'U')
         @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:BandedColumnMajor},
                                         <:AbstractStridedLayout})
             A,x = M.A,M.B
-            tbsv!('U', 'N', $UNIT, size(A,1), bandwidth(A,2), tribandeddata(A), x)
+            tbsv!('U', 'N', $UNIT, size(A,1), bandwidth(A,2), bandeddata(A), x)
         end
 
         @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:BandedColumnMajor},
                                                         <:AbstractStridedLayout})
             A,x = M.A,M.B
-            tbsv!('L', 'N', $UNIT, size(A,1), bandwidth(A,1), tribandeddata(A), x)
+            tbsv!('L', 'N', $UNIT, size(A,1), bandwidth(A,1), bandeddata(A), x)
         end
     end
     for UPLO in ('U', 'L')
@@ -75,13 +74,13 @@ for UNIT in ('N', 'U')
             @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,BandedRowMajor},
                                                         <:AbstractStridedLayout})
                 A,x = M.A,M.B
-                tbsv!($UPLO, 'T', $UNIT, transpose(tribandeddata(A)), x)
+                tbsv!($UPLO, 'T', $UNIT, transpose(bandeddata(A)), x)
             end
 
             @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,ConjLayout{BandedRowMajor}},
                                                         <:AbstractStridedLayout})
                 A,x = M.A,M.B
-                tbsv!($UPLO, 'C', $UNIT, tribandeddata(A)', x)
+                tbsv!($UPLO, 'C', $UNIT, bandeddata(A)', x)
             end
         end
     end
