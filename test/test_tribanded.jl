@@ -58,10 +58,14 @@ import BandedMatrices: BandedColumns
     @testset "subarray" begin
         A = brand(6,6,2,1)
         L = LowerTriangular(A)
+        U = UpperTriangular(A)
         V = view(L,2:4,1:3)
         @test MemoryLayout(V) isa BandedColumns{DenseColumnMajor}
         @test L[2:4,1:3] == BandedMatrix(V) == LowerTriangular(Matrix(A))[2:4,1:3]
         @test L[2:4,1:3] isa BandedMatrix
         @test bandwidths(L[2:4,1:3]) == bandwidths(V) == (1,1)
+        @test U[2:4,1:3] == UpperTriangular(Matrix(A))[2:4,1:3]
+        @test U[2:4,1:3] isa BandedMatrix
+        @test bandwidths(U[2:4,1:3]) == (-1,2)
     end
 end
