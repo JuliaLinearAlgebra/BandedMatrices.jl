@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
-import BandedMatrices: BandedColumns
+import BandedMatrices: BandedColumns, BandedRows
 
 
 @testset "Triangular" begin
@@ -67,5 +67,13 @@ import BandedMatrices: BandedColumns
         @test U[2:4,1:3] == UpperTriangular(Matrix(A))[2:4,1:3]
         @test U[2:4,1:3] isa BandedMatrix
         @test bandwidths(U[2:4,1:3]) == (-1,2)
+    end
+
+    @testset "row major" begin
+        A = brand(5,5,2,1)
+        b = randn(5)
+        U = UpperTriangular(A')
+        @test MemoryLayout(U) isa TriangularLayout{'U','N',BandedRows{DenseColumnMajor}}
+        @test ArrayLayouts.lmul!(U,copy(b)) ≈ U*b
     end
 end

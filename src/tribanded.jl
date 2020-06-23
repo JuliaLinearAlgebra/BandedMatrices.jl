@@ -27,6 +27,20 @@ function bandeddata(::TriangularLayout{'L'}, A)
     view(D, u+1:l+u+1, :)
 end
 
+# function bandedrowsdata(::TriangularLayout{'U'}, A)
+#     B = triangulardata(A)
+#     l,u = bandwidths(B)
+#     D = bandedrowsdata(B)
+#     view(D, :, l+1:l+u+1)
+# end
+
+# function bandeddata(::TriangularLayout{'L'}, A)
+#     B = triangulardata(A)
+#     l,_ = bandwidths(B)
+#     D = bandedrowsdata(B)
+#     view(D, :, 1:l+1)
+# end
+
 # Mul
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
@@ -41,18 +55,23 @@ end
     tbmv!('L', 'N', UNIT, size(A,1), bandwidth(A,1), bandeddata(A), x)
 end
 
-@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,BandedRowMajor},
-                                                <:AbstractStridedLayout}) where {UPLO,UNIT}
-    A,x = M.A,M.B
-    tbmv!(UPLO, 'T', UNIT, transpose(bandeddata(A)), x)
-end
+# @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'U',UNIT,<:BandedRowMajor},
+#                                                 <:AbstractStridedLayout}) where UNIT
+#     A,x = M.A,M.B
+#     tbmv!('U', 'T', UNIT, size(A,1), bandwidth(A,2), bandedrowsdata(A), x)
+# end
 
+# @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'L',UNIT,<:BandedRowMajor},
+#                                                 <:AbstractStridedLayout}) where UNIT
+#     A,x = M.A,M.B
+#     tbmv!('L', 'T', UNIT, size(A,1), bandwidth(A,1), bandeddata(transpose(parent(A))), x)
+# end
 
-@inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,ConjLayout{BandedRowMajor}},
-                                                <:AbstractStridedLayout}) where {UPLO,UNIT}
-    A,x = M.A,M.B
-    tbmv!(UPLO, 'C', UNIT, bandeddata(A)', dest)
-end
+# @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,<:ConjLayout{<:BandedRowMajor}},
+#                                                 <:AbstractStridedLayout}) where {UPLO,UNIT}
+#     A,x = M.A,M.B
+#     tbmv!(UPLO, 'C', UNIT, bandeddata(A)', dest)
+# end
 
 # Ldiv
 for UNIT in ('N', 'U')
