@@ -88,20 +88,20 @@ for UNIT in ('N', 'U')
             tbsv!('L', 'N', $UNIT, size(A,1), bandwidth(A,1), bandeddata(A), x)
         end
     end
-    for UPLO in ('U', 'L')
-        @eval begin
-            @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,BandedRowMajor},
-                                                        <:AbstractStridedLayout})
-                A,x = M.A,M.B
-                tbsv!($UPLO, 'T', $UNIT, transpose(bandeddata(A)), x)
-            end
+    # for UPLO in ('U', 'L')
+    #     @eval begin
+    #         @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,BandedRowMajor},
+    #                                                     <:AbstractStridedLayout})
+    #             A,x = M.A,M.B
+    #             tbsv!($UPLO, 'T', $UNIT, transpose(bandeddata(A)), x)
+    #         end
 
-            @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,ConjLayout{BandedRowMajor}},
-                                                        <:AbstractStridedLayout})
-                A,x = M.A,M.B
-                tbsv!($UPLO, 'C', $UNIT, bandeddata(A)', x)
-            end
-        end
-    end
+    #         @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,ConjLayout{BandedRowMajor}},
+    #                                                     <:AbstractStridedLayout})
+    #             A,x = M.A,M.B
+    #             tbsv!($UPLO, 'C', $UNIT, bandeddata(A)', x)
+    #         end
+    #     end
+    # end
 end
 
