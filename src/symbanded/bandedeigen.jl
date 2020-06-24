@@ -17,16 +17,13 @@ end
 size(B::BandedGeneralizedEigenvectors) = size(B.W)
 getindex(B::BandedGeneralizedEigenvectors, i, j) = Matrix(B)[i, j]
 
-convert(::Type{Eigen{T, T, Matrix{T}, Vector{T}}}, F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = Eigen(F.values, Matrix(F.vectors))
-convert(::Type{GeneralizedEigen{T, T, Matrix{T}, Vector{T}}}, F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = GeneralizedEigen(F.values, Matrix(F.vectors))
+convert(::Type{Eigen{S, T, Matrix{S}, Vector{T}}}, F::Eigen{S, T, BandedEigenvectors{S}, Vector{T}}) where {S, T} = Eigen(F.values, Matrix(F.vectors))
+convert(::Type{GeneralizedEigen{S, T, Matrix{S}, Vector{T}}}, F::GeneralizedEigen{S, T, BandedGeneralizedEigenvectors{S}, Vector{T}}) where {S, T} = GeneralizedEigen(F.values, Matrix(F.vectors))
 
-compress(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = convert(Eigen{T, T, Matrix{T}, Vector{T}}, F)
-compress(F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = convert(GeneralizedEigen{T, T, Matrix{T}, Vector{T}}, F)
+compress(F::Eigen{S, T, BandedEigenvectors{S}, Vector{T}}) where {S, T} = convert(Eigen{S, T, Matrix{S}, Vector{T}}, F)
+compress(F::GeneralizedEigen{S, T, BandedGeneralizedEigenvectors{S}, Vector{T}}) where {S, T} = convert(GeneralizedEigen{S, T, Matrix{S}, Vector{T}}, F)
 
-eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
-eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A), copy(B))
-
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, kwargs...) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -34,12 +31,56 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     G = Vector{Givens{T}}(undef, 0)
     WORK = Vector{T}(undef, N)
     AB = symbandeddata(A)
-    sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
+    sbtrd!('N', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
+    return eigvals!(SymTridiagonal(D, E), kwargs...)
+end
+
+function eigen!(A::Symmetric{T,<:BandedMatrix{T}}; kwargs...) where T <: Real
+    N = size(A, 1)
+    KD = bandwidth(A)
+    NG = count_givens_sbtrd(N, KD)
+    D = Vector{T}(undef, N)
+    E = Vector{T}(undef, N-1)
+    G = Vector{Givens{T}}(undef, NG)
+    WORK = Vector{T}(undef, N)
+    AB = symbandeddata(A)
+    sbtrd!('V', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
     Λ, Q = eigen(SymTridiagonal(D, E))
     Eigen(Λ, BandedEigenvectors(G, Q))
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, kwargs...) where T <: Complex
+    N = size(A, 1)
+    KD = bandwidth(A)
+    D = Vector{real(T)}(undef, N)
+    E = Vector{T}(undef, N-1)
+    G = Vector{Givens{T}}(undef, 0)
+    WORK = Vector{T}(undef, N)
+    AB = hermbandeddata(A)
+    sbtrd!('N', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
+    return eigvals!(HermTridiagonal(D, E), kwargs...)
+end
+eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, kwargs...) where T = eigvals!(Symmetric(A), kwargs...)
+
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}; kwargs...) where T <: Complex
+    N = size(A, 1)
+    KD = bandwidth(A)
+    NG = count_givens_sbtrd(N, KD)
+    D = Vector{real(T)}(undef, N)
+    E = Vector{T}(undef, N-1)
+    G = Vector{Givens{T}}(undef, NG)
+    WORK = Vector{T}(undef, N)
+    AB = hermbandeddata(A)
+    sbtrd!('V', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
+    if symmetricuplo(A) == 'L'
+        conj!(E)
+    end
+    Λ, Q = eigen(HermTridiagonal(D, E))
+    Eigen(Λ, BandedEigenvectors(G, Q))
+end
+eigen!(A::Hermitian{T,<:BandedMatrix{T}}; kwargs...) where T = eigen!(Symmetric(A); kwargs...)
+
+function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}, kwargs...) where T <: Real
     S = splitcholesky!(B)
     N = size(A, 1)
     KA = bandwidth(A)
@@ -48,8 +89,21 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     WORK = Vector{T}(undef, 2*N)
     AB = symbandeddata(A)
     BB = symbandeddata(B)
-    sbgst!('V', A.uplo, N, KA, KB, AB, BB, Q, WORK)
-    Λ, W = eigen!(A)
+    sbgst!('N', symmetricuplo(A), N, KA, KB, AB, BB, Q, WORK)
+    return eigvals!(A, kwargs...)
+end
+
+function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}; kwargs...) where T <: Real
+    S = splitcholesky!(B)
+    N = size(A, 1)
+    KA = bandwidth(A)
+    KB = bandwidth(B)
+    Q = Vector{Givens{T}}(undef, 0)
+    WORK = Vector{T}(undef, 2*N)
+    AB = symbandeddata(A)
+    BB = symbandeddata(B)
+    sbgst!('V', symmetricuplo(A), N, KA, KB, AB, BB, Q, WORK)
+    Λ, W = eigen!(A; kwargs...)
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
 end
 
@@ -73,7 +127,7 @@ function Matrix(B::BandedGeneralizedEigenvectors)
 end
 
 
-function compress!(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T
+function compress!(F::Eigen{S, T, BandedEigenvectors{S}, Vector{T}}) where {S, T}
     Q = F.vectors.Q
     G = F.vectors.G
     for k in length(G):-1:1
@@ -165,6 +219,29 @@ function mul!(y::Array{T,N}, x::Array{T,N}, B::BandedGeneralizedEigenvectors{T})
     y .= y'
 end
 
+Givens(i1::Int, i2::Int, c::S, s::T) where {S, T} = Givens(i1, i2, promote(c, s)...)
+
+function count_givens_sbtrd(N::Integer, KD::Integer)
+    KD1 = KD + 1
+    KDN = min(N-1, KD)
+    NG = 0
+    J1 = KDN + 2
+    J2 = 1
+    for I = 1:N-2
+        for K = KDN+1:-1:2
+            J1 = J1 + KDN
+            J2 = J2 + KDN
+            if K > 2
+                J1 = J1 - KDN - 1
+            end
+            NG += length(J1:KD1:J2)
+            if J2+KDN > N
+                J2 = J2 - KDN - 1
+            end
+        end
+    end
+    NG
+end
 
 
 #
@@ -187,8 +264,8 @@ end
 #       ..
 function sbtrd!(VECT::Char, UPLO::Char,
                 N::Int, KD::Int, AB::AbstractMatrix{T},
-                D::AbstractVector{T}, E::AbstractVector{T}, Q::Vector{Givens{T}},
-                WORK::AbstractVector{T}) where T
+                D::AbstractVector{S}, E::AbstractVector{T}, Q::Vector{Givens{T}},
+                WORK::AbstractVector{T}) where {S, T}
     require_one_based_indexing(AB)
     chkstride1(AB)
     chkuplo(UPLO)
@@ -206,7 +283,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
     LDABF = max(1, stride(AB, 2))
 
     ZERO = zero(T)
-    TEMP1 = Ref{T}()
+    TEMP1 = Ref{S}()
     TEMP2 = Ref{T}()
     TEMP3 = Ref{T}()
     KD1 = KD + 1
@@ -217,7 +294,8 @@ function sbtrd!(VECT::Char, UPLO::Char,
     KDN = min(N-1, KD)
 
     UPPER = UPLO == 'U'
-    WANTQ = true
+    WANTQ = VECT != 'N'
+    NG = 1
 
     if UPPER
         if KD > 1
@@ -271,6 +349,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
                     end
                     # apply plane rotations from the left
                     if NR > 0
+                        lacgv!(NR, pointer(WORK, J1), KD1)
                         if 2*KD-1 < NR
                             # Dependent on the the number of diagonals either
                             # DLARTV or DROT is used
@@ -291,7 +370,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
                                     rot!(KDM1, pointer(AB, KDM1+LDAB*JIN), INCX, pointer(AB, KD+LDAB*JIN), INCX, D[JIN], WORK[JIN])
                                 end
                             end
-                            LEND = min( KDM1, N-J2 )
+                            LEND = min(KDM1, N-J2)
                             LAST = J1END + KD1
                             if LEND > 0
                                 rot!(LEND, pointer(AB, KDM1+LDAB*LAST), INCX, pointer(AB, KD+LDAB*LAST), INCX, D[LAST], WORK[LAST])
@@ -301,9 +380,11 @@ function sbtrd!(VECT::Char, UPLO::Char,
 
                     if WANTQ
                         for J = J1:KD1:J2
-                            push!(Q, Givens(J-1, J, D[J], -WORK[J]))
+                            Q[NG] = Givens(J-1, J, D[J], -WORK[J])
+                            NG += 1
                         end
                     end
+
                     if J2+KDN > N
                         # adjust J2 to keep within the bounds of the matrix
                         NR = NR - 1
@@ -333,7 +414,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
         end
         # copy diagonal elements to D
         for I = 1:N
-            D[I] = AB[KD1, I]
+            D[I] = real(AB[KD1, I])
         end
     else # if UPPER
         if KD > 1
@@ -390,6 +471,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
                     # DLARTV or DROT is used
 
                     if NR > 0
+                        lacgv!(NR, pointer(WORK, J1), KD1)
                         if NR > 2*KD-1
                             for L = 1:KD-1
                                 if J2+L > N
@@ -418,7 +500,8 @@ function sbtrd!(VECT::Char, UPLO::Char,
 
                     if WANTQ
                         for J = J1:KD1:J2
-                            push!(Q, Givens(J-1, J, D[J], -WORK[J]))
+                            Q[NG] = Givens(J-1, J, D[J], conj(-WORK[J]))
+                            NG += 1
                         end
                     end
 
@@ -437,6 +520,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
                 end
             end
         end # if
+
         if KD > 0
             # copy off-diagonal elements to E
             for I = 1:N-1
@@ -450,7 +534,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
         end
         # copy diagonal elements to D
         for I = 1:N
-            D[I] = AB[1, I]
+            D[I] = real(AB[1, I])
         end
     end # if UPPER
 end
@@ -496,7 +580,6 @@ function sbgst!(VECT::Char, UPLO::Char,
     LDAB = size(AB, 1)
     LDABF = max(1, stride(AB, 2))
 
-    ZERO = zero(T)
     TEMP1 = Ref{T}()
     TEMP2 = Ref{T}()
     TEMP3 = Ref{T}()
@@ -506,7 +589,7 @@ function sbgst!(VECT::Char, UPLO::Char,
     M = ( N+KB ) ÷ 2
 
     UPPER = UPLO == 'U'
-    WANTX = true
+    WANTX = VECT != 'N'
 
     UPDATE = true
     I = N + 1
