@@ -32,6 +32,7 @@ isbanded(A::HermOrSym) = isbanded(parent(A))
 bandwidth(A::HermOrSym) = ifelse(symmetricuplo(A) == 'U', bandwidth(parent(A),2), bandwidth(parent(A),1))
 bandwidths(A::HermOrSym) = (bandwidth(A), bandwidth(A))
 
+
 function symbandeddata(A)
     B = symmetricdata(A)
     l,u = bandwidths(B)

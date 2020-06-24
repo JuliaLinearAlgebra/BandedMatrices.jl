@@ -11,7 +11,8 @@ BLAS format.
 
 This is required for gbmv! support
 """
-bandeddata(A) = error("Override bandeddata(::$(typeof(A)))")
+bandeddata(A) = bandeddata(MemoryLayout(A), A)
+bandeddata(_, A) = error("Override bandeddata(::$(typeof(A)))")
 
 """
     bandwidths(A)
