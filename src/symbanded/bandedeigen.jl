@@ -23,7 +23,7 @@ convert(::Type{GeneralizedEigen{S, T, Matrix{S}, Vector{T}}}, F::GeneralizedEige
 compress(F::Eigen{S, T, BandedEigenvectors{S}, Vector{T}}) where {S, T} = convert(Eigen{S, T, Matrix{S}, Vector{T}}, F)
 compress(F::GeneralizedEigen{S, T, BandedGeneralizedEigenvectors{S}, Vector{T}}) where {S, T} = convert(GeneralizedEigen{S, T, Matrix{S}, Vector{T}}, F)
 
-function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, kwargs...) where T <: Real
+function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, args...) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -32,10 +32,10 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, kwargs...) where T <: Real
     WORK = Vector{T}(undef, N)
     AB = symbandeddata(A)
     sbtrd!('N', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
-    return eigvals!(SymTridiagonal(D, E), kwargs...)
+    return eigvals!(SymTridiagonal(D, E), args...)
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}; kwargs...) where T <: Real
+function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, args...; kwds...) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     NG = count_givens_sbtrd(N, KD)
@@ -45,11 +45,11 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}; kwargs...) where T <: Real
     WORK = Vector{T}(undef, N)
     AB = symbandeddata(A)
     sbtrd!('V', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
-    Λ, Q = eigen(SymTridiagonal(D, E))
+    Λ, Q = eigen(SymTridiagonal(D, E), args...)
     Eigen(Λ, BandedEigenvectors(G, Q))
 end
 
-function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, kwargs...) where T <: Complex
+function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: Complex
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{real(T)}(undef, N)
@@ -58,11 +58,11 @@ function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, kwargs...) where T <: Compl
     WORK = Vector{T}(undef, N)
     AB = hermbandeddata(A)
     sbtrd!('N', symmetricuplo(A), N, KD, AB, D, E, G, WORK)
-    return eigvals!(HermTridiagonal(D, E), kwargs...)
+    return eigvals!(HermTridiagonal(D, E), args...)
 end
-eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, kwargs...) where T = eigvals!(Symmetric(A), kwargs...)
+eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T = eigvals!(Symmetric(A), args...)
 
-function eigen!(A::Hermitian{T,<:BandedMatrix{T}}; kwargs...) where T <: Complex
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...; kwds...) where T <: Complex
     N = size(A, 1)
     KD = bandwidth(A)
     NG = count_givens_sbtrd(N, KD)
@@ -75,12 +75,12 @@ function eigen!(A::Hermitian{T,<:BandedMatrix{T}}; kwargs...) where T <: Complex
     if symmetricuplo(A) == 'L'
         conj!(E)
     end
-    Λ, Q = eigen(HermTridiagonal(D, E))
+    Λ, Q = eigen(HermTridiagonal(D, E), args...)
     Eigen(Λ, BandedEigenvectors(G, Q))
 end
-eigen!(A::Hermitian{T,<:BandedMatrix{T}}; kwargs...) where T = eigen!(Symmetric(A); kwargs...)
+eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...; kwds...) where T = eigen!(Symmetric(A), args...; kwds...)
 
-function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}, kwargs...) where T <: Real
+function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}, args...) where T <: Real
     S = splitcholesky!(B)
     N = size(A, 1)
     KA = bandwidth(A)
@@ -90,10 +90,10 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     AB = symbandeddata(A)
     BB = symbandeddata(B)
     sbgst!('N', symmetricuplo(A), N, KA, KB, AB, BB, Q, WORK)
-    return eigvals!(A, kwargs...)
+    return eigvals!(A, args...)
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}; kwargs...) where T <: Real
+function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}, args...; kwds...) where T <: Real
     S = splitcholesky!(B)
     N = size(A, 1)
     KA = bandwidth(A)
@@ -103,9 +103,10 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     AB = symbandeddata(A)
     BB = symbandeddata(B)
     sbgst!('V', symmetricuplo(A), N, KA, KB, AB, BB, Q, WORK)
-    Λ, W = eigen!(A; kwargs...)
+    Λ, W = eigen!(A, args...; kwds...)
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
 end
+eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}, args...; kwds...) where T <: Real = eigen!(copy(A), copy(B), args...; kwds...)
 
 function Matrix(B::BandedEigenvectors)
     Q = copy(B.Q)
