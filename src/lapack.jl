@@ -16,8 +16,24 @@ for (fname, elty) in ((:dlargv_,:Float64),
         #       INTEGER INCC, INCX, INCY, N
         #       .. Array Arguments ..
         #       DOUBLE PRECISION C( * ), X( * ), Y( * )
-        function largv!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::Ptr{$elty}, incc::Int)
-            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}), n, x, incx, y, incy, c, incc)
+        function largv!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::Ptr{real($elty)}, incc::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{real($elty)}, Ref{BlasInt}), n, x, incx, y, incy, c, incc)
+        end
+    end
+end
+
+function lacgv!(n::Int, x::Ptr{T}, incx::Int) where T <: Real end
+
+for (fname, elty) in ((:zlacgv_,:ComplexF64),
+                      (:clacgv_,:ComplexF32))
+    @eval begin
+        #       SUBROUTINE ZLACGV( N, X, INCX )
+        #       .. Scalar Arguments ..
+        #       INTEGER INCX, N
+        #       .. Array Arguments ..
+        #       COMPLEX*16 X( * )
+        function lacgv!(n::Int, x::Ptr{$elty}, incx::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}), n, x, incx)
         end
     end
 end
@@ -32,8 +48,8 @@ for (fname, elty) in ((:dlartv_,:Float64),
         #       INTEGER INCC, INCX, INCY, N
         #       .. Array Arguments ..
         #       DOUBLE PRECISION C( * ), S( * ), X( * ), Y( * )
-        function lartv!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::Ptr{$elty}, s::Ptr{$elty}, incc::Int)
-            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}), n, x, incx, y, incy, c, s, incc)
+        function lartv!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::Ptr{real($elty)}, s::Ptr{$elty}, incc::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{real($elty)}, Ptr{$elty}, Ref{BlasInt}), n, x, incx, y, incy, c, s, incc)
         end
     end
 end
@@ -49,8 +65,8 @@ for (fname, elty) in ((:drot_,:Float64),
         #       INTEGER INCX,INCY,N
         #       .. Array Arguments ..
         #       DOUBLE PRECISION DX(*),DY(*)
-        function rot!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::$elty, s::$elty)
-            ccall((@blasfunc($fname), libblas), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ref{$elty}, Ref{$elty}), n, x, incx, y, incy, c, s)
+        function rot!(n::Int, x::Ptr{$elty}, incx::Int, y::Ptr{$elty}, incy::Int, c::real($elty), s::$elty)
+            ccall((@blasfunc($fname), libblas), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ref{real($elty)}, Ref{$elty}), n, x, incx, y, incy, c, s)
         end
     end
 end
@@ -63,8 +79,8 @@ for (fname, elty) in ((:dlartg_,:Float64),
         #       SUBROUTINE DLARTG( F, G, CS, SN, R )
         #       .. Scalar Arguments ..
         #       DOUBLE PRECISION CS, F, G, R, SN
-        function lartg!(f::$elty, g::$elty, cs::Ref{$elty}, sn::Ref{$elty}, r::Ref{$elty})
-            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{$elty}, Ref{$elty}, Ref{$elty}, Ref{$elty}, Ref{$elty}), f, g, cs, sn, r)
+        function lartg!(f::$elty, g::$elty, cs::Ref{real($elty)}, sn::Ref{$elty}, r::Ref{$elty})
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{$elty}, Ref{$elty}, Ref{real($elty)}, Ref{$elty}, Ref{$elty}), f, g, cs, sn, r)
         end
     end
 end
@@ -79,8 +95,8 @@ for (fname, elty) in ((:dlar2v_,:Float64),
         #       INTEGER INCC, INCX, N
         #       .. Array Arguments ..
         #       DOUBLE PRECISION C( * ), S( * ), X( * ), Y( * ), Z( * )
-        function lar2v!(n::Int, x::Ptr{$elty}, y::Ptr{$elty}, z::Ptr{$elty}, incx::Int, c::Ptr{$elty}, s::Ptr{$elty}, incc::Int)
-            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}), n, x, y, z, incx, c, s, incc)
+        function lar2v!(n::Int, x::Ptr{$elty}, y::Ptr{$elty}, z::Ptr{$elty}, incx::Int, c::Ptr{real($elty)}, s::Ptr{$elty}, incc::Int)
+            ccall((@blasfunc($fname), liblapack), Nothing, (Ref{BlasInt}, Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{real($elty)}, Ptr{$elty}, Ref{BlasInt}), n, x, y, z, incx, c, s, incc)
         end
     end
 end

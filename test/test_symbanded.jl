@@ -38,15 +38,17 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = Symmetric(brand(Float64, 100, 100, 2, 4))
-    @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
-
-    F = eigen(A)
-    Λ, Q = F
-    @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
-    FD = convert(Eigen{Float64, Float64, Matrix{Float64}, Vector{Float64}}, F)
-    @test FD.vectors'Matrix(A)*FD.vectors ≈ Diagonal(F.values)
-
+    for T in (Float32, Float64)
+        for uplo in (:U, :L)
+            A = Symmetric(brand(T, 100, 100, 2, 4), uplo)
+            @test eigvals(A) ≈ eigvals(Symmetric(Matrix(A)))
+            F = eigen(A)
+            Λ, Q = F
+            @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
+            ΛD, QD = convert(Eigen{T, T, Matrix{T}, Vector{T}}, F)
+            @test QD'Matrix(A)*QD ≈ Diagonal(ΛD)
+        end
+    end
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
@@ -115,6 +117,33 @@ end
     @test all(A*x .=== muladd!(one(T),A,x,zero(T),copy(x)) .===
                 materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
+
+    # (generalized) eigen & eigvals
+    Random.seed!(0)
+
+    for T in (Float32, Float64)
+        for uplo in (:U, :L)
+            A = Hermitian(brand(T, 100, 100, 2, 4), uplo)
+            @test eigvals(A) == eigvals(Symmetric(A.data, uplo))
+            F = eigen(A)
+            Λ, Q = F
+            @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
+            ΛD, QD = convert(Eigen{T, T, Matrix{T}, Vector{T}}, F)
+            @test QD'Matrix(A)*QD ≈ Diagonal(ΛD)
+        end
+    end
+
+    for T in (ComplexF32, ComplexF64)
+        for uplo in (:U, :L)
+            A = Hermitian(brand(T, 100, 100, 2, 4), uplo)
+            @test eigvals(A) ≈ eigvals(Hermitian(Matrix(A), uplo))
+            F = eigen(A)
+            Λ, Q = F
+            @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
+            ΛD, QD = convert(Eigen{T, real(T), Matrix{T}, Vector{real(T)}}, F)
+            @test QD'Matrix(A)*QD ≈ Diagonal(ΛD)
+        end
+    end
 end
 
 @testset "LDLᵀ" begin
@@ -139,7 +168,7 @@ end
         y = F\b
         @test x ≈ y
         @test_throws DimensionMismatch F\[b;b]
-        
+
         T ≠ Float16 && (@test det(F) ≈ det(SAL))
     end
     for T in (Int16, Int32, Int64, BigInt)
