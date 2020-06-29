@@ -51,7 +51,7 @@ inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
 isbanded(::Tridiagonal) = true
 bandwidths(::Tridiagonal) = (1,1)
 
-sublayout(::TridiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},AbstractUnitRange{Int}}}) =
+sublayout(::AbstractTridiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},AbstractUnitRange{Int}}}) =
     BandedLayout()
 
 ###

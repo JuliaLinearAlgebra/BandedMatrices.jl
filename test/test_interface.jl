@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
-import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle, 
+import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns
 
 
@@ -113,7 +113,7 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
             bandwidths(A)
 end
 
-@testset "Diagonal interface" begin
+@testset "Bi/Tri/Diagonal" begin
     D = Diagonal(randn(5))
     @test bandwidths(D) == (0,0)
 
@@ -125,7 +125,6 @@ end
     @test A*D isa BandedMatrix
     @test A*D == Matrix(A)*D
 
-
     D = Diagonal(rand(Int,10))
     B = brand(10,10,-1,2)
     J = SymTridiagonal(randn(10), randn(9))
@@ -133,9 +132,16 @@ end
     Bl = Bidiagonal(randn(10), randn(9), :L)
     Bu = Bidiagonal(randn(10), randn(9), :U)
 
+    @test bandwidths(D) == (0,0)
     @test bandwidths(J) == bandwidths(T) == (1,1)
     @test bandwidths(Bu) == (0,1)
     @test bandwidths(Bl) == (1,0)
+
+    @test isbanded(D)
+    @test isbanded(J)
+    @test isbanded(T)
+    @test isbanded(Bu)
+    @test isbanded(Bl)
 
     @test BandedMatrix(J) == J
     @test BandedMatrix(T) == T
@@ -179,13 +185,19 @@ end
     @test Ã isa BandedMatrix
     @test bandwidths(A) == bandwidths(Ã) == (1,2)
     @test Ã == A == Matrix(B) + Matrix(Bl)
-    
+
     A = B .+ Bu
     Ã = Bu .+ B
     @test A isa BandedMatrix
     @test Ã isa BandedMatrix
     @test bandwidths(A) == bandwidths(Ã) == (0,2)
-    @test Ã == A == Matrix(B) + Matrix(Bu)    
+    @test Ã == A == Matrix(B) + Matrix(Bu)
+
+    @test layout_getindex(D,1:10,1:10) isa BandedMatrix
+    @test layout_getindex(B,1:10,1:10) isa BandedMatrix
+    @test layout_getindex(Bu,1:10,1:10) isa BandedMatrix
+    @test layout_getindex(J,1:10,1:10) isa BandedMatrix
+    @test layout_getindex(T,1:10,1:10) isa BandedMatrix
 end
 
 @testset "rot180" begin
