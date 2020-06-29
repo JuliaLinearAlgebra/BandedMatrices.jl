@@ -35,7 +35,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
                     sublayout, sub_materialize, _fill_lmul!,
                     reflector!, reflectorApply!, _copyto!, 
-                    _qr!, _qr, _lu!, _lu, _factorize, TridiagonalLayout
+                    _qr!, _qr, _lu!, _lu, _factorize, TridiagonalLayout, BidiagonalLayout
 
 import FillArrays: AbstractFill, getindex_value
 

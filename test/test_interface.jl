@@ -3,7 +3,6 @@ import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns
 
 
-
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
     l::Int
@@ -131,14 +130,27 @@ end
     B = brand(10,10,-1,2)
     J = SymTridiagonal(randn(10), randn(9))
     T = Tridiagonal(randn(9), randn(10), randn(9))
+    Bl = Bidiagonal(randn(10), randn(9), :L)
+    Bu = Bidiagonal(randn(10), randn(9), :U)
+
+    @test bandwidths(J) == bandwidths(T) == (1,1)
+    @test bandwidths(Bu) == (0,1)
+    @test bandwidths(Bl) == (1,0)
+
+    @test BandedMatrix(J) == J
+    @test BandedMatrix(T) == T
+    @test BandedMatrix(Bu) == Bu
+    @test BandedMatrix(Bl) == Bl
+
     @test Base.BroadcastStyle(Base.BroadcastStyle(typeof(B)), Base.BroadcastStyle(typeof(D))) ==
         Base.BroadcastStyle(Base.BroadcastStyle(typeof(D)), Base.BroadcastStyle(typeof(B))) ==
         Base.BroadcastStyle(Base.BroadcastStyle(typeof(B)), Base.BroadcastStyle(typeof(T))) ==
         Base.BroadcastStyle(Base.BroadcastStyle(typeof(T)), Base.BroadcastStyle(typeof(B))) ==
         Base.BroadcastStyle(Base.BroadcastStyle(typeof(B)), Base.BroadcastStyle(typeof(J))) ==
         Base.BroadcastStyle(Base.BroadcastStyle(typeof(J)), Base.BroadcastStyle(typeof(B))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(Bl)), Base.BroadcastStyle(typeof(B))) ==
+        Base.BroadcastStyle(Base.BroadcastStyle(typeof(Bu)), Base.BroadcastStyle(typeof(B))) ==
             BandedStyle()
-
 
     A = B .+ D
     Ã = D .+ B
@@ -160,6 +172,20 @@ end
     @test Ã isa BandedMatrix
     @test bandwidths(A) == bandwidths(Ã) == (1,2)
     @test Ã == A == Matrix(B) + Matrix(T)
+
+    A = B .+ Bl
+    Ã = Bl .+ B
+    @test A isa BandedMatrix
+    @test Ã isa BandedMatrix
+    @test bandwidths(A) == bandwidths(Ã) == (1,2)
+    @test Ã == A == Matrix(B) + Matrix(Bl)
+    
+    A = B .+ Bu
+    Ã = Bu .+ B
+    @test A isa BandedMatrix
+    @test Ã isa BandedMatrix
+    @test bandwidths(A) == bandwidths(Ã) == (0,2)
+    @test Ã == A == Matrix(B) + Matrix(Bu)    
 end
 
 @testset "rot180" begin

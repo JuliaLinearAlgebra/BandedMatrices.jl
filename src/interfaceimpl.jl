@@ -4,7 +4,7 @@
 # Sparse BroadcastStyle
 ##
 
-for Typ in (:Diagonal, :SymTridiagonal, :Tridiagonal)
+for Typ in (:Diagonal, :SymTridiagonal, :Tridiagonal, :Bidiagonal)
     @eval begin
         BroadcastStyle(::StructuredMatrixStyle{<:$Typ}, ::BandedStyle) =
             BandedStyle()
@@ -33,6 +33,13 @@ sublayout(::DiagonalLayout{L}, inds::Type) where L =
     sublayout(bandedcolumns(L()), inds)
 
 # bandeddata(V::SubArray{<:Any,2,<:Diagonal}) = view(bandeddata(parent(V)), :, parentindices(V)[2])
+
+isbanded(::Bidiagonal) = true
+bandwidths(A::Bidiagonal) = A.uplo == 'U' ? (0,1) : (1,0)
+
+sublayout(::BidiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},AbstractUnitRange{Int}}}) =
+    BandedLayout()
+
 
 isbanded(::SymTridiagonal) = true
 bandwidths(::SymTridiagonal) = (1,1)
