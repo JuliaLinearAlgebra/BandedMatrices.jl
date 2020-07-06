@@ -19,6 +19,11 @@ transposelayout(M::BandedColumns{ML}) where ML = BandedRows{ML}()
 transposelayout(M::BandedRows{ML}) where ML = BandedColumns{ML}()
 conjlayout(::Type{<:Complex}, ::M) where M<:AbstractBandedLayout = ConjLayout{M}()
 
+# bandedrowsdata(Ac::Adjoint) = bandeddata(parent(Ac))'
+# bandedrowsdata(Ac::Transpose) = transpose(bandeddata(parent(Ac)))
+# bandedrowsdata(A) = bandedrowsdata(MemoryLayout(A), A)
+
+
 # Here we override broadcasting for banded matrices.
 # The design is to to exploit the broadcast machinery so that
 # banded matrices that conform to the banded matrix interface but are not
