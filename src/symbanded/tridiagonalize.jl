@@ -1,7 +1,3 @@
-
-export tridiagonalize
-using LinearAlgebra
-
 """
     tridiagonalize(A, d::Integer=0)
 
