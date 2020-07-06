@@ -73,7 +73,7 @@ function _tridiag_algorithm!(B)
 end
 
 # generalization of method for symmetric BandedMatrices
-bandwidth(A::Matrix) = min(size(A)...) - 1
+bandwidth(A::AbstractMatrix) = min(size(A)...) - 1
 
 function copybands(A::AbstractMatrix{T}, d::Integer) where T
     n = min(size(A)...)
