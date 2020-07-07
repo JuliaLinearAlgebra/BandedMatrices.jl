@@ -92,10 +92,12 @@ include("symbanded/ldlt.jl")
 include("symbanded/BandedCholesky.jl")
 include("symbanded/SplitCholesky.jl")
 include("symbanded/bandedeigen.jl")
+include("symbanded/tridiagonalize.jl")
 
 include("tribanded.jl")
 
 include("interfaceimpl.jl")
+
 
 # function _precompile_()
 #     precompile(Tuple{typeof(gbmm!), Char, Char, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}})

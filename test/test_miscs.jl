@@ -50,8 +50,9 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
         @test isa(AbstractMatrix{ComplexF16}(A), BandedMatrix{ComplexF16})
         @test isa(AbstractArray{ComplexF16}(A), BandedMatrix{ComplexF16})
     end
+
     @time @testset "show" begin
-      @test occursin("10×10 BandedMatrix{Float64,Array{Float64,2},"*string(Base.OneTo{Int})*"}",
+        @test occursin("10×10 BandedMatrix{Float64,$(Matrix{Float64}),"*string(Base.OneTo{Int})*"}",
          sprint() do io
             show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
          end)
