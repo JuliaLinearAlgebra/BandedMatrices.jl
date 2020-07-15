@@ -251,5 +251,11 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         A = _BandedMatrix(Ones(3,10), 10, 1, 1)
         @test_throws ArgumentError muladd!(1.0, A, A, 1.0, Zeros(10,10))
     end
+
+    @testset "Diagonal issue (#188)" begin
+        W = diagm(0=>-(1:10.0))
+        B = brand(Float64, 10, 10, 0, 2)
+        @test W\B == W\Matrix(B)
+    end
 end
 
