@@ -38,6 +38,19 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
         @test bandwidths(A') == (0,9)
     end
 
+    @time @testset "sparse overrides" begin
+        for (l,u) = [(0,0), (1,0), (0,1), (3,3), rand(0:10,2)]
+            A = brand(10, 10, l, u)
+            sA = sparse(A)
+            @test sA isa SparseMatrixCSC
+            @test bandwidths(sA) == (l,u)
+            bA = BandedMatrix(sA)
+            @test bA isa BandedMatrix
+            @test bA == A
+            @test bandwidths(bA) == (l,u)
+        end
+    end
+
     @time @testset "trivial convert routines" begin
         A = brand(3,4,1,2)
         @test isa(BandedMatrix{Float64}(A), BandedMatrix{Float64})

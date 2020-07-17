@@ -1,5 +1,6 @@
 using BandedMatrices
 using LinearAlgebra
+using SparseArrays
 using Test
 
 include("test_banded.jl")

@@ -23,6 +23,25 @@ bandwidths(A::AbstractVecOrMat) = (size(A,1)-1 , size(A,2)-1)
 
 bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
 
+function BandedMatrices.bandwidths(A::SparseMatrixCSC)
+    l,u = 0,0
+
+    m,n = size(A)
+    rows = rowvals(A)
+    for j = 1:n
+        for ind in nzrange(A, j)
+            i = rows[ind]
+            if i > j
+                l = max(l, abs(i-j))
+            elseif i < j
+                u = max(u, abs(i-j))
+            end
+        end
+    end
+
+    l,u
+end
+
 """
     bandwidth(A,i)
 
