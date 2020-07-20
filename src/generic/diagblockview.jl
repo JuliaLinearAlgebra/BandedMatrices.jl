@@ -3,8 +3,6 @@ using BandedMatrices, BlockBandedMatrices, BlockArrays
 import LinearAlgebra.BLAS: @blasfunc, BlasInt, require_one_based_indexing, chkstride1
 import LinearAlgebra.LAPACK: chklapackerror, liblapack
 
-
-
 for (tpqrt,elty) in ((:dtpqrt2_,:Float64),)
     @eval function tpqrt2!(l_in::Integer, A::AbstractMatrix{$elty}, B::AbstractMatrix{$elty}, T::AbstractMatrix{$elty})
         require_one_based_indexing(A, B, T)
@@ -38,13 +36,81 @@ for (tpqrt,elty) in ((:dtpqrt2_,:Float64),)
     end
 end
 
+for (tpqrt,elty) in ((:dtpqrt_,:Float64),)
+    @eval function tpqrt!(l_in::Integer, nb_in::Integer, A::AbstractMatrix{$elty}, B::AbstractMatrix{$elty}, T::AbstractMatrix{$elty}, work::AbstractArray{$elty})
+        require_one_based_indexing(A, B, T)
+        chkstride1(A,B,T)
+        m     = BlasInt(size(B, 1))
+        n     = BlasInt(size(B, 2))
+        l = BlasInt(l_in)
+        nb = BlasInt(nb_in)
+        if !(min(m,n) ≥ l ≥ 0)
+            throw(DimensionMismatch("too many $l"))
+        end
+        if size(A) ≠ (n,n)
+            throw(DimensionMismatch("A has size $(size(A)), but needs size ($n,$n)"))
+        end
+        if size(T,2) ≠ n
+            throw(DimensionMismatch("T has $(size(T,2)) columns, but needs $n"))
+        end
+        if !(n ≥ nb ≥ 1)
+            throw(DimensionMismatch("nb is invalid"))
+        end
+        if length(work) ≠ nb*n
+            throw(DimensionMismatch("work has length $(length(work)), but needs length $(nb*n)"))
+        end
+        lda   = BlasInt(max(1,stride(A, 2)))
+        ldb   = BlasInt(max(1,stride(B, 2)))
+        ldt = BlasInt(max(1,stride(T,2)))
+
+        info  = Ref{BlasInt}()
+        ccall((@blasfunc($tpqrt), liblapack), Cvoid,
+                (Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                Ptr{$elty}, Ref{BlasInt},
+                Ptr{$elty}, Ref{BlasInt},
+                Ptr{$elty}, Ref{BlasInt},
+                Ptr{$elty}, Ptr{BlasInt}),
+                m, n, l, nb, A, lda, B, ldb, T, ldt, work, info)
+        chklapackerror(info[])
+        A, B, T
+    end
+end
+
+tpqrt!(l::Integer, A::AbstractMatrix, B::AbstractMatrix, τ::AbstractVector, work::AbstractVector) =
+    tpqrt!(l, 1, A, B, permutedims(τ), work)
+
+n = 2000
 A = randn(n,n)
 B = randn(n,n)
+τ = similar(A,n)
+work = similar(τ)
+@time tpqrt!(n, copy(A), copy(B), τ, work);
+
+A = randn(n,n)
+B = randn(n,n)
+nb = 32
+T = similar(A,nb,n)
+work = similar(τ,nb*n)
+@time tpqrt!(n, nb, copy(A), copy(B), T, work);
+
+
 T = similar(A,n,n)
+@time tpqrt2!(n, A, B, T);
 
-A2,B2,T2 = tpqrt2!(2,copy(A), copy(B), copy(T))
 
-qr([UpperTriangular(A); UpperTriangular(B)]).T
+A = randn(n,n)
+B = randn(n,n)
+T = similar(A,1,n)
+work = similar(T)
+
+A2,B2,T2 = tpqrt!(n,1,copy(A), copy(B), copy(T), work)
+
+A2,B2,T2 = tpqrt2!(n,copy(A), copy(B), copy(T))
+
+@time qr(A);
+
+@time qr([Matrix(UpperTriangular(A)); Matrix(UpperTriangular(B))]).T;
+@time LinearAlgebra.qrfactUnblocked!([UpperTriangular(A); UpperTriangular(B)]).τ;
 
 A2
 B2
