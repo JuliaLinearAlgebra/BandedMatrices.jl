@@ -49,6 +49,22 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
             @test bA == A
             @test bandwidths(bA) == (l,u)
         end
+
+        for diags = [(-1 => ones(Int, 5),),
+                     (-2 => ones(Int, 5),),
+                     (2 => ones(Int, 5),),
+                     (-1 => ones(Int, 5), 1 => 2ones(Int, 5))]
+            A = BandedMatrix(diags...)
+            l,u = bandwidths(A)
+
+            sA = sparse(A)
+            @test sA isa SparseMatrixCSC
+            @test bandwidths(sA) == (l,u)
+            bA = BandedMatrix(sA)
+            @test bA isa BandedMatrix
+            @test bA == A
+            @test bandwidths(bA) == (l,u)
+        end
     end
 
     @time @testset "trivial convert routines" begin
