@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns
-
+import ArrayLayouts: OnesLayout
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
@@ -50,7 +50,7 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
         V = view(Eye(5),2:3,:)
         @test bandwidths(V) == (-1,1)
-        @test MemoryLayout(typeof(V)) isa BandedColumns{FillLayout}
+        @test MemoryLayout(typeof(V)) isa BandedColumns{OnesLayout}
         @test BandedMatrix(V) == [0 1 0 0 0; 0 0 1 0 0]
     end
 

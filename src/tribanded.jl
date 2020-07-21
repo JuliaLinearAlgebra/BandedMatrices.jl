@@ -43,6 +43,9 @@ end
 
 # Mul
 
+copy(M::Lmul{<:TriangularLayout{uplo,trans,<:AbstractBandedLayout},<:AbstractBandedLayout}) where {uplo,trans} =
+    ArrayLayouts.lmul!(M.A, BandedMatrix(M.B, bandwidths(M)))
+
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{'U',UNIT,<:BandedColumnMajor},
                                                 <:AbstractStridedLayout}) where UNIT
     A,x = M.A,M.B
