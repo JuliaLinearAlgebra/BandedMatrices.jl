@@ -922,3 +922,22 @@ function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
 end
 
 axpy!(α, A::AbstractBandedMatrix, dest::AbstractMatrix) = banded_axpy!(α, A, dest)
+
+
+###
+# Fill
+###
+
+for op in (:*, :/)
+    @eval begin
+        broadcasted(::BandedStyle, ::typeof($op), a::Zeros, b::AbstractArray) = _broadcasted_zeros(a, b)
+        broadcasted(::BandedStyle, ::typeof($op), a::Ones{T}, b::AbstractArray{V}) where {T,V} = copy_oftype(b, promote_op(*, T, V))
+    end
+end
+
+for op in (:*, :\)
+    @eval begin
+        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray, b::Zeros) = _broadcasted_zeros(a, b)
+        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray{T}, b::Ones{V}) where {T,V} = copy_oftype(a, promote_op(*, T, V))
+    end
+end

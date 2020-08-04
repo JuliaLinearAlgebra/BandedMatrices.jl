@@ -37,7 +37,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout, BidiagonalLayout
 
-import FillArrays: AbstractFill, getindex_value
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros
 
 export BandedMatrix,
        bandrange,
