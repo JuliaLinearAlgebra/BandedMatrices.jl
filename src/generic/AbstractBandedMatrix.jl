@@ -24,17 +24,24 @@ bandwidths(A::AbstractVecOrMat) = (size(A,1)-1 , size(A,2)-1)
 bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
 
 function BandedMatrices.bandwidths(A::SparseMatrixCSC)
-    l,u = 0,0
+    l,u = -size(A,1),-size(A,2)
 
     m,n = size(A)
     rows = rowvals(A)
+    vals = nonzeros(A)
     for j = 1:n
         for ind in nzrange(A, j)
             i = rows[ind]
-            if i > j
-                l = max(l, abs(i-j))
+            # We skip non-structural zeros when computing the
+            # bandwidths.
+            iszero(vals[ind]) && continue
+            ij = abs(i-j)
+            if i ≥ j
+                l = max(l, ij)
+                u = max(u, -ij)
             elseif i < j
-                u = max(u, abs(i-j))
+                l = max(l, -ij)
+                u = max(u, ij)
             end
         end
     end
