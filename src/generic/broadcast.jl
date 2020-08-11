@@ -742,7 +742,8 @@ _band_eval_args(a, b...) = (a, _band_eval_args(b...)...)
 _band_eval_args(::Base.RefValue{Type{T}}, b...) where T = (T, _band_eval_args(b...)...)
 _band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
 _band_eval_args(a::AbstractVector{T}, b...) where T = (one(T), _band_eval_args(b...)...)
-_band_eval_args(a::Broadcasted, b...) = (zero(mapreduce(eltype, promote_type, a.args)), _band_eval_args(b...)...)
+_broadcast_eltype(a) = Base.promote_op(a.f, map(eltype,a.args)...)
+_band_eval_args(a::Broadcasted, b...) = (zero(_broadcast_eltype(a)), _band_eval_args(b...)...)
 
 
 # zero dominates. Take the minimum bandwidth
@@ -895,7 +896,10 @@ function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
     Y
 end
 
-
+##
+# special cases to hack tests where 2.0 .* A .+ B can be constructed in different ways depending on REPL or in a function.
+# Should be made more general.
+##
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
                                                         <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
                                                         <:AbstractMatrix}}) where T
@@ -918,3 +922,22 @@ function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
 end
 
 axpy!(α, A::AbstractBandedMatrix, dest::AbstractMatrix) = banded_axpy!(α, A, dest)
+
+
+###
+# Fill
+###
+
+for op in (:*, :/)
+    @eval begin
+        broadcasted(::BandedStyle, ::typeof($op), a::Zeros, b::AbstractArray) = _broadcasted_zeros(a, b)
+        broadcasted(::BandedStyle, ::typeof($op), a::Ones{T}, b::AbstractArray{V}) where {T,V} = copy_oftype(b, promote_op(*, T, V))
+    end
+end
+
+for op in (:*, :\)
+    @eval begin
+        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray, b::Zeros) = _broadcasted_zeros(a, b)
+        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray{T}, b::Ones{V}) where {T,V} = copy_oftype(a, promote_op(*, T, V))
+    end
+end

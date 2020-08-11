@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns
-
+import ArrayLayouts: OnesLayout
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
@@ -50,8 +50,14 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
         V = view(Eye(5),2:3,:)
         @test bandwidths(V) == (-1,1)
-        @test MemoryLayout(typeof(V)) isa BandedColumns{FillLayout}
+        @test MemoryLayout(typeof(V)) isa BandedColumns{OnesLayout}
         @test BandedMatrix(V) == [0 1 0 0 0; 0 0 1 0 0]
+
+        B = brand(5,5,1,2)
+        @test Eye(5) * B == B
+        @test B * Eye(5) == B
+        @test muladd!(2.0, Eye(5), B, 0.0, zeros(5,5)) == 2B
+        @test muladd!(2.0, B, Eye(5), 0.0, zeros(5,5)) == 2B
     end
 
     A = Diagonal(ones(5,5))
@@ -118,12 +124,16 @@ end
     @test bandwidths(D) == (0,0)
 
     A =  brand(5,5,1,1)
-
     @test D*A isa BandedMatrix
     @test D*A == D*Matrix(A)
 
     @test A*D isa BandedMatrix
     @test A*D == Matrix(A)*D
+
+    M = MulAdd(2.0, A, D, 1.0, A)
+    @test copyto!(similar(M), M) ≈ 2A*D + A
+    M = MulAdd(2.0, D, A, 1.0, A)
+    @test copyto!(similar(M), M) ≈ 2D*A + A
 
     D = Diagonal(rand(Int,10))
     B = brand(10,10,-1,2)

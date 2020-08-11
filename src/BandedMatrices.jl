@@ -34,10 +34,10 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
                     sublayout, sub_materialize, _fill_lmul!,
-                    reflector!, reflectorApply!, _copyto!, 
+                    reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout, BidiagonalLayout
 
-import FillArrays: AbstractFill, getindex_value
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros
 
 export BandedMatrix,
        bandrange,
