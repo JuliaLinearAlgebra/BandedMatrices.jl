@@ -241,7 +241,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    for j=1:n
+    for j = rowsupport(dest)
         for k = max(1,j-d_u):min(j-s_u-1,m)
             inbands_setindex!(dest, z, k, j)
         end
@@ -264,7 +264,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    for j=1:n
+    for j = rowsupport(dest)
         for k = max(1,j-d_u):min(j-s_u-1,m)
             inbands_setindex!(dest, z, k, j)
         end
@@ -767,7 +767,8 @@ function bandwidths(bc::Broadcasted)
     bnds
 end
 
-similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef, size(bc), bandwidths(bc))
+banded_similar(T, sz, bnds) = BandedMatrix{T}(undef, sz, bnds)
+similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = banded_similar(T, size(bc), bandwidths(bc))
 
 
 
@@ -776,14 +777,14 @@ similar(bc::Broadcasted{BandedStyle}, ::Type{T}) where T = BandedMatrix{T}(undef
 ##
 
 function _banded_lmul!(α, A::AbstractMatrix, _)
-    for j=1:size(A,2), k=colrange(A,j)
+    for j = rowsupport(A), k = colsupport(A,j)
         inbands_setindex!(A, α*inbands_getindex(A,k,j), k,j)
     end
     A
 end
 
 function _banded_rmul!(A::AbstractMatrix, a, _)
-    for j=1:size(Α,2), k=colrange(A,j)
+    for j = rowsupport(A), k = colsupport(A,j)
         inbands_setindex!(A, inbands_getindex(A,k,j)*α, k,j)
     end
     A
@@ -803,42 +804,8 @@ end
 banded_lmul!(α::Number, A::AbstractMatrix) = _banded_lmul!(α, A, MemoryLayout(typeof(A)))
 banded_rmul!(A::AbstractMatrix, α::Number) = _banded_rmul!(A, α, MemoryLayout(typeof(A)))
 
-lmul!(α::Number, A::AbstractBandedMatrix) = banded_lmul!(α, A)
-rmul!(A::AbstractBandedMatrix, α::Number) = banded_rmul!(A, α)
-
-function lmul!(α::Number, A::Transpose{<:Any,<:AbstractBandedMatrix})
-    lmul!(α, parent(A))
-    A
-end
-function lmul!(α::Number, A::Adjoint{<:Any,<:AbstractBandedMatrix})
-    lmul!(conj(α), parent(A))
-    A
-end
-function lmul!(α::Number, A::Symmetric{<:Any,<:AbstractBandedMatrix})
-    lmul!(α, parent(A))
-    A
-end
-function lmul!(α::Real, A::Hermitian{<:Any,<:AbstractBandedMatrix})
-    lmul!(α, parent(A))
-    A
-end
-
-function rmul!(A::Transpose{<:Any,<:AbstractBandedMatrix}, α::Number)
-    rmul!(parent(A), α)
-    A
-end
-function rmul!(A::Adjoint{<:Any,<:AbstractBandedMatrix}, α::Number)
-    rmul!(parent(A), conj(α))
-    A
-end
-function rmul!(A::Symmetric{<:Any,<:AbstractBandedMatrix}, α::Number)
-    rmul!(parent(A), α)
-    A
-end
-function rmul!(A::Hermitian{<:Any,<:AbstractBandedMatrix}, α::Real)
-    rmul!(parent(A), α)
-    A
-end
+materialize!(L::Lmul{ScalarLayout,<:AbstractBandedLayout}) = banded_lmul!(L.A, L.B)
+materialize!(L::Rmul{<:AbstractBandedLayout,ScalarLayout}) = banded_rmul!(L.A, L.B)
 
 ##
 # axpy!
