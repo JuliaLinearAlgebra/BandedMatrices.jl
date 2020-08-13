@@ -783,7 +783,7 @@ function _banded_lmul!(α, A::AbstractMatrix, _)
     A
 end
 
-function _banded_rmul!(A::AbstractMatrix, a, _)
+function _banded_rmul!(A::AbstractMatrix, α, _)
     for j = rowsupport(A), k = colsupport(A,j)
         inbands_setindex!(A, inbands_getindex(A,k,j)*α, k,j)
     end
