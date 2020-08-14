@@ -26,6 +26,8 @@ hermitianlayout(::Type{<:Real}, ::ML) where ML<:BandedColumns = SymmetricLayout{
 hermitianlayout(::Type{<:Complex}, ::ML) where ML<:BandedRows = HermitianLayout{ML}()
 hermitianlayout(::Type{<:Real}, ::ML) where ML<:BandedRows = SymmetricLayout{ML}()
 
+sublayout(::SymmetricLayout{<:AbstractBandedLayout}, ::Type{<:NTuple{2,AbstractUnitRange}}) = BandedLayout()
+
 
 isbanded(A::HermOrSym) = isbanded(parent(A))
 
