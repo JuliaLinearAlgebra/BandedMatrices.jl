@@ -206,7 +206,7 @@ BandedMatrix{T}(A::AbstractMatrix) where T =
 _BandedMatrix(::BandedColumns, A::AbstractMatrix) = 
     _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
 _BandedMatrix(_, A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
-BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(typeof(A)), A)
+BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 
 
 """
