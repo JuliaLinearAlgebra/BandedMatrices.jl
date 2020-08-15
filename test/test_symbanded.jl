@@ -17,6 +17,8 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test all(A*x .=== muladd!(1.0,A,x,0.0,similar(x)) .===
                 BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
 
+    @test A[2:10,1:9] isa BandedMatrix
+    @test [A[k,j] for k=2:10, j=1:9] == A[2:10,1:9]
     A = Symmetric(brand(10,10,1,2),:L)
     @test isbanded(A)
     @test BandedMatrix(A) == A
@@ -26,6 +28,9 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
 
     @test A[1,2] == A[2,1]
     @test A[1,3] == 0
+    @test A[2:10,1:9] isa BandedMatrix
+    @test [A[k,j] for k=2:10, j=1:9] == A[2:10,1:9]
+
     x=rand(10)
     @test A*x ≈ Matrix(A)*x
     y = similar(x)
@@ -45,6 +50,11 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test eigvals(Hermitian(big.(A))) ≈ std
     
     A = brand(ComplexF64, 100, 100, 4, 0)
+    @test Symmetric(A)[2:10,1:9] isa BandedMatrix
+    @test Hermitian(A)[2:10,1:9] isa BandedMatrix
+    @test [Symmetric(A)[k,j] for k=2:10, j=1:9] == Symmetric(A)[2:10,1:9]
+    @test [Hermitian(A)[k,j] for k=2:10, j=1:9] == Hermitian(A)[2:10,1:9]
+
     std = eigvals(Hermitian(Matrix(A), :L))
     @test eigvals(Hermitian(A, :L)) ≈ std
     @test eigvals(Hermitian(big.(A), :L)) ≈ std
