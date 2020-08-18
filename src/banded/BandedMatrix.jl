@@ -711,6 +711,7 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
     SubArray{T,2,BandedMatrix{T, C, R},Tuple{I1,I2},t}
 
 isbanded(::BandedSubBandedMatrix) = true
+sublayout(::AbstractBandedLayout, ::Type{<:NTuple{2,AbstractUnitRange}}) = BandedLayout()
 sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} = 
     bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J}))
 sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:AbstractUnitRange} = 
