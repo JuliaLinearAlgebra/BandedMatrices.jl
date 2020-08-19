@@ -22,9 +22,12 @@ inbands_setindex!(x::Transpose, v, i::Integer, j::Integer) =
 # Lazy getindex
 # this uses a layout-materialize idiom to construct a matrix based
 # on the memory layout
+# BandedMatrix requires the columns to be Base.OneTo
 ###
 
-sub_materialize(::AbstractBandedLayout, V) = BandedMatrix(V)
+sub_materialize(::AbstractBandedLayout, V, ::NTuple{2,Base.OneTo{Int}}) = BandedMatrix(V)
+sub_materialize(::AbstractBandedLayout, V, ::Tuple{<:Any,Base.OneTo{Int}}) = BandedMatrix(V)
+sub_materialize(::AbstractBandedLayout, V, ::Tuple{Base.OneTo{Int},<:Any}) = BandedMatrix(V')'
 
 @inline getindex(A::AbstractMatrix, b::Band) = layout_getindex(A, b)
 @inline getindex(A::AbstractMatrix, kr::BandRangeType, j::Integer) = layout_getindex(A, kr, j)
