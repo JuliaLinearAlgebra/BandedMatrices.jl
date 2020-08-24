@@ -183,7 +183,9 @@ function _banded_square_ldiv!(A::QR, B)
     B
 end
 
-for  BTyp in (:AbstractBandedMatrix, :BandedSubBandedMatrix), Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat) 
+const UpperLayoutMatrix{T} = UpperTriangular{T,<:LayoutMatrix{T}}
+
+for  BTyp in (:AbstractBandedMatrix, :BandedSubBandedMatrix), Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix )
     @eval function ldiv!(A::QR{T,<:$BTyp}, B::$Typ{T}) where T
         m, n = size(A)
         if m == n
