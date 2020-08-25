@@ -1,6 +1,7 @@
 using BandedMatrices, FillArrays, ArrayLayouts, Test
 import LinearAlgebra: axpy!
-import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedMatrix, _BandedMatrix
+import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedMatrix, _BandedMatrix, sub_materialize
+
 
 @testset "BandedMatrix SubArray" begin
     @testset "BandedMatrix SubArray interface" begin
@@ -8,9 +9,16 @@ import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedM
         V = view(A,2:4,3:6)
         @test isbanded(V)
         @test bandwidths(V) == (2,1)
-        @test MemoryLayout(typeof(V)) isa BandedColumns{DenseColumnMajor}
+        @test MemoryLayout(V) isa BandedColumns{DenseColumnMajor}
         @test all(Matrix(_BandedMatrix(bandeddata(V), size(V,1), bandwidths(V)...)) .===
                 Matrix(V))
+
+        @test sub_materialize(V) isa BandedMatrix
+        @test sub_materialize(MemoryLayout(V), V, (Base.Slice(1:3), Base.OneTo(4))) isa BandedMatrix
+        # if 2nd argument is not Base.OneTo, cannot convert to BandedMatrix so take adjoint
+        @test sub_materialize(MemoryLayout(V), V, (Base.OneTo(3), Base.Slice(1:4))) isa Adjoint{<:Any,<:BandedMatrix}
+        # if neither argument is Base.OneTo, we give up
+        @test sub_materialize(MemoryLayout(V), V, (Base.Slice(1:3), Base.Slice(1:4))) isa Matrix
     end
 
     @testset "BandedMatrix SubArray arithmetic" begin
@@ -69,7 +77,6 @@ import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedM
             @test (2.0B[1:10,1:10]+A) ≈ A2
         end
     end
-
 
     @testset "BandedMatrix SubArray *" begin
         let A=brand(10,10,1,2), v=rand(20)
