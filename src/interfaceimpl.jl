@@ -29,8 +29,8 @@ inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
 bandeddata(D::Diagonal) = reshape(D.diag, 1, length(D.diag))
 
 # treat subinds as banded
-sublayout(::DiagonalLayout{L}, inds::Type) where L =
-    sublayout(bandedcolumns(L()), inds)
+sublayout(::DiagonalLayout{L}, inds::Type) where L = sublayout(bandedcolumns(L()), inds)
+sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,AbstractUnitRange{Int}}}) where L = sublayout(bandedcolumns(L()), inds)
 
 # bandeddata(V::SubArray{<:Any,2,<:Diagonal}) = view(bandeddata(parent(V)), :, parentindices(V)[2])
 

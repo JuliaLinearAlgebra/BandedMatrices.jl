@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns
-import ArrayLayouts: OnesLayout
+import ArrayLayouts: OnesLayout, UnknownLayout
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
@@ -60,14 +60,19 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test muladd!(2.0, B, Eye(5), 0.0, zeros(5,5)) == 2B
     end
 
-    A = Diagonal(ones(5,5))
-    @test isbanded(A)
-    @test bandwidths(A) == (0,0)
-    @test BandedMatrices.inbands_getindex(A, 1,1) == 1
-    BandedMatrices.inbands_setindex!(A, 2, 1,1)
-    @test A[1,1] == 2
-    @test A[1,2] == 0
-    @test BandedMatrices.@inbands(A[1,2]) == 2
+    @testset "Diagonal" begin
+        A = Diagonal(ones(5,5))
+        @test isbanded(A)
+        @test bandwidths(A) == (0,0)
+        @test BandedMatrices.inbands_getindex(A, 1,1) == 1
+        BandedMatrices.inbands_setindex!(A, 2, 1,1)
+        @test A[1,1] == 2
+        @test A[1,2] == 0
+        @test BandedMatrices.@inbands(A[1,2]) == 2
+
+        @test MemoryLayout(view(A, 1:3,2:4)) isa BandedColumns{DenseColumnMajor}
+        @test MemoryLayout(view(A, [1,2,3],2:4)) isa UnknownLayout
+    end
 
     A = SymTridiagonal([1,2,3],[4,5])
     @test isbanded(A)

@@ -192,6 +192,7 @@ import BandedMatrices: BandedStyle, BandedRows
         @testset "trans-adj" begin
             A = brand(5,5,1,1)
             Ã = copy(A)
+
             lmul!(2.0, A')
             @test A == 2Ã
             lmul!(2.0, transpose(A))
@@ -377,6 +378,18 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A + B isa BandedMatrix
         @test bandwidths(A .+ B) == (2,1)
         @test A .+ B == Matrix(A) + Matrix(B)
+    end
+
+    @testset "adjtans" begin
+        n = 10
+        A = brand(n,n,1,1)
+
+        @test BroadcastStyle(typeof(A')) isa BandedStyle
+        @test BroadcastStyle(typeof(transpose(A))) isa BandedStyle
+
+        @test A' .+ A isa BandedMatrix
+        @test transpose(A) .+ A isa BandedMatrix
+        @test A' .+ A == transpose(A) .+ A == Matrix(A)' .+ A
     end
 
     @testset "vector and matrix broadcastring" begin

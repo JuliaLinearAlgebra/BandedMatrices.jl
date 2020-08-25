@@ -37,6 +37,7 @@ BandedStyle(::Val{2}) = BandedStyle()
 BroadcastStyle(::Type{<:AbstractBandedMatrix}) = BandedStyle()
 BroadcastStyle(::Type{<:Adjoint{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
 BroadcastStyle(::Type{<:Transpose{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
+BroadcastStyle(::Type{<:SubArray{<:Any,2,<:AbstractBandedMatrix,<:NTuple{2,AbstractUnitRange{Int}}}}) = BandedStyle()
 BroadcastStyle(::DefaultArrayStyle{2}, ::BandedStyle) = BandedStyle()
 BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = BandedStyle()
 
@@ -534,11 +535,11 @@ end
 
 
 copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractVector,<:AbstractMatrix}}) =
-    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
+    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(dest), MemoryLayout.(bc.args))
 
 
 copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractVector}}) =
-    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), MemoryLayout.(typeof.(bc.args)))
+    _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(dest), MemoryLayout.(bc.args))
     
 
 ################
