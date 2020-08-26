@@ -641,6 +641,11 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
         # fill extra bands in dest
         fill!(view(data_d,1:d_u-max(A_u,B_u),:), z)
         fill!(view(data_d,d_u+max(A_l,B_l)+2:size(data_d,1),:), z)
+        # between A and B if non-overlapping
+        bs = max(-d_u,-B_l+1):min(A_u-1,d_l)
+        fill!(view(data_d, bs .+ d_u .+ 1, :), z)
+        bs = max(-d_u,-A_l+1):min(B_u-1,d_l)
+        fill!(view(data_d, bs .+ d_u .+ 1, :), z)
 
         # construct where B upper is zero
         # this is from band A_u:B_u+1

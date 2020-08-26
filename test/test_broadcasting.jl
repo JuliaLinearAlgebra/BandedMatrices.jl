@@ -512,5 +512,16 @@ import BandedMatrices: BandedStyle, BandedRows
         
         @test copyto!(similar(bc, Float64), bc) == A .* B == B .* A == 
             BandedMatrix(B, (0,0)) == Matrix(A) .* B
-	end
+    end
+    
+    @testset "adding degenerate" begin
+        A = BandedMatrix(1 => 1:9)
+        B = BandedMatrix(-1 => 1:9)
+        C = BandedMatrix(Fill(-1,10,10),(1,1))
+        C .= A .+ B
+        @test diag(C) == Zeros{Int}(10)
+        C = BandedMatrix(Fill(-1,10,10),(1,1))
+        C .= A .+ B
+        @test diag(C) == Zeros{Int}(10)
+    end
 end
