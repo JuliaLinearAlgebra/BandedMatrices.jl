@@ -216,4 +216,10 @@ end
         @test Ac\b ≈ Matrix(A)\b
         @test_broken Ac\b ≈ A\b
     end
+
+    @testset "UnitRange" begin
+        A = brand(100,100,3,2)
+        S = Symmetric(A)
+        @test S[3:10,4:11] == Symmetric(Matrix(A))[3:10,4:11]
+    end
 end
