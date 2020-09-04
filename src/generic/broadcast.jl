@@ -737,11 +737,15 @@ end
 _broadcast_bandwidths(bnds) = bnds
 _broadcast_bandwidths(bnds, _) = bnds
 _broadcast_bandwidths((l,u), a::AbstractVector) = (bandwidth(a,1),u)
-function _broadcast_bandwidths((l,u), A::AbstractArray) 
-    size(A,2) == 1 && return (bandwidth(A,1),u) 
-    size(A,1) == 1 && return (l, bandwidth(A,2))
+function __broadcast_bandwidths((l,u), A)
+    sz = size(A)
+    (length(sz) == 1 || sz[2] == 1) && return (bandwidth(A,1),u) 
+    sz[1] == 1 && return (l, bandwidth(A,2))
     bandwidths(A) # need to special case vector broadcasting
 end
+_broadcast_bandwidths((l,u), A::AbstractArray) = __broadcast_bandwidths((l,u), A)
+_broadcast_bandwidths((l,u), A::Broadcasted) = __broadcast_bandwidths((l,u), A)
+
 
 _band_eval_args() = ()
 _band_eval_args(a, b...) = (a, _band_eval_args(b...)...)
@@ -767,7 +771,8 @@ _isweakzero(f, args...) =  iszero(f(_band_eval_args(args...)...))
 
 
 function bandwidths(bc::Broadcasted)
-    (a,b) = size(bc)
+    sz = size(bc)
+    a,b = length(sz) == 1 ? (sz[1],1) : sz
     bnds = (a-1,b-1)
     _isweakzero(bc.f, bc.args...) && return min.(bnds, max.(_broadcast_bandwidths.(Ref(bnds), bc.args)...))
     bnds
