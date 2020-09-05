@@ -26,7 +26,7 @@ function getindex(S::Symmetric{<:Any, <:BandedMatrix}, kr::AbstractUnitRange, jr
         BandedMatrix(A[1:m,1:m],(bandwidth(A,1),0))
     end
     ret = B + transpose(B)
-    view(ret, band(0)) ./= 2
+    rdiv!(view(ret, band(0)), 2)
     ret[kr, jr]
 end
 
