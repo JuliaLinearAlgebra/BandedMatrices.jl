@@ -524,4 +524,12 @@ import BandedMatrices: BandedStyle, BandedRows
         C .= A .+ B
         @test diag(C) == Zeros{Int}(10)
     end
+
+    @testset "nested broadcast" begin
+        A = brand(5,4,2,1)
+        x = randn(5)
+        B = Base.Broadcast.broadcasted(*, Base.Broadcast.broadcasted(+, 2, x), A)
+        @test bandwidths(B) == bandwidths(A) == bandwidths(materialize(B)) == (2,1)
+        @test materialize(B) == (2 .+ x) .* Matrix(A)
+    end
 end
