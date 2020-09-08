@@ -184,7 +184,7 @@ end
                                     #(Float64, Hermitian),
                                     #(ComplexF32, Hermitian),
                                     #(ComplexF64, Hermitian),
-                                   )
+                                   ),
     (Ua, Ub) in  ((:L,:L), (:U,:U)),
     (wa, wb) in ((2, 3), (3, 2)), n in (4,)
     #
