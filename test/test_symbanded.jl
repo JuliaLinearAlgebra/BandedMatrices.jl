@@ -195,11 +195,7 @@ end
     end
     A = sbmatrix(W, T, Ua, wa, n)
     B = sbmatrix(W, T, Ub, wb, n)
-    if wb <= wa
-        @test eigvals(A, B) ≈ eigvals(Matrix(A), Matrix(B))
-    else
-        @test_broken eigvals(A, B) ≈ eigvals(Matrix(A), Matrix(B))
-    end
+    @test eigvals(A, B) ≈ eigvals(Matrix(A), Matrix(B))
 end
 
 @testset "Cholesky" begin
