@@ -185,6 +185,8 @@ end
 
         @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.U ≈ cholesky(Matrix(A)).U
+        @test Ac.U isa LowerTriangular{T,<:BandedMatrix{T}}
+        @test Ac.L isa LowerTriangular{T,<:BandedMatrix{T}}
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
@@ -198,6 +200,8 @@ end
 
         @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.L ≈ cholesky(Matrix(A)).L
+        @test Ac.U isa LowerTriangular{T,<:BandedMatrix{T}}
+        @test Ac.L isa LowerTriangular{T,<:BandedMatrix{T}}
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
@@ -211,6 +215,8 @@ end
 
         @test Ac isa Cholesky{T,<:BandedMatrix{T}}
         @test Ac.U ≈ cholesky(Matrix(A)).U
+        @test Ac.U isa LowerTriangular{T,<:BandedMatrix{T}}
+        @test Ac.L isa LowerTriangular{T,<:BandedMatrix{T}}
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b

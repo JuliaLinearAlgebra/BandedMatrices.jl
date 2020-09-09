@@ -98,3 +98,6 @@ cholesky(A::Symmetric{T,<:BandedMatrix{T}},
 
 cholesky(A::Hermitian{T,<:BandedMatrix{T}},
     ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)
+
+Base.copy(Ac::Adjoint{<:Any,<:AbstractBandedMatrix}) = BandedMatrix(Ac)
+Base.copy(Ac::Transpose{<:Any,<:AbstractBandedMatrix}) = BandedMatrix(Ac)
