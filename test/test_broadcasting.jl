@@ -435,9 +435,11 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A .* b' == b' .* A == Matrix(A) .* b'
         @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
 
-        @testset "nested broadcast" begin
-            @test bandwidths((b ./ 2) .* A) == (1,2)
-            @test (b ./ 2) .* A == (b ./ 2) .* Matrix(A)
+        if VERSION ≥ v"1.5"
+            @testset "nested broadcast" begin
+                @test bandwidths((b ./ 2) .* A) == (1,2)
+                @test (b ./ 2) .* A == (b ./ 2) .* Matrix(A)
+            end
         end
     end
 
