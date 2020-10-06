@@ -762,8 +762,10 @@ _broadcast_eltype(a) = Base.promote_op(a.f, map(eltype,a.args)...)
 _band_eval_args(a::Broadcasted, b...) = (zero(_broadcast_eltype(a)), _band_eval_args(b...)...)
 
 
-# zero dominates. Take the minimum bandwidth
-_bnds(bc) = size(bc).-1
+# zero dominates. Take the minimum bandwidth. Always treat like matrix.
+__bnds(m, n) = (m-1, n-1)
+__bnds(m) = (m-1, 0)
+_bnds(bc) = __bnds(size(bc)...)
     
 bandwidths(bc::Broadcasted{<:Union{Nothing,BroadcastStyle},<:Any,typeof(*)}) =
     min.(_broadcast_bandwidths.(Ref(_bnds(bc)), bc.args)...)
