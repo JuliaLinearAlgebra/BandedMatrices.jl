@@ -1,5 +1,6 @@
 function _dot(x::AbstractVector, A::BandedMatrix, y::AbstractVector)
     require_one_based_indexing(x, y)
+    # This should include a message but matches LinearAlgebra.dot
     (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
     l,u = bandwidths(A)
     M = size(A,1)
@@ -28,6 +29,7 @@ function dot(x::AbstractVector, A::BandedMatrix{<:Any,<:AbstractFill}, y::Abstra
     l,u = bandwidths(A)
     l == -u || return _dot(x, A, y)
 
+    # This should include a message but matches LinearAlgebra.dot
     (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
     T = typeof(dot(first(x), first(A), first(y)))
     Av = unique_value(A.data)

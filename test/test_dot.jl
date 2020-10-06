@@ -1,7 +1,9 @@
 using BandedMatrices, LinearAlgebra, FillArrays, Test
 import BandedMatrices: _BandedMatrix
+using Random
 
 @testset "dot(x, A::BandedMatrix, y)" begin
+    Random.seed!(0)
     @testset "Single, constant diagonal" begin
         for (m,n,l) in [(100,15,5),(15,100,-5)]
             S = _BandedMatrix(0.1Ones{Int}(1,n), Base.OneTo(m), l, -l)
