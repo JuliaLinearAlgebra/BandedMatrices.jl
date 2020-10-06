@@ -1,4 +1,4 @@
-function _dot(x::AbstractVector, A::BandedMatrix, y::AbstractVector)
+function _dot(x::AbstractVector, A::AbstractBandedMatrix, y::AbstractVector)
     require_one_based_indexing(x, y)
     # This should include a message but matches LinearAlgebra.dot
     (axes(x)..., axes(y)...) == axes(A) || throw(DimensionMismatch())
@@ -21,7 +21,7 @@ function _dot(x::AbstractVector, A::BandedMatrix, y::AbstractVector)
     s
 end
 
-dot(x::AbstractVector, A::BandedMatrix, y::AbstractVector) =
+dot(x::AbstractVector, A::AbstractBandedMatrix, y::AbstractVector) =
     _dot(x, A, y)
 
 function dot(x::AbstractVector, A::BandedMatrix{<:Any,<:AbstractFill}, y::AbstractVector)
