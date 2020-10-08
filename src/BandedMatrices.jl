@@ -39,6 +39,8 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
 
+using Compat # dot(x, A, y) for Julia < 1.3
+
 export BandedMatrix,
        bandrange,
        brand,
