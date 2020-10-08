@@ -4,7 +4,7 @@ using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
                         copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
-                        _chol!, rot180
+                        _chol!, rot180, dot
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
@@ -37,7 +37,9 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout, BidiagonalLayout
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
+
+using Compat # dot(x, A, y) for Julia < 1.3
 
 export BandedMatrix,
        bandrange,
@@ -86,6 +88,7 @@ include("banded/BandedLU.jl")
 include("banded/bandedqr.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
+include("banded/dot.jl")
 
 include("symbanded/symbanded.jl")
 include("symbanded/ldlt.jl")
