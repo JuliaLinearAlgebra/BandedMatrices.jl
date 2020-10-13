@@ -73,8 +73,8 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test MemoryLayout(view(A, 1:3,2:4)) isa BandedColumns{DenseColumnMajor}
         @test MemoryLayout(view(A, [1,2,3],2:4)) isa UnknownLayout
 
-        A[band(0)][1] = 2
-        @test A[band(0)] == ones(5)
+        A[band(0)][1] = 3
+        @test A[band(0)] == [2; ones(4)]
 
         B = Diagonal(Fill(1,5))
         @test B[band(0)] ≡ Fill(1,5)
