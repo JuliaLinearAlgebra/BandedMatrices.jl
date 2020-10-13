@@ -82,3 +82,10 @@ function getindex(D::SymTridiagonal{T,V}, b::Band) where {T,V}
     abs(b.i) == 1 && return copy(D.ev)
     convert(V, Zeros{T}(size(D,1)-abs(b.i)))
 end
+
+function getindex(D::Bidiagonal{T,V}, b::Band) where {T,V}
+    iszero(b.i) && return copy(D.dv)
+    D.uplo == 'L' && b.i == -1 && return copy(D.ev)
+    D.uplo == 'U' && b.i == 1 && return copy(D.ev)
+    convert(V, Zeros{T}(size(D,1)-abs(b.i)))
+end

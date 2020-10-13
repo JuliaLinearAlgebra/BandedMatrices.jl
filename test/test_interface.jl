@@ -72,14 +72,51 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
         @test MemoryLayout(view(A, 1:3,2:4)) isa BandedColumns{DenseColumnMajor}
         @test MemoryLayout(view(A, [1,2,3],2:4)) isa UnknownLayout
+
+        A[band(0)][1] = 2
+        @test A[band(0)] == ones(5)
+
+        B = Diagonal(Fill(1,5))
+        @test B[band(0)] ≡ Fill(1,5)
+        @test B[band(1)] ≡ B[band(-1)] ≡ Fill(0,4)
+        @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0,3)
     end
 
-    A = SymTridiagonal([1,2,3],[4,5])
-    @test isbanded(A)
-    @test bandwidths(A) == (1,1)
-    @test BandedMatrices.inbands_getindex(A, 1,1) == 1
-    BandedMatrices.inbands_setindex!(A, 2, 1,1)
-    @test A[1,1] == 2
+    @testset "SymTridiagonal" begin
+        A = SymTridiagonal([1,2,3],[4,5])
+        @test isbanded(A)
+        @test bandwidths(A) == (1,1)
+        @test BandedMatrices.inbands_getindex(A, 1,1) == 1
+        BandedMatrices.inbands_setindex!(A, 2, 1,1)
+        @test A[1,1] == 2
+
+        B = SymTridiagonal(Fill(1,5), Fill(2,4))
+        @test B[band(0)] ≡ Fill(1,5)
+        @test B[band(1)] ≡ B[band(-1)] ≡ Fill(2,4)
+        @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0,3)
+    end
+
+    @testset "Tridiagonal" begin
+        B = Tridiagonal(Fill(1,4), Fill(2,5), Fill(3,4))
+        @test B[band(0)] ≡ Fill(2,5)
+        @test B[band(1)] ≡ Fill(3,4)
+        @test B[band(-1)] ≡ Fill(1,4)
+        @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0,3)
+    end
+
+    @testset "Bidiagonal" begin
+        L = Bidiagonal(Fill(2,5), Fill(1,4), :L)
+        @test L[band(0)] ≡ Fill(2,5)
+        @test L[band(1)] ≡ Fill(0,4)
+        @test L[band(-1)] ≡ Fill(1,4)
+        @test L[band(2)] ≡ L[band(-2)] ≡ Fill(0,3)
+
+        U = Bidiagonal(Fill(2,5), Fill(1,4), :U)
+        @test U[band(0)] ≡ Fill(2,5)
+        @test U[band(1)] ≡ Fill(1,4)
+        @test U[band(-1)] ≡ Fill(0,4)
+        @test U[band(2)] ≡ U[band(-2)] ≡ Fill(0,3)
+    end
 
     A = PseudoBandedMatrix(rand(5, 4), 2, 2)
     B = rand(5, 4)
