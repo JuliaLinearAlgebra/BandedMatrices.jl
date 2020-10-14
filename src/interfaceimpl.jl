@@ -64,3 +64,28 @@ function rot180(A::AbstractBandedMatrix)
     l,u = bandwidths(A)
     _BandedMatrix(bandeddata(A)[end:-1:1,end:-1:1], m, u+sh,l-sh)
 end
+
+function getindex(D::Diagonal{T,V}, b::Band) where {T,V}
+    iszero(b.i) && return copy(D.diag)
+    convert(V, Zeros{T}(size(D,1)-abs(b.i)))
+end
+
+function getindex(D::Tridiagonal{T,V}, b::Band) where {T,V}
+    b.i == -1 && return copy(D.dl)
+    iszero(b.i) && return copy(D.d)
+    b.i == 1 && return copy(D.du)
+    convert(V, Zeros{T}(size(D,1)-abs(b.i)))
+end
+
+function getindex(D::SymTridiagonal{T,V}, b::Band) where {T,V}
+    iszero(b.i) && return copy(D.dv)
+    abs(b.i) == 1 && return copy(D.ev)
+    convert(V, Zeros{T}(size(D,1)-abs(b.i)))
+end
+
+function getindex(D::Bidiagonal{T,V}, b::Band) where {T,V}
+    iszero(b.i) && return copy(D.dv)
+    D.uplo == 'L' && b.i == -1 && return copy(D.ev)
+    D.uplo == 'U' && b.i == 1 && return copy(D.ev)
+    convert(V, Zeros{T}(size(D,1)-abs(b.i)))
+end

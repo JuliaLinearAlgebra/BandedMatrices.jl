@@ -200,4 +200,10 @@ done(S::BandSlice, s) = done(S.indices, s)
 
 to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
 
-@inline to_indices(A, I::Tuple{Band}) = (BandSlice(I[1], diagind(A, I[1].i)),)
+"""
+" the following is designed to supported infinite baned arrays
+"""
+
+band_to_indices(A, _, b) = (BandSlice(b, diagind(A, b.i)),)
+@inline to_indices(A, I::Tuple{Band}) = band_to_indices(A, axes(A), I[1])
+view(A::AbstractArray, I::Band) = view(A, to_indices(A, (I,))...)
