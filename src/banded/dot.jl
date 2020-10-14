@@ -8,7 +8,7 @@ function _dot(x::AbstractVector, A::AbstractBandedMatrix, y::AbstractVector)
     s = zero(T)
     i₁ = first(eachindex(x))
     x₁ = first(x)
-    @inbounds for j in eachindex(y)
+    @inbounds for j in colsupport(y)
         yj = y[j]
         if !iszero(yj)
             temp = zero(adjoint(A[i₁,j]) * x₁)
