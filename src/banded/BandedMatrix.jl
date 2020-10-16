@@ -780,3 +780,17 @@ function convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
     end
     _BandedMatrix(data,length(kr),max(0, l-shft),max(0, u+shft))
 end
+
+_banded_summary(io, B::BandedMatrix{T}, inds) where T = print(io, Base.dims2string(length.(inds)), " BandedMatrix{$T} with bandwidths $(bandwidths(B))")
+Base.array_summary(io::IO, B::DefaultBandedMatrix, inds::Tuple{Vararg{OneTo}}) = _banded_summary(io, B, inds)
+function Base.array_summary(io::IO, B::BandedMatrix, inds::Tuple{Vararg{OneTo}})
+    _banded_summary(io, B, inds)
+    print(io, " with data ")
+    summary(io, B.data)
+end
+function Base.array_summary(io::IO, B::BandedMatrix, inds)
+    _banded_summary(io, B, inds)
+    print(io, " with data ")
+    summary(io, B.data)
+    print(io, " with indices ", Base.inds2string(inds))
+end
