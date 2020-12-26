@@ -15,7 +15,7 @@ end
 
 # Here we implement the banded matrix interface for some key examples
 isbanded(::Zeros) = true
-bandwidths(::Zeros) = (0,0)
+bandwidths(::Zeros) = (-1,-1)
 inbands_getindex(::Zeros{T}, k::Integer, j::Integer) where T = zero(T)
 
 isbanded(::Eye) = true
