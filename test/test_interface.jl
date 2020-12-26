@@ -39,7 +39,7 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 @testset "banded matrix interface" begin
     @testset "Zeros" begin
         @test isbanded(Zeros(5,6))
-        @test bandwidths(Zeros(5,6)) == (0,0)
+        @test bandwidths(Zeros(5,6)) == (-1,-1)
         @test BandedMatrices.inbands_getindex(Zeros(5,6), 1,2) == 0
     end
 
