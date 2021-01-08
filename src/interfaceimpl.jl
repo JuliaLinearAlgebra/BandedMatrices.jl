@@ -15,7 +15,7 @@ end
 
 # Here we implement the banded matrix interface for some key examples
 isbanded(::Zeros) = true
-bandwidths(::Zeros) = (0,0)
+bandwidths(::Zeros) = (-40320,-40320) # 40320 == prod(1:8), used for special cases involving gcd
 inbands_getindex(::Zeros{T}, k::Integer, j::Integer) where T = zero(T)
 
 isbanded(::Eye) = true

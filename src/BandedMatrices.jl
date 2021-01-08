@@ -39,7 +39,6 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
 
-using Compat # dot(x, A, y) for Julia < 1.3
 
 export BandedMatrix,
        bandrange,
@@ -59,18 +58,8 @@ export BandedMatrix,
        Eye
 
 
-if VERSION < v"1.2-"
-    import Base: has_offset_axes
-    require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
-else
-    import Base: require_one_based_indexing
-end
-
-if VERSION < v"1.3-"
-    const _apply_ipiv_rows! = LinearAlgebra._apply_ipiv!
-else
-    import LinearAlgebra: _apply_ipiv_rows!
-end
+import Base: require_one_based_indexing
+import LinearAlgebra: _apply_ipiv_rows!
 
 include("blas.jl")
 include("lapack.jl")

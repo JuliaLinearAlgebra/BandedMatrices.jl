@@ -438,5 +438,14 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test A - B == A .- B == Matrix(A) - Matrix(B)
         @test B - A == B .- A == Matrix(B) - Matrix(A)
     end
+
+    @testset "summary" begin
+        A = BandedMatrix{Float64}(undef, (5, 5), (1,2))
+        @test summary(A) == "5×5 BandedMatrix{Float64} with bandwidths (1, 2)"
+        A = _BandedMatrix(Fill(1,1,5), 4, 1, -1)
+        @test summary(A) == "4×5 BandedMatrix{$Int} with bandwidths (1, -1) with data 1×5 Fill{Int64}"
+        A = _BandedMatrix(Fill(1,1,5), Base.Slice(1:4), 1, -1)
+        @test summary(A) == "4×5 BandedMatrix{$Int} with bandwidths (1, -1) with data 1×5 Fill{Int64} with indices 1:4×Base.OneTo(5)"
+    end
 end
 
