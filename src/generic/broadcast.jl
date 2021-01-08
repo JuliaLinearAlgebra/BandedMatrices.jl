@@ -736,9 +736,6 @@ end
 
 _bcsize(A) = size(A)
 
-if VERSION < v"1.5"
-    _bcsize(bc::Broadcasted) = map(length,axes(bc))
-end
 
 _broadcast_bandwidths(bnds) = bnds
 _broadcast_bandwidths(bnds, _) = bnds
