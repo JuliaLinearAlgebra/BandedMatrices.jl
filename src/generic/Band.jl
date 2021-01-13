@@ -195,8 +195,6 @@ end
 
 getindex(S::BandSlice, i::Int) = getindex(S.indices, i)
 show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ",", r.indices, ")")
-next(S::BandSlice, s) = next(S.indices, s)
-done(S::BandSlice, s) = done(S.indices, s)
 
 to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
 
