@@ -718,6 +718,10 @@ sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:Abs
     transposelayout(bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J})))
 
 
+Base.permutedims(A::BandedMatrix{<:Real}) = transpose(A) # temp
+Base.permutedims(A::BandedMatrix) = PermutedDimsArray(A, (2,1))
+
+
 function _shift(bm::BandedSubBandedMatrix)
     kr,jr=parentindices(bm)
     kr[1]-jr[1]
