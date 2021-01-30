@@ -1,8 +1,7 @@
 # BandedMatrices.jl
 A Julia package for representing banded matrices
 
-[![Build Status](https://travis-ci.org/JuliaMatrices/BandedMatrices.jl.svg?branch=master)](https://travis-ci.org/JuliaMatrices/BandedMatrices.jl) 
-[![Build status](https://ci.appveyor.com/api/projects/status/1nbjit44621pa5e5?svg=true)](https://ci.appveyor.com/project/dlfivefifty/bandedmatrices-jl)
+[![Build Status](https://github.com/JuliaMatrices/BandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/BandedMatrices.jl/actions)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/latest)
