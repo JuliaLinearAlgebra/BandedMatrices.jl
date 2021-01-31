@@ -14,7 +14,7 @@ Represents the `i`-th band of a banded matrix.
 julia> using BandedMatrices
 
 julia> A = BandedMatrix(Ones(5,5),(1,1))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 1):
  1.0  1.0   ⋅    ⋅    ⋅
  1.0  1.0  1.0   ⋅    ⋅
   ⋅   1.0  1.0  1.0   ⋅
@@ -41,7 +41,7 @@ Represents the entries in a row/column inside the bands.
 julia> using BandedMatrices
 
 julia> A = BandedMatrix(Ones(5,5),(1,1))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 1):
  1.0  1.0   ⋅    ⋅    ⋅
  1.0  1.0  1.0   ⋅    ⋅
   ⋅   1.0  1.0  1.0   ⋅
