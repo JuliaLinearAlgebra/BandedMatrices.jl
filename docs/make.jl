@@ -1,15 +1,5 @@
 using Documenter, BandedMatrices
 
-makedocs(modules=[BandedMatrices],
-			doctest = true,
-			clean = true,
-			format = :html,
-			sitename = "BandedMatrices.jl",
-			authors = "Sheehan Olver",
-			pages = Any[
-					"Home" => "index.md"
-					]
-			)
 makedocs(;
     modules = [FastGaussQuadrature],
     format = Documenter.HTML(
