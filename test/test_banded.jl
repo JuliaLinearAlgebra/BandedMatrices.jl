@@ -447,5 +447,20 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         A = _BandedMatrix(Fill(1,1,5), Base.Slice(1:4), 1, -1)
         @test summary(A) == "4×5 BandedMatrix{$Int} with bandwidths (1, -1) with data 1×5 Fill{$Int} with indices 1:4×Base.OneTo(5)"
     end
+
+    @testset "permutedims" begin
+        A = brand(10,11,1,2)
+        @test bandwidths(permutedims(A)) == (2,1)
+        @test permutedims(A) == permutedims(Matrix(A))
+
+        B = A + im*A
+        @test bandwidths(permutedims(B)) == (2,1)
+        @test permutedims(B) == permutedims(Matrix(B))
+
+        A = BandedMatrix{Matrix{Float64}}(undef, 10, 11, 1, 2)
+        A.data .= Ref([1 2; 3 4])
+        # TODO: properly support PermutedDimsArray
+        @test bandwidths(permutedims(A)) == (2,1)
+    end
 end
 
