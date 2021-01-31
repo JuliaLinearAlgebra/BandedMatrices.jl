@@ -1,7 +1,7 @@
 using Documenter, BandedMatrices
 
 makedocs(;
-    modules = [FastGaussQuadrature],
+    modules = [BandedMatrices],
     format = Documenter.HTML(
         canonical = "https://JuliaMatrices.github.io/BandedMatrices.jl/stable/",
     ),
