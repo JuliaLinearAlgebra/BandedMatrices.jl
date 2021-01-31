@@ -273,3 +273,22 @@ end
     @test bandwidths(R) == (2,-2)
     @test R == rot180(Matrix(A))
 end
+
+
+@testset "permutedims" begin
+    A = brand(10,11,1,2)
+    @test bandwidths(permutedims(A)) == (2,1)
+    @test permutedims(A) == permutedims(Matrix(A))
+
+    B = A + im*A
+    @test bandwidths(permutedims(B)) == (2,1)
+    @test permutedims(B) == permutedims(Matrix(B))
+
+    A = BandedMatrix{Matrix{Float64}}(undef, 10, 11, 1, 2)
+    A.data .= Ref([1 2; 3 4])
+    # TODO: properly support PermutedDimsArray
+    @test bandwidths(permutedims(A)) == (2,1)
+
+    S = Symmetric(brand(10,10,1,2))
+    @test permutedims(S) ≡ S
+end
