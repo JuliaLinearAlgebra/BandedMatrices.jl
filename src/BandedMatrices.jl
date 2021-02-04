@@ -61,8 +61,8 @@ export BandedMatrix,
 import Base: require_one_based_indexing
 import LinearAlgebra: _apply_ipiv_rows!
 
-if VERSION < v"0.6-"
-	oneto = OneTo
+if VERSION < v"1.6-"
+	oneto(n) = OneTo(n)
 else
 	import Base: oneto
 end
