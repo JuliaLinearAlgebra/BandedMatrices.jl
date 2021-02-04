@@ -284,7 +284,7 @@ end
     @test bandwidths(permutedims(B)) == (2,1)
     @test permutedims(B) == permutedims(Matrix(B))
 
-    A = BandedMatrix{Matrix{Float64}}(undef, 10, 11, 1, 2)
+    A = BandedMatrix{Matrix{Float64}}(undef, (10, 11), (1, 2))
     A.data .= Ref([1 2; 3 4])
     # TODO: properly support PermutedDimsArray
     @test bandwidths(permutedims(A)) == (2,1)
