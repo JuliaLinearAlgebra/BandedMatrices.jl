@@ -27,7 +27,7 @@ mutable struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     end
 end
 
-_BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
+_BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, oneto(m), l, u)
 
 const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
 

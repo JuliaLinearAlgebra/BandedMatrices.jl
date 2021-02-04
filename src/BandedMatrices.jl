@@ -32,7 +32,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
                     materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
-                    colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
+                    colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     sublayout, sub_materialize, _fill_lmul!,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout, BidiagonalLayout
@@ -60,6 +60,12 @@ export BandedMatrix,
 
 import Base: require_one_based_indexing
 import LinearAlgebra: _apply_ipiv_rows!
+
+if VERSION < v"0.6-"
+	oneto = OneTo
+else
+	import Base: oneto
+end
 
 include("blas.jl")
 include("lapack.jl")
