@@ -185,7 +185,7 @@ end
 
 const UpperLayoutMatrix{T} = UpperTriangular{T,<:LayoutMatrix{T}}
 
-for  BTyp in (:AbstractBandedMatrix, :BandedSubBandedMatrix), Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix )
+for  BTyp in (:AbstractBandedMatrix, :BandedSubBandedMatrix), Typ in (:StridedVector, :StridedMatrix, :AbstractVecOrMat, :UpperLayoutMatrix, :LayoutMatrix)
     @eval function ldiv!(A::QR{T,<:$BTyp}, B::$Typ{T}) where T
         m, n = size(A)
         if m == n
