@@ -78,7 +78,6 @@ struct _foo <: Number end
         for (n, m) in zip([7, 5], [5, 7])
             A = brand(m, n, 1, 1)
             b = rand(m)
-            @test_throws DimensionMismatch (A\b)
             @test_throws DimensionMismatch lu(A)\b
             @test_throws DimensionMismatch ldiv!(A, b)
             @test_throws DimensionMismatch ldiv!(lu(A), b)
