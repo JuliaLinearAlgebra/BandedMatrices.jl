@@ -227,5 +227,7 @@ end
         A = SymTridiagonal(zeros(8), fill(0.5,7))
         B = Symmetric(BandedMatrix(1 => fill(0.5,7)))
         @test A ≈ B
+        @test BandedMatrices.inbands_getindex(B, 1, 1) == 0
+        @test BandedMatrices.inbands_getindex(B, 1, 2) == BandedMatrices.inbands_getindex(B, 2, 1) == 0.5
     end
 end
