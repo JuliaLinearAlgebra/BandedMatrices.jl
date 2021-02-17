@@ -13,8 +13,15 @@
 
 
 
-@inline inbands_getindex(A::Symmetric{<:Any, <:BandedMatrix}, k::Integer, j::Integer) =
-    parent(A).data[bandwidth(A) - abs(k-j) + 1, max(k,j)]
+@inline function inbands_getindex(A::Symmetric{T, <:BandedMatrix}, k::Integer, j::Integer) where T
+    P = parent(A)
+    l,u = bandwidths(P)
+    if -l ≤ abs(k-j) ≤ u
+        parent(A).data[bandwidth(A) - abs(k-j) + 1, max(k,j)]
+    else
+        zero(T)
+    end
+end
 
 # this is a hack but is much faster than default
 function getindex(S::Symmetric{<:Any, <:BandedMatrix}, kr::AbstractUnitRange, jr::AbstractUnitRange)

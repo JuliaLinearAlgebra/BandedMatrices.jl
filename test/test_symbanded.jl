@@ -222,4 +222,10 @@ end
         S = Symmetric(A)
         @test S[3:10,4:11] == Symmetric(Matrix(A))[3:10,4:11]
     end
+
+    @testset "Sym of degenerate bands" begin
+        A = SymTridiagonal(zeros(8), fill(0.5,7))
+        B = Symmetric(BandedMatrix(1 => fill(0.5,7)))
+        @test A ≈ B
+    end
 end
