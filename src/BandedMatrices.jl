@@ -4,7 +4,7 @@ using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
                         copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
-                        _chol!, rot180
+                        _chol!, rot180, dot
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
@@ -32,12 +32,13 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
                     materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
-                    colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd, 
+                    colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     sublayout, sub_materialize, _fill_lmul!,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout, BidiagonalLayout
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
+
 
 export BandedMatrix,
        bandrange,
@@ -57,17 +58,13 @@ export BandedMatrix,
        Eye
 
 
-if VERSION < v"1.2-"
-    import Base: has_offset_axes
-    require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
-else
-    import Base: require_one_based_indexing
-end
+import Base: require_one_based_indexing
+import LinearAlgebra: _apply_ipiv_rows!
 
-if VERSION < v"1.3-"
-    const _apply_ipiv_rows! = LinearAlgebra._apply_ipiv!
+if VERSION < v"1.6-"
+	oneto(n) = OneTo(n)
 else
-    import LinearAlgebra: _apply_ipiv_rows!
+	import Base: oneto
 end
 
 include("blas.jl")
@@ -86,6 +83,7 @@ include("banded/BandedLU.jl")
 include("banded/bandedqr.jl")
 include("banded/gbmm.jl")
 include("banded/linalg.jl")
+include("banded/dot.jl")
 
 include("symbanded/symbanded.jl")
 include("symbanded/ldlt.jl")

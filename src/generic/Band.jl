@@ -14,7 +14,7 @@ Represents the `i`-th band of a banded matrix.
 julia> using BandedMatrices
 
 julia> A = BandedMatrix(Ones(5,5),(1,1))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 1):
  1.0  1.0   ⋅    ⋅    ⋅
  1.0  1.0  1.0   ⋅    ⋅
   ⋅   1.0  1.0  1.0   ⋅
@@ -41,7 +41,7 @@ Represents the entries in a row/column inside the bands.
 julia> using BandedMatrices
 
 julia> A = BandedMatrix(Ones(5,5),(1,1))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 1):
  1.0  1.0   ⋅    ⋅    ⋅
  1.0  1.0  1.0   ⋅    ⋅
   ⋅   1.0  1.0  1.0   ⋅
@@ -195,9 +195,13 @@ end
 
 getindex(S::BandSlice, i::Int) = getindex(S.indices, i)
 show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ",", r.indices, ")")
-next(S::BandSlice, s) = next(S.indices, s)
-done(S::BandSlice, s) = done(S.indices, s)
 
 to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
 
-@inline to_indices(A, I::Tuple{Band}) = (BandSlice(I[1], diagind(A, I[1].i)),)
+"""
+" the following is designed to supported infinite baned arrays
+"""
+
+band_to_indices(A, _, b) = (BandSlice(b, diagind(A, b.i)),)
+@inline to_indices(A, I::Tuple{Band}) = band_to_indices(A, axes(A), I[1])
+view(A::AbstractArray, I::Band) = view(A, to_indices(A, (I,))...)

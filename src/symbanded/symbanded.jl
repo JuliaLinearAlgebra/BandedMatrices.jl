@@ -13,23 +13,28 @@
 
 
 
-@inline inbands_getindex(A::Symmetric{<:Any, <:BandedMatrix}, k::Integer, j::Integer) =
-    parent(A).data[bandwidth(A) - abs(k-j) + 1, max(k,j)]
+@inline function inbands_getindex(A::Symmetric{T, <:BandedMatrix}, k::Integer, j::Integer) where T
+    P = parent(A)
+    l,u = bandwidths(P)
+    if -l ≤ abs(k-j) ≤ u
+        parent(A).data[bandwidth(A) - abs(k-j) + 1, max(k,j)]
+    else
+        zero(T)
+    end
+end
 
 # this is a hack but is much faster than default
-if VERSION ≥ v"1.5"
-    function getindex(S::Symmetric{<:Any, <:BandedMatrix}, kr::AbstractUnitRange, jr::AbstractUnitRange)
-        A = parent(S)
-        m = max(maximum(kr), maximum(jr))
-        B = if S.uplo == 'U'
-            BandedMatrix(A[1:m,1:m],(0, bandwidth(A,2)))
-        else
-            BandedMatrix(A[1:m,1:m],(bandwidth(A,1),0))
-        end
-        ret = B + transpose(B)
-        rdiv!(view(ret, band(0)), 2)
-        ret[kr, jr]
+function getindex(S::Symmetric{<:Any, <:BandedMatrix}, kr::AbstractUnitRange, jr::AbstractUnitRange)
+    A = parent(S)
+    m = max(maximum(kr), maximum(jr))
+    B = if S.uplo == 'U'
+        BandedMatrix(A[1:m,1:m],(0, bandwidth(A,2)))
+    else
+        BandedMatrix(A[1:m,1:m],(bandwidth(A,1),0))
     end
+    ret = B + transpose(B)
+    rdiv!(view(ret, band(0)), 2)
+    ret[kr, jr]
 end
 
 symmetriclayout(::ML) where ML<:BandedColumns = SymmetricLayout{ML}()

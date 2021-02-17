@@ -27,7 +27,7 @@ mutable struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     end
 end
 
-_BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, Base.OneTo(m), l, u)
+_BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, oneto(m), l, u)
 
 const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
 
@@ -717,6 +717,10 @@ sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:
 sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:AbstractUnitRange} = 
     transposelayout(bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J})))
 
+Base.permutedims(A::Symmetric{<:Any,<:AbstractBandedMatrix}) = A
+Base.permutedims(A::BandedMatrix{<:Number}) = transpose(A) # temp
+Base.permutedims(A::BandedMatrix) = PermutedDimsArray(A, (2,1))
+bandwidths(A::PermutedDimsArray{<:Any,2,(2,1),(2,1)}) = reverse(bandwidths(parent(A)))
 
 function _shift(bm::BandedSubBandedMatrix)
     kr,jr=parentindices(bm)
@@ -739,27 +743,16 @@ end
 bandwidths(S::SubArray{T,2,<:AbstractMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
     min.(size(S) .- 1, bandwidths(parent(S)) .+ (-1,1) .* bandshift(S))
 
-if VERSION < v"1.2-"
-    @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
-        @inbounds r = inbands_getindex(parent(S), reindex(S, parentindices(S), (k, j))...)
-        r
-    end
-
-    @inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
-        @inbounds r = inbands_setindex!(parent(S), v, reindex(S, parentindices(S), (k, j))...)
-        r
-    end
-else
-    @inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
-        @inbounds r = inbands_getindex(parent(S), reindex(parentindices(S), (k, j))...)
-        r
-    end
-    
-    @inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
-        @inbounds r = inbands_setindex!(parent(S), v, reindex(parentindices(S), (k, j))...)
-        r
-    end
+@inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
+    @inbounds r = inbands_getindex(parent(S), reindex(parentindices(S), (k, j))...)
+    r
 end
+
+@inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
+    @inbounds r = inbands_setindex!(parent(S), v, reindex(parentindices(S), (k, j))...)
+    r
+end
+
 
 
 function convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
@@ -779,4 +772,18 @@ function convert(::Type{BandedMatrix}, S::BandedSubBandedMatrix)
         data[-shft-u+1:end,:] = A.data[:,jr]  # l-shft+1 - (-shft-u) == l+u+1
     end
     _BandedMatrix(data,length(kr),max(0, l-shft),max(0, u+shft))
+end
+
+_banded_summary(io, B::BandedMatrix{T}, inds) where T = print(io, Base.dims2string(length.(inds)), " BandedMatrix{$T} with bandwidths $(bandwidths(B))")
+Base.array_summary(io::IO, B::DefaultBandedMatrix, inds::Tuple{Vararg{OneTo}}) = _banded_summary(io, B, inds)
+function Base.array_summary(io::IO, B::BandedMatrix, inds::Tuple{Vararg{OneTo}})
+    _banded_summary(io, B, inds)
+    print(io, " with data ")
+    summary(io, B.data)
+end
+function Base.array_summary(io::IO, B::BandedMatrix, inds)
+    _banded_summary(io, B, inds)
+    print(io, " with data ")
+    summary(io, B.data)
+    print(io, " with indices ", Base.inds2string(inds))
 end

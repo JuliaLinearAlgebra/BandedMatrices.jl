@@ -81,8 +81,7 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
     end
 
     @time @testset "show" begin
-        @test occursin(Regex("10×10 BandedMatrix{Float64, *$(Matrix{Float64}), *" *
-                             string(Base.OneTo{Int})*"}"),
+        @test occursin("10×10 BandedMatrix{Float64} with bandwidths (3, 3)",
          sprint() do io
             show(io, MIME"text/plain"(), brand(10, 10, 3, 3))
          end)

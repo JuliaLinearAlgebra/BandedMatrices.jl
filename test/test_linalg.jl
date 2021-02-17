@@ -257,5 +257,12 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         B = brand(Float64, 10, 10, 0, 2)
         @test W\B == W\Matrix(B)
     end
+
+    @testset "rect backslash" begin
+        A = brand(6,5,2,1)
+        b = randn(6)
+        @test factorize(A) isa QR
+        @test A \ b ≈ Matrix(A) \ b
+    end
 end
 

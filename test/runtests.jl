@@ -6,6 +6,7 @@ using Test
 include("test_banded.jl")
 include("test_subarray.jl")
 include("test_linalg.jl")
+include("test_dot.jl")
 include("test_broadcasting.jl")
 include("test_indexing.jl")
 include("test_bandedlu.jl")

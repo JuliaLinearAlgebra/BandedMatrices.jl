@@ -25,7 +25,7 @@ To create a banded matrix of all zeros, identity matrix, or with a constant valu
 use the following constructors:
 ```jldoctest
 julia> BandedMatrix(Zeros(5,5), (1,2))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 2):
  0.0  0.0  0.0   ⋅    ⋅
  0.0  0.0  0.0  0.0   ⋅
   ⋅   0.0  0.0  0.0  0.0
@@ -33,7 +33,7 @@ julia> BandedMatrix(Zeros(5,5), (1,2))
   ⋅    ⋅    ⋅   0.0  0.0
 
 julia> BandedMatrix(Eye(5), (1,2))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 2):
  1.0  0.0  0.0   ⋅    ⋅
  0.0  1.0  0.0  0.0   ⋅
   ⋅   0.0  1.0  0.0  0.0
@@ -41,7 +41,7 @@ julia> BandedMatrix(Eye(5), (1,2))
   ⋅    ⋅    ⋅   0.0  1.0
 
 julia> BandedMatrix(Ones(5,5), (1,2))
-5×5 BandedMatrix{Float64,Array{Float64,2}}:
+5×5 BandedMatrix{Float64} with bandwidths (1, 2):
  1.0  1.0  1.0   ⋅    ⋅
  1.0  1.0  1.0  1.0   ⋅
   ⋅   1.0  1.0  1.0  1.0
@@ -58,18 +58,18 @@ A[band(1)] .= A[band(-1)] .= 1/h^2
 ```
 
 Creating a large banded matrix from a dense matrix should be avoided because that costs time and memory:
-```jldoctest
+```julia
 julia> @time BandedMatrix(ones(10000,10000),(0,0));
 0.775120 seconds (10 allocations: 763.016 MiB, 28.04% gc time)
 ```
 Try to use structured matrices to get around this:
-```jldoctest
+```julia
 julia> @time BandedMatrix(Ones(10000,10000),(0,0));
 0.000074 seconds (9 allocations: 78.469 KiB)
 ```
 
 Another example:
-```jldoctest
+```julia
 julia> @time BandedMatrix([Ones(10000,5000) Zeros(10000,5000)],(1,1));
 0.346918 seconds (22 allocations: 763.169 MiB, 8.38% gc time)
 
