@@ -177,6 +177,27 @@ end
     end
 end
 
+@testset "Generalized eigenvalues $W{$T}($Ua,$Ub)($n,$wa-$wb)" for (T,W) in (
+                                    (Float32, Symmetric),
+                                    (Float64, Symmetric),
+                                    #(Float32, Hermitian),
+                                    #(Float64, Hermitian),
+                                    #(ComplexF32, Hermitian),
+                                    #(ComplexF64, Hermitian),
+                                   ),
+    (Ua, Ub) in  ((:L,:L), (:U,:U)),
+    (wa, wb) in ((2, 3), (3, 2)), n in (4,)
+    #
+    function sbmatrix(W, T, U, w, n)
+        r = U == :L ? (0:-1:-w+1) : (0:w-1)
+        band(k) = k => ones(T, n - abs(k)) * 2.0^-abs(k)
+        W(BandedMatrix(band.(r)...), U)
+    end
+    A = sbmatrix(W, T, Ua, wa, n)
+    B = sbmatrix(W, T, Ub, wb, n)
+    @test eigvals(A, B) ≈ eigvals(Matrix(A), Matrix(B))
+end
+
 @testset "Cholesky" begin
     for T in (Float64, BigFloat)
         A = Symmetric(BandedMatrix(0 => one(T) ./ [12, 6, 6, 6, 12],

@@ -164,4 +164,11 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     eigvals!(A)
 end
 
-eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix}) = eigvals!(copy(A), copy(B))
+function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
+    AA = if bandwidth(A) >= bandwidth(B)
+        copy(A)
+    else
+        copyto!(similar(B), A)
+    end
+    eigvals!(AA, copy(B))
+end
