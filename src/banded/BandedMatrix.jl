@@ -719,6 +719,8 @@ sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:Abs
 
 Base.permutedims(A::Symmetric{<:Any,<:AbstractBandedMatrix}) = A
 Base.permutedims(A::BandedMatrix{<:Number}) = transpose(A) # temp
+Base.permutedims(A::Adjoint{<:Real,<:BandedMatrix}) = A' # temp
+Base.permutedims(A::Transpose{<:Number,<:BandedMatrix}) = transpose(A) # temp
 Base.permutedims(A::BandedMatrix) = PermutedDimsArray(A, (2,1))
 bandwidths(A::PermutedDimsArray{<:Any,2,(2,1),(2,1)}) = reverse(bandwidths(parent(A)))
 
