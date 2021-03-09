@@ -280,9 +280,13 @@ end
     @test bandwidths(permutedims(A)) == (2,1)
     @test permutedims(A) == permutedims(Matrix(A))
 
+    @test permutedims(A') == permutedims(transpose(A)) == A
+
     B = A + im*A
     @test bandwidths(permutedims(B)) == (2,1)
     @test permutedims(B) == permutedims(Matrix(B))
+    @test permutedims(B') == permutedims(Matrix(B)')
+    @test permutedims(transpose(B)) == B
 
     A = BandedMatrix{Matrix{Float64}}(undef, (10, 11), (1, 2))
     A.data .= Ref([1 2; 3 4])
