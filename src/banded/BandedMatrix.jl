@@ -209,7 +209,7 @@ BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 
 ## specialised
 # use bandeddata if possible
-_BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
+_BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), axes(A,1), bandwidths(A)...)
 function _BandedMatrix(::BidiagonalLayout, A::AbstractMatrix{T}) where T
     m,n = size(A)
     dat = Matrix{T}(undef, 2, n)
