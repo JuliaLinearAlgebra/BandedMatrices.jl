@@ -202,11 +202,37 @@ BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} =
 BandedMatrix{T}(A::AbstractMatrix) where T = 
     copyto!(BandedMatrix{T}(undef, size(A), bandwidths(A)), A)
 
-# use bandeddata if possible
-_BandedMatrix(::BandedColumns, A::AbstractMatrix) = 
-    _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
+
 _BandedMatrix(_, A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
 BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
+
+
+## specialised
+# use bandeddata if possible
+_BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), size(A,1), bandwidths(A)...)
+function _BandedMatrix(::BidiagonalLayout, A::AbstractMatrix{T}) where T
+    m,n = size(A)
+    dat = Matrix{T}(undef, 2, n)
+    if bidiagonaluplo(A) == 'L'
+        copyto!(view(dat, 1, :), diagonaldata(A))
+        copyto!(view(dat, 2, 1:n-1), subdiagonaldata(A))
+        _BandedMatrix(dat, m, 1, 0)
+    else # u
+        copyto!(view(dat, 1, 2:n), supdiagonaldata(A))
+        copyto!(view(dat, 2, :), diagonaldata(A))
+        _BandedMatrix(dat, m, 0, 1)
+    end
+end
+
+function _BandedMatrix(::AbstractTridiagonalLayout, A::AbstractMatrix{T}) where T
+    m,n = size(A)
+    dat = Matrix{T}(undef, 3, n)
+
+    copyto!(view(dat, 1, 2:n), supdiagonaldata(A))
+    copyto!(view(dat, 2, :), diagonaldata(A))
+    copyto!(view(dat, 3, 1:n-1), subdiagonaldata(A))
+    _BandedMatrix(dat, m, 1, 1)
+end
 
 
 """

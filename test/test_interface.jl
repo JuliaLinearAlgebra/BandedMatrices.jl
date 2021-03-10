@@ -110,12 +110,14 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test L[band(1)] ≡ Fill(0,4)
         @test L[band(-1)] ≡ Fill(1,4)
         @test L[band(2)] ≡ L[band(-2)] ≡ Fill(0,3)
+        @test BandedMatrix(L) == L
 
         U = Bidiagonal(Fill(2,5), Fill(1,4), :U)
         @test U[band(0)] ≡ Fill(2,5)
         @test U[band(1)] ≡ Fill(1,4)
         @test U[band(-1)] ≡ Fill(0,4)
         @test U[band(2)] ≡ U[band(-2)] ≡ Fill(0,3)
+        @test BandedMatrix(U) == U
     end
 
     A = PseudoBandedMatrix(rand(5, 4), 2, 2)
