@@ -102,6 +102,8 @@ band
 BandRange
 ```
 
+To loop over the nonzero elements of a BandedMatrix, you can use `colrange(A, c)` and `rowrange(A, r)`.
+
 
 
 ## Creating symmetric banded matrices
