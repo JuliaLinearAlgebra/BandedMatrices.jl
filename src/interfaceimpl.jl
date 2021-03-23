@@ -51,8 +51,30 @@ inbands_setindex!(J::SymTridiagonal, v, k::Integer, j::Integer) =
 isbanded(::Tridiagonal) = true
 bandwidths(::Tridiagonal) = (1,1)
 
+struct SubTridiagonalLayout <: AbstractBandedLayout end
+
 sublayout(::AbstractTridiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},AbstractUnitRange{Int}}}) =
-    BandedLayout()
+    SubTridiagonalLayout()
+
+function _BandedMatrix(::SubTridiagonalLayout, V::AbstractMatrix{T}) where T
+    A = parent(V)
+    kr,jr = parentindices(V)
+    m,n = size(V)
+    dat = Matrix{T}(undef, 3, n)
+
+    c,a,b = subdiagonaldata(A), diagonaldata(A), supdiagonaldata(A)
+    if first(jr) == 1
+        copyto!(view(dat, 1, 2:n), view(c, jr[2:end] .- 1))
+    else
+        copyto!(view(dat, 1, :), view(c, jr .- 1))
+    end
+    copyto!(view(dat, 2, :), view(a, jr))
+    copyto!(view(dat, 3, :), view(b, jr))
+    
+    sh = first(kr)-first(jr)
+    _BandedMatrix(dat, m, 1-sh, 1+sh)
+end
+    
 
 ###
 # rot180
