@@ -62,7 +62,7 @@ function _BandedMatrix(::SubTridiagonalLayout, V::AbstractMatrix{T}) where T
     m,n = size(V)
     dat = Matrix{T}(undef, 3, n)
 
-    c,a,b = supdiagonaldata(A), diagonaldata(A), supdiagonaldata(A)
+    c,a,b = subdiagonaldata(A), diagonaldata(A), supdiagonaldata(A)
     if first(jr) == 1
         copyto!(view(dat, 1, 2:n), view(c, jr[2:end] .- 1))
     else
