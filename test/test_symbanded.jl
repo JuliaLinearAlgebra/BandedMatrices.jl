@@ -18,6 +18,10 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
                 BLAS.sbmv!('U', 2, 1.0, parent(A).data, x, 0.0, similar(x)))
 
     @test A[2:10,1:9] isa BandedMatrix
+    @test isempty(A[1:0,1:9])
+    @test isempty(A[1:9,1:0])
+    @test isempty(A[1:0,1:0])
+
     @test [A[k,j] for k=2:10, j=1:9] == A[2:10,1:9]
     A = Symmetric(brand(10,10,1,2),:L)
     @test isbanded(A)
@@ -52,6 +56,9 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     A = brand(ComplexF64, 100, 100, 4, 0)
     @test Symmetric(A)[2:10,1:9] isa BandedMatrix
     @test Hermitian(A)[2:10,1:9] isa BandedMatrix
+    @test isempty(Hermitian(A)[1:0,1:9])
+    @test isempty(Hermitian(A)[1:0,1:0])
+    @test isempty(Hermitian(A)[1:9,1:0])
     @test [Symmetric(A)[k,j] for k=2:10, j=1:9] == Symmetric(A)[2:10,1:9]
     @test [Hermitian(A)[k,j] for k=2:10, j=1:9] == Hermitian(A)[2:10,1:9]
 

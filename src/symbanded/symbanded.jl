@@ -26,7 +26,7 @@ end
 # this is a hack but is much faster than default
 function getindex(S::Symmetric{<:Any, <:BandedMatrix}, kr::AbstractUnitRange, jr::AbstractUnitRange)
     A = parent(S)
-    m = max(maximum(kr), maximum(jr))
+    m = max(last(kr), last(jr))
     B = if S.uplo == 'U'
         BandedMatrix(A[1:m,1:m],(0, bandwidth(A,2)))
     else
