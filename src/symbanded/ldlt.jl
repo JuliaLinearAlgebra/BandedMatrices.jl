@@ -2,6 +2,7 @@
 
 @inline bandwidth(A::LDLt{T,Symmetric{T,M}}, k) where {T,M<:BandedMatrix{T}} = bandwidth(A.data, k)
 
+LinearAlgebra._factorize(S::Symmetric{<:Any,<:BandedMatrix}; check=false) = ldlt(S)
 ArrayLayouts._factorize(::SymmetricLayout{<:BandedColumns}, ::NTuple{2,Base.OneTo{Int}}, S) = ldlt(S)
 
 function ldlt!(F::Symmetric{T,M}) where {T,M<:BandedMatrix{T}}

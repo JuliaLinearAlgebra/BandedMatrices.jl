@@ -10,7 +10,7 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-ArrayLayouts = "0.4.3, 0.5, 0.6"
+ArrayLayouts = "0.7"
 FillArrays = "0.9.7, 0.10, 0.11"
 julia = "1.5"
 
