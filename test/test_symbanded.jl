@@ -150,7 +150,8 @@ end
         A[band(1)] .= -one(T)/4
         A[band(2)] .= -one(T)/16
         SAU = Symmetric(A, :U)
-        F = ldlt(SAU)
+        F = factorize(SAU)
+        @test F isa LDLt
         b = collect(one(T):size(F, 1))
         x = Matrix(SAU)\b
         y = F\b
