@@ -22,7 +22,7 @@ julia> A = BandedMatrix(Ones(5,5),(1,1))
   ⋅    ⋅    ⋅   1.0  1.0
 
 julia> A[band(1)]
-4-element Array{Float64,1}:
+4-element Vector{Float64}:
  1.0
  1.0
  1.0
@@ -49,7 +49,7 @@ julia> A = BandedMatrix(Ones(5,5),(1,1))
   ⋅    ⋅    ⋅   1.0  1.0
 
 julia> A[2,BandRange]
-3-element Array{Float64,1}:
+3-element Vector{Float64}:
  1.0
  1.0
  1.0
