@@ -43,11 +43,11 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
             A = brand(10, 10, l, u)
             sA = sparse(A)
             @test sA isa SparseMatrixCSC
-            @test bandwidths(sA) == (l,u)
+            @test bandwidths(sA) == min.((l,u),9)
             bA = BandedMatrix(sA)
             @test bA isa BandedMatrix
             @test bA == A
-            @test bandwidths(bA) == (l,u)
+            @test bandwidths(bA) == min.((l,u),9)
         end
 
         for diags = [(-1 => ones(Int, 5),),
