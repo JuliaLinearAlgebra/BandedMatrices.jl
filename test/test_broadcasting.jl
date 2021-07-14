@@ -536,5 +536,9 @@ import BandedMatrices: BandedStyle, BandedRows
         B = Base.Broadcast.broadcasted(*, Base.Broadcast.broadcasted(+, 2, x), A)
         @test bandwidths(B) == bandwidths(A) == bandwidths(materialize(B)) == (2,1)
         @test materialize(B) == (2 .+ x) .* Matrix(A)
+
+        B = Base.Broadcast.broadcasted(+, Base.Broadcast.broadcasted(+, A, A), A)
+        @test bandwidths(B) == bandwidths(A)
+        @test (A .+ A) .+ A == 3A
     end
 end
