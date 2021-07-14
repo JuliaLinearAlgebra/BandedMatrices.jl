@@ -755,8 +755,7 @@ _band_eval_args(a, b...) = (a, _band_eval_args(b...)...)
 _band_eval_args(::Base.RefValue{Type{T}}, b...) where T = (T, _band_eval_args(b...)...)
 _band_eval_args(a::AbstractMatrix{T}, b...) where T = (zero(T), _band_eval_args(b...)...)
 _band_eval_args(a::AbstractVector{T}, b...) where T = (one(T), _band_eval_args(b...)...)
-_broadcast_eltype(a) = Base.promote_op(a.f, map(eltype,a.args)...)
-_band_eval_args(a::Broadcasted, b...) = (zero(_broadcast_eltype(a)), _band_eval_args(b...)...)
+_band_eval_args(a::Broadcasted, b...) = (zero(Base.Broadcast.combine_eltypes(a.f, a.args)), _band_eval_args(b...)...)
 
 
 # zero dominates. Take the minimum bandwidth. Always treat like matrix.
