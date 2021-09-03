@@ -19,7 +19,8 @@ bandeddata(_, A) = error("Override bandeddata(::$(typeof(A)))")
 
 Returns a tuple containing the upper and lower bandwidth of `A`.
 """
-bandwidths(A::AbstractVecOrMat) = (size(A,1)-1 , size(A,2)-1)
+bandwidths(A::AbstractVecOrMat) = bandwidths(MemoryLayout(A), A)
+bandwidths(_, A) = (size(A,1)-1 , size(A,2)-1)
 
 bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
 
@@ -94,8 +95,8 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 
 returns true if a matrix implements the banded interface.
 """
-isbanded(::AbstractBandedMatrix) = true
-isbanded(_) = false
+isbanded(A) = isbanded(MemoryLayout(A), A)
+isbanded(::AbstractBandedLayout, A) = true
 
 # override bandwidth(A,k) for each AbstractBandedMatrix
 # override inbands_getindex(A,k,j)
