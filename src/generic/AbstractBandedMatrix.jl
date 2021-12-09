@@ -17,7 +17,7 @@ bandeddata(_, A) = error("Override bandeddata(::$(typeof(A)))")
 """
     bandwidths(A)
 
-Returns a tuple containing the upper and lower bandwidth of `A`.
+Returns a tuple containing the lower and upper bandwidth of `A`, in order.
 """
 bandwidths(A::AbstractVecOrMat) = bandwidths(MemoryLayout(A), A)
 bandwidths(_, A) = (size(A,1)-1 , size(A,2)-1)
