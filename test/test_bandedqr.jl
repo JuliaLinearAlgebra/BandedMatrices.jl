@@ -5,7 +5,7 @@ Random.seed!(0)
 @testset "QR tests" begin
     for T in (Float64,ComplexF64,Float32,ComplexF32)
         A=brand(T,10,10,3,2)
-        Q,R=qr(A)
+        Q,R = qr(A)
         @test Matrix(Q)*Matrix(R) ≈ A
         b=rand(T,10)
         @test mul!(similar(b),Q,mul!(similar(b),Q',b)) ≈ b
@@ -119,5 +119,15 @@ Random.seed!(0)
         Q,R = qr(B)
         @test lmul!(Q', BandedMatrix(B,(size(B,1),2))) ≈ Q'*B
         @test lmul!(Q', view(BandedMatrix(B,(size(B,1),2)),:,4:10)) ≈ Q'*B[:,4:10]
+    end
+
+    @testset "rmul!" begin
+        for T in (Float64,ComplexF64,Float32,ComplexF32)
+            A = brand(T,10,10,3,2)
+            Q,R = qr(A)
+            B = randn(2, 10)
+            @test rmul!(copy(B), Q') ≈ B*Q'
+            @test rmul!(copy(B), Q) ≈ B*Q
+        end
     end
 end
