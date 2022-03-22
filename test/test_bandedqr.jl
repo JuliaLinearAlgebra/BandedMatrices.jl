@@ -125,7 +125,7 @@ Random.seed!(0)
         for T in (Float64,ComplexF64,Float32,ComplexF32)
             A = brand(T,10,10,3,2)
             Q,R = qr(A)
-            B = randn(2, 10)
+            B = randn(T, 2, 10)
             @test rmul!(copy(B), Q') ≈ B*Q'
             @test rmul!(copy(B), Q) ≈ B*Q
         end
