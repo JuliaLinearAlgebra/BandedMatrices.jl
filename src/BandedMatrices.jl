@@ -3,7 +3,7 @@ using Base, FillArrays, ArrayLayouts, LinearAlgebra, SparseArrays, Random
 using LinearAlgebra.LAPACK
 import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
-                        copy_oftype, checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
+                        checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
                         _chol!, rot180, dot
 import LinearAlgebra.BLAS: libblas
 import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
@@ -33,7 +33,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
                     materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
-                    sublayout, sub_materialize, _fill_lmul!,
+                    sublayout, sub_materialize, _fill_lmul!, _copy_oftype,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
                     BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata
