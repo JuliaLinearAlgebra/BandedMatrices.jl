@@ -1,6 +1,6 @@
 name = "BandedMatrices"
 uuid = "aae01518-5342-5314-be14-df237901396f"
-version = "0.16.13"
+version = "0.17"
 
 [deps]
 ArrayLayouts = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
@@ -10,9 +10,9 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
-ArrayLayouts = "0.7, 0.8"
-FillArrays = "0.11, 0.12, 0.13"
-julia = "1.5"
+ArrayLayouts = "0.8"
+FillArrays = "0.13"
+julia = "1.6"
 
 [extras]
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"

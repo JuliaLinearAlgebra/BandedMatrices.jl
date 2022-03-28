@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
+using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test
 import Base: BroadcastStyle
 import Base.Broadcast: broadcasted
 import BandedMatrices: BandedStyle, BandedRows
@@ -540,5 +540,24 @@ import BandedMatrices: BandedStyle, BandedRows
         B = Base.Broadcast.broadcasted(+, Base.Broadcast.broadcasted(+, A, A), A)
         @test bandwidths(B) == bandwidths(A)
         @test (A .+ A) .+ A == 3A
+    end
+
+    @testset "ones special case" begin
+        A = brand(5,4,2,1)
+        @test Ones(5) .* A == A
+        @test Ones(5,4) .* A == A
+        @test Ones(5) .\ A == A
+        @test Ones(5,4) .\ A == A
+        @test Ones(5) ./ A == inv.(A)
+        @test_throws DimensionMismatch Ones(3) .* A
+        @test_throws DimensionMismatch Ones(3,4) .* A
+
+        @test A .* Ones(5) == A
+        @test A .* Ones(5,4) == A
+        @test A ./ Ones(5) == A
+        @test A ./ Ones(5,4) == A
+        @test A .\ Ones(5) == inv.(A)
+        @test_throws DimensionMismatch A .* Ones(3)
+        @test_throws DimensionMismatch A .* Ones(3,4)
     end
 end
