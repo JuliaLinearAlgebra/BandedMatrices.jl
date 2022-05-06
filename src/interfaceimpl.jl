@@ -89,3 +89,11 @@ function getindex(D::Bidiagonal{T,V}, b::Band) where {T,V}
     D.uplo == 'U' && b.i == 1 && return copy(D.ev)
     convert(V, Zeros{T}(size(D,1)-abs(b.i)))
 end
+
+
+###
+# adjtrans copy
+###
+
+copy(A::Adjoint{T, <:AbstractBandedMatrix}) where T = adjoint!(banded_similar(T, size(A), bandwidths(A)), A.parent)
+copy(A::Transpose{T, <:AbstractBandedMatrix}) where T = transpose!(banded_similar(T, size(A), bandwidths(A)), A.parent)
