@@ -5,8 +5,7 @@ import Base: axes, axes1, getproperty, iterate, tail
 import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
                         checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
                         _chol!, rot180, dot
-import LinearAlgebra.BLAS: libblas
-import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
+import LinearAlgebra.LAPACK: chkuplo, chktrans
 import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
             qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
             chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
@@ -40,6 +39,8 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
 
+const libblas = Base.libblas_name
+const liblapack = Base.liblapack_name
 
 export BandedMatrix,
        bandrange,
