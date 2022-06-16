@@ -96,13 +96,24 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
 
     d_l, d_u = bandwidths(dest)
     s_l, s_u = bandwidths(src)
-    (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
+    if d_l < min(s_l,m-1)
+        # check zeros
+        for j = 1:n, k = max(1,j+d_l+1):min(j+s_l,j+d_l,m)
+            iszero(f(inbands_getindex(src, k, j))) || throw(BandError(dest))
+        end
+    end
+    if d_u < min(s_u,n-1)
+        # check zeros
+        for j = 1:n, k = max(1,j-d_u,j-s_u):min(j-d_u-1,m)
+            iszero(f(inbands_getindex(src, k, j))) || throw(BandError(dest))
+        end
+    end 
 
     for j=1:n
         for k = max(1,j-d_u):min(j-s_u-1,m)
             inbands_setindex!(dest, z, k, j)
         end
-        for k = max(1,j-s_u):min(j+s_l,m)
+        for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
             inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
         end
         for k = max(1,j+s_l+1):min(j+d_l,m)
