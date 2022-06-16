@@ -110,13 +110,13 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
     end 
 
     for j=1:n
-        for k = max(1,j-d_u):min(j-s_u-1,j-d_u-1,m)
+        for k = max(1,j-d_u):min(j-s_u-1,m)
             inbands_setindex!(dest, z, k, j)
         end
         for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
             inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
         end
-        for k = max(1,j+s_l+1,j+d_l+1):min(j+d_l,m)
+        for k = max(1,j+s_l+1):min(j+d_l,m)
             inbands_setindex!(dest, z, k, j)
         end
     end

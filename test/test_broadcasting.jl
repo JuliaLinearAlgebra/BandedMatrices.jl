@@ -560,4 +560,13 @@ import BandedMatrices: BandedStyle, BandedRows
         @test_throws DimensionMismatch A .* Ones(3)
         @test_throws DimensionMismatch A .* Ones(3,4)
     end
+
+    @testset "degenerate bands" begin
+        A = BandedMatrix{Float64}(undef, (5, 5), (1,-1)); A.data .= NaN
+        B = BandedMatrix{Float64}(undef, (5, 5), (-1,1)); B.data .= NaN
+        Z = Diagonal(Zeros(5))
+        copyto!(A, Z)
+        copyto!(B, Z)
+        @test A == B == zeros(5,5)
+    end
 end
