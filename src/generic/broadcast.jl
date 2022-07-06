@@ -35,8 +35,8 @@ conjlayout(::Type{<:Complex}, ::M) where M<:AbstractBandedLayout = ConjLayout{M}
 struct BandedStyle <: AbstractArrayStyle{2} end
 BandedStyle(::Val{2}) = BandedStyle()
 BroadcastStyle(::Type{<:AbstractBandedMatrix}) = BandedStyle()
-BroadcastStyle(::Type{<:Adjoint{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
-BroadcastStyle(::Type{<:Transpose{<:Any,<:AbstractBandedMatrix}}) = BandedStyle()
+BroadcastStyle(::Type{<:Adjoint{<:Any,Mat}}) where Mat<:AbstractBandedMatrix = BroadcastStyle(Mat)
+BroadcastStyle(::Type{<:Transpose{<:Any,Mat}}) where Mat<:AbstractBandedMatrix = BroadcastStyle(Mat)
 BroadcastStyle(::Type{<:SubArray{<:Any,2,<:AbstractBandedMatrix,<:NTuple{2,AbstractUnitRange{Int}}}}) = BandedStyle()
 BroadcastStyle(::DefaultArrayStyle{2}, ::BandedStyle) = BandedStyle()
 BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = BandedStyle()
