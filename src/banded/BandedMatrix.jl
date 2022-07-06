@@ -815,3 +815,10 @@ function Base.array_summary(io::IO, B::BandedMatrix, inds)
     summary(io, B.data)
     print(io, " with indices ", Base.inds2string(inds))
 end
+
+## Broadcast style
+# allow special casing
+
+
+bandedbroadcaststyle(_) = BandedStyle()
+BroadcastStyle(::Type{<:BandedMatrix{<:Any,Dat}}) where Dat = bandedbroadcaststyle(BroadcastStyle(Dat))
