@@ -108,6 +108,14 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
         @test V'Matrix(A)*V ≈ Diagonal(Λ)
         @test V'Matrix(B)*V ≈ I
     end
+
+    @testset "copyto! with mismatched parent bandwidths" begin
+        A = BandedMatrix(0=>ones(5), 3=>ones(2))
+        B = BandedMatrix(-1=>ones(4), 0=>2ones(5), 1=>ones(4))
+        SA = Symmetric(A, :L)
+        SB = Symmetric(B, :L)
+        @test eigvals(SA, SB) ≈ eigvals(Matrix(SA), Matrix(SB))
+    end
 end
 
 @testset "Hermitian" begin

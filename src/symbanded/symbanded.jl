@@ -55,27 +55,17 @@ bandwidth(A::HermOrSym) = ifelse(symmetricuplo(A) == 'U', bandwidth(parent(A),2)
 bandwidths(A::HermOrSym) = (bandwidth(A), bandwidth(A))
 
 
-function symbandeddata(A)
-    B = symmetricdata(A)
-    l,u = bandwidths(B)
-    D = bandeddata(B)
-    if symmetricuplo(A) == 'U'
-        view(D, 1:u+1, :)
-    else
-        m = size(D,1)
-        view(D, u+1:u+l+1, :)
-    end
-end
-
-function hermbandeddata(A)
-    B = hermitiandata(A)
-    l,u = bandwidths(B)
-    D = bandeddata(B)
-    if symmetricuplo(A) == 'U'
-        view(D, 1:u+1, :)
-    else
-        m = size(D,1)
-        view(D, u+1:u+l+1, :)
+for (f,g) in [(:symbandeddata, :symmetricdata), (:hermbandeddata, :hermitiandata)]
+    @eval function $f(A)
+        B = $g(A)
+        l,u = bandwidths(B)
+        D = bandeddata(B)
+        if symmetricuplo(A) == 'U'
+            view(D, 1:u+1, :)
+        else
+            m = size(D,1)
+            view(D, u+1:u+l+1, :)
+        end
     end
 end
 
@@ -164,11 +154,29 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     eigvals!(A)
 end
 
+# Internal function similar to copyto! to overwrite the bands of A with that of B
+function copyto_bandedsym!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:BandedMatrix})
+    size(A) == size(B) || throw(ArgumentError("sizes of A and B must match"))
+    symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("A and B must have identical uplo"))
+    bandwidth(A) >= bandwidth(B) || throw(ArgumentError("bandwidth of A must exceed that of B"))
+    A .= zero(eltype(A))
+    ASdata = symbandeddata(A)
+    BSdata = symbandeddata(B)
+    if symmetricuplo(A) == 'L'
+        ASdata[axes(BSdata)...] = BSdata
+    else
+        # in this case, we may need to skip the first few rows
+        nrowsskip = size(ASdata,1) - size(BSdata,1)
+        ASdata[axes(BSdata,1) .+ nrowsskip, axes(BSdata,2)] = BSdata
+    end
+    return A
+end
+
 function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
     AA = if bandwidth(A) >= bandwidth(B)
         copy(A)
     else
-        copyto!(similar(B), A)
+        copyto_bandedsym!(similar(B), A)
     end
     eigvals!(AA, copy(B))
 end
