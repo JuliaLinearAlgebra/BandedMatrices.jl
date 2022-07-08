@@ -24,7 +24,10 @@ compress(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = convert(Eig
 compress(F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = convert(GeneralizedEigen{T, T, Matrix{T}, Vector{T}}, F)
 
 eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
-eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A), copy(B))
+function eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+    AA = _copy_bandedsym(A, B)
+    eigen!(AA, copy(B))
+end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     N = size(A, 1)

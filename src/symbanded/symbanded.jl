@@ -172,11 +172,15 @@ function copyto_bandedsym!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<
     return A
 end
 
-function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
-    AA = if bandwidth(A) >= bandwidth(B)
+function _copy_bandedsym(A, B)
+    if bandwidth(A) >= bandwidth(B)
         copy(A)
     else
         copyto_bandedsym!(similar(B), A)
     end
+end
+
+function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
+    AA = _copy_bandedsym(A, B)
     eigvals!(AA, copy(B))
 end
