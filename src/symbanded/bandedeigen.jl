@@ -53,7 +53,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     AB = symbandeddata(A)
     BB = symbandeddata(B)
     sbgst!('V', A.uplo, N, KA, KB, AB, BB, Q, WORK)
-    any(x -> isnan(x), A) && error("NaN found in the standard form of A")
+    any(isnan, A) && error("NaN found in the standard form of A")
     Λ, W = eigen!(A)
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
 end
