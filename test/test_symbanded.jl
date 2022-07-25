@@ -110,14 +110,22 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     end
 
     @testset "eigen with mismatched parent bandwidths" begin
-        A = BandedMatrix(0=>ones(5), 3=>ones(2))
-        B = BandedMatrix(-1=>ones(4), 0=>2ones(5), 1=>ones(4))
-        SA = Symmetric(A, :L)
-        SB = Symmetric(B, :L)
-        λS, VS = eigen(SA, SB)
-        λ, V = eigen(Matrix(SA), Matrix(SB))
-        @test λS ≈ λ ≈ eigvals(SA, SB)
-        @test mapreduce((x,y) -> isapprox(abs.(x), abs.(y)), &, eachcol(V), eachcol(VS))
+        for (A, uploA) in Any[
+                (BandedMatrix(0=>ones(5), 3=>ones(2)), :L),
+                (BandedMatrix(0=>ones(5), -3=>ones(2)), :U),
+                ]
+            SA = Symmetric(A, uploA)
+            for (B, uploB) in Any[
+                    (BandedMatrix(-1=>ones(4), 0=>2ones(5)), :L),
+                    (BandedMatrix(0=>2ones(5), 1=>ones(4)), :U),
+                    ]
+                SB = Symmetric(B, uploB)
+                λS, VS = eigen(SA, SB)
+                λ, V = eigen(Matrix(SA), Matrix(SB))
+                @test λS ≈ λ ≈ eigvals(SA, SB)
+                @test mapreduce((x,y) -> isapprox(abs.(x), abs.(y)), &, eachcol(V), eachcol(VS))
+            end
+        end
     end
 end
 

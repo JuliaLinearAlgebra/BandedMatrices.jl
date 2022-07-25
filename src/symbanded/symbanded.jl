@@ -154,20 +154,26 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     eigvals!(A)
 end
 
-# Internal function similar to copyto! to overwrite the bands of A with that of B
-function copyto_bandedsym!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:BandedMatrix})
+function copyto!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:BandedMatrix})
     size(A) == size(B) || throw(ArgumentError("sizes of A and B must match"))
-    symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("A and B must have identical uplo"))
     bandwidth(A) >= bandwidth(B) || throw(ArgumentError("bandwidth of A must exceed that of B"))
     A .= zero(eltype(A))
-    ASdata = symbandeddata(A)
-    BSdata = symbandeddata(B)
-    if symmetricuplo(A) == 'L'
-        ASdata[axes(BSdata)...] = BSdata
+    Ap = parent(A)
+    Bp = parent(B)
+    SAuplo = symmetricuplo(A)
+    SBuplo = symmetricuplo(B)
+    if SAuplo == SBuplo
+        if SAuplo == 'L'
+            LowerTriangular(Ap) .= LowerTriangular(Bp)
+        else
+            UpperTriangular(Ap) .= UpperTriangular(Bp)
+        end
     else
-        # in this case, we may need to skip the first few rows
-        nrowsskip = size(ASdata,1) - size(BSdata,1)
-        ASdata[axes(BSdata,1) .+ nrowsskip, axes(BSdata,2)] = BSdata
+        if SAuplo == 'L'
+            LowerTriangular(Ap) .= LowerTriangular(transpose(Bp))
+        else
+            UpperTriangular(Ap) .= UpperTriangular(transpose(Bp))
+        end
     end
     return A
 end
@@ -176,7 +182,7 @@ function _copy_bandedsym(A, B)
     if bandwidth(A) >= bandwidth(B)
         copy(A)
     else
-        copyto_bandedsym!(similar(B), A)
+        copyto!(similar(B), A)
     end
 end
 
