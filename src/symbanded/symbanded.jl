@@ -158,17 +158,20 @@ function copyto!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:
     size(A) == size(B) || throw(ArgumentError("sizes of A and B must match"))
     bandwidth(A) >= bandwidth(B) || throw(ArgumentError("bandwidth of A must exceed that of B"))
     A .= zero(eltype(A))
-    Ap = parent(A)
-    Bp = parent(B)
     SAuplo = symmetricuplo(A)
     SBuplo = symmetricuplo(B)
     if SAuplo == SBuplo
+        ASdata = symbandeddata(A)
+        BSdata = symbandeddata(B)
         if SAuplo == 'L'
-            LowerTriangular(Ap) .= LowerTriangular(Bp)
+            ASdata[axes(BSdata)...] = BSdata
         else
-            UpperTriangular(Ap) .= UpperTriangular(Bp)
+            nrowsskip = size(ASdata,1) - size(BSdata,1)
+            ASdata[axes(BSdata,1) .+ nrowsskip, axes(BSdata,2)] = BSdata
         end
     else
+        Ap = parent(A)
+        Bp = parent(B)
         if SAuplo == 'L'
             LowerTriangular(Ap) .= LowerTriangular(transpose(Bp))
         else

@@ -43,6 +43,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
 end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+    isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
     S = splitcholesky!(B)
     N = size(A, 1)
     KA = bandwidth(A)
