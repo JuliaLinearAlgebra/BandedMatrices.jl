@@ -19,7 +19,7 @@ mutable struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     l::Int # lower bandwidth ≥0
     u::Int # upper bandwidth ≥0
     global function _BandedMatrix(data::AbstractMatrix{T}, raxis::AbstractUnitRange, l, u) where {T}
-        if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
+        if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
            error("Data matrix must have number rows equal to number of bands")
         else
             new{T, typeof(data), typeof(raxis)}(data, raxis, l, u)
@@ -65,8 +65,8 @@ BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,OneTo{Int}}, ab::NTuple{2,Integ
     BandedMatrix{T}(undef, length.(nm), ab)
 
 @deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T, C<:AbstractMatrix{T}} BandedMatrix{T,C}(undef,n,n+b,a,b)
-@deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} BandedMatrix{T, C}(undef, (n,m), (a,b))    
-@deprecate BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} BandedMatrix{T}(undef,(n,m),(a,b))    
+@deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} BandedMatrix{T, C}(undef, (n,m), (a,b))
+@deprecate BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} BandedMatrix{T}(undef,(n,m),(a,b))
 @deprecate BandedMatrix{T}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T} BandedMatrix{T}(undef,(n,n+b),(a,b))
 
 BandedMatrix{V}(M::BandedMatrix) where {V} = _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
@@ -81,11 +81,11 @@ convert(BM::Type{BandedMatrix{T,C}}, M::BandedMatrix{T,C}) where {T,C<:AbstractM
 convert(BM::Type{BandedMatrix{T,C,AXIS}}, M::BandedMatrix{T,C,AXIS}) where {T,C<:AbstractMatrix{T},AXIS} = M
 convert(BM::Type{BandedMatrix{T,C,OneTo{Int}}}, M::BandedMatrix{T,C,OneTo{Int}}) where {T,C<:AbstractMatrix{T}} = M
 
-function convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C 
+function convert(::Type{BandedMatrix{<:, C}}, M::BandedMatrix) where C
     M.data isa C && return M
     _BandedMatrix(convert(C, M.data), M.raxis, M.l, M.u)
 end
-function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}} 
+function convert(BM::Type{BandedMatrix{T, C}}, M::BandedMatrix) where {T, C <: AbstractMatrix{T}}
     M.data isa C && return M
     _BandedMatrix(convert(C, M.data), M.raxis, M.l, M.u)
 end
@@ -197,9 +197,9 @@ function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Integer}) where T
     ret
 end
 
-BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} = 
+BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} =
     copyto!(BandedMatrix{T, C}(undef, size(A), bandwidths(A)), A)
-BandedMatrix{T}(A::AbstractMatrix) where T = 
+BandedMatrix{T}(A::AbstractMatrix) where T =
     copyto!(BandedMatrix{T}(undef, size(A), bandwidths(A)), A)
 
 
@@ -345,9 +345,9 @@ end
 # work around for Any matrices
 _offband_zero(::AbstractMatrix{T}, _, _, _, _) where T = zero(T)
 _offband_zero(::AbstractMatrix{Any}, _, _, _, _) = nothing
-_offband_zero(data::AbstractMatrix{<:AbstractMatrix}, l, u, k, j) = 
+_offband_zero(data::AbstractMatrix{<:AbstractMatrix}, l, u, k, j) =
     diagzero(Diagonal(view(data,u+1,:)), k, j)
-diagzero(D::Diagonal{B}, i, j) where B<:BandedMatrix = 
+diagzero(D::Diagonal{B}, i, j) where B<:BandedMatrix =
     B(Zeros{eltype(B)}(size(D.diag[i], 1), size(D.diag[j], 2)), (bandwidth(D.diag[i],1), bandwidth(D.diag[j],2)))
 
 # banded get index, used for banded matrices with other data types
@@ -523,7 +523,7 @@ end
     data, u, i = A.data, A.u, 0
     for v in V
         k = kr[i+=1]
-        if a ≤ k ≤ b
+        if a ≤ k ≤ b
             inbands_setindex!(data, u, v, k, j)
         end
     end
@@ -538,7 +538,7 @@ end
     @boundscheck if k < 1 || k > size(A,1)
         throw(BoundsError(A, (k, jr)))
     end
-    @boundscheck if size(A,2) ≠ length(V)
+    @boundscheck if size(A,2) ≠ length(V)
         throw(DimensionMismatch("tried to assign $(length(V)) vector to $(size(A,1)) destination"))
     end
 
@@ -573,7 +573,7 @@ end
     data, u, i = A.data, A.u, 0
     for v in V
         j = jr[i+=1]
-        if a ≤ j ≤ b
+        if a ≤ j ≤ b
             inbands_setindex!(data, u, v, k, j)
         end
     end
@@ -593,7 +593,7 @@ end
     for j in jr
         kk = 1
         for k in kr
-            if -l ≤ j - k ≤ u
+            if -l ≤ j - k ≤ u
                 # we index V manually in column-major order
                 inbands_setindex!(data, u, V[kk, jj], k, j)
                 kk += 1
@@ -738,9 +738,9 @@ const BandedSubBandedMatrix{T, C, R, I1<:AbstractUnitRange, I2<:AbstractUnitRang
 
 isbanded(::BandedSubBandedMatrix) = true
 sublayout(::AbstractBandedLayout, ::Type{<:NTuple{2,AbstractUnitRange}}) = BandedLayout()
-sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} = 
+sublayout(::BandedColumns{L}, ::Type{<:Tuple{AbstractUnitRange,J}}) where {L,J<:AbstractUnitRange} =
     bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J}))
-sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:AbstractUnitRange} = 
+sublayout(::BandedRows{L}, ::Type{<:Tuple{J,AbstractUnitRange}}) where {L,J<:AbstractUnitRange} =
     transposelayout(bandedcolumns(sublayout(L(),Tuple{Slice{OneTo{Int}},J})))
 
 Base.permutedims(A::Symmetric{<:Any,<:AbstractBandedMatrix}) = A
@@ -762,7 +762,7 @@ function similar(bm::BandedSubBandedMatrix, T::Type=eltype(bm),
     similar(bm.parent, T, n, m, l, u)
 end
 
-function bandeddata(V::SubArray) 
+function bandeddata(V::SubArray)
     l,u = bandwidths(V)
     L,U = bandwidths(parent(V)) .+ (-1,1) .* bandshift(V)
     view(bandeddata(parent(V)), U-u+1:U+l+1, parentindices(V)[2])

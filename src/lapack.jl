@@ -99,7 +99,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
             chkvect(vect)
             info = Ref{BlasInt}()
             n    = size(A,2)
-            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
             size(A,1) < k+1 && throw(ArgumentError("Not enough bands"))
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Nothing,
@@ -205,7 +205,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
             chkuplo(uplo)
             info = Ref{BlasInt}()
             n    = size(A,2)
-            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
             size(A,1) < kd+1 && throw(ArgumentError("Not enough bands"))
             ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
@@ -272,7 +272,7 @@ for (fname, elty) in ((:dpbstf_,:Float64),
             chkuplo(uplo)
             info = Ref{BlasInt}()
             n    = size(A,2)
-            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
             size(A,1) < kd+1 && throw(ArgumentError("Not enough bands"))
             ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},

@@ -16,7 +16,7 @@
 @inline function inbands_getindex(A::Symmetric{T, <:BandedMatrix}, k::Integer, j::Integer) where T
     P = parent(A)
     l,u = bandwidths(P)
-    if -l ≤ abs(k-j) ≤ u
+    if -l ≤ abs(k-j) ≤ u
         parent(A).data[bandwidth(A) - abs(k-j) + 1, max(k,j)]
     else
         zero(T)
@@ -96,7 +96,7 @@ function materialize!(M::BlasMatMulVecAdd{<:SymmetricLayout{<:BandedColumnMajor}
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l = bandwidth(A)
     l ≥ 0 || return lmul!(β, y)
     _banded_sbmv!(symmetricuplo(A), α, A, x, β, y)
@@ -118,7 +118,7 @@ function materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:BandedColumnMajor}
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     m, n = size(A)
     m == n || throw(DimensionMismatch("matrix is not square"))
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l = bandwidth(A)
     l ≥ 0 || return lmul!(β, y)
     _banded_hbmv!(symmetricuplo(A), α, A, x, β, y)

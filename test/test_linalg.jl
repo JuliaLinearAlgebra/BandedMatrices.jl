@@ -42,7 +42,7 @@ import BandedMatrices: BandedColumns, _BandedMatrix
     end
 
     @testset "gbmm!" begin
-        @testset "gbmm! subpieces step by step and column by column" begin 
+        @testset "gbmm! subpieces step by step and column by column" begin
             for n in (1,5,50), ν in (1,5,50), m in (1,5,50),
                             Al in (0,1,2,30), Au in (0,1,2,30),
                             Bl in (0,1,2,30), Bu in (0,1,2,30)

@@ -39,7 +39,7 @@ end
 
 function _banded_muladd!(α::T, A, x::AbstractVector, β, y) where T
     m, n = size(A)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
         _fill_lmul!(β, y)
@@ -61,7 +61,7 @@ function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayo
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     At = transpose(A)
     m, n = size(A)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
       _fill_lmul!(β, y)
@@ -80,7 +80,7 @@ function materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:BandedRowMajor},<:Abstr
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     Ac = A'
     m, n = size(A)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
         _fill_lmul!(β, y)
@@ -118,7 +118,7 @@ end
     _fill_lmul!(β, C)
 
     @inbounds for j = 1:size(A,2), k = colrange(A,j)
-        C[j] +=  α*transpose(inbands_getindex(A,k,j))*B[k]
+        C[j] +=  α*transpose(inbands_getindex(A,k,j))*B[k]
     end
     C
 end

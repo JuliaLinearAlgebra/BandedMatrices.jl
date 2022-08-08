@@ -414,19 +414,19 @@ import BandedMatrices: BandedStyle, BandedRows
         @test isinf((b ./ A)[4,1])
         @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
         @test isinf((A .\ b)[4,1])
-        
+
 
         @test A .* b == Matrix(A) .* b
         @test bandwidths(A .* b) == bandwidths(A)
         @test A ./ b == Matrix(A) ./ b
         @test bandwidths(A ./ b) == bandwidths(A)
         @test isinf((A .\ b)[4,1])
-        
+
         @test reshape(b,10,1) .* A isa BandedMatrix
         @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
         @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
         @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
-        
+
         @test b .+ A == b .+ Matrix(A) == A .+ b
 
         @test bandwidths(broadcasted(+, A, b')) == (9,9)
@@ -460,7 +460,7 @@ import BandedMatrices: BandedStyle, BandedRows
         A = BandedMatrix{Int}(undef,(10,10),(2,1));  vec(A.data) .= (1:length(A.data));
         B = BandedMatrix{Int}(undef,(10,10),(1,2));  vec(B.data) .= (1:length(B.data));
         @test_throws BandError view(A,5:10,:) .= view(B,5:10,:)
-        
+
         A = BandedMatrix{Int}(undef,(10,10),(1,2));  vec(A.data) .= (1:length(A.data));
         B = BandedMatrix{Int}(undef,(10,10),(2,1));  vec(B.data) .= (1:length(B.data));
         @test_throws BandError view(A,5:10,:) .= view(B,5:10,:)
@@ -487,7 +487,7 @@ import BandedMatrices: BandedStyle, BandedRows
         b = brand(5,1,1,1)
         B = brand(1,5,1,1)
         @test A .+ b == b .+ A == Matrix(A) .+ Matrix(b)
-        @test A .+ B' == B' .+ A == Matrix(A) .+ Matrix(B)'        
+        @test A .+ B' == B' .+ A == Matrix(A) .+ Matrix(B)'
         @test A .+ b' == b' .+ A == Matrix(A) .+ Matrix(b)'
         @test A .+ B == B .+ A == Matrix(A) .+ Matrix(B)
 
@@ -510,15 +510,15 @@ import BandedMatrices: BandedStyle, BandedRows
 		@test C == zeros(1,1)
 		C .= A .- 0.0
         @test C == zeros(1,1)
-        
-        A = BandedMatrix(Eye(3,4)) 
+
+        A = BandedMatrix(Eye(3,4))
         B = randn(3,4)
         bc = broadcasted(*, A, B)
-        
-        @test copyto!(similar(bc, Float64), bc) == A .* B == B .* A == 
+
+        @test copyto!(similar(bc, Float64), bc) == A .* B == B .* A ==
             BandedMatrix(B, (0,0)) == Matrix(A) .* B
     end
-    
+
     @testset "adding degenerate" begin
         A = BandedMatrix(1 => 1:9)
         B = BandedMatrix(-1 => 1:9)

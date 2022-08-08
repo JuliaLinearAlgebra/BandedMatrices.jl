@@ -32,8 +32,8 @@ function _tridiag_algorithm!(B)
 
     @inbounds for bm = d-1:-1:2
         for k = 1:n-bm
-            kp = k 
-            apiv = B[bm+1,bm+kp] 
+            kp = k
+            apiv = B[bm+1,bm+kp]
             iszero(apiv) && continue
             for i = bm+k-1:bm:n-1
                 b = B[ i-kp+1,i]

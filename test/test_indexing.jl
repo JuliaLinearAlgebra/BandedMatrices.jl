@@ -322,7 +322,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
             @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
-        end        
+        end
 
 
         # scalar - range - integer
