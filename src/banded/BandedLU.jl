@@ -84,7 +84,11 @@ function lu!(A::BandedMatrix{T}, pivot::Union{Val{false}, Val{true}} = Val(true)
     end
     m= size(A,1)
     l,u = bandwidths(A) # l of the bands are ignored and overwritten
-    _, ipiv = LAPACK.gbtrf!(l, u-l, m, bandeddata(A))
+    if !iszero(m)
+        _, ipiv = LAPACK.gbtrf!(l, u-l, m, bandeddata(A))
+    else
+        ipiv = Int[]
+    end
     return BandedLU{T,typeof(A)}(A, ipiv, zero(BlasInt))
 end
 
