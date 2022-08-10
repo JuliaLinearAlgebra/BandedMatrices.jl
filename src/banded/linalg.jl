@@ -25,7 +25,8 @@ function ldiv!(A::BandedLU{T,<:BandedMatrix}, B::StridedVecOrMat{T}) where {T<:B
     m = size(A.factors,1)
     l,u = bandwidths(A.factors)
     data = bandeddata(A.factors)
-    LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
+    iszero(m) || LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
+    B
 end
 
 function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real
