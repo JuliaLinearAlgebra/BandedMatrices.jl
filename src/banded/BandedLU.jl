@@ -5,7 +5,7 @@
 ####################
 # Banded LU Factorization #
 # This is like LU but factors does not actually
-# permute the rows.  
+# permute the rows.
 ####################
 struct BandedLU{T,S<:AbstractMatrix{T}} <: Factorization{T}
     factors::S
@@ -104,7 +104,7 @@ end
 function getproperty(F::BandedLU{T}, d::Symbol) where T
     m, n = size(F)
     if d == :L
-        # not clear how to get it from F.factors so we 
+        # not clear how to get it from F.factors so we
         # form it in the most insane way possible
         Ai = F\Matrix(I,n,m)
         tril!((F.P/Ai)/F.U)

@@ -30,13 +30,13 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     @testset "Undef BandedMatrix" begin
         @test typeof(BandedMatrix{Float64}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Float64,Matrix{Float64}}(undef,(10,10),(1,1))) ==
-            typeof(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}(undef,(10,10),(1,1))) 
+            typeof(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}(undef,(10,10),(1,1)))
         @test typeof(BandedMatrix{Int}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Int,Matrix{Int}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}(undef,(10,10),(1,1)))
         @test typeof(BandedMatrix{Vector{Int}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}}}(undef,(10,10),(1,1))) ==
-            typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}},Base.OneTo{Int}}(undef,(10,10),(1,1)))                
+            typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}},Base.OneTo{Int}}(undef,(10,10),(1,1)))
     end
 
     @testset "Creating BandedMatrix" begin
@@ -125,7 +125,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         # @test A*B' ≈ Matrix(A)*B'
         # @test A'*B' ≈ Matrix(A)'*B'
 
-        let 
+        let
             A=brand(1200,1000,200,300); B=rand(1000,1000); C=rand(1200,1200)
             @test A*B ≈ Matrix(A)*B
             @test C*A ≈ C*Matrix(A)
@@ -343,11 +343,11 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             end
 
             @testset "banded to banded" begin
-                A = BandedMatrix{Int}(undef, (5,5), (1,1)); A.data[:] .= 1:length(A.data)           
-                @test convert(BandedMatrix, A) === convert(BandedMatrix{Int}, A) === 
+                A = BandedMatrix{Int}(undef, (5,5), (1,1)); A.data[:] .= 1:length(A.data)
+                @test convert(BandedMatrix, A) === convert(BandedMatrix{Int}, A) ===
                     convert(BandedMatrix{Int,Matrix{Int}}, A) === convert(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}, A) === A
                 @test convert(BandedMatrix{Float64}, A) ==
-                    convert(BandedMatrix{Float64,Matrix{Float64}}, A) == convert(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}, A) == A                    
+                    convert(BandedMatrix{Float64,Matrix{Float64}}, A) == convert(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}, A) == A
             end
         end
 

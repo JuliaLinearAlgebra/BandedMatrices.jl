@@ -52,7 +52,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test eigvals(Symmetric(A)) ≈ std
     @test eigvals(Hermitian(A)) ≈ std
     @test eigvals(Hermitian(big.(A))) ≈ std
-    
+
     A = brand(ComplexF64, 100, 100, 4, 0)
     @test Symmetric(A)[2:10,1:9] isa BandedMatrix
     @test Hermitian(A)[2:10,1:9] isa BandedMatrix
@@ -166,7 +166,7 @@ end
         y = F\b
         @test x ≈ y
         @test_throws DimensionMismatch F\[b;b]
-        
+
         T ≠ Float16 && (@test det(F) ≈ det(SAL))
     end
     for T in (Int16, Int32, Int64, BigInt)

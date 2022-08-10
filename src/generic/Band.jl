@@ -160,7 +160,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::AbstractRan
     for j in jr
         kk = 1
         for k in kr
-            if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
+            if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
                 # we index V manually in column-major order
                 throw(BandError(A, (k,j)))
             end

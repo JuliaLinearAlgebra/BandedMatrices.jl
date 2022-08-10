@@ -194,7 +194,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
     chkuplo(UPLO)
     chkvect(VECT)
     M    = size(AB,2)
-    M ≠ N && throw(ArgumentError("Matrix must be square"))
+    M ≠ N && throw(ArgumentError("Matrix must be square"))
     size(AB,1) < KD+1 && throw(ArgumentError("Not enough bands"))
 
     # In Julia, pointers to entries of a SubArray ignore stride.
@@ -484,7 +484,7 @@ function sbgst!(VECT::Char, UPLO::Char,
     chkstride1(BB)
     chkuplo(UPLO)
     chkvect(VECT)
-    size(AB,2) == size(BB,2) == N || throw(ArgumentError("Matrices must be square"))
+    size(AB,2) == size(BB,2) == N || throw(ArgumentError("Matrices must be square"))
     size(AB,1) < KA+1 && throw(ArgumentError("Not enough bands in AB"))
     size(BB,1) < KB+1 && throw(ArgumentError("Not enough bands in BB"))
 

@@ -105,7 +105,7 @@ Random.seed!(0)
         @test F1.τ ≈ F2.τ
         F = qr(A)
         @test τ[1:size(V,2)]  ≈ F.τ[1:5]
-        
+
         lmul!(F1.Q', view(B,1:6,6:7))
         @test B[1:5,6:7] ≈ F.factors[1:5,6:7]
         banded_qr!(view(B,6:100,6:100), view(τ,6:100))
