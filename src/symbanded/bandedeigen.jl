@@ -24,7 +24,10 @@ compress(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = convert(Eig
 compress(F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = convert(GeneralizedEigen{T, T, Matrix{T}, Vector{T}}, F)
 
 eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
-eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A), copy(B))
+function eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+    AA = _copy_bandedsym(A, B)
+    eigen!(AA, copy(B))
+end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     N = size(A, 1)
@@ -40,6 +43,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
 end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+    isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
     S = splitcholesky!(B)
     N = size(A, 1)
     KA = bandwidth(A)
@@ -49,6 +53,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     AB = symbandeddata(A)
     BB = symbandeddata(B)
     sbgst!('V', A.uplo, N, KA, KB, AB, BB, Q, WORK)
+    any(isnan, A) && throw(ArgumentError("NaN found in the standard form of A"))
     Λ, W = eigen!(A)
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
 end

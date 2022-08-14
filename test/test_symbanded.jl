@@ -108,6 +108,37 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
         @test V'Matrix(A)*V ≈ Diagonal(Λ)
         @test V'Matrix(B)*V ≈ I
     end
+
+    @testset "eigen with mismatched parent bandwidths" begin
+        # A is diagonal
+        function eigencheck(SA, SB)
+            λS, VS = eigen(SA, SB)
+            λ, V = eigen(Matrix(SA), Matrix(SB))
+            @test λS ≈ λ ≈ eigvals(SA, SB)
+            @test mapreduce((x,y) -> isapprox(abs.(x), abs.(y)), &, eachcol(V), eachcol(VS))
+        end
+        @testset for (A, uploA) in Any[
+                    (BandedMatrix(0=>ones(5), 3=>ones(2)), :L),
+                    (BandedMatrix(0=>ones(5), -3=>ones(2)), :U),
+                ]
+            SA = Symmetric(A, uploA)
+            @testset for (B, uploB) in Any[
+                        (BandedMatrix(-1=>ones(4), 0=>2ones(5)), :L),
+                        (BandedMatrix(0=>2ones(5), 1=>ones(4)), :U),
+                    ]
+                SB = Symmetric(B, uploB)
+                eigencheck(SA, SB)
+            end
+        end
+        # A is non-diagonal. In this case, uplo must match
+        @testset for uplo in [:L, :U]
+            A = BandedMatrix(-1=>fill(0.1,3), 0=>4ones(5), 1=>fill(0.1,3))
+            SA = Symmetric(A, uplo)
+            B = BandedMatrix(0=>2ones(5), (uplo == :U ? 1 : -1)=>ones(4))
+            SB = Symmetric(B, uplo)
+            eigencheck(SA, SB)
+        end
+    end
 end
 
 @testset "Hermitian" begin

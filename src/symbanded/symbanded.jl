@@ -55,27 +55,17 @@ bandwidth(A::HermOrSym) = ifelse(symmetricuplo(A) == 'U', bandwidth(parent(A),2)
 bandwidths(A::HermOrSym) = (bandwidth(A), bandwidth(A))
 
 
-function symbandeddata(A)
-    B = symmetricdata(A)
-    l,u = bandwidths(B)
-    D = bandeddata(B)
-    if symmetricuplo(A) == 'U'
-        view(D, 1:u+1, :)
-    else
-        m = size(D,1)
-        view(D, u+1:u+l+1, :)
-    end
-end
-
-function hermbandeddata(A)
-    B = hermitiandata(A)
-    l,u = bandwidths(B)
-    D = bandeddata(B)
-    if symmetricuplo(A) == 'U'
-        view(D, 1:u+1, :)
-    else
-        m = size(D,1)
-        view(D, u+1:u+l+1, :)
+for (f,g) in [(:symbandeddata, :symmetricdata), (:hermbandeddata, :hermitiandata)]
+    @eval function $f(A)
+        B = $g(A)
+        l,u = bandwidths(B)
+        D = bandeddata(B)
+        if symmetricuplo(A) == 'U'
+            view(D, 1:u+1, :)
+        else
+            m = size(D,1)
+            view(D, u+1:u+l+1, :)
+        end
     end
 end
 
@@ -164,11 +154,42 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     eigvals!(A)
 end
 
-function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
-    AA = if bandwidth(A) >= bandwidth(B)
+function copyto!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:BandedMatrix})
+    size(A) == size(B) || throw(ArgumentError("sizes of A and B must match"))
+    bandwidth(A) >= bandwidth(B) || throw(ArgumentError("bandwidth of A must exceed that of B"))
+    A .= zero(eltype(A))
+    SAuplo = symmetricuplo(A)
+    SBuplo = symmetricuplo(B)
+    if SAuplo == SBuplo
+        ASdata = symbandeddata(A)
+        BSdata = symbandeddata(B)
+        if SAuplo == 'L'
+            ASdata[axes(BSdata)...] = BSdata
+        else
+            nrowsskip = size(ASdata,1) - size(BSdata,1)
+            ASdata[axes(BSdata,1) .+ nrowsskip, axes(BSdata,2)] = BSdata
+        end
+    else
+        Ap = parent(A)
+        Bp = parent(B)
+        if SAuplo == 'L'
+            LowerTriangular(Ap) .= LowerTriangular(transpose(Bp))
+        else
+            UpperTriangular(Ap) .= UpperTriangular(transpose(Bp))
+        end
+    end
+    return A
+end
+
+function _copy_bandedsym(A, B)
+    if bandwidth(A) >= bandwidth(B)
         copy(A)
     else
         copyto!(similar(B), A)
     end
+end
+
+function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
+    AA = _copy_bandedsym(A, B)
     eigvals!(AA, copy(B))
 end
