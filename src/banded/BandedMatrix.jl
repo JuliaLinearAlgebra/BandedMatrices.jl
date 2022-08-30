@@ -693,11 +693,14 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-function diag(A::BandedMatrix{T}) where {T}
-    n=size(A,1)
-    @assert n==size(A,2)
+function diag(A::BandedMatrix{T}, k::Integer = 0) where {T}
+    n = LinearAlgebra.checksquare(A) - abs(k)
 
-    vec(A.data[A.u+1,1:n])
+    if -A.l <= k <= A.u
+        convert(Vector{T}, vec(A.data[A.u-k+1,range(max(k, 0) + begin, length=n)]))
+    else
+        zeros(T, max(n, 0))
+    end
 end
 
 

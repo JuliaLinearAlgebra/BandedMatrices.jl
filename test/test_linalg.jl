@@ -264,5 +264,24 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         @test factorize(A) isa QR
         @test A \ b ≈ Matrix(A) \ b
     end
+
+    @testset "diag" begin
+        for B in [BandedMatrix(1=>ones(5), 2=>ones(4)),
+                    BandedMatrix(-1=>ones(5), -2=>ones(4))]
+            @test all(iszero, diag(B))
+        end
+        for B in [BandedMatrix(0=>[1:6;], 2=>fill(2,4)),
+                    BandedMatrix(0=>[1:6;], -2=>fill(2,4))]
+            @test diag(B) == 1:6
+        end
+        @testset "kth diagonal" begin
+            n = 6
+            B = BandedMatrix([k=>rand(n-abs(k)) for k in -2:2]...)
+            M = Matrix(B)
+            @testset for k in -n:n
+                @test diag(B, k) == diag(M, k)
+            end
+        end
+    end
 end
 
