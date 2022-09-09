@@ -95,7 +95,7 @@ end
 _lu!(::AbstractBandedLayout, axes, A, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true) =
     banded_lufact!(A, pivot; check = check)
 
-function _lu(::AbstractBandedLayout, axes, A, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true) where {T<:Real}
+function _lu(::AbstractBandedLayout, axes, A, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true)
     l,u = bandwidths(A)
     lu!(BandedMatrix{float(eltype(A))}(A,(l,l+u)), pivot; check = check)
 end

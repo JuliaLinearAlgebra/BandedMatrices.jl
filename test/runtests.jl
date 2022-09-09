@@ -3,6 +3,11 @@ using LinearAlgebra
 using SparseArrays
 using Test
 
+using Aqua
+@testset "Project quality" begin
+    Aqua.test_all(BandedMatrices, ambiguities=false)
+end
+
 include("test_banded.jl")
 include("test_subarray.jl")
 include("test_linalg.jl")
