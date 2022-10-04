@@ -91,7 +91,7 @@ Random.seed!(0)
         @test qr(V) isa QR{Float64,<:BandedMatrix{Float64}}
         @test qr(V).R ≈ qr(Matrix(V)).R
         @test qr(V).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(V)).τ
-        @test qr(V).Q ≈ qr(Matrix(V)).Q
+        @test Matrix(qr(V).Q) ≈ Matrix(qr(Matrix(V)).Q)
         @test Matrix(qr(V)) ≈ V
         B = BandedMatrix(A,(1,2)) # pad
         V = view(copy(B),1:5,1:6)
