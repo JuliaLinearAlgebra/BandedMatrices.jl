@@ -153,9 +153,9 @@ struct _foo <: Number end
     end
 
     @testset "zero matrix" begin
-        for A in (BandedMatrix{Float64}(undef, (0,0), (1,1)),
-                  BandedMatrix{Float64}(undef, (0,3), (1,1)),
-                  BandedMatrix{Float64}(undef, (0,0), (-1,-2)))
+        for A in (BandedMatrix{Float64}(undef, 0,0, 1,1),
+                  BandedMatrix{Float64}(undef, 0,3, 1,1),
+                  BandedMatrix{Float64}(undef, 0,0, -1,-2))
             @test lu(A).factors == zeros(size(A)...)
             @test lu(A) \ zeros(0) == zeros(0)
         end
