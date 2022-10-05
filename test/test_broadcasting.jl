@@ -266,7 +266,7 @@ import BandedMatrices: BandedStyle, BandedRows
 
         C .= 2.0 .* A .+ B
         @test C == 2A+B == 2.0.*A .+ B
-        @test all(BLAS.axpy!(2.0, A, copy(B)) .=== C)
+        @test all(axpy!(2.0, A, copy(B)) .=== C)
 
         @test 2A + B isa BandedMatrix
         @test 2.0.*A .+ B isa BandedMatrix
