@@ -96,7 +96,7 @@ ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:Bla
 ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) =
     cholesky!(cholcopy(A); check = check)
 
-cholcopy(A::Union{HermOrSym{<:Any,<:BandedMatrix}}) =
+cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) =
     copyto!(similar(A, LinearAlgebra.choltype(A)), A)
 # cholesky(A::Hermitian{T,<:BandedMatrix{T}},
 #     ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)

@@ -13,8 +13,8 @@ using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
 import Base.Broadcast: BroadcastStyle, broadcasted, materialize, materialize!
 
 using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasInt, BlasReal, BlasFloat, BlasComplex,
-            checksquare, HermOrSym, chkstride1, QRPackedQ, StructuredMatrixStyle,
-            checknonsingular, ipiv2perm, Givens
+            checksquare, HermOrSym, RealHermSymComplexHerm, chkstride1, QRPackedQ,
+            StructuredMatrixStyle, checknonsingular, ipiv2perm, Givens
 import LinearAlgebra: axpy!, _chol!, rot180, dot, cholcopy, _apply_ipiv_rows!,
             _apply_inverse_ipiv_rows!, diag, eigvals!, eigvals, eigen!, eigen,
             qr, qr!, ldiv!, mul!, lu, lu!, ldlt, ldlt!,
