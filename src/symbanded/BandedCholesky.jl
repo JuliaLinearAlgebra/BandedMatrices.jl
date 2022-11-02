@@ -93,8 +93,10 @@ ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:Bla
 
 
 # For some bizarre reason this isnt in LinearAlgebra
-ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) = cholesky!(cholcopy(A); check = check)
+ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) =
+    cholesky!(cholcopy(A); check = check)
 
-
+cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) =
+    copyto!(similar(A, LinearAlgebra.choltype(A)), A)
 # cholesky(A::Hermitian{T,<:BandedMatrix{T}},
 #     ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)
