@@ -1,31 +1,30 @@
 module BandedMatrices
-using Base, FillArrays, ArrayLayouts, LinearAlgebra, SparseArrays, Random
+using Base, FillArrays, ArrayLayouts, LinearAlgebra, SparseArrays
+
+using Base: require_one_based_indexing, reindex, checkbounds, @propagate_inbounds,
+            oneto, promote_op, MultiplicativeInverses, OneTo, ReshapedArray, Slice
+import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, >,
+               >=, /, ^, \, adjoint, transpose, showerror, convert, size, view,
+               unsafe_indices, first, last, size, length, unsafe_length, step, to_indices,
+               to_index, show, fill!, similar, copy, promote_rule, IndexStyle, real, imag,
+               copyto!
+
+using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
+import Base.Broadcast: BroadcastStyle, broadcasted, materialize, materialize!
+
+using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasInt, BlasReal, BlasFloat, BlasComplex,
+            checksquare, HermOrSym, chkstride1, QRPackedQ, StructuredMatrixStyle,
+            checknonsingular, ipiv2perm, Givens
+import LinearAlgebra: axpy!, _chol!, rot180, dot, cholcopy, _apply_ipiv_rows!,
+            _apply_inverse_ipiv_rows!, diag, eigvals!, eigvals, eigen!, eigen,
+            qr, qr!, ldiv!, mul!, lu, lu!, ldlt, ldlt!,
+            kron, lmul!, rmul!, factorize, logabsdet,
+            svdvals, svdvals!, tril!, triu!, diagzero
+
 using LinearAlgebra.LAPACK
-import Base: axes, axes1, getproperty, iterate, tail
-import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
-                        checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
-                        _chol!, rot180, dot
-import LinearAlgebra.LAPACK: chkuplo, chktrans
-import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
-            chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
-            svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, tril!,
-            triu!, Givens, diagzero
+using LinearAlgebra.LAPACK: chkuplo, chktrans
+
 import SparseArrays: sparse
-
-import Base: getindex, setindex!, *, +, -, ==, <, <=, >, isassigned,
-                >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
-
-import Base: convert, size, view, unsafe_indices,
-                first, last, size, length, unsafe_length, step,
-                to_indices, to_index, show, fill!, promote_op,
-                MultiplicativeInverses, OneTo, ReshapedArray,
-                               similar, copy, convert, promote_rule, rand,
-                            IndexStyle, real, imag, Slice, pointer, unsafe_convert, copyto!,
-                            hcat, vcat, hvcat
-
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
-                        materialize, materialize!
 
 import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
@@ -59,15 +58,6 @@ export BandedMatrix,
        Ones,
        Eye
 
-
-import Base: require_one_based_indexing
-import LinearAlgebra: _apply_ipiv_rows!
-
-if VERSION < v"1.6-"
-	oneto(n) = OneTo(n)
-else
-	import Base: oneto
-end
 
 include("blas.jl")
 include("lapack.jl")
