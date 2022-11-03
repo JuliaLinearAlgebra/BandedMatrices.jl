@@ -1,11 +1,11 @@
 # BandedMatrices.jl
 A Julia package for representing banded matrices
 
-[![Build Status](https://github.com/JuliaMatrices/BandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/BandedMatrices.jl/actions)
+[![Build Status](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl/actions)
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/dev)
-[![codecov](https://codecov.io/gh/JuliaMatrices/BandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/BandedMatrices.jl)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/BandedMatrices.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaLinearAlgebra.github.io/BandedMatrices.jl/dev)
+[![codecov](https://codecov.io/gh/JuliaLinearAlgebra/BandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/BandedMatrices.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 
@@ -23,7 +23,7 @@ BandedMatrix(-1=> 1:5, 2=>1:3)     # creates a 5 x 5 banded matrix version of di
 BandedMatrix((-1=> 1:5, 2=>1:3), (n,m))     # creates an n x m banded matrix with 1 sub-diagonals and u super-diagonals with the specified diagonals
 BandedMatrix((-1=> 1:5, 2=>1:3), (n,m), (l,u))     # creates an n x m banded matrix with l sub-diagonals and u super-diagonals with the specified diagonals
 ```
-For more examples, see [the documentation](https://juliamatrices.github.io/BandedMatrices.jl/dev/#Creating-banded-matrices).
+For more examples, see [the documentation](https://julialinearalgebra.github.io/BandedMatrices.jl/dev/#Creating-banded-matrices).
 
 Specialized algebra routines are overriden, include `*` and `\`:
 
