@@ -3,8 +3,8 @@ A Julia package for representing banded matrices
 
 [![Build Status](https://github.com/JuliaMatrices/BandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/BandedMatrices.jl/actions)
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaMatrices.github.io/BandedMatrices.jl/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](http://julialinearalgebra.github.io/BandedMatrices.jl/stable/)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](http://julialinearalgebra.github.io/BandedMatrices.jl/dev/)
 [![codecov](https://codecov.io/gh/JuliaMatrices/BandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/BandedMatrices.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
