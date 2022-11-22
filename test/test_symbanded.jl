@@ -248,7 +248,7 @@ end
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
-        @test_broken Ac\b ≈ A\b
+        VERSION >= v"1.9-" && @test Ac\b ≈ A\b
     end
 
     for T in (Float64, BigFloat)
@@ -261,7 +261,7 @@ end
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
-        @test_broken Ac\b ≈ A\b
+        VERSION >= v"1.9-" && @test Ac\b ≈ A\b
     end
 
     let T = ComplexF64
@@ -274,7 +274,7 @@ end
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
-        @test_broken Ac\b ≈ A\b
+        VERSION >= v"1.9-" && @test Ac\b ≈ A\b
     end
 
     @testset "UnitRange" begin
