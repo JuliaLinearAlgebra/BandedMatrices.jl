@@ -37,8 +37,6 @@ import BandedMatrices: BandedStyle, BandedRows
         @test 1 .+ A isa BandedMatrix
         @test (1 .+ A) == 1 .+ Matrix(A)
 
-        @test A .+ A == 2A
-
         @test 1 .\ A == 1 .\ Matrix(A)
         @test 1 .\ A isa BandedMatrix
         @test bandwidths(1 .\ A) == bandwidths(A)
