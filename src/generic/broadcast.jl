@@ -621,6 +621,17 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
     end
 end
 
+# Broadcasting uses Cartesian indexing by default, and only vectorizes over the inner index
+# In case the size(data,1) is small, this may not vectorize at all
+# We explicitly use a loop in this case to use linear indices and force vectorization
+# See https://discourse.julialang.org/t/why-is-a-multi-argument-inplace-map-much-faster-in-this-case-than-a-broadcast/91525
+function _broadcast_linindex!(f, dest::Array, A::Array, B::Array)
+    @inbounds @simd for ind in eachindex(A, B, dest)
+        dest[ind] = f(A[ind], B[ind])
+    end
+    dest
+end
+_broadcast_linindex!(f, dest, A, B) = dest .= f.(A, B)
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumns, ::Tuple{<:BandedColumns,<:BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
@@ -643,7 +654,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     data_d,data_A, data_B = bandeddata(dest), bandeddata(A), bandeddata(B)
 
     if (d_l,d_u) == (A_l,A_u) == (B_l,B_u)
-        data_d .= f.(data_A,data_B)
+        _broadcast_linindex!(f, data_d, data_A,data_B)
     else
         max_l,max_u = max(A_l,B_l,d_l),max(A_u,B_u,d_u)
         min_l,min_u = min(A_l,B_l,d_l),min(A_u,B_u,d_u)
