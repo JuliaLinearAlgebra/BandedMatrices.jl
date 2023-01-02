@@ -625,13 +625,13 @@ end
 # In case the size(data,1) is small, this may not vectorize at all
 # We explicitly use a loop in this case to use linear indices and force vectorization
 # See https://discourse.julialang.org/t/why-is-a-multi-argument-inplace-map-much-faster-in-this-case-than-a-broadcast/91525
-function _broadcast_linindex!(f, dest::Array, A::Array, B::Array)
+@inline function _broadcast_linindex!(f, dest::Array, A::Array, B::Array)
     @inbounds @simd for ind in eachindex(A, B, dest)
         dest[ind] = f(A[ind], B[ind])
     end
     dest
 end
-_broadcast_linindex!(f, dest, A, B) = dest .= f.(A, B)
+@inline _broadcast_linindex!(f, dest, A, B) = dest .= f.(A, B)
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumns, ::Tuple{<:BandedColumns,<:BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
