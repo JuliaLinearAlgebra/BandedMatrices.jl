@@ -621,10 +621,13 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
     end
 end
 
-# Broadcasting uses Cartesian indexing by default, and only vectorizes over the inner index
-# In case the size(data,1) is small, this may not vectorize at all
-# We explicitly use a loop in this case to use linear indices and force vectorization
-# See https://discourse.julialang.org/t/why-is-a-multi-argument-inplace-map-much-faster-in-this-case-than-a-broadcast/91525
+#=
+Broadcasting uses Cartesian indexing by default, and only vectorizes over the innermost index
+In case the size along the first dimension is small, this may not vectorize at all.
+This is often the case with a BandedMatrix, where size(B.data, 1) represents the number of bands
+We explicitly use a loop in this case to use linear indices and force vectorization
+See https://discourse.julialang.org/t/why-is-a-multi-argument-inplace-map-much-faster-in-this-case-than-a-broadcast/91525
+=#
 @inline function _broadcast_linindex!(f, dest::Array, A::Array, B::Array)
     @inbounds @simd for ind in eachindex(A, B, dest)
         dest[ind] = f(A[ind], B[ind])
