@@ -628,13 +628,15 @@ This is often the case with a BandedMatrix, where size(B.data, 1) represents the
 We explicitly use a loop in this case to use linear indices and force vectorization
 See https://discourse.julialang.org/t/why-is-a-multi-argument-inplace-map-much-faster-in-this-case-than-a-broadcast/91525
 =#
-@inline function _broadcast_linindex!(f, dest::Array, A::Array, B::Array)
+@inline function __broadcast_linindex!(f, dest, A, B, ::IndexLinear)
     @inbounds @simd for ind in eachindex(A, B, dest)
         dest[ind] = f(A[ind], B[ind])
     end
     dest
 end
-@inline _broadcast_linindex!(f, dest, A, B) = dest .= f.(A, B)
+@inline __broadcast_linindex!(f, dest, A, B, ::Any) = dest .= f.(A, B)
+@inline _broadcast_linindex!(f, dest, A, B) =
+    __broadcast_linindex!(f, dest, A, B, IndexStyle(dest, A, B))
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumns, ::Tuple{<:BandedColumns,<:BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
