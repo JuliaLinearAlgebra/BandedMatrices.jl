@@ -11,7 +11,6 @@ makedocs(;
     repo = "https://github.com/JuliaMatrices/BandedMatrices.jl/blob/{commit}{path}#L{line}",
     sitename = "BandedMatrices.jl",
     authors = "Sheehan Olver, Mikael Slevinsky, and contributors.",
-    assets = String[],
 )
 
 
