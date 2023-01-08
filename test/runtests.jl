@@ -8,6 +8,11 @@ using Aqua
     Aqua.test_all(BandedMatrices, ambiguities=false)
 end
 
+using Documenter
+@testset "doctests" begin
+    doctest(BandedMatrices)
+end
+
 include("test_banded.jl")
 include("test_subarray.jl")
 include("test_linalg.jl")

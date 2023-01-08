@@ -11,15 +11,17 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 [compat]
 Aqua = "0.5"
 ArrayLayouts = "0.8.14"
+Documenter = "0.27"
 FillArrays = "0.13"
 julia = "1.6"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Base64 = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GenericLinearAlgebra = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Base64", "GenericLinearAlgebra", "Random", "Test"]
+test = ["Aqua", "Base64", "Documenter", "GenericLinearAlgebra", "Random", "Test"]
