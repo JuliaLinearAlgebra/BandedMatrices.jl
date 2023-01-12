@@ -43,11 +43,15 @@ function _banded_muladd!(α::T, A, x::AbstractVector, β, y) where T
     l, u = bandwidths(A)
     if -l > u # no bands
         _fill_lmul!(β, y)
-    elseif l < 0
-        _banded_muladd!(α, view(A, :, 1-l:n), view(x, 1-l:n), β, y)
-    elseif u < 0
+    elseif l < 0 # with u >= -l > 0, that is all bands lie above the diagonal
+        # E.g. (l,u) = (-1,2)
+        # set lview = 0 and uview = u + l >= 0
+        _banded_gbmv!('N', α, view(A, :, 1-l:n), view(x, 1-l:n), β, y)
+    elseif u < 0 # with -l <= u < 0, that is all bands lie below the diagnoal.
+        # E.g. (l,u) = (2,-1)
+        # set lview = l + u >= 0 and uview = 0
         y[1:-u] .= zero(T)
-        _banded_muladd!(α, view(A, 1-u:m, :), x, β, view(y, 1-u:m))
+        _banded_gbmv!('N', α, view(A, 1-u:m, :), x, β, view(y, 1-u:m))
         y
     else
         _banded_gbmv!('N', α, A, x, β, y)
