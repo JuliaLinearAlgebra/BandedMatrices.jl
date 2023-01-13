@@ -198,7 +198,7 @@ end
         @test x ≈ y
         @test_throws DimensionMismatch F\[b;b]
 
-        T ≠ Float16 && (@test det(F) ≈ det(SAL))
+        T ≠ Float16 && (@test det(F) ≈ det(SAL))
     end
     for T in (Int16, Int32, Int64, BigInt)
         A = BandedMatrix{T}(undef, (4,4), (1,1))

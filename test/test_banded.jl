@@ -293,7 +293,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
                 @test @inferred(convert(BandedMatrix, banded)) === banded
             end
 
-            # Note: @inferred convert(MyMatrix, matrix) throws
+            # Note: @inferred convert(MyMatrix, matrix) throws
             banded = convert(BandedMatrix{Int64, MyMatrix}, matrix)
             @test banded isa BandedMatrix{Int64, MyMatrix{Int64}}
             @test banded == matrix
