@@ -93,11 +93,11 @@ Random.seed!(0)
         @test qr(V).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(V)).τ
         @test Matrix(qr(V).Q) ≈ Matrix(qr(Matrix(V)).Q)
         @test Matrix(qr(V)) ≈ V
-        B = BandedMatrix(A,(1,2)) # pad
+        B = BandedMatrix(A,(1,2)) # pad
         V = view(copy(B),1:5,1:6)
         @test qr!(V) isa QR{Float64,<:SubArray{Float64,2,<:BandedMatrix{Float64}}}
         τ = Array{Float64}(undef,100)
-        B = BandedMatrix(A,(1,2)) # pad
+        B = BandedMatrix(A,(1,2)) # pad
         V = view(B,1:6,1:5)
         F1 = qr(V)
         F2 = banded_qr!(V, view(τ,1:size(V,2)))

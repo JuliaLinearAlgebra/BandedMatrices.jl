@@ -31,7 +31,7 @@ struct _foo <: Number end
         bf = copy(b)
         L,U,p = lu(A)
         Lf,Uf,pf = lu(Af)
-        @test L ≈ Lf # storage format is different
+        @test L ≈ Lf # storage format is different
         @test U ≈ Uf
         @test p ≈ pf
         lua = lu(A)
