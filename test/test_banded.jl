@@ -111,6 +111,15 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test A*v ≈ Matrix(A)*v
             @test A'*w ≈ Matrix(A)'*w
         end
+
+        @testset "empty" begin
+            let B=BandedMatrix((0=>ones(0),), (10,0)), v = ones(size(B,2))
+                @test B * v == zeros(size(B,1))
+            end
+            let B=BandedMatrix((0=>ones(0),), (0,10)), v = ones(size(B,2))
+                @test B * v == zeros(size(B,1))
+            end
+        end
     end
 
     @testset "Banded * Dense" begin
