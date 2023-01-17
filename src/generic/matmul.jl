@@ -26,17 +26,16 @@ banded_gbmv!(tA, α, A, x, β, y) =
 
 
 @inline function _banded_gbmv!(tA, α, A, x, β, y)
-    #= Some BLAS implementations throw warnings if the
-    arrays have a zero-sized axis, so we handle
+    #= Some BLAS implementations throw warnings
+    with zero-sized arrays, so we handle
     these cases separately.
     =#
     length(y) == 0 && return y
     if length(x) == 0
         _fill_lmul!(β, y)
-    elseif x ≡ y
-        banded_gbmv!(tA, α, A, copy(x), β, y)
     else
-        banded_gbmv!(tA, α, A, x, β, y)
+        xc = x ≡ y ? copy(x) : x
+        banded_gbmv!(tA, α, A, xc, β, y)
     end
     return y
 end
