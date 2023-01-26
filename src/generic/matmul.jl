@@ -79,7 +79,7 @@ function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayo
     elseif l < 0
       materialize!(MulAdd(α, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), β, y))
     elseif u < 0
-      y[1:-u] .= zero(T)
+      y[1:-u] .= zero(eltype(y))
       materialize!(MulAdd(α, transpose(view(At, :, 1-u:m)), x, β, view(y, 1-u:m)))
       y
     else
@@ -98,7 +98,7 @@ function materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:BandedRowMajor},<:Abstr
     elseif l < 0
         materialize!(MulAdd(α, view(Ac, 1-l:n, :,)', view(x, 1-l:n), β, y))
     elseif u < 0
-        y[1:-u] .= zero(T)
+        y[1:-u] .= zero(eltype(y))
         materialize!(MulAdd(α, view(Ac, :, 1-u:m)', x, β, view(y, 1-u:m)))
         y
     else
