@@ -44,7 +44,7 @@ end
 
 
 
-function _banded_muladd!(α::T, A, x::AbstractVector, β, y) where T
+function _banded_muladd!(α, A, x::AbstractVector, β, y)
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
@@ -57,7 +57,7 @@ function _banded_muladd!(α::T, A, x::AbstractVector, β, y) where T
     elseif u < 0 # with -l <= u < 0, that is, all bands lie below the diagnoal.
         # E.g. (l,u) = (2,-1)
         # set lview = l + u >= 0 and uview = 0
-        y[1:-u] .= zero(T)
+        y[1:-u] .= zero(eltype(y))
         _banded_gbmv!('N', α, view(A, 1-u:m, :), x, β, view(y, 1-u:m))
         y
     else
