@@ -825,11 +825,3 @@ end
 
 bandedbroadcaststyle(_) = BandedStyle()
 BroadcastStyle(::Type{<:BandedMatrix{<:Any,Dat}}) where Dat = bandedbroadcaststyle(BroadcastStyle(Dat))
-
-# precompile instructions
-let B = BandedMatrix(0=>zeros(0))
-    BT = typeof(B)
-    @assert precompile(+, (BT, BT))
-    @assert precompile(-, (BT,))
-    @assert precompile(-, (BT, BT))
-end

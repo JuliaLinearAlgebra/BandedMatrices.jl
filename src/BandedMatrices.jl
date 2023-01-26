@@ -95,4 +95,14 @@ include("interfaceimpl.jl")
 
 # _precompile_()
 
+# precompile instructions
+let B = BandedMatrix(0=>zeros(0)), v = zeros(size(B,2))
+    BT = typeof(B)
+    vT = typeof(v)
+    @assert precompile(+, (BT, BT))
+    @assert precompile(-, (BT,))
+    @assert precompile(-, (BT, BT))
+    @assert precompile(*, (BT, vT))
+end
+
 end #module
