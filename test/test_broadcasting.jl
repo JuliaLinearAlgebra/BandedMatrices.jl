@@ -278,48 +278,82 @@ import BandedMatrices: BandedStyle, BandedRows
     @testset "gbmv!" begin
         n = 100
         x = randn(n)
-        A = brand(n,n,1,1)
         y = similar(x)
-        mul!(y,A,x)
-        @test Matrix(A)*x ≈ y
-        @test all(BLAS.gbmv!('N', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .===
-                    Broadcast.materialize!(MulAdd(1.0,A,x,0.0,similar(y))) .=== y)
         z = similar(y)
-        z .= MulAdd(2.0,A,x,3.0,y)
-        @test 2Matrix(A)*x + 3y ≈ z
-        @test all(BLAS.gbmv!('N', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
-        @test MemoryLayout(typeof(A')) == BandedRows{DenseColumnMajor}()
-        mul!(y,A',x)
-        @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
-        @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
-        z = similar(y)
-        z .= MulAdd(2.0,A',x,3.0,y)
-        @test 2Matrix(A')*x + 3y ≈ z
-        @test all(BLAS.gbmv!('T', n, 1, 1, 2.0, A.data, x, 3.0, copy(y)) .=== z)
-        @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
-        muladd!(1.0,transpose(A),x,0.0,y)
-        @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
-        @test all(BLAS.gbmv!('T', n, 1, 1, 1.0, A.data, x, 0.0, copy(y)) .=== y)
+        @testset for (l,u) in ((1,1), (-1,1), (1,-1), (-2,1), (0,1), (1,0))
+            A = brand(n,n,l,u)
+            mul!(y,A,x)
+            @test Matrix(A)*x ≈ y
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('N', n, l, u, 1.0, A.data, x, 0.0, copy(y)) .===
+                        Broadcast.materialize!(MulAdd(1.0,A,x,0.0,similar(y))) .=== y)
+            end
+
+            z .= MulAdd(2.0,A,x,3.0,y)
+            @test 2Matrix(A)*x + 3y ≈ z
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('N', n, l, u, 2.0, A.data, x, 3.0, copy(y)) .=== z)
+            end
+
+            @test MemoryLayout(typeof(A')) == BandedRows{DenseColumnMajor}()
+
+            mul!(y,A',x)
+            @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('T', n, l, u, 1.0, A.data, x, 0.0, copy(y)) .=== y)
+            end
+
+            z .= MulAdd(2.0,A',x,3.0,y)
+            @test 2Matrix(A')*x + 3y ≈ z
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('T', n, l, u, 2.0, A.data, x, 3.0, copy(y)) .=== z)
+            end
+
+            @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
+
+            muladd!(1.0,transpose(A),x,0.0,y)
+            @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('T', n, l, u, 1.0, A.data, x, 0.0, copy(y)) .=== y)
+            end
+        end
 
         n = 100
         x = randn(ComplexF64,n)
-        A = brand(ComplexF64,n,n,1,1)
         y = similar(x)
-        mul!(y,A,x)
-        @test Matrix(A)*x ≈ y
-        @test all(BLAS.gbmv!('N', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
-        @test MemoryLayout(typeof(A')) == ConjLayout{BandedRows{DenseColumnMajor}}()
+        yc = similar(x)
         z = similar(y)
-        z .= MulAdd(2.0+0.0im,A,x,3.0+0.0im,y)
-        @test 2Matrix(A)*x + 3y ≈ z
-        @test all(BLAS.gbmv!('N', n, 1, 1, 2.0+0.0im, A.data, x, 3.0+0.0im, copy(y)) .=== z)
-        mul!(y,A',x)
-        @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
-        @test all(BLAS.gbmv!('C', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
-        @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
-        mul!(y,transpose(A),x)
-        @test Matrix(transpose(A))*x ≈ transpose(Matrix(A))*x ≈ y
-        @test all(BLAS.gbmv!('T', n, 1, 1, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
+        @testset for (l,u) in ((1,1), (-1,1), (1,-1), (-2,1), (0,1), (1,0))
+            A = brand(ComplexF64,n,n,l,u)
+
+            mul!(y,A,x)
+            @test Matrix(A)*x ≈ y
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('N', n, l, u, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
+            end
+
+            @test MemoryLayout(typeof(A')) == ConjLayout{BandedRows{DenseColumnMajor}}()
+
+            z .= MulAdd(2.0+0.0im,A,x,3.0+0.0im,y)
+            @test 2Matrix(A)*x + 3y ≈ z
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('N', n, l, u, 2.0+0.0im, A.data, x, 3.0+0.0im, copy(y)) .=== z)
+            end
+
+            mul!(y,A',x)
+            @test Matrix(A')*x ≈ Matrix(A)'*x ≈ y
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('C', n, l, u, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
+            end
+
+            @test MemoryLayout(typeof(transpose(A))) == BandedRows{DenseColumnMajor}()
+
+            mul!(y,transpose(A),x)
+            @test Matrix(transpose(A))*x ≈ transpose(Matrix(A))*x ≈ y
+            if l >= 0 && u >= 0
+                @test all(BLAS.gbmv!('T', n, l, u, 1.0+0.0im, A.data, x, 0.0+0.0im, copy(y)) .=== y)
+            end
+        end
     end
 
     @testset "non-blas matvec" begin

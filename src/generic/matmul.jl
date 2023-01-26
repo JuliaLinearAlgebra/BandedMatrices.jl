@@ -102,7 +102,7 @@ function materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:BandedRowMajor},<:Abstr
         _banded_gbmv!('C', α, view(Ac, :, 1-u:m), x, β, view(y, 1-u:m))
         y
     else
-    _banded_gbmv!('C', α, Ac, x, β, y)
+        _banded_gbmv!('C', α, Ac, x, β, y)
     end
 end
 
