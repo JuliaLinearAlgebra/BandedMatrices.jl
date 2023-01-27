@@ -822,7 +822,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     B_l, B_u = bandwidths(B)
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
-    @switchlimits for j=1:n
+    for j=1:n
         for k = max(1,j-d_u):min(j-u-1,j+d_l,m)
             inbands_setindex!(dest, z, k, j)
         end
