@@ -280,7 +280,7 @@ import BandedMatrices: BandedStyle, BandedRows
         x = randn(n)
         y = similar(x)
         z = similar(y)
-        @testset for (l,u) in ((1,1), (-1,1), (1,-1), (-2,1), (0,1), (1,0))
+        @testset for (l,u) in ((1,1), (-1,1), (1,-1), (-2,1), (0,1), (1,0), (0,0))
             A = brand(n,n,l,u)
             mul!(y,A,x)
             @test Matrix(A)*x ≈ y
@@ -323,7 +323,7 @@ import BandedMatrices: BandedStyle, BandedRows
         y = similar(x)
         yc = similar(x)
         z = similar(y)
-        @testset for (l,u) in ((1,1), (-1,1), (1,-1), (-2,1), (0,1), (1,0))
+        @testset for (l,u) in ((1,1), (-1,1), (1,-1), (-2,1), (0,1), (1,0), (0,0))
             A = brand(ComplexF64,n,n,l,u)
 
             mul!(y,A,x)
