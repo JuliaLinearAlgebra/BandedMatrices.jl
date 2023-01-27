@@ -38,6 +38,8 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
 
+using MacroTools
+
 const libblas = Base.libblas_name
 const liblapack = Base.liblapack_name
 
