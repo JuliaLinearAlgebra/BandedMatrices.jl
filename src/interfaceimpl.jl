@@ -24,8 +24,8 @@ inbands_getindex(::Eye{T}, k::Integer, j::Integer) where T = one(T)
 
 isbanded(::Diagonal) = true
 bandwidths(::Diagonal) = (0,0)
-inbands_getindex(D::Diagonal, k::Integer, j::Integer) = D.diag[k]
-inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
+Base.@propagate_inbounds inbands_getindex(D::Diagonal, k::Integer, j::Integer) = D.diag[k]
+Base.@propagate_inbounds inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
 bandeddata(D::Diagonal) = permutedims(D.diag)
 
 # treat subinds as banded
