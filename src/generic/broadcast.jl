@@ -387,6 +387,16 @@ end
 _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractVector{T},AbstractMatrix{V}}, _1, _2) where {T,V} =
     _left_colvec_banded_broadcast!(dest, f, (A,B), _1, _2)
 
+macro switchlimitsif(cond, ex)
+    ex2 = quote
+        if $cond
+            @switchlimits $ex
+        else
+            $ex
+        end
+    end
+    :($(esc(ex2)))
+end
 macro switchlimits(ex)
     exsplit = splitloops(ex)
     :($(esc(exsplit)))
@@ -677,85 +687,41 @@ function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
     if d_l == A_l == l && d_u == A_u == u
         if B_u >= u
             if B_l >= l
-                if u == -l
-                    @switchlimits for j=1:n
-                        for k = max(1,j-u):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
-                    end
-                else
-                    for j=1:n
-                        for k = max(1,j-u):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
+                @switchlimitsif u == -l for j=1:n
+                    for k = max(1,j-u):min(j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
                     end
                 end
             else
-                if u == -l
-                    @switchlimits for j=1:n
-                        for k = max(1,j-u):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
-                        for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
+                for j=1:n
+                    for k = max(1,j-u):min(j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
                     end
-                else
-                    for j=1:n
-                        for k = max(1,j-u):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
-                        for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
+                    for k = max(1,j-u,j+B_l+1):min(j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                     end
                 end
             end
         else
             if B_l >= l
-                if u == -l
-                    @switchlimits for j=1:n
-                        for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
-                        for k = max(1,j-min(u,B_u)):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
+                for j=1:n
+                    for k = max(1,j-u):min(j-B_u-1,j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                     end
-                else
-                    for j=1:n
-                        for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
-                        for k = max(1,j-min(u,B_u)):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
+                    for k = max(1,j-min(u,B_u)):min(j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
                     end
                 end
             else
-                if u == -l
-                    @switchlimits for j=1:n
-                        for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
-                        for k = max(1,j-min(u,B_u)):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
-                        for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
+                for j=1:n
+                    for k = max(1,j-u):min(j-B_u-1,j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                     end
-                else
-                    for j=1:n
-                        for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
-                        for k = max(1,j-min(u,B_u)):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                        end
-                        for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                        end
+                    for k = max(1,j-min(u,B_u)):min(j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
+                    end
+                    for k = max(1,j-u,j+B_l+1):min(j+l,m)
+                        inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                     end
                 end
             end
