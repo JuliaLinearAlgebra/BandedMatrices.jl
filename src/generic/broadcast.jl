@@ -741,6 +741,29 @@ function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatri
 end
 
 ###
+# Special cases
+###
+
+#=
+    B::BandedMatrix * D::Diagonal for DenseColumnMajor storage may be evaluated as
+    B.data .* D.diag', instead of B .* D.diag'
+=#
+function copy(M::Rmul{BandedColumns{DenseColumnMajor}, DiagonalLayout{DenseColumnMajor}})
+    B, D = M.A, M.B
+    d = diagonaldata(D)
+    Bd = bandeddata(B)
+    Bdata = if size(Bd, 1) == 1
+                # performance optimization
+                # may not be necessary in the future if the other branch
+                # is equally fast
+                reshape(vec(Bd) .* d, 1, :)
+            else
+                Bd .* d'
+            end
+    _BandedMatrix(Bdata, size(B,1), bandwidths(B)...)
+end
+
+###
 # broadcast bandwidths
 ###
 
