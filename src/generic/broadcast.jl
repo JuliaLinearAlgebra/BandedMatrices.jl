@@ -643,7 +643,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     data_d,data_A, data_B = bandeddata(dest), bandeddata(A), bandeddata(B)
 
     if (d_l,d_u) == (A_l,A_u) == (B_l,B_u)
-        data_d .= f.(data_A,data_B)
+        vec(data_d) .= f.(vec(data_A),vec(data_B))
     else
         max_l,max_u = max(A_l,B_l,d_l),max(A_u,B_u,d_u)
         min_l,min_u = min(A_l,B_l,d_l),min(A_u,B_u,d_u)
