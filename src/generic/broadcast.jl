@@ -643,6 +643,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
     data_d,data_A, data_B = bandeddata(dest), bandeddata(A), bandeddata(B)
 
     if (d_l,d_u) == (A_l,A_u) == (B_l,B_u)
+        # performance optimization: broadcasting on vec(data) enables vectorization
+        # see https://github.com/JuliaLang/julia/issues/28126
         vec(data_d) .= f.(vec(data_A),vec(data_B))
     else
         max_l,max_u = max(A_l,B_l,d_l),max(A_u,B_u,d_u)
