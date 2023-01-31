@@ -637,19 +637,19 @@ function _left_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
         if max(-A_u,-u) > min(A_l,l) && max(-u,A_l+1) > l
             return dest
         elseif max(-A_u,-u) > min(A_l,l)
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-u,j+A_l+1):min(j+l,m)
                     inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
                 end
             end
         elseif max(-u,A_l+1) > l
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j+max(-A_u,-u)):min(j+min(A_l,l),m)
                     inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j+max(-A_u,-u)):min(j+min(A_l,l),m)
                     inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
                 end
@@ -659,7 +659,7 @@ function _left_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
             end
         end
     else
-        for j=1:n
+        for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-u-1,m)
                 inbands_setindex!(dest, z, k, j)
             end
@@ -703,19 +703,19 @@ function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
         if -min(u,n-1) > min(l,B_l) && max(-u,B_l+1) > l
             return dest
         elseif -min(u,n-1) > min(l,B_l)
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-u,j+B_l+1):min(j+l,m)
                     inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                 end
             end
         elseif max(-u,B_l+1) > l
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-min(u,n-1)):min(j+min(l,B_l),m)
                     inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-min(u,n-1)):min(j+min(l,B_l),m)
                     inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
                 end
@@ -725,7 +725,7 @@ function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
             end
         end
     else
-        for j=1:n
+        for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-u-1,m)
                 inbands_setindex!(dest, z, k, j)
             end
@@ -768,19 +768,19 @@ function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
         if -u > min(-A_u-1,l) && -min(A_u,u) > l
             return dest
         elseif -u > min(-A_u-1,l)
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-min(A_u,u)):min(j+l,m)
                     inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
                 end
             end
         elseif -min(A_u,u) > l
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-u):min(j-A_u-1,j+l,m)
                     inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-u):min(j-A_u-1,j+l,m)
                     inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
                 end
@@ -790,7 +790,7 @@ function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
             end
         end
     else
-        for j=1:n
+        for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-u-1,m)
                 inbands_setindex!(dest, z, k, j)
             end
