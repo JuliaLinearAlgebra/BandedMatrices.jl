@@ -127,19 +127,19 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         return dest
     elseif -d_u > -s_u-1
         if max(-s_u, -d_u) > min(s_l, d_l)
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j+s_l+1):min(j+d_l,m)
                     inbands_setindex!(dest, z, k, j)
                 end
             end
         elseif s_l+1 > d_l
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
                     inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
                     inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
                 end
@@ -150,19 +150,19 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         end
     elseif max(-s_u, -d_u) > min(s_l, d_l)
         if -d_u > -s_u-1
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j+s_l+1):min(j+d_l,m)
                     inbands_setindex!(dest, z, k, j)
                 end
             end
         elseif s_l+1 > d_l
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-d_u):min(j-s_u-1,m)
                     inbands_setindex!(dest, z, k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-d_u):min(j-s_u-1,m)
                     inbands_setindex!(dest, z, k, j)
                 end
@@ -173,19 +173,19 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         end
     elseif s_l+1 > d_l
         if -d_u > -s_u-1
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
                     inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
                 end
             end
         elseif max(-s_u, -d_u) > min(s_l, d_l)
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-d_u):min(j-s_u-1,m)
                     inbands_setindex!(dest, z, k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-d_u):min(j-s_u-1,m)
                     inbands_setindex!(dest, z, k, j)
                 end
@@ -195,7 +195,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
             end
         end
     else
-        for j=1:n
+        for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-s_u-1,m)
                 inbands_setindex!(dest, z, k, j)
             end
@@ -759,19 +759,19 @@ function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
         if -u > min(-B_u-1, l) && -min(u,B_u) > l
             return dest
         elseif -u > min(-B_u-1, l)
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-min(u,B_u)):min(j+l,m)
                     inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
                 end
             end
         elseif -min(u,B_u) > l
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-u):min(j-B_u-1,j+l,m)
                     inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                 end
             end
         else
-            for j=1:n
+            for j=rowsupport(dest)
                 for k = max(1,j-u):min(j-B_u-1,j+l,m)
                     inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
                 end
@@ -781,7 +781,7 @@ function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
             end
         end
     else
-        for j=1:n
+        for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-u-1,m)
                 inbands_setindex!(dest, z, k, j)
             end
