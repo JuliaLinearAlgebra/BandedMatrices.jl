@@ -77,13 +77,27 @@ function checkzerobands(dest, f, A::AbstractMatrix)
     d_l, d_u = bandwidths(dest)
     l, u = bandwidths(A)
 
-    if (l,u) ≠ (d_l,d_u)
-        for j = 1:n
-            for k = max(1,j-u) : min(j-d_u-1,m)
-                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+    if (l,u) ≠ (d_l,d_u) && !(u < d_u+1 && d_l+1 > l)
+        if u < d_u+1
+            for j = 1:n
+                for k = max(1,j+d_l+1) : min(j+l,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
             end
-            for k = max(1,j+d_l+1) : min(j+l,m)
-                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+        elseif d_l+1 > l
+            for j = 1:n
+                for k = max(1,j-u) : min(j-d_u-1,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
+            end
+        else
+            for j = 1:n
+                for k = max(1,j-u) : min(j-d_u-1,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
+                for k = max(1,j+d_l+1) : min(j+l,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
             end
         end
     end
@@ -109,15 +123,86 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         end
     end
 
-    for j=1:n
-        for k = max(1,j-d_u):min(j-s_u-1,m)
-            inbands_setindex!(dest, z, k, j)
+    if -d_u > -s_u-1 && !(max(-s_u, -d_u) > min(s_l, d_l) && s_l+1 > d_l)
+        if max(-s_u, -d_u) > min(s_l, d_l)
+            for j=1:n
+                for k = max(1,j+s_l+1):min(j+d_l,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+            end
+        elseif s_l+1 > d_l
+            for j=1:n
+                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+                end
+            end
+        else
+            for j=1:n
+                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+                end
+                for k = max(1,j+s_l+1):min(j+d_l,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+            end
         end
-        for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-            inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+    elseif max(-s_u, -d_u) > min(s_l, d_l) && !(-d_u > -s_u-1 && s_l+1 > d_l)
+        if -d_u > -s_u-1
+            for j=1:n
+                for k = max(1,j+s_l+1):min(j+d_l,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+            end
+        elseif s_l+1 > d_l
+            for j=1:n
+                for k = max(1,j-d_u):min(j-s_u-1,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+            end
+        else
+            for j=1:n
+                for k = max(1,j-d_u):min(j-s_u-1,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+                for k = max(1,j+s_l+1):min(j+d_l,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+            end
         end
-        for k = max(1,j+s_l+1):min(j+d_l,m)
-            inbands_setindex!(dest, z, k, j)
+    elseif s_l+1 > d_l && !(-d_u > -s_u-1 && max(-s_u, -d_u) > min(s_l, d_l))
+        if -d_u > -s_u-1
+            for j=1:n
+                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+                end
+            end
+        elseif max(-s_u, -d_u) > min(s_l, d_l)
+            for j=1:n
+                for k = max(1,j-d_u):min(j-s_u-1,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+            end
+        else
+            for j=1:n
+                for k = max(1,j-d_u):min(j-s_u-1,m)
+                    inbands_setindex!(dest, z, k, j)
+                end
+                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+                end
+            end
+        end
+    else
+        for j=1:n
+            for k = max(1,j-d_u):min(j-s_u-1,m)
+                inbands_setindex!(dest, z, k, j)
+            end
+            for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+            end
+            for k = max(1,j+s_l+1):min(j+d_l,m)
+                inbands_setindex!(dest, z, k, j)
+            end
         end
     end
     dest
