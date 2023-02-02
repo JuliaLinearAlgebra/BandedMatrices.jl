@@ -41,6 +41,9 @@ import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_valu
 const libblas = Base.libblas_name
 const liblapack = Base.liblapack_name
 
+using MacroTools
+using Combinatorics: combinations
+
 export BandedMatrix,
        bandrange,
        brand,

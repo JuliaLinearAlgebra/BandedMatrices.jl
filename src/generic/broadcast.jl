@@ -72,33 +72,145 @@ end
 # matrix broadcast
 ###########
 
+macro branches(ex)
+    exsplit = splitloops(ex)
+    :($(esc(exsplit)))
+end
+function splitloops(ex::Expr)
+    if @capture(ex, for j_Symbol = outerlims_; innerloops__; end)
+        conds = Expr[]
+        for loop in innerloops
+            if @capture(loop, for k_Symbol = max(tlow__):min(thigh__); inbandsfn_; end)
+                tlow_combined = merge_terms_minmax(max, j, map(y -> headplus_form(y, j), tlow))
+                thigh_combined = merge_terms_minmax(min, j, map(y -> headplus_form(y, j), thigh))
+
+                Ntlow, Nthigh = length(tlow_combined), length(thigh_combined)
+                if Ntlow == Nthigh == 2 &&
+                            @capture(tlow_combined[1], $j + b_) &&
+                            @capture(thigh_combined[1], $j + d_)
+
+                    #= the loop should have the form
+                    for j in 1:n
+                        for k in max(j+b, a):min(j+d, c)
+                            f(j, k)
+                        end
+                    end
+
+                    We extract the terms b and d
+                    =#
+
+                    push!(conds, Expr(:call, :>, b, d))
+                else
+                    return ex
+                end
+            else
+                return ex
+            end
+        end
+        branchex = build_branches(conds, innerloops, 0, (j, outerlims))
+        return quote
+            $branchex
+        end
+    end
+    return ex
+end
+
+function _elseifex(conds_loops, conds_innerloops, nterms, (j, outerlims))
+    if isempty(conds_loops)
+        conds, innerloops = conds_innerloops
+        build_branches(conds, innerloops, nterms+1, (j, outerlims))
+    else
+        cond1, loops1 = first(conds_loops)
+        mergedloops1 = :(for $j in $outerlims
+                            $(loops1...)
+                        end)
+        Expr(:elseif, cond1, mergedloops1,
+            _elseifex(conds_loops[2:end], conds_innerloops, nterms, (j, outerlims)))
+    end
+end
+
+function build_branches(conds, innerloops, nterms, (j, outerlims))
+    N = length(innerloops)
+    if nterms == 0
+        # empty starting branch, so that the others may be elseif branches
+        Expr(:if, foldr((a,b) -> Expr(:&&, a, b), conds), Expr(:block),
+            build_branches(conds, innerloops, 1, (j, outerlims)))
+    elseif nterms == N
+        # The final else branch
+        mergedloops = :(for $j in $outerlims
+                            $(innerloops...)
+                        end)
+        Expr(:block, mergedloops)
+    else
+        inds = axes(conds, 1)
+        inds_set = Set(inds)
+        conds_loops = map(combinations(inds, nterms)) do inds_section
+            inds_rem = collect(setdiff(inds_set, Set(inds_section)))
+            cond_rem = foldr((a,b) -> Expr(:&&, a, b), conds[inds_rem])
+            loops_nterms = innerloops[inds_section]
+            cond_rem, loops_nterms
+        end
+        _elseifex(conds_loops, (conds, innerloops), nterms, (j, outerlims))
+    end
+end
+
+headplus_form(ex, j) = ex # this ignores numbers or symbols, e.g. the 1 in max(1, x...)
+function headplus_form(ex::Expr, j)
+    ex.head == :call || return ex
+    # rearrange terms like j - a + b to j + (b - a)
+    # A term of the form j + a + b is left unchanged
+    MacroTools.postwalk(ex) do term
+        added_term = if @capture(term, +($j, u__)) # j + x...
+            :(+($(u...)))
+        elseif @capture(term, -($j, u_)) # j - x
+            :(-$u)
+        elseif @capture(term, +(-($j, u_),v__)) # j - x + y
+            :(+(-$u, $(v...)))
+        elseif @capture(term, -(-($j, u_),v_)) # j - x - y
+            :(-($u + $v))
+        elseif @capture(term, -(+($j, u__),v_)) # j + x - y
+            :(($(u...) - $v))
+        else
+            return term
+        end
+        :(+($j, $added_term))
+    end
+end
+function merge_terms_minmax(f::Union{typeof(max), typeof(min)}, j, terms::Vector)
+    jexprinds = [@capture(t, $j + u__) for t in terms]
+    numsyminds = .!jexprinds
+    jexprterms = terms[jexprinds]
+    numsymterms = terms[numsyminds]
+    # Transform terms like max(j+a, j+b, m) to max(j + max(a, b), m)
+    # Similarly, for min
+    # This ensures that we only have 2 terms in the max/min call, and 2 corresponding branches
+    if count(jexprinds) > 1
+        # Get the actual terms x
+        # For a term of the form j + a + b, this returns [:a, :b]
+        matching_addedterms = [(@capture(t, $j + u__); u) for t in jexprterms]
+        # We therefore need to reintroduce the + to convert this back to a + b
+        matching_addedterms = map(v -> :(+($(v...))), matching_addedterms)
+
+        newterm_j = :($j + $f($(matching_addedterms...)))
+        terms = [newterm_j; numsymterms]
+    else
+        # Bring the j terms to the front
+        terms = [jexprterms; numsymterms]
+    end
+    terms
+end
+
 function checkzerobands(dest, f, A::AbstractMatrix)
     m,n = size(A)
     d_l, d_u = bandwidths(dest)
     l, u = bandwidths(A)
 
-    if (l,u) ≠ (d_l,d_u) && !(u < d_u+1 && d_l+1 > l)
-        if u < d_u+1
-            for j = 1:n
-                for k = max(1,j+d_l+1) : min(j+l,m)
-                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
-                end
-            end
-        elseif d_l+1 > l
-            for j = 1:n
-                for k = max(1,j-u) : min(j-d_u-1,m)
-                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
-                end
-            end
-        else
-            for j = 1:n
-                for k = max(1,j-u) : min(j-d_u-1,m)
-                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
-                end
-                for k = max(1,j+d_l+1) : min(j+l,m)
-                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
-                end
-            end
+    @branches for j = rowsupport(A)
+        for k = max(1,j-u) : min(j-d_u-1,m)
+            iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+        end
+        for k = max(1,j+d_l+1) : min(j+l,m)
+            iszero(f(A[k,j])) || throw(BandError(dest,j-k))
         end
     end
 end
@@ -123,90 +235,18 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         end
     end
 
-    if -d_u > -s_u-1 && max(-s_u, -d_u) > min(s_l, d_l) && s_l+1 > d_l
-        return dest
-    elseif -d_u > -s_u-1
-        if max(-s_u, -d_u) > min(s_l, d_l)
-            for j=rowsupport(dest)
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        elseif s_l+1 > d_l
-            for j=rowsupport(dest)
-                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-                end
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
+    @branches for j=rowsupport(dest)
+        for k = max(1,j-d_u):min(j-s_u-1,m)
+            inbands_setindex!(dest, z, k, j)
         end
-    elseif max(-s_u, -d_u) > min(s_l, d_l)
-        if -d_u > -s_u-1
-            for j=rowsupport(dest)
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        elseif s_l+1 > d_l
-            for j=rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
+        for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+            inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
         end
-    elseif s_l+1 > d_l
-        if -d_u > -s_u-1
-            for j=rowsupport(dest)
-                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-                end
-            end
-        elseif max(-s_u, -d_u) > min(s_l, d_l)
-            for j=rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-                for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-                end
-            end
-        end
-    else
-        for j=rowsupport(dest)
-            for k = max(1,j-d_u):min(j-s_u-1,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-            for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-            end
-            for k = max(1,j+s_l+1):min(j+d_l,m)
-                inbands_setindex!(dest, z, k, j)
-            end
+        for k = max(1,j+s_l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
         end
     end
+
     dest
 end
 
@@ -340,90 +380,18 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    if -d_u > -s_u-1 && -s_u > s_l && s_l+1 > d_l
-        return dest
-    elseif -d_u > -s_u-1
-        if -s_u > s_l
-            for j = rowsupport(dest)
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        elseif s_l+1 > d_l
-            for j = rowsupport(dest)
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-                end
-            end
-        else
-            for j = rowsupport(dest)
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-                end
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
+    @branches for j = rowsupport(dest)
+        for k = max(1,j-d_u):min(j-s_u-1,m)
+            inbands_setindex!(dest, z, k, j)
         end
-    elseif -s_u > s_l
-        if -d_u > -s_u-1
-            for j = rowsupport(dest)
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        elseif s_l+1 > d_l
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        else
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
+        for k = max(1,j-s_u):min(j+s_l,m)
+            inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
         end
-    elseif s_l+1 > d_l
-        if -d_u > -s_u-1
-            for j = rowsupport(dest)
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-                end
-            end
-        elseif -s_u > s_l
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        else
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-                end
-            end
-        end
-    else
-        for j = rowsupport(dest)
-            for k = max(1,j-d_u):min(j-s_u-1,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-            for k = max(1,j-s_u):min(j+s_l,m)
-                inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-            end
-            for k = max(1,j+s_l+1):min(j+d_l,m)
-                inbands_setindex!(dest, z, k, j)
-            end
+        for k = max(1,j+s_l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
         end
     end
+
     dest
 end
 
@@ -436,90 +404,18 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    if -d_u > -s_u-1 && -s_u > s_l && s_l+1 > d_l
-        return dest
-    elseif -d_u > -s_u-1
-        if -s_u > s_l
-            for j = rowsupport(dest)
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        elseif s_l+1 > d_l
-            for j = rowsupport(dest)
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-                end
-            end
-        else
-            for j = rowsupport(dest)
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-                end
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
+    @branches for j = rowsupport(dest)
+        for k = max(1,j-d_u):min(j-s_u-1,m)
+            inbands_setindex!(dest, z, k, j)
         end
-    elseif -s_u > s_l
-        if -d_u > -s_u-1
-            for j = rowsupport(dest)
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        elseif s_l+1 > d_l
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        else
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-                for k = max(1,j+s_l+1):min(j+d_l,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
+        for k = max(1,j-s_u):min(j+s_l,m)
+            inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
         end
-    elseif s_l+1 > d_l
-        if -d_u > -s_u-1
-            for j = rowsupport(dest)
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-                end
-            end
-        elseif -s_u > s_l
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-            end
-        else
-            for j = rowsupport(dest)
-                for k = max(1,j-d_u):min(j-s_u-1,m)
-                    inbands_setindex!(dest, z, k, j)
-                end
-                for k = max(1,j-s_u):min(j+s_l,m)
-                    inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-                end
-            end
-        end
-    else
-        for j = rowsupport(dest)
-            for k = max(1,j-d_u):min(j-s_u-1,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-            for k = max(1,j-s_u):min(j+s_l,m)
-                inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-            end
-            for k = max(1,j+s_l+1):min(j+d_l,m)
-                inbands_setindex!(dest, z, k, j)
-            end
+        for k = max(1,j+s_l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
         end
     end
+
     dest
 end
 
@@ -634,28 +530,12 @@ function _left_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == B_l == l && d_u == B_u == u
-        if max(-A_u,-u) > min(A_l,l) && max(-u,A_l+1) > l
-            return dest
-        elseif max(-A_u,-u) > min(A_l,l)
-            for j=rowsupport(dest)
-                for k = max(1,j-u,j+A_l+1):min(j+l,m)
-                    inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
-                end
+        @branches for j=rowsupport(dest)
+            for k = max(1,j+max(-A_u,-u)):min(j+min(A_l,l),m)
+                inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
             end
-        elseif max(-u,A_l+1) > l
-            for j=rowsupport(dest)
-                for k = max(1,j+max(-A_u,-u)):min(j+min(A_l,l),m)
-                    inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j+max(-A_u,-u)):min(j+min(A_l,l),m)
-                    inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
-                end
-                for k = max(1,j+max(-u,A_l+1)):min(j+l,m)
-                    inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
-                end
+            for k = max(1,j+max(-u,A_l+1)):min(j+l,m)
+                inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
             end
         end
     else
@@ -700,28 +580,12 @@ function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == A_l == l && d_u == A_u == u
-        if -min(u,n-1) > min(l,B_l) && max(-u,B_l+1) > l
-            return dest
-        elseif -min(u,n-1) > min(l,B_l)
-            for j=rowsupport(dest)
-                for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                end
+        @branches for j=rowsupport(dest)
+            for k = max(1,j-min(u,n-1)):min(j+min(l,B_l),m)
+                inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
             end
-        elseif max(-u,B_l+1) > l
-            for j=rowsupport(dest)
-                for k = max(1,j-min(u,n-1)):min(j+min(l,B_l),m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j-min(u,n-1)):min(j+min(l,B_l),m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
-                end
-                for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                end
+            for k = max(1,j-u,j+B_l+1):min(j+l,m)
+                inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
             end
         end
     else
@@ -765,28 +629,12 @@ function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == B_l == l && d_u == B_u == u
-        if -u > min(-A_u-1,l) && -min(A_u,u) > l
-            return dest
-        elseif -u > min(-A_u-1,l)
-            for j=rowsupport(dest)
-                for k = max(1,j-min(A_u,u)):min(j+l,m)
-                    inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
-                end
+        @branches for j=rowsupport(dest)
+            for k = max(1,j-u):min(j-A_u-1,j+l,m)
+                inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
             end
-        elseif -min(A_u,u) > l
-            for j=rowsupport(dest)
-                for k = max(1,j-u):min(j-A_u-1,j+l,m)
-                    inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j-u):min(j-A_u-1,j+l,m)
-                    inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
-                end
-                for k = max(1,j-min(A_u,u)):min(j+l,m)
-                    inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
-                end
+            for k = max(1,j-min(A_u,u)):min(j+l,m)
+                inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
             end
         end
     else
@@ -829,28 +677,12 @@ function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == A_l == l && d_u == A_u == u
-        if -u > min(-B_u-1, l) && -min(u,B_u) > l
-            return dest
-        elseif -u > min(-B_u-1, l)
-            for j=rowsupport(dest)
-                for k = max(1,j-min(u,B_u)):min(j+l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                end
+        @branches for j=rowsupport(dest)
+            for k = max(1,j-u):min(j-B_u-1,j+l,m)
+                inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
             end
-        elseif -min(u,B_u) > l
-            for j=rowsupport(dest)
-                for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                end
-            end
-        else
-            for j=rowsupport(dest)
-                for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-                end
-                for k = max(1,j-min(u,B_u)):min(j+l,m)
-                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-                end
+            for k = max(1,j-min(u,B_u)):min(j+l,m)
+                inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
             end
         end
     else
