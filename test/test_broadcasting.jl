@@ -49,6 +49,17 @@ import BandedMatrices: BandedStyle, BandedRows
         end
     end
 
+    function test_empty(f!)
+        # the function f! must not set the RHS to zero for the error check to work
+        @testset "empty dest" begin
+            D = brand(4, 4, -2, 1) # empty
+            B = brand(size(D)...,1,2) # non-empty and non-zero bands
+            @test_throws BandError f!(D, B)
+            f!(D, zero(B))
+            @test all(iszero, D)
+        end
+    end
+
     @testset "identity" begin
         n = 100
         A = brand(n,n,2,2)
@@ -87,6 +98,16 @@ import BandedMatrices: BandedStyle, BandedRows
         B = brand(n,n,1,-1)
         A .= B
         @test A == B
+
+        @testset "empty dest" begin
+            test_empty((D,B) -> D .= B)
+        end
+
+        @testset "adjtrans" begin
+            @testset "empty dest" begin
+                test_empty((D,B) -> D' .= B')
+            end
+        end
     end
 
     @testset "lmul!/rmul!" begin
@@ -187,6 +208,11 @@ import BandedMatrices: BandedStyle, BandedRows
         B .= 2.0 .\ A
         @test B == 2.0 \ A == 2.0 \ Matrix(A)
 
+        @testset "empty dest" begin
+            test_empty((D,B) -> D .= 2 .* B)
+            test_empty((D,B) -> D .= B .* 2)
+        end
+
         @testset "trans-adj" begin
             A = brand(5,5,1,1)
             Ã = copy(A)
@@ -207,6 +233,15 @@ import BandedMatrices: BandedStyle, BandedRows
             @test A == 2Ã
             rmul!(A', 1/2)
             @test A == Ã
+
+            @testset "empty dest" begin
+                test_empty((D,B) -> D' .= 2 .* B')
+                test_empty((D,B) -> D' .= B' .* 2)
+                test_empty((D,B) -> D' .= 2 .* B' .* 2)
+                test_empty((D,B) -> D' .= 2 .* B)
+                test_empty((D,B) -> D' .= B .* 2)
+                test_empty((D,B) -> D' .= 2 .* B .* 2)
+            end
         end
     end
 
@@ -412,7 +447,7 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A .+ B == Matrix(A) + Matrix(B)
     end
 
-    @testset "adjtans" begin
+    @testset "adjtrans" begin
         n = 10
         A = brand(n,n,1,1)
 
