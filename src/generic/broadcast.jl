@@ -386,13 +386,13 @@ end
     end
 end
 
-function _banded_broadcast_loop!(dest, src, f, s_l_s_u, m)
+@inline function _banded_broadcast_loop!(dest, src, f, s_l_s_u, m)
     for j = rowsupport(dest)
         _banded_broadcast_loop_overlap!(dest, src, f, s_l_s_u, m, j)
     end
 end
 
-function _banded_broadcast_loop!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
+@inline function _banded_broadcast_loop!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
     min_su_du = min(s_u, d_u)
     min_sl_dl = min(s_l, d_l)
     for j = rowsupport(dest)
@@ -408,7 +408,7 @@ function _banded_broadcast_loop!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
     end
 end
 
-function _banded_broadcast_loop_checkbandwidths!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
+@inline function _banded_broadcast_loop_checkbandwidths!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
     if d_l == s_l && d_u == s_u
         _banded_broadcast_loop!(dest, src, f, (s_l, s_u), m)
     else
