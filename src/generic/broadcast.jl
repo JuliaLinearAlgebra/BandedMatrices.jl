@@ -396,26 +396,30 @@ end
 # matrix-number broadcast
 ###########
 
-@inline function _banded_broadcast_number!(dest, src, f::F, (s_l, s_u), m) where {F}
+@inline function __banded_broadcast_number!(dest, src, f::F, (min_sl_dl, min_su_du), m, j) where {F}
+    for k = max(1,j-min_su_du):min(j+min_sl_dl,m)
+        src_kj = inbands_getindex(src, k, j)
+        v = f(src_kj)
+        inbands_setindex!(dest, v, k, j)
+    end
+end
+
+@inline function _banded_broadcast_number!(dest, src, f::F, s_l_s_u, m) where {F}
     for j = rowsupport(dest)
-        for k = max(1,j-s_u):min(j+s_l,m)
-            src_kj = inbands_getindex(src, k, j)
-            v = f(src_kj)
-            inbands_setindex!(dest, v, k, j)
-        end
+        __banded_broadcast_number!(dest, src, f, s_l_s_u, m, j)
     end
 end
 
 @inline function _banded_broadcast_number!(dest, src, f::F, z, (s_l, s_u), (d_l, d_u), m) where {F}
+    min_su_du = min(s_u, d_u)
+    min_sl_dl = min(s_l, d_l)
     for j = rowsupport(dest)
         for k = max(1,j-d_u):min(j-s_u-1,m)
             inbands_setindex!(dest, z, k, j)
         end
-        for k = max(1,j-s_u):min(j+s_l,m)
-            src_kj = inbands_getindex(src, k, j)
-            v = f(src_kj)
-            inbands_setindex!(dest, v, k, j)
-        end
+
+        __banded_broadcast_number!(dest, src, f, (min_sl_dl, min_su_du), m, j)
+
         for k = max(1,j+s_l+1):min(j+d_l,m)
             inbands_setindex!(dest, z, k, j)
         end
