@@ -396,8 +396,33 @@ end
 # matrix-number broadcast
 ###########
 
+@inline function _banded_broadcast_number!(dest, src, f::F, (s_l, s_u), m) where {F}
+    for j = rowsupport(dest)
+        for k = max(1,j-s_u):min(j+s_l,m)
+            src_kj = inbands_getindex(src, k, j)
+            v = f(src_kj)
+            inbands_setindex!(dest, v, k, j)
+        end
+    end
+end
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, _1, _2) where T
+@inline function _banded_broadcast_number!(dest, src, f::F, z, (s_l, s_u), (d_l, d_u), m) where {F}
+    for j = rowsupport(dest)
+        for k = max(1,j-d_u):min(j-s_u-1,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+        for k = max(1,j-s_u):min(j+s_l,m)
+            src_kj = inbands_getindex(src, k, j)
+            v = f(src_kj)
+            inbands_setindex!(dest, v, k, j)
+        end
+        for k = max(1,j+s_l+1):min(j+d_l,m)
+            inbands_setindex!(dest, z, k, j)
+        end
+    end
+end
+
+function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, _1, _2) where {T}
     z = f(zero(T), x)
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
     m,n = size(dest)
@@ -407,23 +432,9 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
     if d_l == s_l && d_u == s_u
-        for j = rowsupport(dest)
-            for k = max(1,j-s_u):min(j+s_l,m)
-                inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-            end
-        end
+        _banded_broadcast_number!(dest, src, Base.Fix2(f, x), (s_l, s_u), m)
     else
-        for j = rowsupport(dest)
-            for k = max(1,j-d_u):min(j-s_u-1,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-            for k = max(1,j-s_u):min(j+s_l,m)
-                inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-            end
-            for k = max(1,j+s_l+1):min(j+d_l,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-        end
+        _banded_broadcast_number!(dest, src, Base.Fix2(f, x), z, (s_l, s_u), (d_l, d_u), m)
     end
 
     dest
@@ -439,23 +450,9 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
     if d_l == s_l && d_u == s_u
-        for j = rowsupport(dest)
-            for k = max(1,j-s_u):min(j+s_l,m)
-                inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-            end
-        end
+        _banded_broadcast_number!(dest, src, Base.Fix1(f, x), (s_l, s_u), m)
     else
-        for j = rowsupport(dest)
-            for k = max(1,j-d_u):min(j-s_u-1,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-            for k = max(1,j-s_u):min(j+s_l,m)
-                inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-            end
-            for k = max(1,j+s_l+1):min(j+d_l,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-        end
+        _banded_broadcast_number!(dest, src, Base.Fix1(f, x), z, (s_l, s_u), (d_l, d_u), m)
     end
 
     dest
