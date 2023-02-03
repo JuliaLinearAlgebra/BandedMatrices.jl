@@ -72,6 +72,24 @@ end
 # matrix broadcast
 ###########
 
+#=
+This macro splits loops like
+    for j in 1:n
+        for k in max(1, j + a):min(j+b, m)
+            ex...
+        end
+    end
+
+into various branches, depending on the conditions (e.g. a > b and a <= b).
+This is used as
+    @branches for j in 1:n
+        ...
+
+This can significantly improve performance if the broadcasting operation takes microseconds.
+However, judicious use of this macro is needed, as it can massively increase compilation time
+if the number of inner loops is large (> 3, generally). It's best used with 2-3 inner loops,
+and even in that case benchmarking is recommended.
+=#
 macro branches(ex)
     exsplit = splitloops(ex)
     :($(esc(exsplit)))
@@ -235,15 +253,23 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         end
     end
 
-    @branches for j=rowsupport(dest)
-        for k = max(1,j-d_u):min(j-s_u-1,m)
-            inbands_setindex!(dest, z, k, j)
+    if d_l == s_l && d_u == s_u
+        for j=rowsupport(dest)
+            for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+            end
         end
-        for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-            inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-        end
-        for k = max(1,j+s_l+1):min(j+d_l,m)
-            inbands_setindex!(dest, z, k, j)
+    else
+        for j=rowsupport(dest)
+            for k = max(1,j-d_u):min(j-s_u-1,m)
+                inbands_setindex!(dest, z, k, j)
+            end
+            for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
+                inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
+            end
+            for k = max(1,j+s_l+1):min(j+d_l,m)
+                inbands_setindex!(dest, z, k, j)
+            end
         end
     end
 
@@ -380,15 +406,23 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    @branches for j = rowsupport(dest)
-        for k = max(1,j-d_u):min(j-s_u-1,m)
-            inbands_setindex!(dest, z, k, j)
+    if d_l == s_l && d_u == s_u
+        for j = rowsupport(dest)
+            for k = max(1,j-s_u):min(j+s_l,m)
+                inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
+            end
         end
-        for k = max(1,j-s_u):min(j+s_l,m)
-            inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
-        end
-        for k = max(1,j+s_l+1):min(j+d_l,m)
-            inbands_setindex!(dest, z, k, j)
+    else
+        for j = rowsupport(dest)
+            for k = max(1,j-d_u):min(j-s_u-1,m)
+                inbands_setindex!(dest, z, k, j)
+            end
+            for k = max(1,j-s_u):min(j+s_l,m)
+                inbands_setindex!(dest, f(inbands_getindex(src, k, j), x), k, j)
+            end
+            for k = max(1,j+s_l+1):min(j+d_l,m)
+                inbands_setindex!(dest, z, k, j)
+            end
         end
     end
 
@@ -404,15 +438,23 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    @branches for j = rowsupport(dest)
-        for k = max(1,j-d_u):min(j-s_u-1,m)
-            inbands_setindex!(dest, z, k, j)
+    if d_l == s_l && d_u == s_u
+        for j = rowsupport(dest)
+            for k = max(1,j-s_u):min(j+s_l,m)
+                inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
+            end
         end
-        for k = max(1,j-s_u):min(j+s_l,m)
-            inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
-        end
-        for k = max(1,j+s_l+1):min(j+d_l,m)
-            inbands_setindex!(dest, z, k, j)
+    else
+        for j = rowsupport(dest)
+            for k = max(1,j-d_u):min(j-s_u-1,m)
+                inbands_setindex!(dest, z, k, j)
+            end
+            for k = max(1,j-s_u):min(j+s_l,m)
+                inbands_setindex!(dest, f(x, inbands_getindex(src, k, j)), k, j)
+            end
+            for k = max(1,j+s_l+1):min(j+d_l,m)
+                inbands_setindex!(dest, z, k, j)
+            end
         end
     end
 
@@ -785,7 +827,7 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
     B_l, B_u = bandwidths(B)
     l, u = max(A_l,B_l), max(A_u,B_u)
 
-    for j = 1:n
+    for j = rowsupport(A)
         for k = max(1,j-u) : min(j-d_u-1,m)
             iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,b))
         end
