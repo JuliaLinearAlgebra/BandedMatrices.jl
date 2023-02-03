@@ -426,7 +426,6 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
     f_x = Base.Fix2(f, x)
-
     _banded_broadcast_loop_checkbandwidths!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
@@ -442,39 +441,36 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
     f_x = Base.Fix1(f, x)
-
     _banded_broadcast_loop_checkbandwidths!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
 end
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns, ::BandedColumns) where T
-    z = f(zero(T),x)
-    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
-
+function __banded_broadcast_BandedColumn!(dest, f, src, z)
+    data_d, data_s = bandeddata(dest), bandeddata(src)
+    d_m, d_n = size(data_d)
     l,u = bandwidths(src)
     λ,μ = bandwidths(dest)
     m,n = size(src)
-    data_d,data_s = bandeddata(dest), bandeddata(src)
-    d_m, d_n = size(data_d)
+
     if (l,u) == (λ,μ)
-        data_d .= f.(data_s, x)
+        data_d .= f.(data_s)
     elseif μ > u && λ > l
         fill!(view(data_d,1:min(μ-u,d_m),:), z)
         fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
-        view(data_d,μ-u+1:μ+l+1,:) .= f.(data_s,x)
+        view(data_d,μ-u+1:μ+l+1,:) .= f.(data_s)
     elseif μ > u
         fill!(view(data_d,1:min(μ-u,d_m),:), z)
         for b = λ+1:l
             any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
         end
-        view(data_d,μ-u+1:μ+λ+1,:) .= f.(view(data_s,1:u+λ+1,:),x)
+        view(data_d,μ-u+1:μ+λ+1,:) .= f.(view(data_s,1:u+λ+1,:))
     elseif λ > l
         for b = μ+1:u
             any(!iszero, view(data_s,u-b+1,b+1:n)) && throw(BandError(dest,b))
         end
         fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
-        view(data_d,1:μ+l+1,:) .= f.(view(data_s,u-μ+1:u+l+1,:),x)
+        view(data_d,1:μ+l+1,:) .= f.(view(data_s,u-μ+1:u+l+1,:))
     else # μ < u && λ < l
         for b = μ+1:u
             any(!iszero, view(data_s,u-b+1,b+1:n)) && throw(BandError(dest,b))
@@ -482,8 +478,17 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
         for b = λ+1:l
             any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
         end
-        data_d .= f.(view(data_s,u-μ+1:u+λ+1,:),x)
+        data_d .= f.(view(data_s,u-μ+1:u+λ+1,:))
     end
+    dest
+end
+
+function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns, ::BandedColumns) where T
+    z = f(zero(T),x)
+    iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
+
+    f_x = Base.Fix2(f, x)
+    __banded_broadcast_BandedColumn!(dest, f_x, src, z)
 
     dest
 end
@@ -492,38 +497,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,Abst
     z = f(x, zero(T))
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, x,src)))
 
-    l,u = bandwidths(src)
-    λ,μ = bandwidths(dest)
-    m,n = size(src)
-    data_d,data_s = bandeddata(dest), bandeddata(src)
-    d_m, d_n = size(data_d)
-    if (l,u) == (λ,μ)
-        data_d .= f.(x, data_s)
-    elseif μ > u && λ > l
-        fill!(view(data_d,1:min(μ-u,d_m),:), z)
-        fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
-        view(data_d,μ-u+1:μ+l+1,:) .= f.(x, data_s)
-    elseif μ > u
-        fill!(view(data_d,1:min(μ-u,d_m),:), z)
-        for b = λ+1:l
-            any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
-        end
-        view(data_d,μ-u+1:μ+λ+1,:) .= f.(x, view(data_s,1:u+λ+1,:))
-    elseif λ > l
-        for b = μ+1:u
-            any(!iszero, view(data_s,u-b+1,b+1:n)) && throw(BandError(dest,b))
-        end
-        fill!(view(data_d,μ+l+2:μ+λ+1,:), z)
-        view(data_d,1:μ+l+1,:) .= f.(x, view(data_s,u-μ+1:u+l+1,:))
-    else # μ < u && λ < l
-        for b = μ+1:u
-            any(!iszero, view(data_s,u-b+1,b+1:n)) && throw(BandError(dest,b))
-        end
-        for b = λ+1:l
-            any(!iszero, view(data_s,u+b+1,1:min(m-b,n))) && throw(BandError(dest,b))
-        end
-        data_d .= f.(x, view(data_s,u-μ+1:u+λ+1,:))
-    end
+    f_x = Base.Fix1(f, x)
+    __banded_broadcast_BandedColumn!(dest, f_x, src, z)
 
     dest
 end
