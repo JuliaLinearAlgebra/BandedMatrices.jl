@@ -253,25 +253,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
         end
     end
 
-    if d_l == s_l && d_u == s_u
-        for j=rowsupport(dest)
-            for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-            end
-        end
-    else
-        for j=rowsupport(dest)
-            for k = max(1,j-d_u):min(j-s_u-1,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-            for k = max(1,j-s_u,j-d_u):min(j+s_l,j+d_l,m)
-                inbands_setindex!(dest, f(inbands_getindex(src, k, j)), k, j)
-            end
-            for k = max(1,j+s_l+1):min(j+d_l,m)
-                inbands_setindex!(dest, z, k, j)
-            end
-        end
-    end
+    _banded_broadcast_loop_checkbandwidths!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
 end
@@ -396,7 +378,7 @@ end
 # matrix-number broadcast
 ###########
 
-@inline function __banded_broadcast_number!(dest, src, f::F, (min_sl_dl, min_su_du), m, j) where {F}
+@inline function _banded_broadcast_loop_overlap!(dest, src, f::F, (min_sl_dl, min_su_du), m, j) where {F}
     for k = max(1,j-min_su_du):min(j+min_sl_dl,m)
         src_kj = inbands_getindex(src, k, j)
         v = f(src_kj)
@@ -404,13 +386,13 @@ end
     end
 end
 
-@inline function _banded_broadcast_number!(dest, src, f::F, s_l_s_u, m) where {F}
+function _banded_broadcast_loop!(dest, src, f, s_l_s_u, m)
     for j = rowsupport(dest)
-        __banded_broadcast_number!(dest, src, f, s_l_s_u, m, j)
+        _banded_broadcast_loop_overlap!(dest, src, f, s_l_s_u, m, j)
     end
 end
 
-@inline function _banded_broadcast_number!(dest, src, f::F, z, (s_l, s_u), (d_l, d_u), m) where {F}
+function _banded_broadcast_loop!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
     min_su_du = min(s_u, d_u)
     min_sl_dl = min(s_l, d_l)
     for j = rowsupport(dest)
@@ -418,11 +400,19 @@ end
             inbands_setindex!(dest, z, k, j)
         end
 
-        __banded_broadcast_number!(dest, src, f, (min_sl_dl, min_su_du), m, j)
+        _banded_broadcast_loop_overlap!(dest, src, f, (min_sl_dl, min_su_du), m, j)
 
         for k = max(1,j+s_l+1):min(j+d_l,m)
             inbands_setindex!(dest, z, k, j)
         end
+    end
+end
+
+function _banded_broadcast_loop_checkbandwidths!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
+    if d_l == s_l && d_u == s_u
+        _banded_broadcast_loop!(dest, src, f, (s_l, s_u), m)
+    else
+        _banded_broadcast_loop!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
     end
 end
 
@@ -435,11 +425,9 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    if d_l == s_l && d_u == s_u
-        _banded_broadcast_number!(dest, src, Base.Fix2(f, x), (s_l, s_u), m)
-    else
-        _banded_broadcast_number!(dest, src, Base.Fix2(f, x), z, (s_l, s_u), (d_l, d_u), m)
-    end
+    f_x = Base.Fix2(f, x)
+
+    _banded_broadcast_loop_checkbandwidths!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
 end
@@ -453,11 +441,9 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     s_l, s_u = bandwidths(src)
     (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    if d_l == s_l && d_u == s_u
-        _banded_broadcast_number!(dest, src, Base.Fix1(f, x), (s_l, s_u), m)
-    else
-        _banded_broadcast_number!(dest, src, Base.Fix1(f, x), z, (s_l, s_u), (d_l, d_u), m)
-    end
+    f_x = Base.Fix1(f, x)
+
+    _banded_broadcast_loop_checkbandwidths!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
 end
