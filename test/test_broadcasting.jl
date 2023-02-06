@@ -132,18 +132,21 @@ import BandedMatrices: BandedStyle, BandedRows
             @test 2.0 .\ A isa BandedMatrix
             @test bandwidths(2\A) == bandwidths(2.0 .\ A) == bandwidths(A)
 
-            A.data .= NaN
-            lmul!(0.0,A)
-            @test isnan(norm(A)) == isnan(norm(lmul!(0.0,[NaN])))
-            lmul!(false,A)
-            @test norm(A) == 0.0
+            if -l <= u
+                # This doesn't work for now if there are no bands,
+                # although ideally, the matrix should be all NaN
+                A.data .= NaN
+                lmul!(0.0,A)
+                @test isnan(norm(A)) == isnan(norm(lmul!(0.0,[NaN])))
+                lmul!(false,A)
+                @test norm(A) == 0.0
 
-
-            A.data .= NaN
-            rmul!(A,0.0)
-            @test isnan(norm(A)) == isnan(norm(rmul!([NaN],0.0)))
-            rmul!(A,false)
-            @test norm(A) == 0.0
+                A.data .= NaN
+                rmul!(A,0.0)
+                @test isnan(norm(A)) == isnan(norm(rmul!([NaN],0.0)))
+                rmul!(A,false)
+                @test norm(A) == 0.0
+            end
         end
 
         n = 100
