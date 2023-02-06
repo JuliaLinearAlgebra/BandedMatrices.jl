@@ -6,45 +6,47 @@ import BandedMatrices: BandedStyle, BandedRows
 @testset "broadcasting" begin
     @testset "general" begin
         n = 1000
-        A = brand(n,n,1,1)
-        B = Matrix{Float64}(undef, n,n)
-        B .= exp.(A)
-        @test B == exp.(Matrix(A)) == exp.(A)
+        for (l,u) in ((1,1), (0,0), (1,0), (0,1), (2,-1), (-1,2), (-2,2), (-2,1))
+            A = brand(n,n,l,u)
+            B = Matrix{Float64}(undef, n,n)
+            B .= exp.(A)
+            @test B == exp.(Matrix(A)) == exp.(A)
 
-        @test exp.(A) isa BandedMatrix
-        @test bandwidths(exp.(A)) == (n-1,n-1)
+            @test exp.(A) isa BandedMatrix
+            @test bandwidths(exp.(A)) == (n-1,n-1)
 
-        C = similar(A)
-        @test_throws BandError C .= exp.(A)
+            C = similar(A)
+            @test_throws BandError C .= exp.(A)
 
-        @test identity.(A) == A
-        @test identity.(A) isa BandedMatrix
-        @test bandwidths(identity.(A)) == bandwidths(A)
+            @test identity.(A) == A
+            @test identity.(A) isa BandedMatrix
+            @test bandwidths(identity.(A)) == bandwidths(A)
 
-        @test (z -> exp(z)-1).(A) == (z -> exp(z)-1).(Matrix(A))
-        @test (z -> exp(z)-1).(A) isa BandedMatrix
-        @test bandwidths((z -> exp(z)-1).(A)) == bandwidths(A)
+            @test (z -> exp(z)-1).(A) == (z -> exp(z)-1).(Matrix(A))
+            @test (z -> exp(z)-1).(A) isa BandedMatrix
+            @test bandwidths((z -> exp(z)-1).(A)) == bandwidths(A)
 
-        @test A .+ 1 == Matrix(A) .+ 1
-        @test A .+ 1 isa BandedMatrix
-        @test (A .+ 1) == Matrix(A) .+ 1
+            @test A .+ 1 == Matrix(A) .+ 1
+            @test A .+ 1 isa BandedMatrix
+            @test (A .+ 1) == Matrix(A) .+ 1
 
-        @test A ./ 1 == Matrix(A) ./ 1
-        @test A ./ 1 isa BandedMatrix
-        @test bandwidths(A ./ 1) == bandwidths(A)
+            @test A ./ 1 == Matrix(A) ./ 1
+            @test A ./ 1 isa BandedMatrix
+            @test bandwidths(A ./ 1) == bandwidths(A)
 
-        @test 1 .+ A == 1 .+ Matrix(A)
-        @test 1 .+ A isa BandedMatrix
-        @test (1 .+ A) == 1 .+ Matrix(A)
+            @test 1 .+ A == 1 .+ Matrix(A)
+            @test 1 .+ A isa BandedMatrix
+            @test (1 .+ A) == 1 .+ Matrix(A)
 
-        @test 1 .\ A == 1 .\ Matrix(A)
-        @test 1 .\ A isa BandedMatrix
-        @test bandwidths(1 .\ A) == bandwidths(A)
+            @test 1 .\ A == 1 .\ Matrix(A)
+            @test 1 .\ A isa BandedMatrix
+            @test bandwidths(1 .\ A) == bandwidths(A)
 
-        A = brand(10,1,1,1)
-        @test A[:,1] isa Vector
-        @test norm(A .- A[:,1]) == 0
-        @test A ≈ A[:,1]
+            A = brand(10,1,l,u)
+            @test A[:,1] isa Vector
+            @test norm(A .- A[:,1]) == 0
+            @test A ≈ A[:,1]
+        end
     end
 
     @testset "identity" begin
