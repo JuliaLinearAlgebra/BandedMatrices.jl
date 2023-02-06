@@ -100,6 +100,8 @@ import BandedMatrices: BandedStyle, BandedRows
             @test A-I isa BandedMatrix
             @test I-A isa BandedMatrix
             @test bandwidths(A-I) == bandwidths(I-A)
+            @test A-I == Matrix(A) - I
+            @test I-A == I - Matrix(A)
             if all(>=(0), bandwidths(A))
                 @test bandwidths(A) == bandwidths(A-I)
             end
