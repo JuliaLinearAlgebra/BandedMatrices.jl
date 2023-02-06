@@ -99,8 +99,13 @@ import BandedMatrices: BandedStyle, BandedRows
             @test B == -A == (-).(A)
             @test A-I isa BandedMatrix
             @test I-A isa BandedMatrix
+            @test bandwidths(A-I) == bandwidths(I-A)
             if all(>=(0), bandwidths(A))
-                @test bandwidths(A) == bandwidths(A-I) == bandwidths(I-A)
+                @test bandwidths(A) == bandwidths(A-I)
+            end
+            if (l,u) == (-2,2)
+                @test all(iszero, (A-I)[band(1)])
+                @test all(iszero, (I-A)[band(1)])
             end
 
             B .= 2.0.*A
