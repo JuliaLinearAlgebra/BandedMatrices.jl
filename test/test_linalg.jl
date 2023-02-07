@@ -236,15 +236,36 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         @test_throws DimensionMismatch m \ [1, 2]
     end
 
-    @testset "Banded*Diagonal*Banded" begin
-        A = brand(4,4,1,1)
-        D= Diagonal(randn(4))
-        @test A*D*A isa BandedMatrix
-        @test Matrix(A)*D*Matrix(A) ≈ A*D*A
-        @test D*A' isa BandedMatrix
-        @test A'D isa BandedMatrix
-        @test A'*D*A isa BandedMatrix
-        @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
+    @testset "Banded * Diagonal" begin
+        for (l,u) in ((1,1), (0,0), (-2,1), (-1,1), (1,-1))
+            A = brand(4,4,l,u)
+            D = Diagonal(rand(size(A,2)))
+            AD = A * D
+            @test AD isa BandedMatrix
+            @test AD ≈ Matrix(A) * D
+            DA = D * A
+            @test DA isa BandedMatrix
+            @test DA ≈ D * Matrix(A)
+
+            DAadj = D*A'
+            @test DAadj isa BandedMatrix
+            @test DAadj ≈ D * Matrix(A')
+            AadjD = A'D
+            @test AadjD isa BandedMatrix
+            @test AadjD ≈ Matrix(A') * D
+        end
+    end
+
+    @testset "Banded * Diagonal * Banded" begin
+        for (l,u) in ((1,1), (0,0), (-2,1), (-1,1), (1,-1))
+            A = brand(4,4,l,u)
+            D = Diagonal(rand(size(A,2)))
+            ADA = A * D * A
+            @test ADA isa BandedMatrix
+            @test ADA ≈ Matrix(A)*D*Matrix(A)
+            @test A'*D*A isa BandedMatrix
+            @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
+        end
     end
 
     @testset "muladd! throws error" begin
