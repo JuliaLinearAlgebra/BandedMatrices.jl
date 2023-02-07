@@ -103,20 +103,38 @@ for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     end
 end
 
+function copyto_bandeddata!(B::BandedMatrix, M::AbstractMatrix)
+    copyto_bandeddata!(B, MemoryLayout(B), M, MemoryLayout(M))
+end
+function copyto_bandeddata!(B, ::BandedColumns{DenseColumnMajor},
+        M, ::Union{BandedColumns{DenseColumnMajor}, DiagonalLayout{DenseColumnMajor}})
+    copyto!(B.data, bandeddata(M))
+    return B
+end
+copyto_bandeddata!(B, @nospecialize(_), M, @nospecialize(_)) = copyto!(B, M)
+
+@inline function _convert_common(T, Container, M)
+    B = BandedMatrix{T, Container}(undef, size(M), bandwidths(M))
+    copyto_bandeddata!(B, M)
+end
+
 function convert(::Type{BandedMatrix{<:,C,OneTo{Int}}}, M::AbstractMatrix) where {C}
     Container = typeof(convert(C, similar(M, 0, 0)))
     T = eltype(Container)
-    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
+    _convert_common(T, Container, M)
+end
+
+@inline function _convert_common_container(T, C, M)
+    Container = typeof(convert(C, similar(M, T, 0, 0)))
+    _convert_common(T, Container, M)
 end
 
 function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C}
-    Container = typeof(convert(C, similar(M, T, 0, 0)))
-    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
+    _convert_common_container(T, C, M)
 end
 
 function convert(::Type{BandedMatrix{T,C,OneTo{Int}}}, M::AbstractMatrix) where {T, C<:AbstractMatrix{T}}
-    Container = typeof(convert(C, similar(M, T, 0, 0)))
-    copyto!(BandedMatrix{T, Container}(undef, size(M), bandwidths(M)), M)
+    _convert_common_container(T, C, M)
 end
 
 convert(::Type{BandedMatrix{<:, C}}, M::AbstractMatrix) where {C} = convert(BandedMatrix{<:,C,OneTo{Int}}, M)
@@ -198,9 +216,9 @@ function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Integer}) where T
 end
 
 BandedMatrix{T,C}(A::AbstractMatrix) where {T, C<:AbstractMatrix{T}} =
-    copyto!(BandedMatrix{T, C}(undef, size(A), bandwidths(A)), A)
+    copyto_bandeddata!(BandedMatrix{T, C}(undef, size(A), bandwidths(A)), A)
 BandedMatrix{T}(A::AbstractMatrix) where T =
-    copyto!(BandedMatrix{T}(undef, size(A), bandwidths(A)), A)
+    copyto_bandeddata!(BandedMatrix{T}(undef, size(A), bandwidths(A)), A)
 
 
 _BandedMatrix(_, A::AbstractMatrix) = BandedMatrix(A, bandwidths(A))
@@ -210,6 +228,12 @@ BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 ## specialised
 # use bandeddata if possible
 _BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), axes(A,1), bandwidths(A)...)
+function _BandedMatrix(::DiagonalLayout, A::AbstractMatrix{T}) where T
+    m,n = size(A)
+    dat = Matrix{T}(undef, 1, n)
+    copyto!(vec(dat), diagonaldata(A))
+    _BandedMatrix(dat, m, 0, 0)
+end
 function _BandedMatrix(::BidiagonalLayout, A::AbstractMatrix{T}) where T
     m,n = size(A)
     dat = Matrix{T}(undef, 2, n)

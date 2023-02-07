@@ -26,7 +26,9 @@ isbanded(::Diagonal) = true
 bandwidths(::Diagonal) = (0,0)
 inbands_getindex(D::Diagonal, k::Integer, j::Integer) = D.diag[k]
 inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
-bandeddata(D::Diagonal) = permutedims(D.diag)
+function bandeddata(D::Union{Diagonal, Transpose{<:Any, <:Diagonal}, Adjoint{<:Any,<:Diagonal}})
+    permutedims(diagonaldata(D))
+end
 
 # treat subinds as banded
 sublayout(::DiagonalLayout{L}, inds::Type) where L = sublayout(bandedcolumns(L()), inds)

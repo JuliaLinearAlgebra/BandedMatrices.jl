@@ -1,6 +1,6 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
-                        rowsupport, colsupport, _BandedMatrix, BandedColumns
+                        rowsupport, colsupport, _BandedMatrix, BandedColumns, bandeddata
 import ArrayLayouts: OnesLayout, UnknownLayout
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
@@ -69,6 +69,8 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test A[1,1] == 2
         @test A[1,2] == 0
         @test BandedMatrices.@inbands(A[1,2]) == 2
+
+        @test bandeddata(A) == bandeddata(Adjoint(A)) == bandeddata(Transpose(A)) == diag(A)'
 
         @test MemoryLayout(view(A, 1:3,2:4)) isa BandedColumns{DenseColumnMajor}
         @test MemoryLayout(view(A, [1,2,3],2:4)) isa UnknownLayout
