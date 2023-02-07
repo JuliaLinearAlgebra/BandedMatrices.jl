@@ -1,7 +1,5 @@
-bandwidths(M::MulAdd) = min.(_bnds(M), prodbandwidths(M.A,M.B))
-bandwidths(M::Lmul) = min.(_bnds(M), prodbandwidths(M.A,M.B))
-bandwidths(M::Rmul) = min.(_bnds(M), prodbandwidths(M.A,M.B))
-bandwidths(M::ArrayLayouts.Mul) = min.(_bnds(M), prodbandwidths(M.A,M.B))
+bandwidths(M::Union{MulAdd, Lmul, Rmul, ArrayLayouts.Mul}) = min.(_bnds(M), prodbandwidths(M.A,M.B))
+
 similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
     BandedMatrix{T}(undef, axes, bandwidths(M))
 similar(M::MulAdd{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
