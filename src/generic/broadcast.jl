@@ -704,18 +704,23 @@ _default_banded_broadcast(bc::Broadcasted) = _default_banded_broadcast(bc, axes(
 _banded_broadcast(f, args::Tuple, _...) = _default_banded_broadcast(broadcasted(f, args...))
 _banded_broadcast(f, arg, _...) = _default_banded_broadcast(broadcasted(f, arg))
 
-
 function _banded_broadcast(f, A::AbstractMatrix{T}, ::BandedColumns) where T
     iszero(f(zero(T))) || return _default_banded_broadcast(broadcasted(f, A))
-    _BandedMatrix(f.(bandeddata(A)), axes(A,1), bandwidths(A)...)
+    Bdata = bandeddata(A)
+    Bdata_new = reshape(f.(vec(Bdata)), size(Bdata))
+    _BandedMatrix(Bdata_new, axes(A,1), bandwidths(A)...)
 end
 function _banded_broadcast(f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns) where T
     iszero(f(zero(T),x)) || return _default_banded_broadcast(broadcasted(f, src,x))
-    _BandedMatrix(f.(bandeddata(src),x), axes(src,1), bandwidths(src)...)
+    Bdata = bandeddata(src)
+    Bdata_new = reshape(f.(vec(Bdata), x), size(Bdata))
+    _BandedMatrix(Bdata_new, axes(src,1), bandwidths(src)...)
 end
 function _banded_broadcast(f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::BandedColumns) where T
     iszero(f(x, zero(T))) || return _default_banded_broadcast(broadcasted(f, x,src))
-    _BandedMatrix(f.(x, bandeddata(src)), axes(src,1), bandwidths(src)...)
+    Bdata = bandeddata(src)
+    Bdata_new = reshape(f.(x, vec(Bdata)), size(Bdata))
+    _BandedMatrix(Bdata_new, axes(src,1), bandwidths(src)...)
 end
 
 function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
