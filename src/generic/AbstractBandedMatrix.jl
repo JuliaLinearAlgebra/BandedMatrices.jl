@@ -97,6 +97,7 @@ returns true if a matrix implements the banded interface.
 """
 isbanded(A) = isbanded(MemoryLayout(A), A)
 isbanded(::AbstractBandedLayout, A) = true
+isbanded(@nospecialize(::Any), @nospecialize(::Any)) = false
 
 # override bandwidth(A,k) for each AbstractBandedMatrix
 # override inbands_getindex(A,k,j)

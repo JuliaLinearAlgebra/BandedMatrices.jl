@@ -122,6 +122,10 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test BandedMatrix(U) == U
     end
 
+    @testset "!Array" begin
+        @test !BandedMatrices.isbanded(zeros(0,0))
+    end
+
     A = PseudoBandedMatrix(rand(5, 4), 2, 2)
     B = rand(5, 4)
     C = copy(B)
