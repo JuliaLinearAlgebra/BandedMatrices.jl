@@ -40,11 +40,7 @@ banded_gbmv!(tA, α, A, x, β, y) =
     return y
 end
 
-
-
-
-
-function _banded_muladd!(α::T, A, x::AbstractVector, β, y) where T
+function _banded_muladd!(α, A, x::AbstractVector, β, y)
     m, n = size(A)
     (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
@@ -57,7 +53,7 @@ function _banded_muladd!(α::T, A, x::AbstractVector, β, y) where T
     elseif u < 0 # with -l <= u < 0, that is, all bands lie below the diagnoal.
         # E.g. (l,u) = (2,-1)
         # set lview = l + u >= 0 and uview = 0
-        y[1:-u] .= zero(T)
+        y[1:-u] .= zero(eltype(y))
         _banded_gbmv!('N', α, view(A, 1-u:m, :), x, β, view(y, 1-u:m))
         y
     else
@@ -68,42 +64,31 @@ end
 materialize!(M::BlasMatMulVecAdd{<:BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat =
     _banded_muladd!(M.α, M.A, M.B, M.β, M.C)
 
+function _banded_muladd_row!(tA, α, At, x, β, y)
+    n, m = size(At)
+    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
+    u, l = bandwidths(At)
+    if -l > u # no bands
+        _fill_lmul!(β, y)
+    elseif l < 0
+        _banded_gbmv!(tA, α, view(At, 1-l:n, :,), view(x, 1-l:n), β, y)
+    elseif u < 0
+        y[1:-u] .= zero(eltype(y))
+        _banded_gbmv!(tA, α, view(At, :, 1-u:m), x, β, view(y, 1-u:m))
+        y
+    else
+        _banded_gbmv!(tA, α, At, x, β, y)
+    end
+end
+
 function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
-    At = transpose(A)
-    m, n = size(A)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
-    l, u = bandwidths(A)
-    if -l > u # no bands
-      _fill_lmul!(β, y)
-    elseif l < 0
-      materialize!(MulAdd(α, transpose(view(At, 1-l:n, :,)), view(x, 1-l:n), β, y))
-    elseif u < 0
-      y[1:-u] .= zero(T)
-      materialize!(MulAdd(α, transpose(view(At, :, 1-u:m)), x, β, view(y, 1-u:m)))
-      y
-    else
-      _banded_gbmv!('T', α, At, x, β, y)
-    end
+    _banded_muladd_row!('T', α, transpose(A), x, β, y)
 end
 
 function materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:BandedRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasComplex
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
-    Ac = A'
-    m, n = size(A)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
-    l, u = bandwidths(A)
-    if -l > u # no bands
-        _fill_lmul!(β, y)
-    elseif l < 0
-        materialize!(MulAdd(α, view(Ac, 1-l:n, :,)', view(x, 1-l:n), β, y))
-    elseif u < 0
-        y[1:-u] .= zero(T)
-        materialize!(MulAdd(α, view(Ac, :, 1-u:m)', x, β, view(y, 1-u:m)))
-        y
-    else
-    _banded_gbmv!('C', α, Ac, x, β, y)
-    end
+    _banded_muladd_row!('C', α, A', x, β, y)
 end
 
 
