@@ -8,10 +8,6 @@ BandedMatrix
 ```
 
 ```@docs
-bones
-```
-
-```@docs
 brand
 ```
 
