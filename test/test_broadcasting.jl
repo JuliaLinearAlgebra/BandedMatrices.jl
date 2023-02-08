@@ -412,7 +412,7 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A .+ B == Matrix(A) + Matrix(B)
     end
 
-    @testset "adjtans" begin
+    @testset "adjtrans" begin
         n = 10
         A = brand(n,n,1,1)
 
@@ -429,48 +429,70 @@ import BandedMatrices: BandedStyle, BandedRows
         A = brand(n,n,1,2)
         b = randn(n)
 
-        @test b .* A == b .* Matrix(A)
-        @test b .* A isa BandedMatrix
-        @test bandwidths(b .* A) == bandwidths(A)
-        @test A .* b == Matrix(A) .* b
-        @test A .* b isa BandedMatrix
-        @test bandwidths(A .* b) == bandwidths(A)
-        @test b .\ A == b .\ Matrix(A)
-        @test b .\ A isa BandedMatrix
-        @test bandwidths(b .\ A) == bandwidths(A)
-        @test A ./ b == Matrix(A) ./ b
-        @test A ./ b isa BandedMatrix
-        @test bandwidths(A ./ b) == bandwidths(A)
+        @testset "implicit dest" begin
+            @test b .* A == b .* Matrix(A)
+            @test b .* A isa BandedMatrix
+            @test bandwidths(b .* A) == bandwidths(A)
+            @test A .* b == Matrix(A) .* b
+            @test A .* b isa BandedMatrix
+            @test bandwidths(A .* b) == bandwidths(A)
+            @test b .\ A == b .\ Matrix(A)
+            @test b .\ A isa BandedMatrix
+            @test bandwidths(b .\ A) == bandwidths(A)
+            @test A ./ b == Matrix(A) ./ b
+            @test A ./ b isa BandedMatrix
+            @test bandwidths(A ./ b) == bandwidths(A)
 
-        @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
-        @test isinf((b ./ A)[4,1])
-        @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
-        @test isinf((A .\ b)[4,1])
+            @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
+            @test isinf((b ./ A)[4,1])
+            @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
+            @test isinf((A .\ b)[4,1])
 
 
-        @test A .* b == Matrix(A) .* b
-        @test bandwidths(A .* b) == bandwidths(A)
-        @test A ./ b == Matrix(A) ./ b
-        @test bandwidths(A ./ b) == bandwidths(A)
-        @test isinf((A .\ b)[4,1])
+            @test A .* b == Matrix(A) .* b
+            @test bandwidths(A .* b) == bandwidths(A)
+            @test A ./ b == Matrix(A) ./ b
+            @test bandwidths(A ./ b) == bandwidths(A)
+            @test isinf((A .\ b)[4,1])
 
-        @test reshape(b,10,1) .* A isa BandedMatrix
-        @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
-        @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
-        @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
+            @test reshape(b,10,1) .* A isa BandedMatrix
+            @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
+            @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
+            @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
 
-        @test b .+ A == b .+ Matrix(A) == A .+ b
+            @test b .+ A == b .+ Matrix(A) == A .+ b
 
-        @test bandwidths(broadcasted(+, A, b')) == (9,9)
-        @test A .+ b' == b' .+ A == Matrix(A) .+ b'
-        @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
-        @test A .* b' == b' .* A == Matrix(A) .* b'
-        @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
+            @test bandwidths(broadcasted(+, A, b')) == (9,9)
+            @test A .+ b' == b' .+ A == Matrix(A) .+ b'
+            @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
+            @test A .* b' == b' .* A == Matrix(A) .* b'
+            @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
 
-        @testset "nested broadcast" begin
-            @test bandwidths((b ./ 2) .* A) == (1,2)
-            @test (b ./ 2) .* A == (b ./ 2) .* Matrix(A)
+            @testset "nested broadcast" begin
+                @test bandwidths((b ./ 2) .* A) == (1,2)
+                @test (b ./ 2) .* A == (b ./ 2) .* Matrix(A)
+            end
         end
+
+        @testset "explicit dest" begin
+            D = brand(size(A)..., (bandwidths(A) .+ 1)...)
+            D .= 0
+
+            for (A_, D_) in ((A,D), (A', D'))
+                D_ .= b .* A_
+                @test D_ == b .* A_
+
+                D_ .= b' .* A_
+                @test D_ == b' .* A_
+
+                D_ .= A_ .* b
+                @test D_ == A_ .* b
+
+                D_ .= A_ .* b'
+                @test D_ == A_ .* b'
+            end
+        end
+
     end
 
     @testset "views" begin
