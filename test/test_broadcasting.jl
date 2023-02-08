@@ -430,29 +430,30 @@ import BandedMatrices: BandedStyle, BandedRows
         b = randn(n)
 
         @testset "implicit dest" begin
-            @test b .* A == b .* Matrix(A)
-            @test b .* A isa BandedMatrix
-            @test bandwidths(b .* A) == bandwidths(A)
-            @test A .* b == Matrix(A) .* b
-            @test A .* b isa BandedMatrix
-            @test bandwidths(A .* b) == bandwidths(A)
-            @test b .\ A == b .\ Matrix(A)
-            @test b .\ A isa BandedMatrix
-            @test bandwidths(b .\ A) == bandwidths(A)
-            @test A ./ b == Matrix(A) ./ b
-            @test A ./ b isa BandedMatrix
-            @test bandwidths(A ./ b) == bandwidths(A)
+            for A_ in (A, A'), b_ in (b, BandedMatrix(b')')
+                @test b_ .* A_ == b_ .* Matrix(A_)
+                @test b_ .* A_ isa BandedMatrix
+                @test bandwidths(b_ .* A_) == bandwidths(A_)
+                @test b_' .* A_ == b_' .* Matrix(A_)
+                @test b_' .* A_ isa BandedMatrix
+                @test bandwidths(b_' .* A_) == bandwidths(A_)
+                @test A_ .* b_ == Matrix(A_) .* b_
+                @test A_ .* b_ isa BandedMatrix
+                @test bandwidths(A_ .* b_) == bandwidths(A_)
+                @test A_ .* b_' == Matrix(A_) .* b_'
+                @test A_ .* b_' isa BandedMatrix
+                @test bandwidths(A_ .* b_') == bandwidths(A_)
+                @test b_ .\ A_ == b_ .\ Matrix(A_)
+                @test b_ .\ A_ isa BandedMatrix
+                @test bandwidths(b_ .\ A_) == bandwidths(A_)
+                @test A_ ./ b_ == Matrix(A_) ./ b_
+                @test A_ ./ b_ isa BandedMatrix
+                @test bandwidths(A_ ./ b_) == bandwidths(A_)
+            end
 
             @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
             @test isinf((b ./ A)[4,1])
             @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
-            @test isinf((A .\ b)[4,1])
-
-
-            @test A .* b == Matrix(A) .* b
-            @test bandwidths(A .* b) == bandwidths(A)
-            @test A ./ b == Matrix(A) ./ b
-            @test bandwidths(A ./ b) == bandwidths(A)
             @test isinf((A .\ b)[4,1])
 
             @test reshape(b,10,1) .* A isa BandedMatrix
@@ -465,8 +466,6 @@ import BandedMatrices: BandedStyle, BandedRows
             @test bandwidths(broadcasted(+, A, b')) == (9,9)
             @test A .+ b' == b' .+ A == Matrix(A) .+ b'
             @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
-            @test A .* b' == b' .* A == Matrix(A) .* b'
-            @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
 
             @testset "nested broadcast" begin
                 @test bandwidths((b ./ 2) .* A) == (1,2)
@@ -478,21 +477,20 @@ import BandedMatrices: BandedStyle, BandedRows
             D = brand(size(A)..., (bandwidths(A) .+ 1)...)
             D .= 0
 
-            for (A_, D_) in ((A,D), (A', D'))
-                D_ .= b .* A_
-                @test D_ == b .* A_
+            for (A_, D_) in ((A,D), (A', D')), b_ in (b, BandedMatrix(b')')
+                D_ .= b_ .* A_
+                @test D_ == b_ .* A_
 
-                D_ .= b' .* A_
-                @test D_ == b' .* A_
+                D_ .= b_' .* A_
+                @test D_ == b_' .* A_
 
-                D_ .= A_ .* b
-                @test D_ == A_ .* b
+                D_ .= A_ .* b_
+                @test D_ == A_ .* b_
 
-                D_ .= A_ .* b'
-                @test D_ == A_ .* b'
+                D_ .= A_ .* b_'
+                @test D_ == A_ .* b_'
             end
         end
-
     end
 
     @testset "views" begin

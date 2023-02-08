@@ -473,6 +473,27 @@ function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
     dest
 end
 
+function __left_rowvec_banded_broadcast!(dest, f, (A,B),
+        ::BandedColumns, ::Tuple{DualLayout{ArrayLayouts.DenseRowMajor}, BandedColumns},
+        (l, u), (A_l,A_u), (m,n))
+
+    D = bandeddata(dest)
+    Bd = bandeddata(B)
+    D .= f.(A, Bd)
+    return nothing
+end
+
+function __left_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2, (l, u), (A_l,A_u), (m,n))
+    for j=rowsupport(dest)
+        for k = max(1,j-u):min(j-A_u-1,j+l,m)
+            inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+        end
+        for k = max(1,j-min(A_u,u)):min(j+l,m)
+            inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
+        end
+    end
+end
+
 function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
     @assert size(A,1) == 1
     z = f(zero(T), zero(V))
@@ -488,14 +509,8 @@ function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == B_l == l && d_u == B_u == u
-        for j=rowsupport(dest)
-            for k = max(1,j-u):min(j-A_u-1,j+l,m)
-                inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
-            end
-            for k = max(1,j-min(A_u,u)):min(j+l,m)
-                inbands_setindex!(dest, f(A[j], inbands_getindex(B, k, j)), k, j)
-            end
-        end
+        __left_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2,
+                (l, u), (A_l,A_u), (m,n))
     else
         for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-u-1,m)
@@ -521,6 +536,27 @@ function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
     dest
 end
 
+function __right_rowvec_banded_broadcast!(dest, f, (A,B),
+        ::BandedColumns, ::Tuple{BandedColumns, DualLayout{ArrayLayouts.DenseRowMajor}},
+        (l, u), (B_l,B_u), (m,n))
+
+    D = bandeddata(dest)
+    Ad = bandeddata(A)
+    D .= f.(Ad, B)
+    return nothing
+end
+
+function __right_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2, (l, u), (B_l,B_u), (m,n))
+    for j=rowsupport(dest)
+        for k = max(1,j-u):min(j-B_u-1,j+l,m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+        end
+        for k = max(1,j-min(u,B_u)):min(j+l,m)
+            inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
+        end
+    end
+end
+
 function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
     @assert size(B,1) == 1
     z = f(zero(T), zero(V))
@@ -536,14 +572,8 @@ function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == A_l == l && d_u == A_u == u
-        for j=rowsupport(dest)
-            for k = max(1,j-u):min(j-B_u-1,j+l,m)
-                inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
-            end
-            for k = max(1,j-min(u,B_u)):min(j+l,m)
-                inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[j]), k, j)
-            end
-        end
+        __right_rowvec_banded_broadcast!(dest, f, (A,B), _1, _2,
+                (l, u), (B_l,B_u), (m,n))
     else
         for j=rowsupport(dest)
             for k = max(1,j-d_u):min(j-u-1,m)
