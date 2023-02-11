@@ -35,6 +35,8 @@ Base.iterate(S::BandedLU, ::Val{:done}) = nothing
 if !(isdefined(LinearAlgebra, :AdjointFactorization)) # VERSION < v"1.10-"
     adjoint(F::BandedLU) = Adjoint(F)
     transpose(F::BandedLU) = Transpose(F)
+else # overwrite fallback for transpose, use fallback for adjoint
+    transpose(F::BandedLU) = LinearAlgebra.TransposeFactorization(F)
 end
 
 lu(S::BandedLU) = S
