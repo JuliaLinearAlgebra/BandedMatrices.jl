@@ -40,6 +40,12 @@ import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_valu
 
 const libblas = Base.libblas_name
 const liblapack = Base.liblapack_name
+const AdjointFact = isdefined(LinearAlgebra, :AdjointFactorization) ?
+    LinearAlgebra.AdjointFactorization :
+    Adjoint
+const TransposeFact = isdefined(LinearAlgebra, :TransposeFactorization) ?
+    LinearAlgebra.TransposeFactorization :
+    Transpose
 
 export BandedMatrix,
        bandrange,

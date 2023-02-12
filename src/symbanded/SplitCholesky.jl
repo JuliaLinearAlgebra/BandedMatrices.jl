@@ -45,7 +45,13 @@ function splitcholesky!(::SymmetricLayout{<:BandedColumnMajor},
     SplitCholesky(A, A.uplo)
 end
 
-adjoint(S::SplitCholesky) = Adjoint(S)
+if !(isdefined(LinearAlgebra, :AdjointFactorization)) # VERSION < v"1.10-"
+    adjoint(S::SplitCholesky) = Adjoint(S)
+else
+    transpose(S::SplitCholesky{<:Real}) = S'
+    transpose(::SplitCholesky) =
+        throw(ArgumentError("transpose of SplitCholesky decomposition is not supported, consider using adjoint"))
+end
 
 function lmul!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
@@ -103,7 +109,7 @@ function ldiv!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where
     B
 end
 
-function lmul!(S::Adjoint{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function lmul!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -138,7 +144,7 @@ function lmul!(S::Adjoint{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMa
     B
 end
 
-function ldiv!(S::Adjoint{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function ldiv!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
