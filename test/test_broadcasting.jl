@@ -412,7 +412,7 @@ import BandedMatrices: BandedStyle, BandedRows
         @test A .+ B == Matrix(A) + Matrix(B)
     end
 
-    @testset "adjtans" begin
+    @testset "adjtrans" begin
         n = 10
         A = brand(n,n,1,1)
 
@@ -427,49 +427,76 @@ import BandedMatrices: BandedStyle, BandedRows
     @testset "vector and matrix broadcastring" begin
         n = 10
         A = brand(n,n,1,2)
-        b = randn(n)
+        b = rand(n) .+ 0.1 # avoid zero
+        Bb = BandedMatrix(b')'
+        Bb2 = BandedMatrix(b', (0,3))'
 
-        @test b .* A == b .* Matrix(A)
-        @test b .* A isa BandedMatrix
-        @test bandwidths(b .* A) == bandwidths(A)
-        @test A .* b == Matrix(A) .* b
-        @test A .* b isa BandedMatrix
-        @test bandwidths(A .* b) == bandwidths(A)
-        @test b .\ A == b .\ Matrix(A)
-        @test b .\ A isa BandedMatrix
-        @test bandwidths(b .\ A) == bandwidths(A)
-        @test A ./ b == Matrix(A) ./ b
-        @test A ./ b isa BandedMatrix
-        @test bandwidths(A ./ b) == bandwidths(A)
+        @testset "implicit dest" begin
+            for A_ in (A, A'), b_ in (b, Bb, Bb2)
+                @test b_ .* A_ == b_ .* Matrix(A_)
+                @test b_ .* A_ isa BandedMatrix
+                @test bandwidths(b_ .* A_) == bandwidths(A_)
+                @test b_' .* A_ == b_' .* Matrix(A_)
+                @test b_' .* A_ isa BandedMatrix
+                @test bandwidths(b_' .* A_) == bandwidths(A_)
+                @test A_ .* b_ == Matrix(A_) .* b_
+                @test A_ .* b_ isa BandedMatrix
+                @test bandwidths(A_ .* b_) == bandwidths(A_)
+                @test A_ .* b_' == Matrix(A_) .* b_'
+                @test A_ .* b_' isa BandedMatrix
+                @test bandwidths(A_ .* b_') == bandwidths(A_)
+            end
 
-        @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
-        @test isinf((b ./ A)[4,1])
-        @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
-        @test isinf((A .\ b)[4,1])
+            # division tests currently don't deal with Inf/NaN correctly,
+            # so we don't divide by zero
+            for A_ in (A, A'), b_ in (b, Bb)
+                @test b_ .\ A_ == b_ .\ Matrix(A_)
+                @test b_ .\ A_ isa BandedMatrix
+                @test bandwidths(b_ .\ A_) == bandwidths(A_)
+                @test A_ ./ b_ == Matrix(A_) ./ b_
+                @test A_ ./ b_ isa BandedMatrix
+                @test bandwidths(A_ ./ b_) == bandwidths(A_)
+            end
 
+            @test bandwidths(Broadcast.broadcasted(/, b, A)) == (9,9)
+            @test isinf((b ./ A)[4,1])
+            @test bandwidths(Broadcast.broadcasted(\, A,b)) == (9,9)
+            @test isinf((A .\ b)[4,1])
 
-        @test A .* b == Matrix(A) .* b
-        @test bandwidths(A .* b) == bandwidths(A)
-        @test A ./ b == Matrix(A) ./ b
-        @test bandwidths(A ./ b) == bandwidths(A)
-        @test isinf((A .\ b)[4,1])
+            @test reshape(b,10,1) .* A isa BandedMatrix
+            @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
+            @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
+            @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
 
-        @test reshape(b,10,1) .* A isa BandedMatrix
-        @test reshape(b,10,1) .* A == A .* reshape(b,10,1) == A .* b
-        @test bandwidths(reshape(b,10,1) .* A) == bandwidths(A)
-        @test bandwidths(A .* reshape(b,10,1)) == bandwidths(A)
+            @test b .+ A == b .+ Matrix(A) == A .+ b
 
-        @test b .+ A == b .+ Matrix(A) == A .+ b
+            @test bandwidths(broadcasted(+, A, b')) == (9,9)
+            @test A .+ b' == b' .+ A == Matrix(A) .+ b'
+            @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
 
-        @test bandwidths(broadcasted(+, A, b')) == (9,9)
-        @test A .+ b' == b' .+ A == Matrix(A) .+ b'
-        @test bandwidths(A .+ b') == bandwidths(b' .+ A)  == (9,9)
-        @test A .* b' == b' .* A == Matrix(A) .* b'
-        @test bandwidths(A .* b') == bandwidths(b' .* A) == bandwidths(A)
+            @testset "nested broadcast" begin
+                @test bandwidths((b ./ 2) .* A) == (1,2)
+                @test (b ./ 2) .* A == (b ./ 2) .* Matrix(A)
+            end
+        end
 
-        @testset "nested broadcast" begin
-            @test bandwidths((b ./ 2) .* A) == (1,2)
-            @test (b ./ 2) .* A == (b ./ 2) .* Matrix(A)
+        @testset "explicit dest" begin
+            D = brand(size(A)..., (bandwidths(A) .+ 1)...)
+            D .= 0
+
+            for (A_, D_) in ((A,D), (A', D')), b_ in (b, Bb, Bb2)
+                D_ .= b_ .* A_
+                @test D_ == b_ .* A_
+
+                D_ .= b_' .* A_
+                @test D_ == b_' .* A_
+
+                D_ .= A_ .* b_
+                @test D_ == A_ .* b_
+
+                D_ .= A_ .* b_'
+                @test D_ == A_ .* b_'
+            end
         end
     end
 
