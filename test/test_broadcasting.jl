@@ -427,12 +427,13 @@ import BandedMatrices: BandedStyle, BandedRows
     @testset "vector and matrix broadcastring" begin
         n = 10
         A = brand(n,n,1,2)
+        A2 = brand(n,n,0,0)
         b = rand(n) .+ 0.1 # avoid zero
         Bb = BandedMatrix(b')'
         Bb2 = BandedMatrix(b', (0,3))'
 
         @testset "implicit dest" begin
-            for A_ in (A, A'), b_ in (b, Bb, Bb2)
+            for A_ in (A, A', A2, A2'), b_ in (b, Bb, Bb2)
                 @test b_ .* A_ == b_ .* Matrix(A_)
                 @test b_ .* A_ isa BandedMatrix
                 @test bandwidths(b_ .* A_) == bandwidths(A_)
@@ -449,7 +450,7 @@ import BandedMatrices: BandedStyle, BandedRows
 
             # division tests currently don't deal with Inf/NaN correctly,
             # so we don't divide by zero
-            for A_ in (A, A'), b_ in (b, Bb)
+            for A_ in (A, A', A2, A2'), b_ in (b, Bb)
                 @test b_ .\ A_ == b_ .\ Matrix(A_)
                 @test b_ .\ A_ isa BandedMatrix
                 @test bandwidths(b_ .\ A_) == bandwidths(A_)
