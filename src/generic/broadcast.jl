@@ -975,7 +975,7 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
     l = min(Xl,Yl)
     u = min(Xu,Yu)
 
-    @inbounds for j=rowsupport(X),k=max(1,j-u):min(n,j+l)
+    @inbounds for j=rowsupport(X), k=max(1,j-u):min(n,j+l)
         inbands_setindex!(Y, a*inbands_getindex(X,k,j) + inbands_getindex(Y,k,j) ,k, j)
     end
     Y
@@ -985,7 +985,7 @@ function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
     if size(X) != size(Y)
         throw(DimensionMismatch("+"))
     end
-    @inbounds for j=1:size(X,2),k=colrange(X,j)
+    @inbounds for j=rowsupport(X), k=colrange(X,j)
         Y[k,j] += a*inbands_getindex(X,k,j)
     end
     Y
