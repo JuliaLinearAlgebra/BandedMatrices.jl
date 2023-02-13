@@ -479,7 +479,13 @@ function __left_rowvec_banded_broadcast!(dest, f, (A,B),
 
     D = bandeddata(dest)
     Bd = bandeddata(B)
-    D .= f.(A, Bd)
+    if size(D,1) == size(Bd, 1) == size(A,1) == 1
+        # performance enhancement
+        # might not be necessary in the future if the other branch is equally fast
+        broadcast!(f, vec(D), vec(A), vec(Bd))
+    else
+        D .= f.(A, Bd)
+    end
     return nothing
 end
 
@@ -542,7 +548,13 @@ function __right_rowvec_banded_broadcast!(dest, f, (A,B),
 
     D = bandeddata(dest)
     Ad = bandeddata(A)
-    D .= f.(Ad, B)
+    if size(D,1) == size(Ad, 1) == size(B,1) == 1
+        # performance enhancement
+        # might not be necessary in the future if the other branch is equally fast
+        broadcast!(f, vec(D), vec(Ad), vec(B))
+    else
+        D .= f.(Ad, B)
+    end
     return nothing
 end
 
@@ -808,29 +820,6 @@ end
 
 function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}})
     _banded_broadcast(bc.f, bc.args, MemoryLayout.(typeof.(bc.args)))
-end
-
-###
-# Special cases
-###
-
-#=
-    B::BandedMatrix * D::Diagonal for DenseColumnMajor storage may be evaluated as
-    B.data .* D.diag', instead of B .* D.diag'
-=#
-function copy(M::Rmul{BandedColumns{DenseColumnMajor}, DiagonalLayout{DenseColumnMajor}})
-    B, D = M.A, M.B
-    d = diagonaldata(D)
-    Bd = bandeddata(B)
-    Bdata = if size(Bd, 1) == 1
-                # performance optimization
-                # may not be necessary in the future if the other branch
-                # is equally fast
-                reshape(vec(Bd) .* d, 1, :)
-            else
-                Bd .* d'
-            end
-    _BandedMatrix(Bdata, size(B,1), bandwidths(B)...)
 end
 
 ###
