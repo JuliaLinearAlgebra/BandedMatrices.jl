@@ -78,7 +78,7 @@ function checkzerobands(dest, f, A::AbstractMatrix)
     l, u = bandwidths(A)
 
     if (l,u) ≠ (d_l,d_u)
-        for j = 1:n
+        for j = rowsupport(A)
             for k = max(1,j-u) : min(j-d_u-1,m)
                 iszero(f(A[k,j])) || throw(BandError(dest,j-k))
             end
