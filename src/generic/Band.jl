@@ -73,7 +73,7 @@ BandError(A::AbstractMatrix) = BandError(A, max(size(A)...)-1)
 
 function showerror(io::IO, e::BandError)
     A, i = e.A, e.i
-    print(io, "attempt to access $(typeof(A)) with bandwidths " *
+    print(io, "BandError: attempt to access $(typeof(A)) with bandwidths " *
               "($(bandwidth(A, 1)), $(bandwidth(A, 2))) at band $i")
 end
 

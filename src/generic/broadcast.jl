@@ -78,7 +78,7 @@ function checkzerobands(dest, f, A::AbstractMatrix)
     l, u = bandwidths(A)
 
     if (l,u) ≠ (d_l,d_u)
-        for j = 1:n
+        for j = rowsupport(A)
             for k = max(1,j-u) : min(j-d_u-1,m)
                 iszero(f(A[k,j])) || throw(BandError(dest,j-k))
             end
@@ -93,21 +93,12 @@ function _banded_broadcast!(dest::AbstractMatrix, f, src::AbstractMatrix{T}, _1,
     z = f(zero(T))
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src)))
     m,n = size(dest)
+    m == n == 0 && return dest
 
     d_l, d_u = bandwidths(dest)
     s_l, s_u = bandwidths(src)
-    if d_l < min(s_l,m-1)
-        # check zeros
-        for j = 1:n, k = max(1,j+d_l+1):min(j+s_l,j+d_l,m)
-            iszero(f(inbands_getindex(src, k, j))) || throw(BandError(dest))
-        end
-    end
-    if d_u < min(s_u,n-1)
-        # check zeros
-        for j = 1:n, k = max(1,j-d_u,j-s_u):min(j-d_u-1,m)
-            iszero(f(inbands_getindex(src, k, j))) || throw(BandError(dest))
-        end
-    end
+
+    checkzerobands(dest, f, src)
 
     _banded_broadcast_anylayout!(dest, src, f, z, (s_l, s_u), (d_l, d_u), m)
 
@@ -252,13 +243,15 @@ end
     min_su_du = min(s_u, d_u)
     min_sl_dl = min(s_l, d_l)
     for j = rowsupport(dest)
-        for k = max(1,j-d_u):min(j-s_u-1,m)
+        # if s_u < d_u, set extra bands in dest above the diagonal to zero
+        for k = max(1,j-d_u):min(j+min(d_l, -(s_u+1)),m)
             inbands_setindex!(dest, z, k, j)
         end
 
         _banded_broadcast_loop_overlap!(dest, src, f, (min_sl_dl, min_su_du), m, j)
 
-        for k = max(1,j+s_l+1):min(j+d_l,m)
+        # if s_l < d_l, set extra bands in dest below the diagonal to zero
+        for k = max(1,j+max(s_l+1, -d_u)):min(j+d_l,m)
             inbands_setindex!(dest, z, k, j)
         end
     end
@@ -276,12 +269,17 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
     z = f(zero(T), x)
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
     m,n = size(dest)
+    m == n == 0 && return dest
+
+    f_x = Base.Fix2(f, x)
+
+    # if dest has fewer bands (either above or below the diagonal) than dest,
+    # then f.(x, dest) must be zero in these bands
+    checkzerobands(dest, f_x, src)
 
     d_l, d_u = bandwidths(dest)
     s_l, s_u = bandwidths(src)
-    (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    f_x = Base.Fix2(f, x)
     _banded_broadcast_anylayout!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
@@ -291,12 +289,19 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     z = f(x, zero(T))
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, x,src)))
     m,n = size(dest)
+    m == n == 0 && return dest
+
+    f_x = Base.Fix1(f, x)
+
+    # if dest has fewer bands (either above or below the diagonal) than dest,
+    # then f.(x, src) must be zero in these bands
+    checkzerobands(dest, f_x, src)
 
     d_l, d_u = bandwidths(dest)
     s_l, s_u = bandwidths(src)
-    (d_l ≥ min(s_l,m-1) && d_u ≥ min(s_u,n-1)) || throw(BandError(dest))
 
-    f_x = Base.Fix1(f, x)
+    checkzerobands(dest, f, src)
+
     _banded_broadcast_anylayout!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
