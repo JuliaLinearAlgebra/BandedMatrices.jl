@@ -951,27 +951,36 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
     Xl, Xu = bandwidths(X)
     Yl, Yu = bandwidths(Y)
 
+    if -Xl > Xu #= no bands in X =#
+        return Y
+    end
+
     @boundscheck if Xl > Yl
-        # test that all entries are zero in extra bands
-        for j=1:size(X,2),k=max(1,j+Yl+1):min(j+Xl,n)
+        # test that all entries are zero in extra bands below the diagonal
+        for j=rowsupport(X),k=max(1,j+Yl+1):min(j+Xl,n)
             if inbands_getindex(X, k, j) ≠ 0
-                throw(BandError(X, (k,j)))
+                throw(BandError(Y, (k,j)))
             end
         end
     end
     @boundscheck if Xu > Yu
-        # test that all entries are zero in extra bands
-        for j=1:size(X,2),k=max(1,j-Xu):min(j-Yu-1,n)
+        # test that all entries are zero in extra bands above the diagonal
+        for j=rowsupport(X),k=max(1,j-Xu):min(j-Yu-1,n)
             if inbands_getindex(X, k, j) ≠ 0
-                throw(BandError(X, (k,j)))
+                throw(BandError(Y, (k,j)))
             end
         end
     end
 
+    if -Yl > Yu #= no bands in Y =#
+        return Y
+    end
+
+    # only fill overlapping bands
     l = min(Xl,Yl)
     u = min(Xu,Yu)
 
-    @inbounds for j=1:m,k=max(1,j-u):min(n,j+l)
+    @inbounds for j=rowsupport(X), k=max(1,j-u):min(n,j+l)
         inbands_setindex!(Y, a*inbands_getindex(X,k,j) + inbands_getindex(Y,k,j) ,k, j)
     end
     Y
@@ -981,7 +990,7 @@ function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
     if size(X) != size(Y)
         throw(DimensionMismatch("+"))
     end
-    @inbounds for j=1:size(X,2),k=colrange(X,j)
+    @inbounds for j=rowsupport(X), k=colrange(X,j)
         Y[k,j] += a*inbands_getindex(X,k,j)
     end
     Y
