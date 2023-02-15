@@ -215,7 +215,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, A::AbstractMatrix{T}, ::Ban
     dest
 end
 
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{AbstractMatrix}})
     (A,) = bc.args
     _banded_broadcast!(dest, bc.f, A, MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
 end
@@ -362,12 +362,12 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,Abst
     dest
 end
 
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}})
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{AbstractMatrix,Number}})
     (A,x) = bc.args
     _banded_broadcast!(dest, bc.f, (A, x), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
 end
 
-function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}})
+function copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{Number,AbstractMatrix}})
     (x,A) = bc.args
     _banded_broadcast!(dest, bc.f, (x,A), MemoryLayout(typeof(dest)), MemoryLayout(typeof(A)))
 end
@@ -605,11 +605,11 @@ function _right_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
 end
 
 
-copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractVector,<:AbstractMatrix}}) =
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{AbstractVector,AbstractMatrix}}) =
     _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(dest), MemoryLayout.(bc.args))
 
 
-copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractVector}}) =
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{AbstractMatrix,AbstractVector}}) =
     _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(dest), MemoryLayout.(bc.args))
 
 
@@ -676,7 +676,7 @@ function __banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatri
     dest
 end
 
-function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
+function checkzerobands(dest, f, (A,B)::NTuple{2,AbstractMatrix})
     m,n = size(A)
     d_l, d_u = bandwidths(dest)
     A_l, A_u = bandwidths(A)
@@ -696,7 +696,7 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
 end
 
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, Mdest::BandedColumns, MAB::NTuple{2,BandedColumns})
+function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::NTuple{2,AbstractMatrix}, Mdest::BandedColumns, MAB::NTuple{2,BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
@@ -769,7 +769,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
 end
 
 
-copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}}) =
+copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:NTuple{2,AbstractMatrix}}) =
     _banded_broadcast!(dest, bc.f, bc.args, MemoryLayout(typeof(dest)), map(MemoryLayout,bc.args))
 
 # override copy in case data has special broadcast
@@ -798,24 +798,24 @@ function _banded_broadcast(f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::Bande
     _BandedMatrix(Bdata_new, axes(src,1), bandwidths(src)...)
 end
 
-function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix}})
+function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{AbstractMatrix}})
     (A,) = bc.args
     _banded_broadcast(bc.f, A, MemoryLayout(typeof(A)))
 end
 
-function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:Number}})
+function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{AbstractMatrix,Number}})
     (A,x) = bc.args
     _banded_broadcast(bc.f, (A, x), MemoryLayout(typeof(A)))
 end
 
 
-function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:Number,<:AbstractMatrix}})
+function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{Number,AbstractMatrix}})
     (x,A) = bc.args
     _banded_broadcast(bc.f, (x,A), MemoryLayout(typeof(A)))
 end
 
 
-function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{<:AbstractMatrix,<:AbstractMatrix}})
+function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:NTuple{2,AbstractMatrix}})
     _banded_broadcast(bc.f, bc.args, MemoryLayout.(typeof.(bc.args)))
 end
 
@@ -1005,8 +1005,9 @@ end
 # Should be made more general.
 ##
 function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typeof(+),
-                                                        <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
-                                                        <:AbstractMatrix}}) where T
+            <:Tuple{
+                Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{Number,AbstractMatrix}},
+                AbstractMatrix}}) where T
     αA,B = bc.args
     α,A = αA.args
     dest ≡ B || (dest .= B)
@@ -1014,8 +1015,9 @@ function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typ
 end
 
 function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
-                        <:Tuple{<:Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{<:Number,<:AbstractMatrix}},
-                        <:AbstractMatrix}}, ::Type{T}) where T
+            <:Tuple{
+                Broadcasted{BandedStyle,<:Any,typeof(*),<:Tuple{Number,AbstractMatrix}},
+                AbstractMatrix}}, ::Type{T}) where T
     αA,B = bc.args
     α,A = αA.args
     n,m = size(A)
