@@ -99,6 +99,11 @@ import BandedMatrices: BandedStyle, BandedRows
         A .= B
         @test A == B
 
+        B = brand(1,4,0,1)
+        C = brand(size(B)...,0,0)
+        @test_throws BandError C .= B
+        @test_throws BandError C' .= B'
+
         @testset "empty dest" begin
             test_empty((D,B) -> D .= B)
         end

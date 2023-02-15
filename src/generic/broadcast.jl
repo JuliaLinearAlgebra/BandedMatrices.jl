@@ -300,8 +300,6 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (x,src)::Tuple{Number,Abstr
     d_l, d_u = bandwidths(dest)
     s_l, s_u = bandwidths(src)
 
-    checkzerobands(dest, f, src)
-
     _banded_broadcast_anylayout!(dest, src, f_x, z, (s_l, s_u), (d_l, d_u), m)
 
     dest
