@@ -395,12 +395,20 @@ function _left_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == B_l == l && d_u == B_u == u
-        for j=rowsupport(dest)
-            for k = max(1,j-u):min(j+min(A_l,l),m)
-                inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
+        if A_l >= l
+            for j=rowsupport(dest)
+                for k = max(1,j-u):min(j+l,m)
+                    inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
+                end
             end
-            for k = max(1,j-u,j+A_l+1):min(j+l,m)
-                inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+        else
+            for j=rowsupport(dest)
+                for k = max(1,j-u):min(j+A_l,m)
+                    inbands_setindex!(dest, f(A[k], inbands_getindex(B, k, j)), k, j)
+                end
+                for k = max(1,j-u,j+A_l+1):min(j+l,m)
+                    inbands_setindex!(dest, f(zero(T), inbands_getindex(B, k, j)), k, j)
+                end
             end
         end
     else
@@ -445,12 +453,20 @@ function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
     (d_l ≥ min(l,m-1) && d_u ≥ min(u,n-1)) || throw(BandError(dest))
 
     if d_l == A_l == l && d_u == A_u == u
-        for j=rowsupport(dest)
-            for k = max(1,j-u):min(j+min(l,B_l),m)
-                inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
+        if B_l >= l
+            for j=rowsupport(dest)
+                for k = max(1,j-u):min(j+l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
+                end
             end
-            for k = max(1,j-u,j+B_l+1):min(j+l,m)
-                inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+        else
+            for j=rowsupport(dest)
+                for k = max(1,j-u):min(j+B_l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), B[k]), k, j)
+                end
+                for k = max(1,j-u,j+B_l+1):min(j+l,m)
+                    inbands_setindex!(dest, f(inbands_getindex(A, k, j), zero(V)), k, j)
+                end
             end
         end
     else
