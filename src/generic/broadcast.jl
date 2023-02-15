@@ -617,8 +617,10 @@ copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{
 # matrix-matrix broadcast
 ################
 
-
 function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
+    __banded_broadcast!(dest, f, (A,B), _1, _2)
+end
+function __banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
     z = f(zero(T), zero(V))
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
@@ -692,7 +694,7 @@ function checkzerobands(dest, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix})
 end
 
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, ::BandedColumns, ::Tuple{<:BandedColumns,<:BandedColumns})
+function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix,AbstractMatrix}, Mdest::BandedColumns, MAB::NTuple{2,BandedColumns})
     z = f(zero(eltype(A)), zero(eltype(B)))
     bc = broadcasted(f, A, B)
     l, u = bandwidths(bc)
@@ -701,7 +703,7 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix
 
     if size(A) ≠ size(dest) || size(B) ≠ size(dest)
         # special broadcast
-        return _banded_broadcast!(dest, f, (A,B), UnknownLayout(), (UnknownLayout(), UnknownLayout()))
+        return __banded_broadcast!(dest, f, (A,B), Mdest, MAB)
     end
 
     A_l,A_u = bandwidths(A)
