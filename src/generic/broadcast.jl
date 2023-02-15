@@ -617,7 +617,7 @@ copyto!(dest::AbstractArray, bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{
 # matrix-matrix broadcast
 ################
 
-function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::NTuple{2,AbstractMatrix}, _1, _2) where {T,V}
+function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::NTuple{2,AbstractMatrix}, _1, _2)
     __banded_broadcast!(dest, f, (A,B), _1, _2)
 end
 function __banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{AbstractMatrix{T},AbstractMatrix{V}}, _1, _2) where {T,V}
