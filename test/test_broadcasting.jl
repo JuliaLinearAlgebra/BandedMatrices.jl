@@ -491,15 +491,26 @@ import BandedMatrices: BandedStyle, BandedRows
                 @test b_ .* A_ == b_ .* Matrix(A_)
                 @test b_ .* A_ isa BandedMatrix
                 @test bandwidths(b_ .* A_) == bandwidths(A_)
+
                 @test b_' .* A_ == b_' .* Matrix(A_)
                 @test b_' .* A_ isa BandedMatrix
                 @test bandwidths(b_' .* A_) == bandwidths(A_)
+
+                @test permutedims(b_) .* A_ == permutedims(b_) .* Matrix(A_)
+                @test permutedims(b_) .* A_ isa BandedMatrix
+                @test bandwidths(permutedims(b_) .* A_) == bandwidths(A_)
+
                 @test A_ .* b_ == Matrix(A_) .* b_
                 @test A_ .* b_ isa BandedMatrix
                 @test bandwidths(A_ .* b_) == bandwidths(A_)
+
                 @test A_ .* b_' == Matrix(A_) .* b_'
                 @test A_ .* b_' isa BandedMatrix
                 @test bandwidths(A_ .* b_') == bandwidths(A_)
+
+                @test A_ .* permutedims(b_) == Matrix(A_) .* permutedims(b_)
+                @test A_ .* permutedims(b_) isa BandedMatrix
+                @test bandwidths(A_ .* permutedims(b_)) == bandwidths(A_)
             end
 
             # division tests currently don't deal with Inf/NaN correctly,
@@ -546,11 +557,17 @@ import BandedMatrices: BandedStyle, BandedRows
                 D_ .= b_' .* A_
                 @test D_ == b_' .* A_
 
+                D_ .= permutedims(b_) .* A_
+                @test D_ == permutedims(b_) .* A_
+
                 D_ .= A_ .* b_
                 @test D_ == A_ .* b_
 
                 D_ .= A_ .* b_'
                 @test D_ == A_ .* b_'
+
+                D_ .= A_ .* permutedims(b_)
+                @test D_ == A_ .* permutedims(b_)
             end
         end
     end

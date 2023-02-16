@@ -477,7 +477,8 @@ function _right_colvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{A
 end
 
 function __left_rowvec_banded_broadcast!(dest, f, (A,B),
-        ::BandedColumns, ::Tuple{DualLayout{ArrayLayouts.DenseRowMajor}, BandedColumns},
+        ::BandedColumns,
+        ::Tuple{Union{DenseColumnMajor, DualLayout{ArrayLayouts.DenseRowMajor}}, BandedColumns},
         (l, u), (A_l,A_u), (m,n))
 
     D = bandeddata(dest)
@@ -540,7 +541,8 @@ function _left_rowvec_banded_broadcast!(dest::AbstractMatrix, f, (A,B)::Tuple{Ab
 end
 
 function __right_rowvec_banded_broadcast!(dest, f, (A,B),
-        ::BandedColumns, ::Tuple{BandedColumns, DualLayout{ArrayLayouts.DenseRowMajor}},
+        ::BandedColumns,
+        ::Tuple{BandedColumns, Union{DualLayout{ArrayLayouts.DenseRowMajor}, DenseColumnMajor}},
         (l, u), (B_l,B_u), (m,n))
 
     D = bandeddata(dest)
