@@ -96,20 +96,4 @@ include("interfaceimpl.jl")
 
 include("precompile.jl")
 
-# function _precompile_()
-#     precompile(Tuple{typeof(gbmm!), Char, Char, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}})
-# end
-
-# _precompile_()
-
-# precompile instructions
-let B = BandedMatrix(0=>zeros(0)), v = zeros(size(B,2))
-    BT = typeof(B)
-    vT = typeof(v)
-    @assert precompile(+, (BT, BT))
-    @assert precompile(-, (BT,))
-    @assert precompile(-, (BT, BT))
-    @assert precompile(*, (BT, vT))
-end
-
 end #module
