@@ -1,6 +1,6 @@
 name = "BandedMatrices"
 uuid = "aae01518-5342-5314-be14-df237901396f"
-version = "0.17.13"
+version = "0.17.14"
 
 [deps]
 ArrayLayouts = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
