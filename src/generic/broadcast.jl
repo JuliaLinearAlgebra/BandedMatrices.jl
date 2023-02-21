@@ -934,8 +934,9 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
 # additions and subtractions
 function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
     n,m = size(X)
-    if (n,m) ≠ size(Y)
-        throw(BoundsError())
+    ny,my = size(Y)
+    if (n,m) ≠ (ny,my)
+        throw(DimensionMismatch("X has size $((n,m)) but $Y has size $((ny,my))"))
     end
     Xl, Xu = bandwidths(X)
     Yl, Yu = bandwidths(Y)
@@ -976,8 +977,10 @@ function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
 end
 
 function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
-    if size(X) != size(Y)
-        throw(DimensionMismatch("+"))
+    n,m = size(X)
+    ny,my = size(Y)
+    if (n,m) ≠ (ny,my)
+        throw(DimensionMismatch("X has size $((n,m)) but $Y has size $((ny,my))"))
     end
     @inbounds for j=rowsupport(X), k=colrange(X,j)
         Y[k,j] += a*inbands_getindex(X,k,j)

@@ -329,6 +329,10 @@ import BandedMatrices: BandedStyle, BandedRows
             axpy!(0.1, C, B) # no bands in dest, but src is zero
             @test B == D
         end
+
+        @test_throws DimensionMismatch axpy!(2, brand(2,2,1,1), brand(3,3,1,1))
+        @test_throws DimensionMismatch axpy!(2, brand(2,2,1,1), brand(3,3,2,2))
+        @test_throws DimensionMismatch axpy!(2, brand(2,2,1,1), zeros(3,3))
     end
 
     @testset "gbmv!" begin
