@@ -401,7 +401,7 @@ end
 Type to represent a view of a band of a `BandedMatrix`
 
 # Examples
-```jldoctest
+```jldoctest; setup=:(using BandedMatrices)
 julia> B = BandedMatrix(0=>1:3);
 
 julia> view(B, band(0)) isa BandedMatrices.BandedMatrixBand
@@ -420,7 +420,7 @@ band(V::BandedMatrixBand) = first(parentindices(V)).band.i
 Forward a view of a band of a `BandedMatrix` to the parent's data matrix.
 
 # Examples
-```jldoctest
+```jldoctest; setup=:(using BandedMatrices)
 julia> A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
 4×4 BandedMatrix{Int64} with bandwidths (1, 1):
  1  5   ⋅  ⋅
