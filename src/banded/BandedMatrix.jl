@@ -453,7 +453,8 @@ function copyto!(v::Vector, B::BandedMatrixBand)
     if -A.l ≤ band(B) ≤ A.u
         copyto!(v, dataview(B))
     else
-        v .= 0
+        Binds = axes(B,1)
+        v[Binds] .= 0
     end
     return v
 end
