@@ -830,3 +830,14 @@ end
 
 bandedbroadcaststyle(_) = BandedStyle()
 BroadcastStyle(::Type{<:BandedMatrix{<:Any,Dat}}) where Dat = bandedbroadcaststyle(BroadcastStyle(Dat))
+
+function banded_axpy!(a::Number, X::BandedMatrix, Y::BandedMatrix)
+    bx = bandwidths(X)
+    by = bandwidths(Y)
+    if bx == by
+        axpy!(a, X.data, Y.data)
+    else
+        banded_generic_axpy!(a, X, Y)
+    end
+    return Y
+end
