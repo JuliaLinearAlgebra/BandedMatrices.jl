@@ -510,7 +510,7 @@ end
     @boundscheck checkdimensions(size(A), size(v))
     @boundscheck checkbandmatch(A, v, kr, jr)
 
-    for j=1:size(A,2), k=colrange(A,j)
+    for j=rowsupport(A), k=colrange(A,j)
         @inbounds A[k,j] = v[k,j]
     end
     A
@@ -734,15 +734,7 @@ function fill!(A::BandedMatrix{T}, x) where T
     A
 end
 
-function diag(A::BandedMatrix{T}, k::Integer = 0) where {T}
-    n = LinearAlgebra.checksquare(A) - abs(k)
-
-    if -A.l <= k <= A.u
-        convert(Vector{T}, vec(A.data[A.u-k+1,range(max(k, 0) + begin, length=n)]))
-    else
-        zeros(T, max(n, 0))
-    end
-end
+diag(A::BandedMatrix, k::Integer = 0) = A[band(k)]
 
 
 
@@ -752,7 +744,7 @@ function fliplrud(A::BandedMatrix)
     l=A.u+n-m
     u=A.l+m-n
     ret=BandedMatrix(eltype(A),n,m,l,u)
-    for j = 1:size(ret,2), k = colrange(ret,j)
+    for j = rowsupport(A), k = colrange(ret,j)
         @inbounds ret[k,j] = A[n-k+1,m-j+1]
     end
     ret
