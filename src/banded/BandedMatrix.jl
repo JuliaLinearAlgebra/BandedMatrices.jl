@@ -736,11 +736,6 @@ end
 
 diag(A::BandedMatrix, k::Integer = 0) = A[band(k)]
 
-for OP in (:real, :imag)
-    @eval $OP(A::BandedMatrix) = _BandedMatrix($OP(A.data),A.raxis,A.l,A.u)
-end
-
-
 ## BandedSubBandedMatrix routines
 
 # gives the band which is diagonal for the parent
