@@ -312,6 +312,9 @@ import BandedMatrices: BandedStyle, BandedRows
         B .= 2.0 .* A .+ B
         @test B == C
 
+        # test with identical bandwidth
+        @test axpy!(3, A, copy(A)) ≈ 4A
+
         @testset "trivial cases" begin
             B = brand(2,4,-1,0) # no bands in B
             B2 = brand(2,4,0,-1) # no bands in B2
@@ -326,6 +329,10 @@ import BandedMatrices: BandedStyle, BandedRows
             axpy!(0.1, C, B) # no bands in dest, but src is zero
             @test B == D
         end
+
+        @test_throws DimensionMismatch axpy!(2, brand(2,2,1,1), brand(3,3,1,1))
+        @test_throws DimensionMismatch axpy!(2, brand(2,2,1,1), brand(3,3,2,2))
+        @test_throws DimensionMismatch axpy!(2, brand(2,2,1,1), zeros(3,3))
     end
 
     @testset "gbmv!" begin

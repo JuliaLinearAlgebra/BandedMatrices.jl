@@ -932,10 +932,11 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
     banded_dense_axpy!(a, X, Y)
 
 # additions and subtractions
-@propagate_inbounds function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
+function banded_generic_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
     n,m = size(X)
-    if (n,m) ≠ size(Y)
-        throw(BoundsError())
+    ny,my = size(Y)
+    if (n,m) ≠ (ny,my)
+        throw(DimensionMismatch("X has size $((n,m)) but $Y has size $((ny,my))"))
     end
     Xl, Xu = bandwidths(X)
     Yl, Yu = bandwidths(Y)
@@ -944,17 +945,17 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
         return Y
     end
 
-    @boundscheck if Xl > Yl
+    if Xl > Yl
         # test that all entries are zero in extra bands below the diagonal
-        for j=rowsupport(X),k=max(1,j+Yl+1):min(j+Xl,n)
+        @inbounds for j=rowsupport(X),k=max(1,j+Yl+1):min(j+Xl,n)
             if inbands_getindex(X, k, j) ≠ 0
                 throw(BandError(Y, (k,j)))
             end
         end
     end
-    @boundscheck if Xu > Yu
+    if Xu > Yu
         # test that all entries are zero in extra bands above the diagonal
-        for j=rowsupport(X),k=max(1,j-Xu):min(j-Yu-1,n)
+        @inbounds for j=rowsupport(X),k=max(1,j-Xu):min(j-Yu-1,n)
             if inbands_getindex(X, k, j) ≠ 0
                 throw(BandError(Y, (k,j)))
             end
@@ -976,8 +977,10 @@ _banded_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix, notbandedX, notba
 end
 
 function banded_dense_axpy!(a::Number, X::AbstractMatrix, Y::AbstractMatrix)
-    if size(X) != size(Y)
-        throw(DimensionMismatch("+"))
+    n,m = size(X)
+    ny,my = size(Y)
+    if (n,m) ≠ (ny,my)
+        throw(DimensionMismatch("X has size $((n,m)) but $Y has size $((ny,my))"))
     end
     @inbounds for j=rowsupport(X), k=colrange(X,j)
         Y[k,j] += a*inbands_getindex(X,k,j)
