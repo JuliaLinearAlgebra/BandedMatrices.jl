@@ -351,8 +351,6 @@ size(A::BandedMatrix) = (length(A.raxis), size(A.data,2))
 bandeddata(A::BandedMatrix) = A.data
 bandwidths(A::BandedMatrix) = (A.l , A.u)
 
-IndexStyle(::Type{BandedMatrix{T}}) where {T} = IndexCartesian()
-
 # ~~ getindex ~~
 
 # fast method used below
