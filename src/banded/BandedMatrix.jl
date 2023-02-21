@@ -354,14 +354,11 @@ bandwidths(A::BandedMatrix) = (A.l , A.u)
 # ~~ getindex ~~
 
 # fast method used below
-@inline inbands_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
+@propagate_inbounds inbands_getindex(data::AbstractMatrix, u::Integer, k::Integer, j::Integer) =
     data[u + k - j + 1, j]
 
-@inline function inbands_getindex(A::BandedMatrix, k::Integer, j::Integer)
-    # it takes a bit of time to extract A.data, A.u since julia checks if those fields exist
-    # the @inbounds here will suppress those checks
-    @inbounds r = inbands_getindex(A.data, A.u, k, j)
-    r
+@propagate_inbounds function inbands_getindex(A::BandedMatrix, k::Integer, j::Integer)
+    inbands_getindex(A.data, A.u, k, j)
 end
 
 # work around for Any matrices
@@ -475,20 +472,17 @@ data_rowrange(A::BandedMatrix{T}, i::Integer) where {T} = range((i ≤ 1+A.l ? A
 # ~ Special setindex methods ~
 
 # fast method used below
-@inline @propagate_inbounds function inbands_setindex!(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) where {T}
+@propagate_inbounds function inbands_setindex!(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) where {T}
     data[u + k - j + 1, j] = convert(T, v)::T
     v
 end
 
 # slow fall back method
-@inline @propagate_inbounds function inbands_setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
-    # it takes a bit of time to extract A.data, A.u since julia checks if those fields exist
-    # the @inbounds here will suppress those checks
-    @inbounds r = inbands_setindex!(A.data, A.u, v, k, j)
-    r
+@propagate_inbounds function inbands_setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
+    inbands_setindex!(A.data, A.u, v, k, j)
 end
 
-@inline @propagate_inbounds function banded_setindex!(data::AbstractMatrix, l::Integer, u::Integer, v, k::Integer, j::Integer)
+@propagate_inbounds function banded_setindex!(data::AbstractMatrix, l::Integer, u::Integer, v, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
         inbands_setindex!(data, u, v, k, j)
     elseif !iszero(v)  # allow setting outside bands to zero
@@ -499,14 +493,14 @@ end
 end
 
 # scalar - integer - integer
-@inline @propagate_inbounds function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
+@inline function setindex!(A::BandedMatrix, v, k::Integer, j::Integer)
     @boundscheck checkbounds(A, k, j)
-    @inbounds r = banded_setindex!(A.data, A.l, A.u, v, k ,j)
-    r
+    @inbounds banded_setindex!(A.data, A.l, A.u, v, k ,j)
+    A
 end
 
 # matrix - colon - colon
-@inline @propagate_inbounds function setindex!(A::BandedMatrix{T}, v::AbstractMatrix, kr::Colon, jr::Colon) where {T}
+@inline function setindex!(A::BandedMatrix{T}, v::AbstractMatrix, kr::Colon, jr::Colon) where {T}
     @boundscheck checkdimensions(size(A), size(v))
     @boundscheck checkbandmatch(A, v, kr, jr)
 
@@ -524,7 +518,7 @@ end
 # ~ indexing along a band
 
 # vector - band - colon
-@inline @propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, b::Band) where {T}
+@propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, b::Band) where {T}
     @boundscheck checkband(A, b)
     @boundscheck checkdimensions(diaglength(A, b), V)
     row = A.u - b.i + 1
@@ -539,7 +533,7 @@ end
 
 # ~ indexing along columns
 # vector - colon - integer -- A[:, 1] = [1, 2, 3] - not allowed
-@inline @propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, kr::Colon, j::Integer) where {T}
+@propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, kr::Colon, j::Integer) where {T}
     @boundscheck checkbounds(A, kr, j)
     @boundscheck checkdimensions(1:size(A,1), V)
     @boundscheck checkbandmatch(A,V,:,j)
@@ -553,7 +547,7 @@ end
     (A[colrange(A, j), j] = V) # call range method
 
 # vector - range - integer -- A[1:3, 1] = [1, 2, 3]
-@inline @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, kr::AbstractRange, j::Integer)
+@propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, kr::AbstractRange, j::Integer)
     @boundscheck checkbounds(A, kr, j)
     @boundscheck checkdimensions(kr, V)
     @boundscheck checkbandmatch(A, V, kr, j)
@@ -575,7 +569,7 @@ end
 # ~ indexing along a row
 
 # vector - integer - colon -- A[1, :] = [1, 2, 3] - not allowed
-@inline @propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, k::Integer, jr::Colon) where {T}
+@propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, k::Integer, jr::Colon) where {T}
     @boundscheck if k < 1 || k > size(A,1)
         throw(BoundsError(A, (k, jr)))
     end
@@ -603,7 +597,7 @@ end
     (A[k, rowstart(A, k):rowstop(A, k)] = V) # call range method
 
 # vector - integer - range -- A[1, 2:3] = [3, 4]
-@inline @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::AbstractRange)
+@propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::AbstractRange)
     @boundscheck checkbounds(A, k, jr)
     @boundscheck checkdimensions(jr, V)
     @boundscheck checkbandmatch(A, V, k, jr)
@@ -624,7 +618,7 @@ end
 # ~ indexing over a rectangular block
 
 # matrix - range - range
-@inline @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange)
+@propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange)
     @boundscheck checkbounds(A, kr, jr)
     @boundscheck checkdimensions(kr, jr, V)
     @boundscheck checkbandmatch(A, V, kr, jr)
@@ -650,8 +644,8 @@ end
 
 
 function convert(::Type{Matrix}, A::BandedMatrix)
-    ret=zeros(eltype(A),size(A,1),size(A,2))
-    for j = 1:size(ret,2), k = colrange(ret,j)
+    ret=zeros(eltype(A), size(A))
+    for j = rowsupport(A), k = colrange(ret,j)
         @inbounds ret[k,j] = A[k,j]
     end
     ret
@@ -787,14 +781,12 @@ end
 bandwidths(S::SubArray{T,2,<:AbstractMatrix,I}) where {T,I<:Tuple{Vararg{AbstractUnitRange}}} =
     min.(size(S) .- 1, bandwidths(parent(S)) .+ (-1,1) .* bandshift(S))
 
-@inline function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
-    @inbounds r = inbands_getindex(parent(S), reindex(parentindices(S), (k, j))...)
-    r
+@propagate_inbounds function inbands_getindex(S::BandedSubBandedMatrix{T}, k::Integer, j::Integer) where {T}
+    inbands_getindex(parent(S), reindex(parentindices(S), (k, j))...)
 end
 
-@inline function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
-    @inbounds r = inbands_setindex!(parent(S), v, reindex(parentindices(S), (k, j))...)
-    r
+@propagate_inbounds function inbands_setindex!(S::BandedSubBandedMatrix{T}, v, k::Integer, j::Integer) where {T}
+    inbands_setindex!(parent(S), v, reindex(parentindices(S), (k, j))...)
 end
 
 
