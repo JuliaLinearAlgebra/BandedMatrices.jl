@@ -9,6 +9,7 @@ using Aqua
 end
 
 using Documenter
+DocMeta.setdocmeta!(BandedMatrices, :DocTestSetup, :(using BandedMatrices))
 @testset "doctests" begin
     doctest(BandedMatrices)
 end

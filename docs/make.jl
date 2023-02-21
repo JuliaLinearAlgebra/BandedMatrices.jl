@@ -1,5 +1,6 @@
 using Documenter, BandedMatrices
 
+DocMeta.setdocmeta!(BandedMatrices, :DocTestSetup, :(using BandedMatrices))
 makedocs(;
     modules = [BandedMatrices],
     format = Documenter.HTML(

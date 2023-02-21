@@ -395,50 +395,68 @@ end
 # we reduce it to converting a View
 
 
-# type to represent a view of a band
-const BandedMatrixBand{T} = SubArray{T, 1, ReshapedArray{T,1,BandedMatrix{T},
-                                Tuple{MultiplicativeInverses.SignedMultiplicativeInverse{Int}}}, Tuple{BandSlice}, false}
+"""
+    BandedMatrixBand
+
+Type to represent a view of a band of a `BandedMatrix`
+
+# Examples
+```jldoctest
+julia> B = BandedMatrix(0=>1:3);
+
+julia> view(B, band(0)) isa BandedMatrices.BandedMatrixBand
+true
+```
+"""
+const BandedMatrixBand{T} = SubArray{T, 1, <:ReshapedArray{T,1,<:BandedMatrix{T}}, Tuple{BandSlice}}
 
 
 band(V::BandedMatrixBand) = first(parentindices(V)).band.i
 
-# gives a view of the parent's data matrix
+
+"""
+    dataview(V::BandedMatrices.BandedMatrixBand)
+
+Forward a view of a band of a `BandedMatrix` to the parent's data matrix.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
+4×4 BandedMatrix{Int64} with bandwidths (1, 1):
+ 1  5   ⋅  ⋅
+ 8  2   6  ⋅
+ ⋅  9   3  7
+ ⋅  ⋅  10  4
+
+julia> v = view(A, band(1))
+3-element view(reshape(::BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, 16), BandSlice(Band(1), 5:5:15)) with eltype Int64:
+ 5
+ 6
+ 7
+
+julia> BandedMatrices.dataview(v)
+3-element view(::Matrix{Int64}, 1, 2:4) with eltype Int64:
+ 5
+ 6
+ 7
+```
+"""
 function dataview(V::BandedMatrixBand)
     A = parent(parent(V))
     b = band(V)
     m,n = size(A)
-    if b > 0
-        view(A.data, A.u - b + 1, b+1:min(n,m+b))
-    elseif b == 0
-        view(A.data, A.u - b + 1, 1:min(n,m))
-    else # b < 0
-        view(A.data, A.u - b + 1, 1:min(n,m+b))
-    end
+    view(A.data, A.u - b + 1, max(b,0)+1:min(n,m+b))
 end
 
-function convert(::Type{Vector{T}}, V::BandedMatrixBand) where T
-    A = parent(parent(V))
-    if -A.l ≤ band(V) ≤ A.u
-        Vector{T}(dataview(V))
+function copyto!(v::Vector, B::BandedMatrixBand)
+    A = parent(parent(B))
+    if -A.l ≤ band(B) ≤ A.u
+        copyto!(v, dataview(B))
     else
-        zeros(T, length(V))
+        v .= 0
     end
+    return v
 end
-
-convert(::Type{Array{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
-convert(::Type{Array}, A::BandedMatrixBand) = convert(Vector{eltype(A)}, A)
-convert(::Type{Vector}, A::BandedMatrixBand)= convert(Vector{eltype(A)}, A)
-
-
-convert(::Type{AbstractArray{T}}, A::BandedMatrixBand{T}) where T = A
-convert(::Type{AbstractVector{T}}, A::BandedMatrixBand{T}) where T = A
-convert(::Type{AbstractArray}, A::BandedMatrixBand{T}) where T = A
-convert(::Type{AbstractVector}, A::BandedMatrixBand{T}) where T = A
-
-convert(::Type{AbstractArray{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
-convert(::Type{AbstractVector{T}}, A::BandedMatrixBand) where T = convert(Vector{T}, A)
-
-
 
 # ~ indexing along a row
 
