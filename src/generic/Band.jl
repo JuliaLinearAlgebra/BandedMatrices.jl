@@ -184,7 +184,7 @@ the indices over which the `Band` spans.
 This mimics the relationship between `Colon` and `Base.Slice`.
 
 # Example
-```jldoctest; setup=:(using BandedMatrices)
+```jldoctest
 julia> B = BandedMatrix(0 => 1:4, 1=>1:3);
 
 julia> to_indices(B, (Band(1),))[1]
