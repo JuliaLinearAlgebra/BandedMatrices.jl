@@ -211,6 +211,8 @@ for f in (:indices, :unsafe_indices, :axes1, :first, :last, :size, :length,
     @eval $f(S::BandSlice) = $f(S.indices)
 end
 
+Base.reindex(S::Tuple{BandSlice}, i::Tuple{Any}) = Base.reindex((S[1].indices,), i)
+
 getindex(S::BandSlice, i::Int) = getindex(S.indices, i)
 show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ", ", r.indices, ")")
 

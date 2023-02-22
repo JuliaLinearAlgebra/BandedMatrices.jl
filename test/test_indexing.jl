@@ -670,6 +670,14 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
         end
     end
 
+    @testset "views of band views" begin
+        A = BandedMatrix(0=>1:4, 1=>(1:3) .+ 5, -1=>(1:3) .+ 10)
+        v = @view A[band(1)]
+        w = view(v, 2:3)
+        @test w == [7,8]
+        @test parentindices(w) isa Tuple{AbstractRange}
+    end
+
     @testset "other special indexing" begin
         @testset "all elements" begin
             a = BandedMatrix(Ones(3, 3), (1, 1))
