@@ -706,5 +706,9 @@ import BandedMatrices: BandedStyle, BandedRows
         copyto!(A, Z)
         copyto!(B, Z)
         @test A == B == zeros(5,5)
+
+        a = BandedMatrix(Zeros(0,4), (-1,1))
+        b = BandedMatrix(Zeros(0,4), (-1,2))
+        @test a-b == a
     end
 end

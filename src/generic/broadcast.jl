@@ -693,7 +693,7 @@ function checkzerobands(dest, f, (A,B)::NTuple{2,AbstractMatrix})
 
     rspA = rowsupport(A)
     rspB = rowsupport(B)
-    for j = min(minimum(rspA), minimum(rspB)):max(maximum(rspA), maximum(rspB))
+    for j = min(first(rspA), first(rspB)):max(last(rspA), last(rspB))
         for k = max(1,j-u) : min(j-d_u-1,m)
             iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,b))
         end
