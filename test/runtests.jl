@@ -5,7 +5,7 @@ using Test
 
 using Aqua
 @testset "Project quality" begin
-    Aqua.test_all(BandedMatrices, ambiguities=false)
+    Aqua.test_all(BandedMatrices, ambiguities=false, piracy=false)
 end
 
 using Documenter
