@@ -1024,7 +1024,7 @@ axpy!(α, A::AbstractBandedMatrix, dest::AbstractMatrix) = banded_axpy!(α, A, d
 
 for op in (:*, :/)
     @eval begin
-        broadcasted(::BandedStyle, ::typeof($op), a::Zeros, b::AbstractArray) = _broadcasted_zeros(a, b)
+        broadcasted(::BandedStyle, ::typeof($op), a::Zeros, b::AbstractArray) = _broadcasted_zeros($op, a, b)
         function broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray{T}, b::Ones{V}) where {T,V}
             Base.Broadcast.combine_axes(a, b) # dimension check
             _copy_oftype(a, promote_op(*, T, V))
@@ -1034,7 +1034,7 @@ end
 
 for op in (:*, :\)
     @eval begin
-        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray, b::Zeros) = _broadcasted_zeros(a, b)
+        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray, b::Zeros) = _broadcasted_zeros($op, a, b)
         function broadcasted(::BandedStyle, ::typeof($op), a::Ones{T}, b::AbstractArray{V}) where {T,V}
             Base.Broadcast.combine_axes(a, b) # dimension check
             _copy_oftype(b, promote_op(*, T, V))
