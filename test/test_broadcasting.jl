@@ -711,4 +711,11 @@ import BandedMatrices: BandedStyle, BandedRows
         b = BandedMatrix(Zeros(0,4), (-1,2))
         @test a-b == a
     end
+
+    @testset "zeros broadcasting" begin
+        A = brand(5,4,2,1)
+        Z = Zeros(5,4)
+        @test Z .* A ≡ Z
+        @test A .* Z ≡ Z
+    end
 end
