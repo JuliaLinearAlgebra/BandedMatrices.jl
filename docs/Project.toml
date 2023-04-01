@@ -5,4 +5,4 @@ LazyArrays = "5078a376-72f3-5289-bfd5-ec5146d43c02"
 
 [compat]
 Documenter = "0.27"
-LazyArrays = "0.22"
+LazyArrays = "1"
