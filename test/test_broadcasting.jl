@@ -49,10 +49,12 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
         end
 
         @testset "checkzerobands" begin
-            A = brand(4,4, 1,1)
+            A = brand(10,10, 2,2)
+            B = brand(10,10, 1,1)
             for (l,u) in ((0,0), (0,1), (1,0))
                 dest = brand(size(A)..., l,u)
                 @test_throws BandError dest .= A .+ A
+                @test_throws BandError dest .= A .+ B
                 @test_throws BandError dest .= A
             end
         end
