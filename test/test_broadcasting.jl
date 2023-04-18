@@ -1,7 +1,7 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test
 import Base: BroadcastStyle
 import Base.Broadcast: broadcasted
-import BandedMatrices: BandedStyle, BandedRows
+import BandedMatrices: BandedStyle, BandedRows, BandError
 
 @testset "broadcasting" begin
     @testset "general" begin
@@ -46,6 +46,15 @@ import BandedMatrices: BandedStyle, BandedRows
             @test A[:,1] isa Vector
             @test norm(A .- A[:,1]) == 0
             @test A ≈ A[:,1]
+        end
+
+        @testset "checkzerobands" begin
+            A = brand(4,4, 1,1)
+            for (l,u) in ((0,0), (0,1), (1,0))
+                dest = brand(size(A)..., l,u)
+                @test_throws BandError dest .= A .+ A
+                @test_throws BandError dest .= A
+            end
         end
     end
 
