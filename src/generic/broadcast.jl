@@ -78,12 +78,26 @@ function checkzerobands(dest, f, A::AbstractMatrix)
     l, u = bandwidths(A)
 
     if !(d_l >= l && d_u >= u)
-        for j = rowsupport(A)
-            for k = max(1,j-u) : min(j-d_u-1,m)
-                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+        if d_l >= l
+            for j = rowsupport(A)
+                for k = max(1,j-u) : min(j-d_u-1,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
             end
-            for k = max(1,j+d_l+1) : min(j+l,m)
-                iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+        elseif d_u >= u
+            for j = rowsupport(A)
+                for k = max(1,j+d_l+1) : min(j+l,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
+            end
+        else
+            for j = rowsupport(A)
+                for k = max(1,j-u) : min(j-d_u-1,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
+                for k = max(1,j+d_l+1) : min(j+l,m)
+                    iszero(f(A[k,j])) || throw(BandError(dest,j-k))
+                end
             end
         end
     end
@@ -693,12 +707,29 @@ function checkzerobands(dest, f, (A,B)::NTuple{2,AbstractMatrix})
 
     rspA = rowsupport(A)
     rspB = rowsupport(B)
-    for j = min(first(rspA), first(rspB)):max(last(rspA), last(rspB))
-        for k = max(1,j-u) : min(j-d_u-1,m)
-            iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,b))
-        end
-        for k = max(1,j+d_l+1) : min(j+l,m)
-            iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,b))
+    # if the dest has more bands both above and below the diagonal, no checks are necessary
+    if !(u <= d_u && l <= d_l)
+        if u <= d_u # the dest has more bands above the diagonal, so we only check below
+            for j = min(first(rspA), first(rspB)):max(last(rspA), last(rspB))
+                for k = max(1,j+d_l+1) : min(j+l,m)
+                    iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,j-k))
+                end
+            end
+        elseif l <= d_l # the dest has more bands below the diagonal, so we only check above
+            for j = min(first(rspA), first(rspB)):max(last(rspA), last(rspB))
+                for k = max(1,j-u) : min(j-d_u-1,m)
+                    iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,j-k))
+                end
+            end
+        else # check both above and below the diagonal
+            for j = min(first(rspA), first(rspB)):max(last(rspA), last(rspB))
+                for k = max(1,j-u) : min(j-d_u-1,m)
+                    iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,j-k))
+                end
+                for k = max(1,j+d_l+1) : min(j+l,m)
+                    iszero(f(A[k,j], B[k,j])) || throw(BandError(dest,j-k))
+                end
+            end
         end
     end
 end
@@ -727,9 +758,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (A,B)::NTuple{2,AbstractMat
     if (d_l,d_u) == (A_l,A_u) == (B_l,B_u)
         data_d .= f.(data_A,data_B)
     else
-        max_l,max_u = max(A_l,B_l,d_l),max(A_u,B_u,d_u)
-        min_l,min_u = min(A_l,B_l,d_l),min(A_u,B_u,d_u)
         checkzerobands(dest, f, (A,B))
+        min_l,min_u = min(A_l,B_l,d_l),min(A_u,B_u,d_u)
 
         # fill extra bands in dest
         fill!(view(data_d,1:d_u-max(A_u,B_u),:), z)
