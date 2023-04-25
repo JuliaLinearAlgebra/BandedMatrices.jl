@@ -619,23 +619,7 @@ end
 
 # matrix - range - range
 @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange)
-    @boundscheck checkbounds(A, kr, jr)
-    @boundscheck checkdimensions(kr, jr, V)
-    @boundscheck checkbandmatch(A, V, kr, jr)
-
-    data, u, l = A.data, A.u, A.l
-    jj = 1
-    for j in jr
-        kk = 1
-        for k in kr
-            if -l ≤ j - k ≤ u
-                # we index V manually in column-major order
-                inbands_setindex!(data, u, V[kk, jj], k, j)
-                kk += 1
-            end
-        end
-        jj += 1
-    end
+    copyto!(view(A, kr, jr), V)
     V
 end
 
