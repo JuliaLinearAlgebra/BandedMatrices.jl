@@ -619,6 +619,9 @@ end
 
 # matrix - range - range
 @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange)
+    @boundscheck checkbounds(A, kr, jr)
+    @boundscheck checkdimensions(kr, jr, V)
+    @boundscheck checkbandmatch(A, V, kr, jr)
     copyto!(view(A, kr, jr), V)
     V
 end
