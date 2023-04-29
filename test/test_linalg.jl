@@ -43,21 +43,21 @@ import BandedMatrices: BandedColumns, _BandedMatrix
 
     @testset "BandedMatrix * dense" begin
         for T in [Float64, Int]
+            cmp = T <: Integer ? (==) : (≈)
             B = brand(T, 10,10,2,2)
             M = Matrix(B)
             v = rand(T, 10)
             Bv = M * v
-            @test B * v == Bv
+            @test cmp(B * v, Bv)
             w = similar(v)
-            @test mul!(w, B, v) == Bv
-            cmp = T <: Integer ? (==) : (≈)
+            @test cmp(mul!(w, B, v), Bv)
             @test cmp(mul!(w, B, v, true, false), Bv)
 
             X = rand(T, 10, 10)
             BX = M * X
-            @test B * X == BX
+            @test cmp(B * X, BX)
             Y = similar(X)
-            @test mul!(Y, B, X) == BX
+            @test cmp(mul!(Y, B, X), BX)
             @test cmp(mul!(Y, B, X, true, false), BX)
         end
     end
