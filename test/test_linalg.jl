@@ -41,6 +41,27 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         @test bandwidths(UpperTriangular(A)*A) == (1,4)
     end
 
+    @testset "BandedMatrix * dense" begin
+        for T in [Float64, Int]
+            B = brand(T, 10,10,2,2)
+            M = Matrix(B)
+            v = rand(T, 10)
+            Bv = M * v
+            @test B * v == Bv
+            w = similar(v)
+            @test mul!(w, B, v) == Bv
+            cmp = T <: Integer ? (==) : (≈)
+            @test cmp(mul!(w, B, v, true, false), Bv)
+
+            X = rand(T, 10, 10)
+            BX = M * X
+            @test B * X == BX
+            Y = similar(X)
+            @test mul!(Y, B, X) == BX
+            @test cmp(mul!(Y, B, X, true, false), BX)
+        end
+    end
+
     @testset "gbmm!" begin
         @testset "gbmm! subpieces step by step and column by column" begin
             for n in (1,5,50), ν in (1,5,50), m in (1,5,50),
@@ -133,7 +154,10 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         B = brand(10,10,-2,2)
         C = BandedMatrix(Fill(NaN,10,10),(0,4))
         mul!(C,A,B)
-        @test C ≈ Matrix(A)*Matrix(B)
+        AB = Matrix(A)*Matrix(B)
+        @test C ≈ AB
+        mul!(C,A,B,true,false)
+        @test C ≈ AB
 
         A = brand(10,10,-2,2)
         B = brand(10,10,-2,2)
@@ -180,7 +204,11 @@ import BandedMatrices: BandedColumns, _BandedMatrix
 
         mul!(C,A,B)
 
-        @test all(C .=== A*B)
+        AB = A*B
+        @test C == AB
+
+        mul!(C,A,B,true,false)
+        @test C == AB
 
         A[band(1)] .= randn(9)
         @test_throws BandError mul!(C,A,B)
