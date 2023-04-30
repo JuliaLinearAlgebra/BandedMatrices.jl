@@ -236,3 +236,17 @@ function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:
     M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
     M.C
 end
+
+### BandedMatrix * dense matrix
+
+function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, DenseColumnMajor, DenseColumnMajor,
+        T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T<:BlasFloat}
+    α, β, C = M.α, M.β, M.C
+    A, B = Base.unalias(C, M.A), Base.unalias(C, M.B)
+
+    for (colC, colB) in zip(eachcol(C), eachcol(B))
+        mul!(colC, A, colB, α, β)
+    end
+
+    return C
+end
