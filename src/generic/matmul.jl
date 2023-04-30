@@ -32,7 +32,7 @@ banded_gbmv!(tA, α, A, x, β, y) =
     if length(x) == 0
         _fill_lmul!(β, y)
     else
-        xc = x ≡ y ? copy(x) : x
+        xc = Base.unalias(y, x)
         banded_gbmv!(tA, α, A, xc, β, y)
     end
     return y
