@@ -244,6 +244,11 @@ function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, DenseColumnMajo
     α, β, C = M.α, M.β, M.C
     A, B = Base.unalias(C, M.A), Base.unalias(C, M.B)
 
+    mA, nA = size(A)
+    mB, nB = size(B)
+    mC, nC = size(C)
+    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("Dimensions must match"))
+
     for (colC, colB) in zip(eachcol(C), eachcol(B))
         mul!(colC, A, colB, α, β)
     end
