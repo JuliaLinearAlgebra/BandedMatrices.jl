@@ -241,8 +241,7 @@ end
 
 function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, <:AbstractColumnMajor, <:AbstractColumnMajor,
         T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
-    α, β, C = M.α, M.β, M.C
-    A, B = Base.unalias(C, M.A), Base.unalias(C, M.B)
+    α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
     mA, nA = size(A)
     mB, nB = size(B)

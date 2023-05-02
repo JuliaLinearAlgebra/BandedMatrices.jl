@@ -86,13 +86,6 @@ import BandedMatrices: BandedColumns, _BandedMatrix
                 Y .= 1
                 mul!(Y, B, X, oneunit(T), oneunit(T))
                 @test cmp(Y, BX + ones(T, size(Y)))
-                # aliasing
-                X2 = copy(X)
-                mul!(X2, B, X2, true, true)
-                @test cmp(X2, BX + X)
-                X2 .= X
-                mul!(X2, B, X2, oneunit(T), oneunit(T))
-                @test cmp(X2, BX + X)
             end
         end
     end
