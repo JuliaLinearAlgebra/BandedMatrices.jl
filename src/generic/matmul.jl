@@ -239,7 +239,7 @@ end
 
 ### BandedMatrix * dense matrix
 
-function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, DenseColumnMajor, DenseColumnMajor,
+function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, <:AbstractColumnMajor, <:AbstractColumnMajor,
         T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T<:BlasFloat}
     α, β, C = M.α, M.β, M.C
     A, B = Base.unalias(C, M.A), Base.unalias(C, M.B)
