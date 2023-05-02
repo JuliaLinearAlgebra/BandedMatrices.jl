@@ -46,8 +46,10 @@ import BandedMatrices: BandedColumns, _BandedMatrix
             cmp = T <: Integer ? (==) : (≈)
             B = BandedMatrix(Symmetric(BandedMatrix{T}(0=>1:10, 1=>11:19, 2=>21:28)))
             M = Matrix(B)
+
             _v = T[1:10;]
-            for v in Any[_v, view(_v, :), view(_v, axes(_v)...)]
+            _v2 = T[1:20;]
+            for v in Any[_v, view(_v, :), view(_v, axes(_v)...), view(_v2, axes(_v)...)]
                 Bv = M * _v
                 @test cmp(B * v, Bv)
                 w = similar(Bv)
@@ -65,8 +67,11 @@ import BandedMatrices: BandedColumns, _BandedMatrix
             end
 
             _X = reshape(T[1:100;], 10, 10)
+            _X2 = reshape(T[1:15^2;], 15, 15)
             for X in Any[_X, view(_X, :, :), view(_X, axes(_X)...), view(_X, :, axes(_X,2)), view(_X, axes(_X,1), :),
-                        _X', view(_X', :, :), view(_X', axes(_X')...)]
+                        view(_X2, axes(_X)...),
+                        _X', view(_X', :, :), view(_X', axes(_X')...),
+                        view(_X2', axes(_X)...)]
                 BX = M * X
                 @test cmp(B * X, BX)
                 Y = similar(BX)
