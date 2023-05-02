@@ -47,8 +47,8 @@ import BandedMatrices: BandedColumns, _BandedMatrix
             B = brand(T, 10,10,2,2)
             M = Matrix(B)
             _v = T[1:10;]
-            Bv = M * _v
             for v in Any[_v, view(_v, :), view(_v, axes(_v)...)]
+                Bv = M * _v
                 @test cmp(B * v, Bv)
                 w = similar(Bv)
                 @test cmp(mul!(w, B, v), Bv)
@@ -59,8 +59,9 @@ import BandedMatrices: BandedColumns, _BandedMatrix
             end
 
             _X = reshape(T[1:100;], 10, 10)
-            BX = M * _X
-            for X in Any[_X, view(_X, :, :), view(_X, axes(_X)...), view(_X, :, axes(_X,2)), view(_X, axes(_X,1), :)]
+            for X in Any[_X, view(_X, :, :), view(_X, axes(_X)...), view(_X, :, axes(_X,2)), view(_X, axes(_X,1), :),
+                        _X', view(_X', :, :), view(_X', axes(_X')...)]
+                BX = M * X
                 @test cmp(B * X, BX)
                 Y = similar(BX)
                 @test cmp(mul!(Y, B, X), BX)
