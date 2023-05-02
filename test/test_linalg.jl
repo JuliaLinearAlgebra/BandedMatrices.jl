@@ -42,23 +42,33 @@ import BandedMatrices: BandedColumns, _BandedMatrix
     end
 
     @testset "BandedMatrix * dense" begin
-        for T in [Float64, Int]
+        @testset for T in [Float64, Int]
             cmp = T <: Integer ? (==) : (≈)
             B = brand(T, 10,10,2,2)
             M = Matrix(B)
-            v = rand(T, 10)
-            Bv = M * v
-            @test cmp(B * v, Bv)
-            w = similar(v)
-            @test cmp(mul!(w, B, v), Bv)
-            @test cmp(mul!(w, B, v, true, false), Bv)
+            _v = T[1:10;]
+            Bv = M * _v
+            for v in Any[_v, view(_v, :), view(_v, axes(_v)...)]
+                @test cmp(B * v, Bv)
+                w = similar(Bv)
+                @test cmp(mul!(w, B, v), Bv)
+                @test cmp(mul!(w, B, v, true, false), Bv)
+                w .= 1
+                mul!(w, B, v, oneunit(T), oneunit(T))
+                @test cmp(w, Bv + ones(T, size(w)))
+            end
 
-            X = rand(T, 10, 10)
-            BX = M * X
-            @test cmp(B * X, BX)
-            Y = similar(X)
-            @test cmp(mul!(Y, B, X), BX)
-            @test cmp(mul!(Y, B, X, true, false), BX)
+            _X = reshape(T[1:100;], 10, 10)
+            BX = M * _X
+            for X in Any[_X, view(_X, :, :), view(_X, axes(_X)...), view(_X, :, axes(_X,2)), view(_X, axes(_X,1), :)]
+                @test cmp(B * X, BX)
+                Y = similar(BX)
+                @test cmp(mul!(Y, B, X), BX)
+                @test cmp(mul!(Y, B, X, true, false), BX)
+                Y .= 1
+                mul!(Y, B, X, oneunit(T), oneunit(T))
+                @test cmp(Y, BX + ones(T, size(Y)))
+            end
         end
     end
 
