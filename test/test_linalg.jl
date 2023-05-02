@@ -44,7 +44,7 @@ import BandedMatrices: BandedColumns, _BandedMatrix
     @testset "BandedMatrix * dense" begin
         @testset for T in [Float64, Int]
             cmp = T <: Integer ? (==) : (≈)
-            B = brand(T, 10,10,2,2)
+            B = BandedMatrix(Symmetric(BandedMatrix{T}(0=>1:10, 1=>11:19, 2=>21:28)))
             M = Matrix(B)
             _v = T[1:10;]
             for v in Any[_v, view(_v, :), view(_v, axes(_v)...)]
