@@ -240,17 +240,21 @@ end
 ### BandedMatrix * dense matrix
 
 function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, <:AbstractColumnMajor, <:AbstractColumnMajor,
-        T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T<:BlasFloat}
+        T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
     α, β, C = M.α, M.β, M.C
     A, B = Base.unalias(C, M.A), Base.unalias(C, M.B)
 
     mA, nA = size(A)
     mB, nB = size(B)
     mC, nC = size(C)
-    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("Dimensions must match"))
+    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("A has size ($mA, $nA), B has size ($mB, $nB), C has size ($mC, $nC)"))
 
-    for (colC, colB) in zip(eachcol(C), eachcol(B))
-        mul!(colC, A, colB, α, β)
+    if iszero(α)
+        lmul!(β, C)
+    else
+        for (colC, colB) in zip(eachcol(C), eachcol(B))
+            mul!(colC, A, colB, α, β)
+        end
     end
 
     return C

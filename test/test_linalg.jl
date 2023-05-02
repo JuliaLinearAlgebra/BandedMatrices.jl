@@ -54,6 +54,12 @@ import BandedMatrices: BandedColumns, _BandedMatrix
                 @test cmp(mul!(w, B, v), Bv)
                 @test cmp(mul!(w, B, v, true, false), Bv)
                 w .= 1
+                mul!(w, B, v, true, true)
+                @test cmp(w, Bv + ones(T, size(w)))
+                w .= 2
+                mul!(w, B, v, false, true)
+                @test cmp(w, fill(T(2), size(w)))
+                w .= 1
                 mul!(w, B, v, oneunit(T), oneunit(T))
                 @test cmp(w, Bv + ones(T, size(w)))
             end
@@ -66,6 +72,12 @@ import BandedMatrices: BandedColumns, _BandedMatrix
                 Y = similar(BX)
                 @test cmp(mul!(Y, B, X), BX)
                 @test cmp(mul!(Y, B, X, true, false), BX)
+                Y .= 1
+                mul!(Y, B, X, true, true)
+                @test cmp(Y, BX + ones(T, size(Y)))
+                Y .= 2
+                mul!(Y, B, X, false, true)
+                @test cmp(Y, fill(T(2), size(Y)))
                 Y .= 1
                 mul!(Y, B, X, oneunit(T), oneunit(T))
                 @test cmp(Y, BX + ones(T, size(Y)))
