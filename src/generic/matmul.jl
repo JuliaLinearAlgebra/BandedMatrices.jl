@@ -236,3 +236,25 @@ function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:
     M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
     M.C
 end
+
+### BandedMatrix * dense matrix
+
+function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, <:AbstractColumnMajor, <:AbstractColumnMajor,
+        T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
+    α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
+
+    mA, nA = size(A)
+    mB, nB = size(B)
+    mC, nC = size(C)
+    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("A has size ($mA, $nA), B has size ($mB, $nB), C has size ($mC, $nC)"))
+
+    if iszero(α)
+        lmul!(β, C)
+    else
+        for (colC, colB) in zip(eachcol(C), eachcol(B))
+            mul!(colC, A, colB, α, β)
+        end
+    end
+
+    return C
+end

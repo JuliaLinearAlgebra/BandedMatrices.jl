@@ -42,23 +42,51 @@ import BandedMatrices: BandedColumns, _BandedMatrix
     end
 
     @testset "BandedMatrix * dense" begin
-        for T in [Float64, Int]
+        @testset for T in [Float64, Int]
             cmp = T <: Integer ? (==) : (≈)
-            B = brand(T, 10,10,2,2)
+            B = BandedMatrix(Symmetric(BandedMatrix{T}(0=>1:10, 1=>11:19, 2=>21:28)))
             M = Matrix(B)
-            v = rand(T, 10)
-            Bv = M * v
-            @test cmp(B * v, Bv)
-            w = similar(v)
-            @test cmp(mul!(w, B, v), Bv)
-            @test cmp(mul!(w, B, v, true, false), Bv)
 
-            X = rand(T, 10, 10)
-            BX = M * X
-            @test cmp(B * X, BX)
-            Y = similar(X)
-            @test cmp(mul!(Y, B, X), BX)
-            @test cmp(mul!(Y, B, X, true, false), BX)
+            _v = T[1:10;]
+            _v2 = T[1:20;]
+            for v in Any[_v, view(_v, :), view(_v, axes(_v)...), view(_v2, axes(_v)...)]
+                Bv = M * _v
+                @test cmp(B * v, Bv)
+                w = similar(Bv)
+                @test cmp(mul!(w, B, v), Bv)
+                @test cmp(mul!(w, B, v, true, false), Bv)
+                w .= 1
+                mul!(w, B, v, true, true)
+                @test cmp(w, Bv + ones(T, size(w)))
+                w .= 2
+                mul!(w, B, v, false, true)
+                @test cmp(w, fill(T(2), size(w)))
+                w .= 1
+                mul!(w, B, v, oneunit(T), oneunit(T))
+                @test cmp(w, Bv + ones(T, size(w)))
+            end
+
+            _X = reshape(T[1:100;], 10, 10)
+            _X2 = reshape(T[1:15^2;], 15, 15)
+            for X in Any[_X, view(_X, :, :), view(_X, axes(_X)...), view(_X, :, axes(_X,2)), view(_X, axes(_X,1), :),
+                        view(_X2, axes(_X)...),
+                        _X', view(_X', :, :), view(_X', axes(_X')...),
+                        view(_X2', axes(_X)...)]
+                BX = M * X
+                @test cmp(B * X, BX)
+                Y = similar(BX)
+                @test cmp(mul!(Y, B, X), BX)
+                @test cmp(mul!(Y, B, X, true, false), BX)
+                Y .= 1
+                mul!(Y, B, X, true, true)
+                @test cmp(Y, BX + ones(T, size(Y)))
+                Y .= 2
+                mul!(Y, B, X, false, true)
+                @test cmp(Y, fill(T(2), size(Y)))
+                Y .= 1
+                mul!(Y, B, X, oneunit(T), oneunit(T))
+                @test cmp(Y, BX + ones(T, size(Y)))
+            end
         end
     end
 
