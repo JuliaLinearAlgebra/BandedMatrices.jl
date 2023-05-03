@@ -99,7 +99,7 @@ end
     checkdimensions(M)
     α,A,B,β,C = M.α,M.A,M.B,M.β,M.C
     _fill_lmul!(β, C)
-    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+    @inbounds for j = rowsupport(A), k = colrange(A,j)
         C[k] += α*inbands_getindex(A,k,j)*B[j]
     end
     C
@@ -111,7 +111,7 @@ end
     A = transpose(At)
     _fill_lmul!(β, C)
 
-    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+    @inbounds for j = rowsupport(A), k = colrange(A,j)
         C[j] +=  α*transpose(inbands_getindex(A,k,j))*B[k]
     end
     C
@@ -122,7 +122,7 @@ end
     α,Ac,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = Ac'
     _fill_lmul!(β, C)
-    @inbounds for j = 1:size(A,2), k = colrange(A,j)
+    @inbounds for j = rowsupport(A), k = colrange(A,j)
         C[j] += α*inbands_getindex(A,k,j)'*B[k]
     end
     C
