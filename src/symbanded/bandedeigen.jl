@@ -7,12 +7,27 @@ struct BandedEigenvectors{T} <: AbstractMatrix{T}
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
-function getindex(B::BandedEigenvectors{T}, i::Int, j::Int) where {T}
+getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i,j]
+function _getindex_vec(B::BandedEigenvectors{T}, j) where {T}
     z1, z2 = B.z1, B.z2
     z2 .= zero(T)
     z2[j] = oneunit(T)
     mul!(z1, B, z2)
-    z1[i]
+end
+function getindex(B::BandedEigenvectors, i::Int, j::Int)
+    z = _getindex_vec(B, j)
+    z[i]
+end
+function getindex(B::BandedEigenvectors, ::Colon, j::Int)
+    z = _getindex_vec(B, j)
+    copy(z)
+end
+function getindex(B::BandedEigenvectors, ::Colon, jr::AbstractVector{<:Int})
+    M = similar(B, size(B,1), length(jr))
+    for (ind, j) in enumerate(jr)
+        M[:, ind] = _getindex_vec(B, j)
+    end
+    return M
 end
 
 # V = S⁻¹ Q W
