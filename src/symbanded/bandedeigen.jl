@@ -96,7 +96,7 @@ function compress!(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T
     F
 end
 
-function mul!(y::AbstractArray{T,N}, B::BandedEigenvectors{T}, x::AbstractArray{T,N}) where {T,N}
+function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Array{T,N}) where {T,N}
     mul!(y, B.Q, x)
     G = B.G
     for k in length(G):-1:1
@@ -105,7 +105,7 @@ function mul!(y::AbstractArray{T,N}, B::BandedEigenvectors{T}, x::AbstractArray{
     y
 end
 
-function mul!(y::AbstractArray{T,N}, B::Adjoint{T,BandedEigenvectors{T}}, x::AbstractArray{T,N}) where {T,N}
+function mul!(y::Array{T,N}, B::Adjoint{T,BandedEigenvectors{T}}, x::Array{T,N}) where {T,N}
     Q = B.parent.Q
     G = B.parent.G
     if length(G) > 0
@@ -120,7 +120,7 @@ function mul!(y::AbstractArray{T,N}, B::Adjoint{T,BandedEigenvectors{T}}, x::Abs
     y
 end
 
-function mul!(y::AbstractArray{T,N}, B::Transpose{T,BandedEigenvectors{T}}, x::AbstractArray{T,N}) where {T,N}
+function mul!(y::Array{T,N}, B::Transpose{T,BandedEigenvectors{T}}, x::Array{T,N}) where {T,N}
     Q = B.parent.Q
     G = B.parent.G
     if length(G) > 0
@@ -135,7 +135,7 @@ function mul!(y::AbstractArray{T,N}, B::Transpose{T,BandedEigenvectors{T}}, x::A
     y
 end
 
-function mul!(y::AbstractArray{T,N}, B::BandedGeneralizedEigenvectors{T}, x::AbstractArray{T,N}) where {T,N}
+function mul!(y::Array{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Array{T,N}) where {T,N}
     mul!(y, B.W, x)
     Q = B.Q
     for k in length(Q):-1:1
@@ -144,7 +144,7 @@ function mul!(y::AbstractArray{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Abs
     ldiv!(B.S, y)
 end
 
-function mul!(y::AbstractArray{T,N}, B::Adjoint{T,BandedGeneralizedEigenvectors{T,M}}, x::AbstractArray{T,N}) where {T,M,N}
+function mul!(y::Array{T,N}, B::Adjoint{T,BandedGeneralizedEigenvectors{T,M}}, x::Array{T,N}) where {T,M,N}
     z = copy(x)
     ldiv!(B.parent.S', z)
     Q = B.parent.Q
@@ -154,7 +154,7 @@ function mul!(y::AbstractArray{T,N}, B::Adjoint{T,BandedGeneralizedEigenvectors{
     mul!(y, B.parent.W', z)
 end
 
-function ldiv!(y::AbstractArray{T,N}, B::BandedGeneralizedEigenvectors{T}, x::AbstractArray{T,N}) where {T,N}
+function ldiv!(y::Array{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Array{T,N}) where {T,N}
     z = copy(x)
     lmul!(B.S, z)
     Q = B.Q
@@ -164,14 +164,14 @@ function ldiv!(y::AbstractArray{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Ab
     mul!(y, B.W', z)
 end
 
-function mul!(y::AbstractArray{T,N}, x::AbstractArray{T,N}, B::BandedEigenvectors{T}) where {T,N}
+function mul!(y::Array{T,N}, x::Array{T,N}, B::BandedEigenvectors{T}) where {T,N}
     x .= x'
     mul!(y, B', x)
     x .= x'
     y .= y'
 end
 
-function mul!(y::AbstractArray{T,N}, x::AbstractArray{T,N}, B::BandedGeneralizedEigenvectors{T}) where {T,N}
+function mul!(y::Array{T,N}, x::Array{T,N}, B::BandedGeneralizedEigenvectors{T}) where {T,N}
     x .= x'
     mul!(y, B', x)
     x .= x'
