@@ -7,7 +7,7 @@ struct BandedEigenvectors{T} <: AbstractMatrix{T}
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
-function getindex(B::BandedEigenvectors{T}, i, j) where {T}
+function getindex(B::BandedEigenvectors{T}, i::Int, j::Int) where {T}
     z1, z2 = B.z1, B.z2
     z2 .= zero(T)
     z2[j] = oneunit(T)
