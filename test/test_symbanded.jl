@@ -73,6 +73,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     FD = convert(Eigen{Float64, Float64, Matrix{Float64}, Vector{Float64}}, F)
     @test FD.vectors'Matrix(A)*FD.vectors ≈ Diagonal(F.values)
 
+    @test Q[1,2] ≈ Matrix(Q)[1,2]
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
