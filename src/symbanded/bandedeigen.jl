@@ -2,10 +2,33 @@
 struct BandedEigenvectors{T} <: AbstractMatrix{T}
     G::Vector{Givens{T}}
     Q::Matrix{T}
+    z1::Vector{T}
+    z2::Vector{T}
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
-getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i, j]
+getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i,j]
+function _getindex_vec(B::BandedEigenvectors{T}, j) where {T}
+    z1, z2 = B.z1, B.z2
+    z2 .= zero(T)
+    z2[j] = oneunit(T)
+    mul!(z1, B, z2)
+end
+function getindex(B::BandedEigenvectors, i::Int, j::Int)
+    z = _getindex_vec(B, j)
+    z[i]
+end
+function getindex(B::BandedEigenvectors, ::Colon, j::Int)
+    z = _getindex_vec(B, j)
+    copy(z)
+end
+function getindex(B::BandedEigenvectors, ::Colon, jr::AbstractVector{<:Int})
+    M = similar(B, size(B,1), length(jr))
+    for (ind, j) in enumerate(jr)
+        M[:, ind] = _getindex_vec(B, j)
+    end
+    return M
+end
 
 # V = S⁻¹ Q W
 struct BandedGeneralizedEigenvectors{T,M<:AbstractMatrix{T}} <: AbstractMatrix{T}
@@ -39,7 +62,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     AB = symbandeddata(A)
     sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
     Λ, Q = eigen(SymTridiagonal(D, E))
-    Eigen(Λ, BandedEigenvectors(G, Q))
+    Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1)), similar(Q, size(Q,2))))
 end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
