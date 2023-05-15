@@ -36,7 +36,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
                     BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement
 
 const libblas = Base.libblas_name
 const liblapack = Base.liblapack_name

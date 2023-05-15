@@ -3,15 +3,13 @@ struct BandedEigenvectors{T} <: AbstractMatrix{T}
     G::Vector{Givens{T}}
     Q::Matrix{T}
     z1::Vector{T}
-    z2::Vector{T}
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
 getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i,j]
 function _getindex_vec(B::BandedEigenvectors{T}, j) where {T}
-    z1, z2 = B.z1, B.z2
-    z2 .= zero(T)
-    z2[j] = oneunit(T)
+    z1 = B.z1
+    z2 = OneElement(one(T), j, size(B,2))
     mul!(z1, B, z2)
 end
 function getindex(B::BandedEigenvectors, i::Int, j::Int)
@@ -62,7 +60,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     AB = symbandeddata(A)
     sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
     Λ, Q = eigen(SymTridiagonal(D, E))
-    Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1)), similar(Q, size(Q,2))))
+    Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
 end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
@@ -111,7 +109,7 @@ function compress!(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T
     F
 end
 
-function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Array{T,N}) where {T,N}
+function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Union{Array{T,N}, OneElement{T,N}}) where {T,N}
     mul!(y, B.Q, x)
     G = B.G
     for k in length(G):-1:1
