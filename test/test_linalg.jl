@@ -360,5 +360,71 @@ import BandedMatrices: BandedColumns, _BandedMatrix
             end
         end
     end
+
+    @testset "isdiag/istril/istriu" begin
+        @testset "no bands" begin
+            B = brand(3,2,-2,1)
+            for k in -5:5
+                @test istriu(B, k)
+                @test istril(B, k)
+                @test isdiag(B)
+            end
+        end
+
+        @testset "one band" begin
+            B = brand(3,3,-1,1)
+            A = Array(B)
+            @test !isdiag(B)
+            @test all(k -> istril(B,k), 1:5)
+            @test all(k -> !istril(B,k), -5:0)
+            @test all(k -> istriu(B,k), -5:1)
+            @test all(k -> !istriu(B,k), 2:5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+
+            B = brand(3,3,1,-1)
+            A = Array(B)
+            @test !isdiag(B)
+            @test all(k -> istril(B,k), -1:5)
+            @test all(k -> !istril(B,k), -5:-2)
+            @test all(k -> istriu(B,k), -5:-1)
+            @test all(k -> !istriu(B,k), 0:5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+
+            B = brand(3,3,0,0)
+            A = Array(B)
+            @test isdiag(B)
+            @test all(k -> istril(B,k), 0:5)
+            @test all(k -> !istril(B,k), -5:-1)
+            @test all(k -> istriu(B,k), -5:0)
+            @test all(k -> !istriu(B,k), 1:5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+        end
+
+        @testset "multiple bands" begin
+            B = brand(3,6,1,2)
+            A = Array(B)
+            @test !isdiag(B)
+            @test all(k -> istril(B,k), 2:5)
+            @test all(k -> !istril(B,k), -5:1)
+            @test all(k -> istriu(B,k), -5:-1)
+            @test all(k -> !istriu(B,k), 0:-5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+
+            for B in (brand(3,3,3,3), brand(3,3,2,2), brand(3,3,4,4))
+                A = Array(B)
+                @test !isdiag(B)
+                @test all(k -> istril(B,k), 2:5)
+                @test all(k -> !istril(B,k), -5:1)
+                @test all(k -> istriu(B,k), -5:-2)
+                @test all(k -> !istriu(B,k), -1:-5)
+                @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+                @test all(k -> istril(A,k) == istril(B,k), -5:5)
+            end
+        end
+    end
 end
 

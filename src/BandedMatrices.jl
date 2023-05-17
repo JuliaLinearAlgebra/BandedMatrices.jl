@@ -19,7 +19,7 @@ import LinearAlgebra: axpy!, _chol!, rot180, dot, cholcopy, _apply_ipiv_rows!,
             _apply_inverse_ipiv_rows!, diag, eigvals!, eigvals, eigen!, eigen,
             qr, qr!, ldiv!, mul!, lu, lu!, ldlt, ldlt!,
             kron, lmul!, rmul!, factorize, logabsdet,
-            svdvals, svdvals!, tril!, triu!, diagzero
+            svdvals, svdvals!, tril!, triu!, diagzero, istriu, istril, isdiag
 
 using LinearAlgebra.LAPACK
 using LinearAlgebra.LAPACK: chkuplo, chktrans
