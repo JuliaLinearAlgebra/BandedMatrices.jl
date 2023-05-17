@@ -139,6 +139,19 @@ function triu!(A::AbstractBandedMatrix{T}, k::Integer) where T
     A
 end
 
+function isdiag(B::AbstractBandedMatrix)
+    l, u = bandwidths(B)
+    l + u < 0 || (iszero(l) && iszero(u))
+end
+function istriu(B::AbstractBandedMatrix, k::Integer)
+    l, u = bandwidths(B)
+    l + u < 0 || min(l, size(B,1)-1) <= -k
+end
+function istril(B::AbstractBandedMatrix, k::Integer)
+    l, u = bandwidths(B)
+    l + u < 0 || min(u, size(B,2)-1) <= k
+end
+
 
 ## @inbands
 
