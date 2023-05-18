@@ -76,6 +76,12 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     FD = convert(Eigen{Float64, Float64, Matrix{Float64}, Vector{Float64}}, F)
     @test FD.vectors'Matrix(A)*FD.vectors ≈ Diagonal(F.values)
 
+    MQ = Matrix(Q)
+    @test Q[axes(Q,1),1:3] ≈ MQ[axes(Q,1),1:3]
+    @test Q[:,1:3] ≈ MQ[:,1:3]
+    @test Q[:,3] ≈ MQ[:,3]
+    @test Q[1,2] ≈ MQ[1,2]
+
     F = eigen(A, 2:4)
     Λ, Q = F
     QM = Matrix(Q)
@@ -85,12 +91,6 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     Λ, Q = F
     QM = Matrix(Q)
     @test QM' * (Matrix(A)*QM) ≈ Diagonal(Λ)
-
-    MQ = Matrix(Q)
-    @test Q[axes(Q,1),1:3] ≈ MQ[axes(Q,1),1:3]
-    @test Q[:,1:3] ≈ MQ[:,1:3]
-    @test Q[:,3] ≈ MQ[:,3]
-    @test Q[1,2] ≈ MQ[1,2]
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
