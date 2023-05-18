@@ -84,3 +84,24 @@ function copybands(A::AbstractMatrix{T}, d::Integer) where T
     B
 end
 
+function _tridiagonalize!(A::AbstractMatrix{T}, ::SymmetricLayout{<:BandedColumnMajor}) where T<:Union{Float32,Float64}
+    n=size(A, 1)
+    d = Vector{T}(undef,n)
+    e = Vector{T}(undef,n-1)
+    Q = Matrix{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    sbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), symbandeddata(A), d, e, Q, work)
+    SymTridiagonal(d,e)
+end
+
+function _tridiagonalize!(A::AbstractMatrix{T}, ::HermitianLayout{<:BandedColumnMajor}) where T<:Union{ComplexF32,ComplexF64}
+    n=size(A, 1)
+    d = Vector{real(T)}(undef,n)
+    e = Vector{real(T)}(undef,n-1)
+    Q = Matrix{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    hbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), hermbandeddata(A), d, e, Q, work)
+    SymTridiagonal(d,e)
+end
+
+tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(typeof(A)))

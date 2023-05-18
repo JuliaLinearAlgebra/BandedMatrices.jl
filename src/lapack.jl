@@ -115,6 +115,36 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
     end
 end
 
+for (fname, elty) in ((:zhbtrd_,:ComplexF64),
+                      (:chbtrd_,:ComplexF32))
+    @eval begin
+        Relty = real($elty)
+        function hbtrd!(vect::Char, uplo::Char,
+                        m::Int, k::Int, A::AbstractMatrix{$elty},
+                        d::AbstractVector{Relty}, e::AbstractVector{Relty}, Q::AbstractMatrix{$elty},
+                        work::AbstractVector{$elty})
+            require_one_based_indexing(A)
+            chkstride1(A)
+            chkuplo(uplo)
+            chkvect(vect)
+            info = Ref{BlasInt}()
+            n    = size(A,2)
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            size(A,1) < k+1 && throw(ArgumentError("Not enough bands"))
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (Ref{UInt8}, Ref{UInt8},
+                 Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
+                 vect, uplo,
+                 n, k, A, max(1,stride(A,2)),
+                 d, e, Q, max(1,stride(Q,2)), work, info)
+            LAPACK.chklapackerror(info[])
+            d, e, Q
+        end
+    end
+end
+
 ## Bidiagonalization
 for (fname, elty) in ((:dgbbrd_,:Float64),
                       (:sgbbrd_,:Float32))

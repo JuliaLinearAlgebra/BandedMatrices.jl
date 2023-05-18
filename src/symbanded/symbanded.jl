@@ -117,25 +117,13 @@ end
 
 ## eigvals routine
 
-
-function _tridiagonalize!(A::AbstractMatrix{T}, ::SymmetricLayout{<:BandedColumnMajor}) where T
-    n=size(A, 1)
-    d = Vector{T}(undef,n)
-    e = Vector{T}(undef,n-1)
-    Q = Matrix{T}(undef,0,0)
-    work = Vector{T}(undef,n)
-    sbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), symbandeddata(A), d, e, Q, work)
-    SymTridiagonal(d,e)
-end
-
-tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(typeof(A)))
-
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Base.IEEEFloat = eigvals!(copy(A))
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Union{Float32, Float64} = eigvals!(copy(A))
 eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Real = eigvals!(tridiagonalize(A))
 eigvals(A::Hermitian{T,<:BandedMatrix{T}}) where T<:Real = eigvals!(tridiagonalize(A))
 eigvals(A::Hermitian{T,<:BandedMatrix{T}}) where T<:Complex = eigvals!(tridiagonalize(A))
 
-eigvals!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))
+eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))
+eigvals!(A::Hermitian{T,<:BandedMatrix{T}}) where T <: Complex = eigvals!(tridiagonalize!(A))
 function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
     n = size(A, 1)
     @assert n == size(B, 1)
