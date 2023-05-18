@@ -50,7 +50,7 @@ function eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{
     eigen!(AA, copy(B))
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -61,6 +61,19 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
     Λ, Q = eigen(SymTridiagonal(D, E))
     Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
+end
+
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}) where T <: Complex
+    N = size(A, 1)
+    KD = bandwidth(A)
+    D = Vector{real(T)}(undef, N)
+    E = Vector{real(T)}(undef, N-1)
+    Q = Matrix{T}(undef, N, N)
+    WORK = Vector{T}(undef, N)
+    AB = hermbandeddata(A)
+    hbtrd!('V', A.uplo, N, KD, AB, D, E, Q, WORK)
+    Λ, W = eigen(SymTridiagonal(D, E))
+    Eigen(Λ, Q * W)
 end
 
 function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real

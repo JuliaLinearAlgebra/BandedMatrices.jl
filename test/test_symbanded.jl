@@ -47,17 +47,14 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    for T in [Float32, Float64]
+    @testset for T in (Float32, Float64)
         A = brand(T, 10, 10, 2, 4)
         std = eigvals(Symmetric(Matrix(A)))
         @test eigvals(Symmetric(A)) ≈ std
         @test eigvals!(copy(Symmetric(A))) ≈ std
-        @test eigvals(Hermitian(A)) ≈ std
         @test eigvals!(copy(Hermitian(A))) ≈ std
-        @test eigvals(Hermitian(big.(A))) ≈ std
 
         @test eigvals(Symmetric(A, :L)) ≈ eigvals(Symmetric(Matrix(A), :L))
-        @test eigvals(Hermitian(A, :L)) ≈ eigvals(Hermitian(Matrix(A), :L))
     end
 
     A = brand(ComplexF64, 20, 20, 4, 0)
@@ -68,14 +65,6 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test isempty(Hermitian(A)[1:9,1:0])
     @test [Symmetric(A)[k,j] for k=2:10, j=1:9] == Symmetric(A)[2:10,1:9]
     @test [Hermitian(A)[k,j] for k=2:10, j=1:9] == Hermitian(A)[2:10,1:9]
-
-    for T in [ComplexF64, ComplexF32]
-        A = brand(T, 20, 20, 4, 2)
-        std = eigvals(Hermitian(Matrix(A), :L))
-        @test eigvals(Hermitian(A, :L)) ≈ std
-        @test eigvals(Hermitian(big.(A), :L)) ≈ std
-        @test eigvals!(copy(Hermitian(A, :L))) ≈ std
-    end
 
     A = Symmetric(brand(Float64, 100, 100, 2, 4))
     F = eigen(A)
@@ -188,6 +177,25 @@ end
     @test all(A*x .=== muladd!(one(T),A,x,zero(T),copy(x)) .===
                 materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
+
+    @testset "eigen" begin
+        @testset for T in (Float32, Float64, ComplexF64, ComplexF32), uplo in (:L, :U)
+            A = brand(T, 20, 20, 4, 2)
+            std = eigvals(Hermitian(Matrix(A), uplo))
+            @test eigvals(Hermitian(A, uplo)) ≈ std
+            @test eigvals(Hermitian(big.(A), uplo)) ≈ std
+            @test eigvals!(copy(Hermitian(A, uplo))) ≈ std
+        end
+
+        @testset for T in (Float32, Float64, ComplexF32, ComplexF64), uplo in (:L, :U)
+            A = Hermitian(brand(T, 20, 20, 2, 4), uplo)
+            MA = Hermitian(Matrix(A), uplo)
+            λ1, v1 = eigen!(A)
+            λ2, v2 = eigen!(copy(MA))
+            @test λ1 ≈ λ2
+            @test v1' * MA * v1 ≈ Diagonal(λ1)
+        end
+    end
 end
 
 @testset "LDLᵀ" begin
