@@ -127,6 +127,23 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
 end
 
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T <: Complex
+    isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
+    splitcholesky!(B)
+    N = size(A, 1)
+    KA = bandwidth(A)
+    KB = bandwidth(B)
+    X = Matrix{T}(undef, N, N)
+    WORK = Vector{T}(undef, N)
+    RWORK = Vector{real(T)}(undef, N)
+    AB = hermbandeddata(A)
+    BB = hermbandeddata(B)
+    hbgst!('V', A.uplo, N, KA, KB, AB, BB, X, WORK, RWORK)
+    any(isnan, A) && throw(ArgumentError("NaN found in the standard form of A"))
+    Λ, W = eigen!(A)
+    GeneralizedEigen(Λ, X * W)
+end
+
 function Matrix(B::BandedEigenvectors)
     Q = copy(B.Q)
     G = B.G

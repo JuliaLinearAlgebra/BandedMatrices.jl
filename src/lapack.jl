@@ -375,8 +375,8 @@ end
 # Convert a complex Hermitian Positive Definite generalized eigenvalue problem
 # to a symmetric eigenvalue problem assuming B has been processed by
 # a split-Cholesky factorization.
-for (fname, elty, Relty) in ((:zhbgst_, :ComplexF64, :Float64),
-                      (:chbgst_, :ComplexF32, :Float32))
+for (fname, elty) in ((:zhbgst_, :ComplexF64),
+                      (:chbgst_, :ComplexF32))
     @eval begin
         #=
         subroutine zhbgst   (
@@ -396,10 +396,11 @@ for (fname, elty, Relty) in ((:zhbgst_, :ComplexF64, :Float64),
         integer     INFO
         )
         =#
+        local Relty = real($elty)
         function hbgst!(vect::Char, uplo::Char, n::Int, ka::Int, kb::Int,
                          AB::StridedMatrix{$elty}, BB::StridedMatrix{$elty},
                          X::StridedMatrix{$elty}, work::StridedVector{$elty},
-                         rwork::StridedVector{$Relty})
+                         rwork::StridedVector{Relty})
             require_one_based_indexing(AB, BB, X, work)
             chkstride1(AB, BB)
             chkuplo(uplo)
@@ -407,20 +408,20 @@ for (fname, elty, Relty) in ((:zhbgst_, :ComplexF64, :Float64),
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Nothing,
                 (
-                Ref{UInt8},
-                Ref{UInt8},
-                Ref{BlasInt},
-                Ref{BlasInt},
-                Ref{BlasInt},
-                Ptr{$elty},
-                Ref{BlasInt},
-                Ptr{$elty},
-                Ref{BlasInt},
-                Ptr{$elty},
-                Ref{BlasInt},
-                Ptr{$elty},
-                Ptr{$Relty},
-                Ref{BlasInt},
+                    Ref{UInt8},
+                    Ref{UInt8},
+                    Ref{BlasInt},
+                    Ref{BlasInt},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ptr{Relty},
+                    Ref{BlasInt},
                 ),
                 vect,
                 uplo,
