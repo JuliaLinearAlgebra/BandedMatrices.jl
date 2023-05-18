@@ -371,3 +371,75 @@ for (fname, elty) in ((:dsbgst_,:Float64),
         end
     end
 end
+
+# Convert a complex Hermitian Positive Definite generalized eigenvalue problem
+# to a symmetric eigenvalue problem assuming B has been processed by
+# a split-Cholesky factorization.
+for (fname, elty, Relty) in ((:zhbgst_, :ComplexF64, :Float64),
+                      (:chbgst_, :ComplexF32, :Float32))
+    @eval begin
+        #=
+        subroutine zhbgst   (
+        character   VECT,
+        character   UPLO,
+        integer     N,
+        integer     KA,
+        integer     KB,
+        complex*16, dimension( ldab, * )    AB,
+        integer     LDAB,
+        complex*16, dimension( ldbb, * )    BB,
+        integer     LDBB,
+        complex*16, dimension( ldx, * )     X,
+        integer     LDX,
+        complex*16, dimension( * )      WORK,
+        double precision, dimension( * )    RWORK,
+        integer     INFO
+        )
+        =#
+        function hbgst!(vect::Char, uplo::Char, n::Int, ka::Int, kb::Int,
+                         AB::StridedMatrix{$elty}, BB::StridedMatrix{$elty},
+                         X::StridedMatrix{$elty}, work::StridedVector{$elty},
+                         rwork::StridedVector{$Relty})
+            require_one_based_indexing(AB, BB, X, work)
+            chkstride1(AB, BB)
+            chkuplo(uplo)
+            chkvect(vect)
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (
+                Ref{UInt8},
+                Ref{UInt8},
+                Ref{BlasInt},
+                Ref{BlasInt},
+                Ref{BlasInt},
+                Ptr{$elty},
+                Ref{BlasInt},
+                Ptr{$elty},
+                Ref{BlasInt},
+                Ptr{$elty},
+                Ref{BlasInt},
+                Ptr{$elty},
+                Ptr{$Relty},
+                Ref{BlasInt},
+                ),
+                vect,
+                uplo,
+                n,
+                ka,
+                kb,
+                AB,
+                max(stride(AB,2),1),
+                BB,
+                max(stride(BB,2),1),
+                X,
+                max(stride(X,2),1),
+                work,
+                rwork,
+                info,
+                )
+
+            LAPACK.chklapackerror(info[])
+            AB
+        end
+    end
+end
