@@ -118,7 +118,7 @@ end
 for (fname, elty) in ((:zhbtrd_,:ComplexF64),
                       (:chbtrd_,:ComplexF32))
     @eval begin
-        Relty = real($elty)
+        local Relty = real($elty)
         function hbtrd!(vect::Char, uplo::Char,
                         m::Int, k::Int, A::AbstractMatrix{$elty},
                         d::AbstractVector{Relty}, e::AbstractVector{Relty}, Q::AbstractMatrix{$elty},
@@ -133,12 +133,33 @@ for (fname, elty) in ((:zhbtrd_,:ComplexF64),
             size(A,1) < k+1 && throw(ArgumentError("Not enough bands"))
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Nothing,
-                (Ref{UInt8}, Ref{UInt8},
-                 Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
-                 Ptr{$elty}, Ptr{$elty}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{BlasInt}),
-                 vect, uplo,
-                 n, k, A, max(1,stride(A,2)),
-                 d, e, Q, max(1,stride(Q,2)), work, info)
+                (
+                    Ref{UInt8},
+                    Ref{UInt8},
+                    Ref{BlasInt},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{Relty},
+                    Ptr{Relty},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ptr{BlasInt},
+                ),
+                 vect,
+                 uplo,
+                 n,
+                 k,
+                 A,
+                 max(1,stride(A,2)),
+                 d,
+                 e,
+                 Q,
+                 max(1,stride(Q,2)),
+                 work,
+                 info
+            )
             LAPACK.chklapackerror(info[])
             d, e, Q
         end
