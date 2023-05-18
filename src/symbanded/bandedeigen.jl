@@ -1,3 +1,34 @@
+## eigvals routine
+
+# the symmetric case uses lapack throughout
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Union{Float32, Float64} = eigvals!(copy(A))
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:Union{Float32, Float64} = eigvals!(copy(A), irange)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:Union{Float32, Float64} = eigvals!(copy(A), vl, vu)
+
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigvals!(tridiagonalize(A))
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigvals!(tridiagonalize(A), irange)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigvals!(tridiagonalize(A), vl, vu)
+
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) = eigvals!(tridiagonalize!(A), args...)
+
+function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
+    n = size(A, 1)
+    @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
+    # compute split-Cholesky factorization of B.
+    kb = bandwidth(B)
+    B_data = symbandeddata(B)
+    pbstf!(B.uplo, n, kb, B_data)
+    # convert to a regular symmetric eigenvalue problem.
+    ka = bandwidth(A)
+    A_data = symbandeddata(A)
+    X = Array{T}(undef,0,0)
+    work = Vector{T}(undef,2n)
+    sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
+    # compute eigenvalues of symmetric eigenvalue problem.
+    eigvals!(A)
+end
+
 # V = G Q
 struct BandedEigenvectors{T} <: AbstractMatrix{T}
     G::Vector{Givens{T}}
@@ -44,13 +75,16 @@ convert(::Type{GeneralizedEigen{T, T, Matrix{T}, Vector{T}}}, F::GeneralizedEige
 compress(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = convert(Eigen{T, T, Matrix{T}, Vector{T}}, F)
 compress(F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = convert(GeneralizedEigen{T, T, Matrix{T}, Vector{T}}, F)
 
-eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
+eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigen!(copy(A))
+eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigen!(copy(A), irange)
+eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigen!(copy(A), vl, vu)
+
 function eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     AA = _copy_bandedsym(A, B)
     eigen!(AA, copy(B))
 end
 
-function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}) where T <: Real
+function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: Real
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -59,11 +93,11 @@ function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}) where T <: Real
     WORK = Vector{T}(undef, N)
     AB = symbandeddata(A)
     sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
-    Λ, Q = eigen(SymTridiagonal(D, E))
+    Λ, Q = eigen!(SymTridiagonal(D, E), args...)
     Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
 end
 
-function eigen!(A::Hermitian{T,<:BandedMatrix{T}}) where T <: Complex
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: Complex
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{real(T)}(undef, N)
@@ -72,7 +106,7 @@ function eigen!(A::Hermitian{T,<:BandedMatrix{T}}) where T <: Complex
     WORK = Vector{T}(undef, N)
     AB = hermbandeddata(A)
     hbtrd!('V', A.uplo, N, KD, AB, D, E, Q, WORK)
-    Λ, W = eigen(SymTridiagonal(D, E))
+    Λ, W = eigen!(SymTridiagonal(D, E), args...)
     Eigen(Λ, Q * W)
 end
 
