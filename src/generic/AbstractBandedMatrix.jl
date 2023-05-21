@@ -22,8 +22,6 @@ Returns a tuple containing the lower and upper bandwidth of `A`, in order.
 bandwidths(A::AbstractVecOrMat) = bandwidths(MemoryLayout(A), A)
 bandwidths(_, A) = (size(A,1)-1 , size(A,2)-1)
 
-bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
-
 function BandedMatrices.bandwidths(A::SparseMatrixCSC)
     l,u = -size(A,1),-size(A,2)
 
@@ -179,3 +177,12 @@ end
 macro inbands(expr)
     esc(inbands_process_args!(expr))
 end
+
+
+####
+# AdjOrTrans
+####
+
+bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
+copy(A::Adjoint{T,<:AbstractBandedMatrix}) where T = copy(parent(A))'
+copy(A::Transpose{T,<:AbstractBandedMatrix}) where T = transpose(copy(parent(A)))
