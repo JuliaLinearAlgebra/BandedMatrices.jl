@@ -1,22 +1,22 @@
 ## eigvals routine
 
 # the symmetric case uses lapack throughout
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}; kw...) where T<:Union{Float32, Float64} =
-    eigvals!(copy(A); kw...)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Union{Float32, Float64} =
+    eigvals!(copy(A))
 eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:Union{Float32, Float64} =
     eigvals!(copy(A), irange)
 eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:Union{Float32, Float64} =
     eigvals!(copy(A), vl, vu)
 
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}; kw...) =
-    eigvals!(tridiagonalize(A); kw...)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) =
+    eigvals!(tridiagonalize(A))
 eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) =
     eigvals!(tridiagonalize(A), irange)
 eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) =
     eigvals!(tridiagonalize(A), vl, vu)
 
-eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...; kw...) =
-    eigvals!(tridiagonalize!(A), args...; kw...)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) =
+    eigvals!(tridiagonalize!(A), args...)
 
 function _copy_bandedsym(A, B)
     if bandwidth(A) >= bandwidth(B)

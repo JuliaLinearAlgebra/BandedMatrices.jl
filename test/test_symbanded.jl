@@ -63,8 +63,6 @@ using Test
         @test eigvals!(copy(Symmetric(A)), 2:4) ≈ std[2:4]
         @test eigvals!(copy(Symmetric(A)), 1, 2) ≈ std[1 .<= std .<= 2]
 
-        @test eigvals(Symmetric(A), sortby=abs) ≈ eigvals(Symmetric(Matrix(A)), sortby=abs)
-
         @test eigvals(Symmetric(A, :L)) ≈ eigvals(Symmetric(Matrix(A), :L))
     end
 
@@ -241,8 +239,6 @@ end
             @test eigvals!(copy(Hermitian(A, uplo))) ≈ std
             @test eigvals!(copy(Hermitian(A, uplo)), 2:4) ≈ std[2:4]
             @test eigvals!(copy(Hermitian(A, uplo)), 1, 2) ≈ std[1 .<= std .<= 2]
-
-            @test eigvals(Hermitian(A, uplo), sortby=abs) ≈ eigvals(Hermitian(Matrix(A), uplo), sortby=abs)
         end
 
         @testset for T in (Float32, Float64, ComplexF32, ComplexF64), uplo in (:L, :U)
