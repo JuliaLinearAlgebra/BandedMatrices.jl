@@ -180,9 +180,11 @@ end
 
 
 ####
-# AdjOrTrans
+# AdjOrTrans
 ####
 
 bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
-copy(A::Adjoint{T,<:AbstractBandedMatrix}) where T = copy(parent(A))'
-copy(A::Transpose{T,<:AbstractBandedMatrix}) where T = transpose(copy(parent(A)))
+if VERSION >= v"1.9"
+    copy(A::Adjoint{T,<:AbstractBandedMatrix}) where T = copy(parent(A))'
+    copy(A::Transpose{T,<:AbstractBandedMatrix}) where T = transpose(copy(parent(A)))
+end
