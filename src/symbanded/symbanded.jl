@@ -114,46 +114,6 @@ function materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:BandedColumnMajor}
     _banded_hbmv!(symmetricuplo(A), α, A, x, β, y)
 end
 
-
-## eigvals routine
-
-
-function _tridiagonalize!(A::AbstractMatrix{T}, ::SymmetricLayout{<:BandedColumnMajor}) where T
-    n=size(A, 1)
-    d = Vector{T}(undef,n)
-    e = Vector{T}(undef,n-1)
-    Q = Matrix{T}(undef,0,0)
-    work = Vector{T}(undef,n)
-    sbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), symbandeddata(A), d, e, Q, work)
-    SymTridiagonal(d,e)
-end
-
-tridiagonalize!(A::AbstractMatrix) = _tridiagonalize!(A, MemoryLayout(typeof(A)))
-
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Base.IEEEFloat = eigvals!(copy(A))
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Real = eigvals!(tridiagonalize(A))
-eigvals(A::Hermitian{T,<:BandedMatrix{T}}) where T<:Real = eigvals!(tridiagonalize(A))
-eigvals(A::Hermitian{T,<:BandedMatrix{T}}) where T<:Complex = eigvals!(tridiagonalize(A))
-
-eigvals!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigvals!(tridiagonalize!(A))
-function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
-    n = size(A, 1)
-    @assert n == size(B, 1)
-    @assert A.uplo == B.uplo
-    # compute split-Cholesky factorization of B.
-    kb = bandwidth(B)
-    B_data = symbandeddata(B)
-    pbstf!(B.uplo, n, kb, B_data)
-    # convert to a regular symmetric eigenvalue problem.
-    ka = bandwidth(A)
-    A_data = symbandeddata(A)
-    X = Array{T}(undef,0,0)
-    work = Vector{T}(undef,2n)
-    sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
-    # compute eigenvalues of symmetric eigenvalue problem.
-    eigvals!(A)
-end
-
 function copyto!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:BandedMatrix})
     size(A) == size(B) || throw(ArgumentError("sizes of A and B must match"))
     bandwidth(A) >= bandwidth(B) || throw(ArgumentError("bandwidth of A must exceed that of B"))

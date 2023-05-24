@@ -47,13 +47,20 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     # (generalized) eigen & eigvals
     Random.seed!(0)
 
-    A = brand(Float64, 100, 100, 2, 4)
-    std = eigvals(Symmetric(Matrix(A)))
-    @test eigvals(Symmetric(A)) ≈ std
-    @test eigvals(Hermitian(A)) ≈ std
-    @test eigvals(Hermitian(big.(A))) ≈ std
+    @testset for T in (Float32, Float64)
+        A = brand(T, 10, 10, 2, 4)
+        std = eigvals(Symmetric(Matrix(A)))
+        @test eigvals(Symmetric(A)) ≈ std
+        @test eigvals(Symmetric(A), 2:4) ≈ std[2:4]
+        @test eigvals(Symmetric(A), 1, 2) ≈ std[1 .<= std .<= 2]
+        @test eigvals!(copy(Symmetric(A))) ≈ std
+        @test eigvals!(copy(Symmetric(A)), 2:4) ≈ std[2:4]
+        @test eigvals!(copy(Symmetric(A)), 1, 2) ≈ std[1 .<= std .<= 2]
 
-    A = brand(ComplexF64, 100, 100, 4, 0)
+        @test eigvals(Symmetric(A, :L)) ≈ eigvals(Symmetric(Matrix(A), :L))
+    end
+
+    A = brand(ComplexF64, 20, 20, 4, 0)
     @test Symmetric(A)[2:10,1:9] isa BandedMatrix
     @test Hermitian(A)[2:10,1:9] isa BandedMatrix
     @test isempty(Hermitian(A)[1:0,1:9])
@@ -62,11 +69,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test [Symmetric(A)[k,j] for k=2:10, j=1:9] == Symmetric(A)[2:10,1:9]
     @test [Hermitian(A)[k,j] for k=2:10, j=1:9] == Hermitian(A)[2:10,1:9]
 
-    std = eigvals(Hermitian(Matrix(A), :L))
-    @test eigvals(Hermitian(A, :L)) ≈ std
-    @test eigvals(Hermitian(big.(A), :L)) ≈ std
-
-    A = Symmetric(brand(Float64, 100, 100, 2, 4))
+    A = Symmetric(brand(Float64, 10, 10, 2, 4))
     F = eigen(A)
     Λ, Q = F
     @test Q'Matrix(A)*Q ≈ Diagonal(Λ)
@@ -78,6 +81,16 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     @test Q[:,1:3] ≈ MQ[:,1:3]
     @test Q[:,3] ≈ MQ[:,3]
     @test Q[1,2] ≈ MQ[1,2]
+
+    F = eigen(A, 2:4)
+    Λ, Q = F
+    QM = Matrix(Q)
+    @test QM' * (Matrix(A)*QM) ≈ Diagonal(Λ)
+
+    F = eigen(A, 1, 2)
+    Λ, Q = F
+    QM = Matrix(Q)
+    @test QM' * (Matrix(A)*QM) ≈ Diagonal(Λ)
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
@@ -177,6 +190,45 @@ end
     @test all(A*x .=== muladd!(one(T),A,x,zero(T),copy(x)) .===
                 materialize!(MulAdd(one(T),A,x,zero(T),copy(x))) .===
                 BLAS.hbmv!('L', 1, one(T), view(parent(A).data,3:4,:), x, zero(T), similar(x)))
+
+    @testset "eigen" begin
+        @testset for T in (Float32, Float64, ComplexF64, ComplexF32), uplo in (:L, :U)
+            A = brand(T, 20, 20, 4, 2)
+            std = eigvals(Hermitian(Matrix(A), uplo))
+            @test eigvals(Hermitian(A, uplo)) ≈ std
+            @test eigvals(Hermitian(A, uplo), 2:4) ≈ std[2:4]
+            @test eigvals(Hermitian(A, uplo), 1, 2) ≈ std[1 .<= std .<= 2]
+            @test eigvals(Hermitian(big.(A), uplo)) ≈ std
+            @test eigvals!(copy(Hermitian(A, uplo))) ≈ std
+            @test eigvals!(copy(Hermitian(A, uplo)), 2:4) ≈ std[2:4]
+            @test eigvals!(copy(Hermitian(A, uplo)), 1, 2) ≈ std[1 .<= std .<= 2]
+        end
+
+        @testset for T in (Float32, Float64, ComplexF32, ComplexF64), uplo in (:L, :U)
+            A = Hermitian(brand(T, 20, 20, 2, 4), uplo)
+            MA = Hermitian(Matrix(A), uplo)
+            λ1, v1 = eigen!(copy(A))
+            λ2, v2 = eigen!(copy(MA))
+            @test λ1 ≈ λ2
+            @test v1' * MA * v1 ≈ Diagonal(λ1)
+
+            λ3, v3 = eigen!(copy(A), 2:4)
+            @test λ3 ≈ λ1[2:4]
+            @test v3' * (MA * v3) ≈ Diagonal(λ3)
+
+            λ4, v4 = eigen(A, 2:4)
+            @test λ4 ≈ λ3
+            @test v4' * (MA * v4) ≈ Diagonal(λ4)
+
+            λ3, v3 = eigen!(copy(A), 1, 2)
+            @test λ3 ≈ λ1[1 .<= λ1 .<= 2]
+            @test v3' * (MA * v3) ≈ Diagonal(λ3)
+
+            λ4, v4 = eigen!(copy(A), 1, 2)
+            @test λ4 ≈ λ1[1 .<= λ1 .<= 2]
+            @test v4' * (MA * v4) ≈ Diagonal(λ4)
+        end
+    end
 end
 
 @testset "LDLᵀ" begin
