@@ -63,6 +63,8 @@ using Test
         @test eigvals!(copy(Symmetric(A)), 2:4) ≈ std[2:4]
         @test eigvals!(copy(Symmetric(A)), 1, 2) ≈ std[1 .<= std .<= 2]
 
+        @test eigvals(Symmetric(A), sortby=abs) ≈ eigvals(Symmetric(Matrix(A)), sortby=abs)
+
         @test eigvals(Symmetric(A, :L)) ≈ eigvals(Symmetric(Matrix(A), :L))
     end
 
@@ -239,6 +241,8 @@ end
             @test eigvals!(copy(Hermitian(A, uplo))) ≈ std
             @test eigvals!(copy(Hermitian(A, uplo)), 2:4) ≈ std[2:4]
             @test eigvals!(copy(Hermitian(A, uplo)), 1, 2) ≈ std[1 .<= std .<= 2]
+
+            @test eigvals(Hermitian(A, uplo), sortby=abs) ≈ eigvals(Hermitian(Matrix(A), uplo), sortby=abs)
         end
 
         @testset for T in (Float32, Float64, ComplexF32, ComplexF64), uplo in (:L, :U)
@@ -313,10 +317,10 @@ end
 @testset "Generalized eigenvalues $W{$T}($Ua,$Ub)($n,$wa-$wb)" for (T,W) in (
                                     (Float32, Symmetric),
                                     (Float64, Symmetric),
-                                    #(Float32, Hermitian),
-                                    #(Float64, Hermitian),
-                                    #(ComplexF32, Hermitian),
-                                    #(ComplexF64, Hermitian),
+                                    (Float32, Hermitian),
+                                    (Float64, Hermitian),
+                                    (ComplexF32, Hermitian),
+                                    (ComplexF64, Hermitian),
                                    ),
     (Ua, Ub) in  ((:L,:L), (:U,:U)),
     (wa, wb) in ((2, 3), (3, 2)), n in (4,)
@@ -328,7 +332,14 @@ end
     end
     A = sbmatrix(W, T, Ua, wa, n)
     B = sbmatrix(W, T, Ub, wb, n)
-    @test eigvals(A, B) ≈ eigvals(Matrix(A), Matrix(B))
+    AM, BM = Matrix.((A,B))
+    @test eigvals(A, B) ≈ eigvals(AM, BM)
+    Λ, V = eigen(A, B)
+    VM = Matrix(V)
+    Λ2, V2 = eigen(AM, BM)
+    @test Λ ≈ Λ2
+    @test VM' * AM * VM ≈ V2' * AM * V2
+    @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
 end
 
 @testset "Cholesky" begin

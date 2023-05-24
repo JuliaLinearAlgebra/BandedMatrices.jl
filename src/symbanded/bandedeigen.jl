@@ -1,17 +1,37 @@
 ## eigvals routine
 
 # the symmetric case uses lapack throughout
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Union{Float32, Float64} = eigvals!(copy(A))
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:Union{Float32, Float64} = eigvals!(copy(A), irange)
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:Union{Float32, Float64} = eigvals!(copy(A), vl, vu)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}; kw...) where T<:Union{Float32, Float64} =
+    eigvals!(copy(A); kw...)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:Union{Float32, Float64} =
+    eigvals!(copy(A), irange)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:Union{Float32, Float64} =
+    eigvals!(copy(A), vl, vu)
 
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigvals!(tridiagonalize(A))
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigvals!(tridiagonalize(A), irange)
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigvals!(tridiagonalize(A), vl, vu)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}; kw...) =
+    eigvals!(tridiagonalize(A); kw...)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) =
+    eigvals!(tridiagonalize(A), irange)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) =
+    eigvals!(tridiagonalize(A), vl, vu)
 
-eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) = eigvals!(tridiagonalize!(A), args...)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...; kw...) =
+    eigvals!(tridiagonalize!(A), args...; kw...)
 
-function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
+function _copy_bandedsym(A, B)
+    if bandwidth(A) >= bandwidth(B)
+        copy(A)
+    else
+        copyto!(similar(B), A)
+    end
+end
+
+function eigvals(A::HermOrSym{<:Any,<:BandedMatrix}, B::HermOrSym{<:Any,<:BandedMatrix})
+    AA = _copy_bandedsym(A, B)
+    eigvals!(AA, copy(B))
+end
+
+function eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T<:Real
     n = size(A, 1)
     @assert n == size(B, 1)
     @assert A.uplo == B.uplo
@@ -25,6 +45,25 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     X = Array{T}(undef,0,0)
     work = Vector{T}(undef,2n)
     sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
+    # compute eigenvalues of symmetric eigenvalue problem.
+    eigvals!(A)
+end
+
+function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T<:Complex
+    n = size(A, 1)
+    @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
+    # compute split-Cholesky factorization of B.
+    kb = bandwidth(B)
+    B_data = hermbandeddata(B)
+    pbstf!(B.uplo, n, kb, B_data)
+    # convert to a regular symmetric eigenvalue problem.
+    ka = bandwidth(A)
+    A_data = hermbandeddata(A)
+    X = Array{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    rwork = Vector{real(T)}(undef,n)
+    hbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work, rwork)
     # compute eigenvalues of symmetric eigenvalue problem.
     eigvals!(A)
 end
@@ -47,6 +86,13 @@ function getindex(B::AbstractBandedEigenvectors, ::Colon, jr::AbstractVector{Int
         M[:, ind] = _getindex_vec(B, j)
     end
     return M
+end
+
+# V = G Q
+struct BandedEigenvectors{T} <: AbstractMatrix{T}
+    G::Vector{Givens{T}}
+    Q::Matrix{T}
+    z1::Vector{T}
 end
 
 # V = G Q
