@@ -84,13 +84,11 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
 
     F = eigen(A, 2:4)
     Λ, Q = F
-    QM = Matrix(Q)
-    @test QM' * (Matrix(A)*QM) ≈ Diagonal(Λ)
+    @test Q' * Matrix(A) * Q ≈ Diagonal(Λ)
 
     F = eigen(A, 1, 2)
     Λ, Q = F
-    QM = Matrix(Q)
-    @test QM' * (Matrix(A)*QM) ≈ Diagonal(Λ)
+    @test Q' * Matrix(A) * Q ≈ Diagonal(Λ)
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
