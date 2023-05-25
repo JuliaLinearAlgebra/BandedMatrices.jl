@@ -149,6 +149,7 @@ using Test
             @test V[axes(V,1),1:3] ≈ VM[axes(V,1),1:3]
             @test V[:,1:3] ≈ VM[:,1:3]
             @test V[:,3] ≈ VM[:,3]
+            @test V[axes(V,1),3] ≈ VM[axes(V,1),3]
             @test V[1,2] ≈ VM[1,2]
         end
 

@@ -37,15 +37,11 @@ function _getindex_vec(B, j)
     z2 = OneElement(one(eltype(B)), j, size(B,2))
     mul!(z1, B, z2)
 end
-function getindex(B::AbstractBandedEigenvectors, i::Int, j::Int)
+function getindex(B::AbstractBandedEigenvectors, i::Union{Int, Colon, AbstractVector{Int}}, j::Int)
     z = _getindex_vec(B, j)
     z[i]
 end
-function getindex(B::AbstractBandedEigenvectors, ::Colon, j::Int)
-    z = _getindex_vec(B, j)
-    copy(z)
-end
-function getindex(B::AbstractBandedEigenvectors, ::Colon, jr::AbstractVector{<:Int})
+function getindex(B::AbstractBandedEigenvectors, ::Colon, jr::AbstractVector{Int})
     M = similar(B, size(B,1), length(jr))
     for (ind, j) in enumerate(jr)
         M[:, ind] = _getindex_vec(B, j)
