@@ -165,10 +165,12 @@ const AdjTransStridedVecOrMat{T} = Union{AdjTransStridedVec{T}, AdjTransStridedM
 
 const OneElementVecOrMat{T} = Union{OneElement{T,1}, OneElement{T,2}}
 
+const AdjTransStridedOrOneElVecOrMat{T} = Union{AdjTransStridedVecOrMat{T}, OneElementVecOrMat{T}}
+
 _adjtransfn(::Transpose) = transpose
 _adjtransfn(::Adjoint) = adjoint
 
-function mul!(y::AdjTransStridedVecOrMat{T}, B::BandedEigenvectors{T}, x::Union{AdjTransStridedVecOrMat{T}, OneElementVecOrMat{T}}) where {T}
+function mul!(y::AdjTransStridedVecOrMat{T}, B::BandedEigenvectors{T}, x::AdjTransStridedOrOneElVecOrMat{T}) where {T}
     mul!(y, B.Q, x)
     G = B.G
     for k in length(G):-1:1
@@ -192,7 +194,7 @@ function mul!(y::AdjTransStridedVecOrMat{T}, B::AdjTrans{T,BandedEigenvectors{T}
     y
 end
 
-function mul!(y::AdjTransStridedVecOrMat{T}, B::BandedGeneralizedEigenvectors{T}, x::AdjTransStridedVecOrMat{T}) where {T}
+function mul!(y::AdjTransStridedVecOrMat{T}, B::BandedGeneralizedEigenvectors{T}, x::AdjTransStridedOrOneElVecOrMat{T}) where {T}
     mul!(y, B.W, x)
     Q = B.Q
     for k in length(Q):-1:1

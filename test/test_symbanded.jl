@@ -1,5 +1,11 @@
-using BandedMatrices, LinearAlgebra, ArrayLayouts, Random, Test, GenericLinearAlgebra
+using ArrayLayouts
+using BandedMatrices
 import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
+using FillArrays
+using GenericLinearAlgebra
+using LinearAlgebra
+using Random
+using Test
 
 @testset "Symmetric" begin
     A = Symmetric(brand(10,10,1,2))
@@ -143,6 +149,9 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
         @test V * AM ≈ VM * AM
         x = rand(T, size(V,2))
         @test ldiv!(similar(x), V, x) ≈ ldiv!(similar(x), factorize(VM), x)
+
+        z = OneElement{T}(4, size(V,2))
+        @test V * z ≈ V * Vector(z)
     end
 
     @testset "eigen with mismatched parent bandwidths" begin
