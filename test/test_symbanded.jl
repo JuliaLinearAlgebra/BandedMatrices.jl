@@ -143,15 +143,24 @@ using Test
         @test V'AM*V ≈ Diagonal(Λ)
         @test V'Matrix(B)*V ≈ I
 
-        # misc mul/div tests
         VM = Matrix(V)
-        @test AM * V ≈ AM * VM
-        @test V * AM ≈ VM * AM
-        x = rand(T, size(V,2))
-        @test ldiv!(similar(x), V, x) ≈ ldiv!(similar(x), factorize(VM), x)
 
-        z = OneElement{T}(4, size(V,2))
-        @test V * z ≈ V * Vector(z)
+        @testset "indexing" begin
+            @test V[axes(V,1),1:3] ≈ VM[axes(V,1),1:3]
+            @test V[:,1:3] ≈ VM[:,1:3]
+            @test V[:,3] ≈ VM[:,3]
+            @test V[1,2] ≈ VM[1,2]
+        end
+
+        @testset "mul/div" begin
+            @test AM * V ≈ AM * VM
+            @test V * AM ≈ VM * AM
+            x = rand(T, size(V,2))
+            @test ldiv!(similar(x), V, x) ≈ ldiv!(similar(x), factorize(VM), x)
+
+            z = OneElement{T}(4, size(V,2))
+            @test V * z ≈ V * Vector(z)
+        end
     end
 
     @testset "eigen with mismatched parent bandwidths" begin

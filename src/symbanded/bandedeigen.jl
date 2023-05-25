@@ -29,29 +29,23 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     eigvals!(A)
 end
 
-# V = G Q
-struct BandedEigenvectors{T} <: AbstractMatrix{T}
-    G::Vector{Givens{T}}
-    Q::Matrix{T}
-    z1::Vector{T}
-end
+abstract type AbstractBandedEigenvectors{T} <: AbstractMatrix{T} end
 
-size(B::BandedEigenvectors) = size(B.Q)
-getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i,j]
-function _getindex_vec(B::BandedEigenvectors{T}, j) where {T}
-    z1 = B.z1
-    z2 = OneElement(one(T), j, size(B,2))
+getindex(B::AbstractBandedEigenvectors, i, j) = Matrix(B)[i,j]
+function _getindex_vec(B, j)
+    z1 = _get_scratch(B)
+    z2 = OneElement(one(eltype(B)), j, size(B,2))
     mul!(z1, B, z2)
 end
-function getindex(B::BandedEigenvectors, i::Int, j::Int)
+function getindex(B::AbstractBandedEigenvectors, i::Int, j::Int)
     z = _getindex_vec(B, j)
     z[i]
 end
-function getindex(B::BandedEigenvectors, ::Colon, j::Int)
+function getindex(B::AbstractBandedEigenvectors, ::Colon, j::Int)
     z = _getindex_vec(B, j)
     copy(z)
 end
-function getindex(B::BandedEigenvectors, ::Colon, jr::AbstractVector{<:Int})
+function getindex(B::AbstractBandedEigenvectors, ::Colon, jr::AbstractVector{<:Int})
     M = similar(B, size(B,1), length(jr))
     for (ind, j) in enumerate(jr)
         M[:, ind] = _getindex_vec(B, j)
@@ -59,15 +53,26 @@ function getindex(B::BandedEigenvectors, ::Colon, jr::AbstractVector{<:Int})
     return M
 end
 
+# V = G Q
+struct BandedEigenvectors{T} <: AbstractBandedEigenvectors{T}
+    G::Vector{Givens{T}}
+    Q::Matrix{T}
+    z1::Vector{T} # scratch space, used in indexing
+end
+
+size(B::BandedEigenvectors) = size(B.Q)
+
+_get_scratch(B::BandedEigenvectors) = B.z1
+
 # V = S⁻¹ Q W
-struct BandedGeneralizedEigenvectors{T,M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+struct BandedGeneralizedEigenvectors{T,M<:AbstractMatrix{T}} <: AbstractBandedEigenvectors{T}
     S::SplitCholesky{T,M}
     Q::Vector{Givens{T}}
     W::BandedEigenvectors{T}
 end
 
 size(B::BandedGeneralizedEigenvectors) = size(B.W)
-getindex(B::BandedGeneralizedEigenvectors, i, j) = Matrix(B)[i, j]
+_get_scratch(B::BandedGeneralizedEigenvectors) = _get_scratch(B.W)
 
 convert(::Type{Eigen{T, T, Matrix{T}, Vector{T}}}, F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = Eigen(F.values, Matrix(F.vectors))
 convert(::Type{GeneralizedEigen{T, T, Matrix{T}, Vector{T}}}, F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = GeneralizedEigen(F.values, Matrix(F.vectors))
