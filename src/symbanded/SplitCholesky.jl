@@ -8,9 +8,12 @@
 #   S = [ U    ]
 #       [ M  L ],
 #
-# where U and M are upper-triangular and L is lower-triangular so that SᵀS = A.
+# where U and M are upper-triangular and L is lower-triangular so that S' * S = A.
+# For a real A, the matrix S is also real, and S' == transpose(S)
 #
-# if n = size(A, 1), n == size(A, 2) and kd = bandwidth(A), then if m = (n+b)÷2,
+# S has the same bandwidth as A
+#
+# If n = size(A, 1), n == size(A, 2) and kd = bandwidth(A), then if m = (n+b)÷2,
 #
 # size(U) == (m, m),  size(L) == (n-m, n-m),  and size(M) == (n-m, m).
 #
