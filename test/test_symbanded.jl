@@ -330,12 +330,14 @@ end
     B = sbmatrix(W, T, Ub, wb, n)
     AM, BM = Matrix.((A,B))
     @test eigvals(A, B) ≈ eigvals(AM, BM)
-    Λ, V = eigen(A, B)
-    VM = Matrix(V)
-    Λ2, V2 = eigen(AM, BM)
-    @test Λ ≈ Λ2
-    @test VM' * AM * VM ≈ V2' * AM * V2
-    @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
+    if VERSION >= v"1.9"
+        Λ, V = eigen(A, B)
+        VM = Matrix(V)
+        Λ2, V2 = eigen(AM, BM)
+        @test Λ ≈ Λ2
+        @test VM' * AM * VM ≈ V2' * AM * V2
+        @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
+    end
 end
 
 @testset "Cholesky" begin
