@@ -101,7 +101,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
     x = rand(4)
     @test B' * x ≈ Matrix(B)' * x
 
-    function An(::Type{T}, N::Int) where {T}
+    function An(T::Type, N::Int)
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
         for n = 0:N-1
             parent(A).data[3,n+1] = T((n+1)*(n+2))
@@ -109,7 +109,7 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
         A
     end
 
-    function Bn(::Type{T}, N::Int) where {T}
+    function Bn(T::Type, N::Int)
         B = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
         for n = 0:N-1
             parent(B).data[3,n+1] = T(2*(n+1)*(n+2))/T((2n+1)*(2n+5))
@@ -120,20 +120,29 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
         B
     end
 
-    for T in (Float32, Float64)
+    @testset for T in (Float32, Float64)
         A = An(T, 100)
         B = Bn(T, 100)
 
+        AM = Matrix(A)
+
         λ = eigvals(A, B)
-        @test λ ≈ eigvals(Symmetric(Matrix(A)), Symmetric(Matrix(B)))
+        @test λ ≈ eigvals(Symmetric(AM), Symmetric(Matrix(B)))
 
         err = λ*(T(2)/π)^2 ./ (1:length(λ)).^2 .- 1
 
         @test norm(err[1:40]) < 100eps(T)
 
         Λ, V = eigen(A, B)
-        @test V'Matrix(A)*V ≈ Diagonal(Λ)
+        @test V'AM*V ≈ Diagonal(Λ)
         @test V'Matrix(B)*V ≈ I
+
+        # misc mul/div tests
+        VM = Matrix(V)
+        @test AM * V ≈ AM * VM
+        @test V * AM ≈ VM * AM
+        x = rand(T, size(V,2))
+        @test ldiv!(similar(x), V, x) ≈ ldiv!(similar(x), factorize(VM), x)
     end
 
     @testset "eigen with mismatched parent bandwidths" begin
