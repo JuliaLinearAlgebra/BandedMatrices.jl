@@ -1,11 +1,11 @@
 ## eigvals routine
 
 # the symmetric case uses lapack throughout
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Union{Float32, Float64} =
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:BlasReal =
     eigvals!(copy(A))
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:Union{Float32, Float64} =
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:BlasReal =
     eigvals!(copy(A), irange)
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:Union{Float32, Float64} =
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:BlasReal =
     eigvals!(copy(A), vl, vu)
 
 eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) =
@@ -15,7 +15,13 @@ eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) =
 eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) =
     eigvals!(tridiagonalize(A), vl, vu)
 
-eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) =
+# This isn't eigvals!(A, args...) to avoid incorrect dispatches
+# This is a cautious approach at the moment
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = _eigvals!(A)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = _eigvals!(A, irange)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = _eigvals!(A, vl, vu)
+
+_eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) =
     eigvals!(tridiagonalize!(A), args...)
 
 function _copy_bandedsym(A, B)
@@ -89,13 +95,6 @@ function getindex(B::AbstractBandedEigenvectors, ::Colon, jr::AbstractVector{Int
 end
 
 # V = G Q
-struct BandedEigenvectors{T} <: AbstractMatrix{T}
-    G::Vector{Givens{T}}
-    Q::Matrix{T}
-    z1::Vector{T}
-end
-
-# V = G Q
 struct BandedEigenvectors{T} <: AbstractBandedEigenvectors{T}
     G::Vector{Givens{T}}
     Q::Matrix{T}
@@ -103,7 +102,6 @@ struct BandedEigenvectors{T} <: AbstractBandedEigenvectors{T}
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
-
 _get_scratch(B::BandedEigenvectors) = B.z1
 
 # V = S⁻¹ Q W
@@ -131,7 +129,11 @@ function eigen(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{
     eigen!(AA, copy(B))
 end
 
-function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: BlasReal
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}) where T<:BlasFloat = _eigen!(A)
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:BlasFloat = _eigen!(A, irange)
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:BlasFloat = _eigen!(A, vl, vu)
+
+function _eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T<:BlasReal
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -144,7 +146,7 @@ function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: BlasReal
     Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
 end
 
-function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: BlasComplex
+function _eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: BlasComplex
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{real(T)}(undef, N)
