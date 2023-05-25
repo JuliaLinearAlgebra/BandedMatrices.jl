@@ -126,12 +126,12 @@ eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigen!(copy(A))
 eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigen!(copy(A), irange)
 eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigen!(copy(A), vl, vu)
 
-function eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigen(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T
     AA = _copy_bandedsym(A, B)
     eigen!(AA, copy(B))
 end
 
-function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: Real
+function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: BlasReal
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -144,7 +144,7 @@ function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: Real
     Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
 end
 
-function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: Complex
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: BlasComplex
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{real(T)}(undef, N)
@@ -157,7 +157,7 @@ function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: Complex
     Eigen(Λ, Q * W)
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T <: BlasReal
     isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
     S = splitcholesky!(B)
     N = size(A, 1)
@@ -173,7 +173,7 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
 end
 
-function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T <: Complex
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T <: BlasComplex
     isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
     splitcholesky!(B)
     N = size(A, 1)

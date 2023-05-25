@@ -62,7 +62,7 @@ else
         throw(ArgumentError("transpose of SplitCholesky decomposition is not supported, consider using adjoint"))
 end
 
-function lmul!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function lmul!(S::SplitCholesky{T,<:HermOrSym{T,M}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -90,7 +90,7 @@ function lmul!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where
     B
 end
 
-function ldiv!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function ldiv!(S::SplitCholesky{T,<:HermOrSym{T,M}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -118,7 +118,7 @@ function ldiv!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where
     B
 end
 
-function lmul!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function lmul!(S::AdjointFact{T,<:SplitCholesky{T,<:HermOrSym{T,M}}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -153,7 +153,7 @@ function lmul!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVec
     B
 end
 
-function ldiv!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function ldiv!(S::AdjointFact{T,<:SplitCholesky{T,<:HermOrSym{T,M}}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
