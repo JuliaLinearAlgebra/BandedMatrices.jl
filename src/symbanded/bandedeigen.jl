@@ -31,7 +31,7 @@ function eigvals(A::HermOrSym{<:Any,<:BandedMatrix}, B::HermOrSym{<:Any,<:Banded
     eigvals!(AA, copy(B))
 end
 
-function eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T<:Real
+function eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T<:BlasReal
     n = size(A, 1)
     @assert n == size(B, 1)
     @assert A.uplo == B.uplo
@@ -49,7 +49,7 @@ function eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatr
     eigvals!(A)
 end
 
-function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T<:Complex
+function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T<:BlasComplex
     n = size(A, 1)
     @assert n == size(B, 1)
     @assert A.uplo == B.uplo
