@@ -84,11 +84,22 @@ import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedCol
 
     F = eigen(A, 2:4)
     Λ, Q = F
-    @test Q' * Matrix(A) * Q ≈ Diagonal(Λ)
+    QM = Matrix(Q)
+    AM = Matrix(A)
+    @test Q' * AM * Q ≈ Diagonal(Λ)
+    # explicit mul tests
+    @test AM * Q ≈ AM * QM
+    @test transpose(Q) * AM ≈ transpose(QM) * AM
+    @test adjoint(Q) * AM ≈ adjoint(QM) * AM
 
     F = eigen(A, 1, 2)
     Λ, Q = F
-    @test Q' * Matrix(A) * Q ≈ Diagonal(Λ)
+    @test Q' * AM * Q ≈ Diagonal(Λ)
+
+    # contrived test with an empty Givens rotation vector
+    B = BandedMatrices.BandedEigenvectors(LinearAlgebra.Givens{Float64}[], rand(4,4), zeros(4))
+    x = rand(4)
+    @test B' * x ≈ Matrix(B)' * x
 
     function An(::Type{T}, N::Int) where {T}
         A = Symmetric(BandedMatrix(Zeros{T}(N,N), (0, 2)))
