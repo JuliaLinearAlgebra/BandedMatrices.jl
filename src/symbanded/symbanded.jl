@@ -114,6 +114,8 @@ function materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:BandedColumnMajor}
     _banded_hbmv!(symmetricuplo(A), α, A, x, β, y)
 end
 
+## eigvals routine
+
 function copyto!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:BandedMatrix})
     size(A) == size(B) || throw(ArgumentError("sizes of A and B must match"))
     bandwidth(A) >= bandwidth(B) || throw(ArgumentError("bandwidth of A must exceed that of B"))
@@ -139,17 +141,4 @@ function copyto!(A::Symmetric{<:Number,<:BandedMatrix}, B::Symmetric{<:Number,<:
         end
     end
     return A
-end
-
-function _copy_bandedsym(A, B)
-    if bandwidth(A) >= bandwidth(B)
-        copy(A)
-    else
-        copyto!(similar(B), A)
-    end
-end
-
-function eigvals(A::Symmetric{<:Any,<:BandedMatrix}, B::Symmetric{<:Any,<:BandedMatrix})
-    AA = _copy_bandedsym(A, B)
-    eigvals!(AA, copy(B))
 end

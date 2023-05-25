@@ -33,18 +33,24 @@ SplitCholesky(factors::AbstractMatrix{T}, uplo::Char) where T = SplitCholesky{T,
 size(S::SplitCholesky) = size(S.factors)
 size(S::SplitCholesky, i::Integer) = size(S.factors, i)
 
-splitcholesky!(A::Symmetric{T,<:BandedMatrix{T}}) where T = splitcholesky!(A, A.uplo == 'U' ? UpperTriangular : LowerTriangular)
-splitcholesky!(A::Symmetric{T,<:BandedMatrix{T}}, ::Type{Tr}) where {T,Tr} = splitcholesky!(MemoryLayout(typeof(A)), A, Tr)
-
-function splitcholesky!(::SymmetricLayout{<:BandedColumnMajor},
-                       A::AbstractMatrix{T}, ::Type{UpperTriangular}) where T<:BlasFloat
-    _, info = pbstf!('U', size(A, 1), bandwidth(A,2), symbandeddata(A))
-    SplitCholesky(A, A.uplo)
+function splitcholesky!(A::HermOrSym{T,<:BandedMatrix{T}}) where T
+    splitcholesky!(A, A.uplo == 'U' ? UpperTriangular : LowerTriangular)
+end
+function splitcholesky!(A::HermOrSym{T,<:BandedMatrix{T}}, Tr) where {T}
+    splitcholesky!(MemoryLayout(typeof(A)), A, Tr)
 end
 
 function splitcholesky!(::SymmetricLayout{<:BandedColumnMajor},
-                       A::AbstractMatrix{T}, ::Type{LowerTriangular}) where T<:BlasFloat
-    _, info = pbstf!('L', size(A, 1), bandwidth(A,1), symbandeddata(A))
+                       A::AbstractMatrix{T}, ::Type{LU}) where {T<:BlasFloat, LU}
+    uplo = LU == UpperTriangular ? 'U' : 'L'
+    pbstf!(uplo, size(A, 1), bandwidth(A,2), symbandeddata(A))
+    SplitCholesky(A, A.uplo)
+end
+
+function splitcholesky!(::HermitianLayout{<:BandedColumnMajor},
+                       A::AbstractMatrix{T}, ::Type{LU}) where {T<:BlasFloat, LU}
+    uplo = LU == UpperTriangular ? 'U' : 'L'
+    pbstf!(uplo, size(A, 1), bandwidth(A,2), hermbandeddata(A))
     SplitCholesky(A, A.uplo)
 end
 
@@ -56,7 +62,7 @@ else
         throw(ArgumentError("transpose of SplitCholesky decomposition is not supported, consider using adjoint"))
 end
 
-function lmul!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function lmul!(S::SplitCholesky{T,<:HermOrSym{T,M}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -84,7 +90,7 @@ function lmul!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where
     B
 end
 
-function ldiv!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function ldiv!(S::SplitCholesky{T,<:HermOrSym{T,M}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -112,7 +118,7 @@ function ldiv!(S::SplitCholesky{T,Symmetric{T,M}}, B::AbstractVecOrMat{T}) where
     B
 end
 
-function lmul!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function lmul!(S::AdjointFact{T,<:SplitCholesky{T,<:HermOrSym{T,M}}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n
@@ -147,7 +153,7 @@ function lmul!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVec
     B
 end
 
-function ldiv!(S::AdjointFact{T,SplitCholesky{T,Symmetric{T,M}}}, B::AbstractVecOrMat{T}) where {T,M<:BandedMatrix{T}}
+function ldiv!(S::AdjointFact{T,<:SplitCholesky{T,<:HermOrSym{T,M}}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
     n, nrhs = size(B, 1), size(B, 2)
     if size(S, 1) != n

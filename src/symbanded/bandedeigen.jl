@@ -1,17 +1,43 @@
 ## eigvals routine
 
 # the symmetric case uses lapack throughout
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:Union{Float32, Float64} = eigvals!(copy(A))
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:Union{Float32, Float64} = eigvals!(copy(A), irange)
-eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:Union{Float32, Float64} = eigvals!(copy(A), vl, vu)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:BlasReal =
+    eigvals!(copy(A))
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:BlasReal =
+    eigvals!(copy(A), irange)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:BlasReal =
+    eigvals!(copy(A), vl, vu)
 
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigvals!(tridiagonalize(A))
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigvals!(tridiagonalize(A), irange)
-eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigvals!(tridiagonalize(A), vl, vu)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) =
+    eigvals!(tridiagonalize(A))
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) =
+    eigvals!(tridiagonalize(A), irange)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) =
+    eigvals!(tridiagonalize(A), vl, vu)
 
-eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) = eigvals!(tridiagonalize!(A), args...)
+# This isn't eigvals!(A, args...) to avoid incorrect dispatches
+# This is a cautious approach at the moment
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = _eigvals!(A)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = _eigvals!(A, irange)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = _eigvals!(A, vl, vu)
 
-function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T<:Real
+_eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) =
+    eigvals!(tridiagonalize!(A), args...)
+
+function _copy_bandedsym(A, B)
+    if bandwidth(A) >= bandwidth(B)
+        copy(A)
+    else
+        copyto!(similar(B), A)
+    end
+end
+
+function eigvals(A::HermOrSym{<:Any,<:BandedMatrix}, B::HermOrSym{<:Any,<:BandedMatrix})
+    AA = _copy_bandedsym(A, B)
+    eigvals!(AA, copy(B))
+end
+
+function eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T<:BlasReal
     n = size(A, 1)
     @assert n == size(B, 1)
     @assert A.uplo == B.uplo
@@ -25,6 +51,25 @@ function eigvals!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatr
     X = Array{T}(undef,0,0)
     work = Vector{T}(undef,2n)
     sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
+    # compute eigenvalues of symmetric eigenvalue problem.
+    eigvals!(A)
+end
+
+function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T<:BlasComplex
+    n = size(A, 1)
+    @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
+    # compute split-Cholesky factorization of B.
+    kb = bandwidth(B)
+    B_data = hermbandeddata(B)
+    pbstf!(B.uplo, n, kb, B_data)
+    # convert to a regular symmetric eigenvalue problem.
+    ka = bandwidth(A)
+    A_data = hermbandeddata(A)
+    X = Array{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    rwork = Vector{real(T)}(undef,n)
+    hbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work, rwork)
     # compute eigenvalues of symmetric eigenvalue problem.
     eigvals!(A)
 end
@@ -57,7 +102,6 @@ struct BandedEigenvectors{T} <: AbstractBandedEigenvectors{T}
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
-
 _get_scratch(B::BandedEigenvectors) = B.z1
 
 # V = S⁻¹ Q W
@@ -80,12 +124,16 @@ eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigen!(copy(A))
 eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigen!(copy(A), irange)
 eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigen!(copy(A), vl, vu)
 
-function eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigen(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T
     AA = _copy_bandedsym(A, B)
     eigen!(AA, copy(B))
 end
 
-function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: Real
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}) where T<:BlasFloat = _eigen!(A)
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:BlasFloat = _eigen!(A, irange)
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:BlasFloat = _eigen!(A, vl, vu)
+
+function _eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T<:BlasReal
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -98,7 +146,7 @@ function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T <: Real
     Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
 end
 
-function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: Complex
+function _eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: BlasComplex
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{real(T)}(undef, N)
@@ -111,7 +159,7 @@ function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: Complex
     Eigen(Λ, Q * W)
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T <: BlasReal
     isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
     S = splitcholesky!(B)
     N = size(A, 1)
@@ -125,6 +173,23 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     any(isnan, A) && throw(ArgumentError("NaN found in the standard form of A"))
     Λ, W = eigen!(A)
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
+end
+
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T <: BlasComplex
+    isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
+    splitcholesky!(B)
+    N = size(A, 1)
+    KA = bandwidth(A)
+    KB = bandwidth(B)
+    X = Matrix{T}(undef, N, N)
+    WORK = Vector{T}(undef, N)
+    RWORK = Vector{real(T)}(undef, N)
+    AB = hermbandeddata(A)
+    BB = hermbandeddata(B)
+    hbgst!('V', A.uplo, N, KA, KB, AB, BB, X, WORK, RWORK)
+    any(isnan, A) && throw(ArgumentError("NaN found in the standard form of A"))
+    Λ, W = eigen!(A)
+    GeneralizedEigen(Λ, X * W)
 end
 
 function Matrix(B::BandedEigenvectors)
