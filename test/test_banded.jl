@@ -479,5 +479,21 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         A[1:2:end,1:2:end] = X1
         @test A == B
     end
+
+    @testset "broadcasting to a band" begin
+        B = brand(Int8, 6, 6, -2, 2)
+        B[band(2)] .= 10
+        @test all(==(10), diag(B, 2))
+        @test all(==(10), B[band(2)])
+
+        B = brand(Int8, 2, 4, 1, 1)
+        B[band(-1)] .= 2
+        B[band(0)] .= 3
+        B[band(1)] .= 4
+        @test B == [3 4 0 0; 2 3 4 0]
+
+        @test_throws BandError B[band(100)] .= 10
+        @test_throws BandError B[band(-100)] .= 10
+    end
 end
 
