@@ -729,4 +729,30 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
         @test Z .* A ≡ Z
         @test A .* Z ≡ Z
     end
+
+    @testset "broadcasting to a band" begin
+        B = brand(Int8, 6, 6, -2, 2)
+        B[band(2)] .= 10
+        @test all(==(10), diag(B, 2))
+        @test all(==(10), B[band(2)])
+
+        B = brand(Int8, 2, 4, 1, 1)
+        B[band(-1)] .= 2
+        B[band(0)] .= 3
+        B[band(1)] .= 4
+        B[band(2)] .= 0
+        @test B == [3 4 0 0; 2 3 4 0]
+
+        B[band(-1)] .= 3:3
+        @test all(==(3), @view B[band(-1)])
+        B[band(0)] .= 4:5
+        @test (@view B[band(0)]) == 4:5
+        B[band(1)] .= 3:4
+        @test (@view B[band(1)]) == 3:4
+        B[band(2)] .= [0,0]
+        @test all(iszero, @view B[band(2)])
+
+        @test_throws BandError B[band(100)] .= 10
+        @test_throws BandError B[band(-100)] .= 10
+    end
 end
