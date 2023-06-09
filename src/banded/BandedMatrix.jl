@@ -447,8 +447,18 @@ function dataview(V::BandedMatrixBand)
     view(A.data, A.u - b + 1, max(b,0)+1:min(n,m+b))
 end
 
+@propagate_inbounds function Base.getindex(B::BandedMatrixBand, i::Int)
+    A = parent(parent(B))
+    b = band(B)
+    if -A.l ≤ band(B) ≤ A.u
+        dataview(B)[i]
+    else
+        zero(eltype(B))
+    end
+end
+
 # B[band(i)]
-function copyto!(v::AbstractVector, B::BandedMatrixBand)
+@inline function copyto!(v::AbstractVector, B::BandedMatrixBand)
     A = parent(parent(B))
     if -A.l ≤ band(B) ≤ A.u
         copyto!(v, dataview(B))
@@ -460,7 +470,7 @@ function copyto!(v::AbstractVector, B::BandedMatrixBand)
 end
 
 # B[band(i)] .= x::Number
-function fill!(Bv::BandedMatrixBand, x)
+@inline function fill!(Bv::BandedMatrixBand, x)
     b = band(Bv)
     A = parent(parent(Bv))
     l, u = bandwidths(A)
@@ -472,28 +482,22 @@ function fill!(Bv::BandedMatrixBand, x)
     Bv
 end
 
-# B[band(i)] .= V::AbstractVector
-function _copyto!(Bv::BandedMatrixBand, V::AbstractVector)
-    isempty(V) && return Bv
-    A = parent(parent(Bv))
-    if -A.l ≤ band(Bv) ≤ A.u
-        copyto!(dataview(Bv), V)
+@noinline throwdm(destaxes, srcaxes) =
+    throw(DimensionMismatch("destination axes $destaxes do not match source axes $srcaxes"))
+
+# more complicated broadcating
+# e.g. B[band(i)] .= a .* x .+ v
+@inline function copyto!(dest::BandedMatrixBand, bc::Broadcasted{Nothing})
+    axes(dest) == axes(bc) || throwdm(axes(dest), axes(src))
+
+    A = parent(parent(dest))
+    if -A.l ≤ band(dest) ≤ A.u
+        copyto!(dataview(dest), bc)
     else
-        # bounds-checking to work around axis offset of V
-        destinds, srcinds = LinearIndices(Bv), LinearIndices(V)
-        idf, isf = first(destinds), first(srcinds)
-        Δi = idf - isf
-        (checkbounds(Bool, destinds, isf+Δi) &
-            checkbounds(Bool, destinds, last(srcinds)+Δi)) ||
-                throw(BoundsError(dest, srcinds))
-
-        all(iszero, V) || throw(BandError(A, band(Bv)))
+        all(iszero, bc) || throw(BandError(A, band(dest)))
     end
-    return Bv
+    return dest
 end
-
-copyto!(Bv::BandedMatrixBand, V::AbstractVector) = _copyto!(Bv, V)
-copyto!(Bv::BandedMatrixBand, V::BandedMatrixBand) = _copyto!(Bv, V)
 
 # ~ indexing along a row
 
