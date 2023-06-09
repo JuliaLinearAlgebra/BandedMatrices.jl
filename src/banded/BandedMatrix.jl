@@ -448,11 +448,10 @@ function dataview(V::BandedMatrixBand)
 end
 
 @propagate_inbounds function Base.getindex(B::BandedMatrixBand, i::Int)
-    @boundscheck checkbounds(B, i)
     A = parent(parent(B))
     b = band(B)
     if -A.l ≤ band(B) ≤ A.u
-        @inbounds dataview(B)[i]
+        dataview(B)[i]
     else
         zero(eltype(B))
     end
