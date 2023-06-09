@@ -448,18 +448,18 @@ function dataview(V::BandedMatrixBand)
 end
 
 # B[band(i)]
-function copyto!(v::Vector, B::BandedMatrixBand)
+function copyto!(v::AbstractVector, B::BandedMatrixBand)
     A = parent(parent(B))
     if -A.l ≤ band(B) ≤ A.u
         copyto!(v, dataview(B))
     else
         Binds = axes(B,1)
-        v[Binds] .= 0
+        v[firstindex(v)-1 .+ Binds] .= 0
     end
     return v
 end
 
-# B[band(i)] .= x
+# B[band(i)] .= x::Number
 function fill!(Bv::BandedMatrixBand, x)
     b = band(Bv)
     A = parent(parent(Bv))
@@ -471,6 +471,29 @@ function fill!(Bv::BandedMatrixBand, x)
     end
     Bv
 end
+
+# B[band(i)] .= V::AbstractVector
+function _copyto!(Bv::BandedMatrixBand, V::AbstractVector)
+    isempty(V) && return Bv
+    A = parent(parent(Bv))
+    if -A.l ≤ band(Bv) ≤ A.u
+        copyto!(dataview(Bv), V)
+    else
+        # bounds-checking to work around axis offset of V
+        destinds, srcinds = LinearIndices(Bv), LinearIndices(V)
+        idf, isf = first(destinds), first(srcinds)
+        Δi = idf - isf
+        (checkbounds(Bool, destinds, isf+Δi) &
+            checkbounds(Bool, destinds, last(srcinds)+Δi)) ||
+                throw(BoundsError(dest, srcinds))
+
+        all(iszero, V) || throw(BandError(A, band(Bv)))
+    end
+    return Bv
+end
+
+copyto!(Bv::BandedMatrixBand, V::AbstractVector) = _copyto!(Bv, V)
+copyto!(Bv::BandedMatrixBand, V::BandedMatrixBand) = _copyto!(Bv, V)
 
 # ~ indexing along a row
 
@@ -530,6 +553,7 @@ end
 
 @propagate_inbounds function setindex!(A::BandedMatrix{T}, v::AbstractVector, ::Colon) where {T}
     A[:, :] = reshape(v,size(A))
+    A
 end
 
 
@@ -542,10 +566,10 @@ end
     row = A.u - b.i + 1
     data, i = A.data, max(b.i + 1, 1)
     for v in V
-        data[row, i] = convert(T, v)::T
+        @inbounds data[row, i] = v
         i += 1
     end
-    V
+    A
 end
 
 
@@ -557,12 +581,14 @@ end
     @boundscheck checkbandmatch(A,V,:,j)
 
     A.data[data_colrange(A,j)] = V[colrange(A,j)]
-    V
+    A
 end
 
 # vector - BandRange - integer -- A[1, BandRange] = 2
-@propagate_inbounds setindex!(A::BandedMatrix, V::AbstractVector, ::BandRangeType, j::Integer) =
-    (A[colrange(A, j), j] = V) # call range method
+@propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, ::BandRangeType, j::Integer)
+    A[colrange(A, j), j] = V # call range method
+    A
+end
 
 # vector - range - integer -- A[1:3, 1] = [1, 2, 3]
 @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, kr::AbstractRange, j::Integer)
@@ -580,7 +606,7 @@ end
             inbands_setindex!(data, u, v, k, j)
         end
     end
-    V
+    A
 end
 
 
@@ -607,12 +633,14 @@ end
     end
 
     A.data[data_rowrange(A,k)] = V[rowrange(A,k)]
-    V
+    A
 end
 
 # vector - integer - BandRange -- A[1, BandRange] = [1, 2, 3]
-@propagate_inbounds setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::BandRangeType) =
-    (A[k, rowstart(A, k):rowstop(A, k)] = V) # call range method
+@propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::BandRangeType)
+    A[k, rowstart(A, k):rowstop(A, k)] = V # call range method
+    A
+end
 
 # vector - integer - range -- A[1, 2:3] = [3, 4]
 @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, jr::AbstractRange)
@@ -630,7 +658,7 @@ end
             inbands_setindex!(data, u, v, k, j)
         end
     end
-    V
+    A
 end
 
 # ~ indexing over a rectangular block
@@ -641,7 +669,7 @@ end
     @boundscheck checkdimensions(kr, jr, V)
     @boundscheck checkbandmatch(A, V, kr, jr)
     copyto!(view(A, kr, jr), V)
-    V
+    A
 end
 
 # ~~ end setindex! ~~

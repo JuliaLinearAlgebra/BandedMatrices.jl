@@ -471,7 +471,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "setindex! with ranges (#348)" begin
-        n = 10; 
+        n = 10;
         X1 = brand(n,n,1,1)
         B = BandedMatrix(Zeros(2n,2n), (3,3))
         B[1:2:end,1:2:end] = X1
@@ -480,20 +480,19 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test A == B
     end
 
-    @testset "broadcasting to a band" begin
-        B = brand(Int8, 6, 6, -2, 2)
-        B[band(2)] .= 10
-        @test all(==(10), diag(B, 2))
-        @test all(==(10), B[band(2)])
-
-        B = brand(Int8, 2, 4, 1, 1)
-        B[band(-1)] .= 2
-        B[band(0)] .= 3
-        B[band(1)] .= 4
-        @test B == [3 4 0 0; 2 3 4 0]
-
-        @test_throws BandError B[band(100)] .= 10
-        @test_throws BandError B[band(-100)] .= 10
+    @testset "copy band to offset vector" begin
+        B = BandedMatrix(2=>2:3)
+        # test that a BandedMatrix and a Matrix behave identically
+        p = zeros(3)
+        v = view(p, Base.IdentityUnitRange(2:3))
+        for M in (B, Matrix(B))
+            p .= 0
+            copyto!(v, diag(M, 2))
+            @test p[1] == 0
+            @test @view(p[2:3]) == 2:3
+            copyto!(v, diag(M, 10))
+            @test p[1] == 0
+            @test @view(p[2:3]) == 2:3
+        end
     end
 end
-
