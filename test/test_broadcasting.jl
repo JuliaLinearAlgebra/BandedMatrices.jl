@@ -736,6 +736,10 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
         @test all(==(10), diag(B, 2))
         @test all(==(10), B[band(2)])
 
+        B = BandedMatrix{Int}(1=>1:4, -1=>2:5)
+        B[band(1)] .= 2 .* view(B, band(-1)) .+ 4
+        @test B[band(1)] == 2 .* (2:5) .+ 4
+
         B = brand(Int8, 2, 4, 1, 1)
         B[band(-1)] .= 2
         B[band(0)] .= 3
