@@ -483,12 +483,16 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     @testset "copy band to offset vector" begin
         B = BandedMatrix(2=>2:3)
         # test that a BandedMatrix and a Matrix behave identically
+        p = zeros(3)
+        v = view(p, Base.IdentityUnitRange(2:3))
         for M in (B, Matrix(B))
-            p = zeros(3)
-            v = view(p, Base.IdentityUnitRange(2:3))
+            p .= 0
             copyto!(v, diag(M, 2))
             @test p[1] == 0
-            @test p[2:3] == 2:3
+            @test @view(p[2:3]) == 2:3
+            copyto!(v, diag(M, 10))
+            @test p[1] == 0
+            @test @view(p[2:3]) == 2:3
         end
     end
 end
