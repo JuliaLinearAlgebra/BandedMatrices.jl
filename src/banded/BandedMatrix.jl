@@ -414,6 +414,10 @@ band(V::BandedMatrixBand) = first(parentindices(V)).band.i
 
 Forward a view of a band of a `BandedMatrix` to the parent's data matrix.
 
+!!! warn
+    This will error if the indexing is out-of-bounds for the data matrix, even if it is inbounds
+    for the parent `BandedMatrix`
+
 # Examples
 ```jldoctest
 julia> A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
@@ -443,6 +447,7 @@ function dataview(V::BandedMatrixBand)
     view(A.data, A.u - b + 1, max(b,0)+1:min(n,m+b))
 end
 
+# B[band(i)]
 function copyto!(v::Vector, B::BandedMatrixBand)
     A = parent(parent(B))
     if -A.l ≤ band(B) ≤ A.u
@@ -452,6 +457,19 @@ function copyto!(v::Vector, B::BandedMatrixBand)
         v[Binds] .= 0
     end
     return v
+end
+
+# B[band(i)] .= x
+function fill!(Bv::BandedMatrixBand, x)
+    b = band(Bv)
+    A = parent(parent(Bv))
+    l, u = bandwidths(A)
+    if -l <= b <= u
+        fill!(dataview(Bv), x)
+    elseif !iszero(x)  # allow setting outside bands to zero
+        throw(BandError(A,b))
+    end
+    Bv
 end
 
 # ~ indexing along a row
