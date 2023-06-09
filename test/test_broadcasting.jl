@@ -749,7 +749,11 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
         @test (@view B[band(0)]) == 4:5
         B[band(1)] .= 3:4
         @test (@view B[band(1)]) == 3:4
+        B[band(1)] .= [3,4] .* 2 .+ 4
+        @test (@view B[band(1)]) == [10,12]
         B[band(2)] .= [0,0]
+        @test all(iszero, @view B[band(2)])
+        B[band(2)] .= [0,0] .* 2
         @test all(iszero, @view B[band(2)])
 
         @test_throws BandError B[band(100)] .= 10
