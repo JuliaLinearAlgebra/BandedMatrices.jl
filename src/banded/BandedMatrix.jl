@@ -509,8 +509,7 @@ data_colrange(A::BandedMatrix{T}, i::Integer) where {T} =
                                 ((i-1)*size(A.data,1))
 
 function data_rowrange(A::BandedMatrix, rowind::Integer)
-    range(
-        start = (rowind ≤ 1+A.l ? A.u+rowind : (rowind-A.l)*size(A.data,1)) ,
+    range(rowind ≤ 1+A.l ? A.u+rowind : (rowind-A.l)*size(A.data,1),
         step = size(A.data,1)-1,
         length = length(rowrange(A,rowind)),
     )
