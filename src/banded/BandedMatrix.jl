@@ -447,7 +447,7 @@ function dataview(V::BandedMatrixBand)
     view(A.data, A.u - b + 1, max(b,0)+1:min(n,m+b))
 end
 
-@propagate_inbounds function Base.getindex(B::BandedMatrixBand, i::Int)
+@propagate_inbounds function getindex(B::BandedMatrixBand, i::Int)
     A = parent(parent(B))
     b = band(B)
     if -A.l ≤ band(B) ≤ A.u
