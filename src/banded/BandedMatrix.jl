@@ -370,7 +370,7 @@ diagzero(D::Diagonal{B}, i, j) where B<:BandedMatrix =
     B(Zeros{eltype(B)}(size(D.diag[i], 1), size(D.diag[j], 2)), (bandwidth(D.diag[i],1), bandwidth(D.diag[j],2)))
 
 # banded get index, used for banded matrices with other data types
-@inline function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
+@propagate_inbounds function banded_getindex(data::AbstractMatrix, l::Integer, u::Integer, k::Integer, j::Integer)
     if -l ≤ j-k ≤ u
         inbands_getindex(data, u, k, j)
     else
@@ -508,9 +508,13 @@ data_colrange(A::BandedMatrix{T}, i::Integer) where {T} =
     (max(1,A.u+2-i):min(size(A,1)+A.u-i+1,size(A.data,1))) .+
                                 ((i-1)*size(A.data,1))
 
-data_rowrange(A::BandedMatrix{T}, i::Integer) where {T} = range((i ≤ 1+A.l ? A.u+i : (i-A.l)*size(A.data,1)) ,
-                                size(A.data,1)-1 ,  # step size
-                                i+A.u ≤ size(A,2) ? A.l+A.u+1 : size(A,2)-i+A.l+1)
+function data_rowrange(A::BandedMatrix, rowind::Integer)
+    range(
+        start = (rowind ≤ 1+A.l ? A.u+rowind : (rowind-A.l)*size(A.data,1)) ,
+        step = size(A.data,1)-1,
+        length = length(rowrange(A,rowind)),
+    )
+end
 
 # ~~ setindex! ~~
 
@@ -564,7 +568,7 @@ end
 # ~ indexing along a band
 
 # vector - band - colon
-@propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, b::Band) where {T}
+@inline function setindex!(A::BandedMatrix{T}, V::AbstractVector, b::Band) where {T}
     @boundscheck checkband(A, b)
     @boundscheck checkdimensions(diaglength(A, b), V)
     row = A.u - b.i + 1
@@ -616,7 +620,7 @@ end
 
 # ~ indexing along a row
 
-# vector - integer - colon -- A[1, :] = [1, 2, 3] - not allowed
+# vector - integer - colon -- A[1, :] = [1, 2, 0] -- out-of-band values must be zeros
 @propagate_inbounds function setindex!(A::BandedMatrix{T}, V::AbstractVector, k::Integer, jr::Colon) where {T}
     @boundscheck if k < 1 || k > size(A,1)
         throw(BoundsError(A, (k, jr)))
@@ -630,7 +634,7 @@ end
             throw(BandError(A, _firstdiagrow(A, k)))
         end
     end
-    for j = rowstop(A,j)+1:size(A,2)
+    for j = rowstop(A,k)+1:size(A,2)
         if V[j] ≠ zero(T)
             throw(BandError(A, _firstdiagrow(A, k)))
         end
