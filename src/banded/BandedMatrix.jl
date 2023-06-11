@@ -588,7 +588,7 @@ end
     @boundscheck checkdimensions(1:size(A,1), V)
     @boundscheck checkbandmatch(A,V,:,j)
 
-    A.data[data_colrange(A,j)] = V[colrange(A,j)]
+    A.data[data_colrange(A,j)] = @view V[colrange(A,j)]
     A
 end
 
@@ -640,7 +640,7 @@ end
         end
     end
 
-    A.data[data_rowrange(A,k)] = V[rowrange(A,k)]
+    A.data[data_rowrange(A,k)] = @view V[rowrange(A,k)]
     A
 end
 
