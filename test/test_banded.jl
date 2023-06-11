@@ -470,15 +470,25 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test summary(A) == "4×5 BandedMatrix{$Int} with bandwidths (1, -1) with data 1×5 Fill{$Int} with indices 1:4×Base.OneTo(5)"
     end
 
-    @testset "setindex! with ranges (#348)" begin
-        n = 10;
-        X1 = brand(n,n,1,1)
-        B = BandedMatrix(Zeros(2n,2n), (3,3))
-        B[1:2:end,1:2:end] = X1
-        A = zeros(2n,2n)
-        A[1:2:end,1:2:end] = X1
-        @test A == B
+    @testset "setindex" begin
+        @testset "setindex! with ranges (#348)" begin
+            n = 10;
+            X1 = brand(n,n,1,1)
+            B = BandedMatrix(Zeros(2n,2n), (3,3))
+            B[1:2:end,1:2:end] = X1
+            A = zeros(2n,2n)
+            A[1:2:end,1:2:end] = X1
+            @test A == B
+        end
+        @testset "vector - integer - colon" begin
+            B = BandedMatrix(0=>1:4, 1=>5:7)
+            B[1, :] = [10, 20, 0, 0]
+            @test B[1, 1:2] == [10,20]
+            B[3, :] = [0, 0, -10, -20]
+            @test B[3, 3:4] == [-10, -20]
+        end
     end
+
 
     @testset "copy band to offset vector" begin
         B = BandedMatrix(2=>2:3)
