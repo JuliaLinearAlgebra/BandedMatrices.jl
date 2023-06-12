@@ -4,7 +4,7 @@
 #   a_21 a_22 a_23
 #   a_31 a_32 a_33 a_34
 #        a_42 a_43 a_44  ]
-# ordering the data like  (cobbndsmns first)
+# ordering the data like  (columns first)
 #       [ *      a_12   a_23    a_34
 #         a_11   a_22   a_33    a_44
 #         a_21   a_32   a_43    *
@@ -379,11 +379,43 @@ diagzero(D::Diagonal{B}, i, j) where B<:BandedMatrix =
 end
 
 
-# scalar - integer - integer
-@inline function getindex(A::BandedMatrix, k::Integer, j::Integer)
+# Int - Int
+@inline function getindex(A::BandedMatrix, k::Int, j::Int)
     @boundscheck checkbounds(A, k, j)
     @inbounds r = banded_getindex(A.data, A.l, A.u, k, j)
     r
+end
+
+# BandRange - Int
+@propagate_inbounds function getindex(A::BandedMatrix, ::BandRangeType, j::Int)
+    @boundscheck checkbounds(A, colrange(A, j), j)
+    A.data[data_colrange(A,j)]
+end
+
+# Colon - Int
+@propagate_inbounds function getindex(A::BandedMatrix, ::Colon, j::Int)
+    @boundscheck checkbounds(A, axes(A,1), j)
+    r = similar(A, axes(A,1))
+    r[firstindex(r):colstart(A,j)-1] .= zero(eltype(r))
+    r[colrange(A,j)] = @view A.data[data_colrange(A,j)]
+    r[colstop(A,j)+1:end] .= zero(eltype(r))
+    return r
+end
+
+# Int - BandRange
+@propagate_inbounds function getindex(A::BandedMatrix, k::Int, j::BandRangeType)
+    @boundscheck checkbounds(A, k, rowrange(A, k))
+    A.data[data_rowrange(A,k)]
+end
+
+# Int - Colon
+@propagate_inbounds function getindex(A::BandedMatrix, k::Int, ::Colon)
+    @boundscheck checkbounds(A, k, axes(A,2))
+    r = similar(A, axes(A,2))
+    r[firstindex(r):rowstart(A,k)-1] .= zero(eltype(r))
+    r[rowrange(A,k)] = @view A.data[data_rowrange(A,k)]
+    r[rowstop(A,k)+1:end] .= zero(eltype(r))
+    return r
 end
 
 # ~ indexing along a band
