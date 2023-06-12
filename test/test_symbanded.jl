@@ -310,33 +310,35 @@ end
     end
 end
 
-@testset "Generalized eigenvalues $W{$T}($Ua,$Ub)($n,$wa-$wb)" for (T,W) in (
-                                    (Float32, Symmetric),
-                                    (Float64, Symmetric),
-                                    (Float32, Hermitian),
-                                    (Float64, Hermitian),
-                                    (ComplexF32, Hermitian),
-                                    (ComplexF64, Hermitian),
-                                   ),
-    (Ua, Ub) in  ((:L,:L), (:U,:U)),
-    (wa, wb) in ((2, 3), (3, 2)), n in (4,)
-    #
-    function sbmatrix(W, T, U, w, n)
-        r = U == :L ? (0:-1:-w+1) : (0:w-1)
-        band(k) = k => ones(T, n - abs(k)) * 2.0^-abs(k)
-        W(BandedMatrix(band.(r)...), U)
-    end
-    A = sbmatrix(W, T, Ua, wa, n)
-    B = sbmatrix(W, T, Ub, wb, n)
-    AM, BM = Matrix.((A,B))
-    @test eigvals(A, B) ≈ eigvals(AM, BM)
-    if VERSION >= v"1.9"
-        Λ, V = eigen(A, B)
-        VM = Matrix(V)
-        Λ2, V2 = eigen(AM, BM)
-        @test Λ ≈ Λ2
-        @test VM' * AM * VM ≈ V2' * AM * V2
-        @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
+@testset "Generalized eigenvalues" begin
+    @testset "$W{$T}($Ua,$Ub)($n,$wa-$wb)" for (T,W) in (
+                                        (Float32, Symmetric),
+                                        (Float64, Symmetric),
+                                        (Float32, Hermitian),
+                                        (Float64, Hermitian),
+                                        (ComplexF32, Hermitian),
+                                        (ComplexF64, Hermitian),
+                                       ),
+        (Ua, Ub) in  ((:L,:L), (:U,:U)),
+        (wa, wb) in ((2, 3), (3, 2)), n in (4,)
+        #
+        function sbmatrix(W, T, U, w, n)
+            r = U == :L ? (0:-1:-w+1) : (0:w-1)
+            band(k) = k => ones(T, n - abs(k)) * 2.0^-abs(k)
+            W(BandedMatrix(band.(r)...), U)
+        end
+        A = sbmatrix(W, T, Ua, wa, n)
+        B = sbmatrix(W, T, Ub, wb, n)
+        AM, BM = Matrix.((A,B))
+        @test eigvals(A, B) ≈ eigvals(AM, BM)
+        if VERSION >= v"1.9"
+            Λ, V = eigen(A, B)
+            VM = Matrix(V)
+            Λ2, V2 = eigen(AM, BM)
+            @test Λ ≈ Λ2
+            @test VM' * AM * VM ≈ V2' * AM * V2
+            @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
+        end
     end
 end
 

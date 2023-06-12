@@ -64,19 +64,193 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 
 
 
-# start/stop indices of the i-th column/row, bounded by actual matrix size
+"""
+    colstart(A, i::Integer)
+
+Return the starting row index of the filled bands in the i-th column,
+bounded by the actual matrix size.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> BandedMatrices.colstart(A, 3)
+2
+
+julia> BandedMatrices.colstart(A, 4)
+3
+```
+"""
 @inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1)
+
+"""
+    colstop(A, i::Integer)
+
+Return the stopping row index of the filled bands in the i-th column,
+bounded by the actual matrix size.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> BandedMatrices.colstop(A, 3)
+3
+
+julia> BandedMatrices.colstop(A, 4)
+4
+```
+"""
 @inline  colstop(A, i::Integer) = max(min(i+bandwidth(A,1), size(A, 1)), 0)
+
+"""
+    rowstart(A, i::Integer)
+
+Return the starting column index of the filled bands in the i-th row,
+bounded by the actual matrix size.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> BandedMatrices.rowstart(A, 2)
+2
+
+julia> BandedMatrices.rowstart(A, 3)
+3
+```
+"""
 @inline rowstart(A, i::Integer) = max(i-bandwidth(A,1), 1)
+
+"""
+    rowstop(A, i::Integer)
+
+Return the stopping column index of the filled bands in the i-th row,
+bounded by the actual matrix size.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> BandedMatrices.rowstop(A, 2)
+3
+
+julia> BandedMatrices.rowstop(A, 4)
+4
+```
+"""
 @inline  rowstop(A, i::Integer) = max(min(i+bandwidth(A,2), size(A, 2)), 0)
 
+"""
+    colrange(A, i::Integer)
 
+Return the range of rows in the `i`-th column that correspond to filled bands.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> colrange(A, 1)
+1:1
+
+julia> colrange(A, 3)
+2:3
+```
+"""
 @inline colrange(A, i::Integer) = colstart(A,i):colstop(A,i)
+
+"""
+    rowrange(A, i::Integer)
+
+Return the range of columns in the `i`-th row that correspond to filled bands.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> rowrange(A, 1)
+1:2
+
+julia> rowrange(A, 4)
+4:4
+```
+"""
 @inline rowrange(A, i::Integer) = rowstart(A,i):rowstop(A,i)
 
 
-# length of i-the column/row
+"""
+    collength(A, i::Integer)
+
+Return the number of filled bands in the `i`-th column.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> BandedMatrices.collength(A, 1)
+1
+
+julia> BandedMatrices.collength(A, 2)
+2
+```
+"""
 @inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
+
+"""
+    rowlength(A, i::Integer)
+
+Return the number of filled bands in the `i`-th row.
+
+# Examples
+```jldoctest
+julia> A = BandedMatrix(0=>1:4, 1=>5:7)
+4×4 BandedMatrix{Int64} with bandwidths (0, 1):
+ 1  5  ⋅  ⋅
+ ⋅  2  6  ⋅
+ ⋅  ⋅  3  7
+ ⋅  ⋅  ⋅  4
+
+julia> BandedMatrices.rowlength(A, 1)
+2
+
+julia> BandedMatrices.rowlength(A, 4)
+1
+```
+"""
 @inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
 
 @inline banded_colsupport(A, j::Integer) = colrange(A, j)
