@@ -520,9 +520,8 @@ end
 # ~ Special setindex methods ~
 
 # fast method used below
-@propagate_inbounds function inbands_setindex!(data::AbstractMatrix{T}, u::Integer, v, k::Integer, j::Integer) where {T}
-    data[u + k - j + 1, j] = convert(T, v)::T
-    v
+@propagate_inbounds function inbands_setindex!(data::AbstractMatrix, u::Integer, v, k::Integer, j::Integer)
+    data[u + k - j + 1, j] = v
 end
 
 # slow fall back method
@@ -552,8 +551,11 @@ end
     @boundscheck checkdimensions(size(A), size(v))
     @boundscheck checkbandmatch(A, v, kr, jr)
 
+    data = A.data
+    l,u = bandwidths(A)
+
     for j=rowsupport(A), k=colrange(A,j)
-        @inbounds A[k,j] = v[k,j]
+        @inbounds inbands_setindex!(data, u, v[k,j], k, j)
     end
     A
 end
@@ -591,9 +593,16 @@ end
     A
 end
 
-# vector - BandRange - integer -- A[1, BandRange] = 2
+# vector - BandRange - integer -- A[BandRange, 1] = [1, 2, 3]
 @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, ::BandRangeType, j::Integer)
-    A[colrange(A, j), j] = V # call range method
+    kr = colrange(A, j)
+    @boundscheck checkbounds(A, kr, j)
+    @boundscheck checkdimensions(kr, V)
+
+    data, u = A.data, A.u
+    for i in eachindex(kr, V)
+        inbands_setindex!(data, u, V[i], kr[i], j)
+    end
     A
 end
 
@@ -627,17 +636,7 @@ end
     @boundscheck if size(A,2) ≠ length(V)
         throw(DimensionMismatch("tried to assign $(length(V)) vector to $(size(A,1)) destination"))
     end
-
-    for j = 1:rowstart(A,k)-1
-        if V[j] ≠ zero(T)
-            throw(BandError(A, _firstdiagrow(A, k)))
-        end
-    end
-    for j = rowstop(A,k)+1:size(A,2)
-        if V[j] ≠ zero(T)
-            throw(BandError(A, _firstdiagrow(A, k)))
-        end
-    end
+    @boundscheck checkbandmatch(A, V, k, jr)
 
     A.data[data_rowrange(A,k)] = @view V[rowrange(A,k)]
     A
@@ -645,7 +644,14 @@ end
 
 # vector - integer - BandRange -- A[1, BandRange] = [1, 2, 3]
 @propagate_inbounds function setindex!(A::BandedMatrix, V::AbstractVector, k::Integer, ::BandRangeType)
-    A[k, rowstart(A, k):rowstop(A, k)] = V # call range method
+    jr = rowrange(A, k)
+    @boundscheck checkbounds(A, k, jr)
+    @boundscheck checkdimensions(jr, V)
+
+    data, u = A.data, A.u
+    for i in eachindex(jr, V)
+        inbands_setindex!(data, u, V[i], k, jr[i])
+    end
     A
 end
 

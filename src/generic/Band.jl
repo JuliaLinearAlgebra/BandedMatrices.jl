@@ -145,7 +145,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::C
             throw(BandError(A, (k,j)))
         end
     end
-    for j = rowstop(A,j)+1:size(A,2)
+    for j = rowstop(A,k)+1:size(A,2)
         if V[j] ≠ zero(T)
             throw(BandError(A, (k,j)))
         end
