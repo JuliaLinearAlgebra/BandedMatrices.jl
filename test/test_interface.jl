@@ -58,6 +58,11 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test B * Eye(5) == B
         @test muladd!(2.0, Eye(5), B, 0.0, zeros(5,5)) == 2B
         @test muladd!(2.0, B, Eye(5), 0.0, zeros(5,5)) == 2B
+
+        E = Eye(4)
+        @test (@inferred E[band(0)]) == Ones(4)
+        @test (@inferred E[band(1)]) == Zeros(3)
+        @test (@inferred E[band(-1)]) == Zeros(3)
     end
 
     @testset "Diagonal" begin
@@ -108,17 +113,17 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
     @testset "Bidiagonal" begin
         L = Bidiagonal(Fill(2,5), Fill(1,4), :L)
-        @test L[band(0)] == Fill(2,5)
-        @test L[band(1)] == Fill(0,4)
-        @test L[band(-1)] == Fill(1,4)
-        @test L[band(2)] == L[band(-2)] == Fill(0,3)
+        @test (@inferred L[band(0)]) == Fill(2,5)
+        @test (@inferred L[band(1)]) == Fill(0,4)
+        @test (@inferred L[band(-1)]) == Fill(1,4)
+        @test (@inferred L[band(2)]) == L[band(-2)] == Fill(0,3)
         @test BandedMatrix(L) == L
 
         U = Bidiagonal(Fill(2,5), Fill(1,4), :U)
-        @test U[band(0)] == Fill(2,5)
-        @test U[band(1)] == Fill(1,4)
-        @test U[band(-1)] == Fill(0,4)
-        @test U[band(2)] == U[band(-2)] == Fill(0,3)
+        @test (@inferred U[band(0)]) == Fill(2,5)
+        @test (@inferred U[band(1)]) == Fill(1,4)
+        @test (@inferred U[band(-1)]) == Fill(0,4)
+        @test (@inferred U[band(2)]) == U[band(-2)] == Fill(0,3)
         @test BandedMatrix(U) == U
     end
 
