@@ -2,6 +2,7 @@ using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns, bandeddata
 import ArrayLayouts: OnesLayout, UnknownLayout
+using InfiniteArrays
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
@@ -87,6 +88,9 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test @inferred(B[band(0)]) ≡ Fill(1.0,5)
         @test B[band(1)] ≡ B[band(-1)] ≡ Fill(0.0,4)
         @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0.0,3)
+
+        B = Diagonal(1:∞)
+        @test @inferred(B[Band(0)]) == 1:∞
     end
 
     @testset "SymTridiagonal" begin
@@ -100,6 +104,9 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test BandedMatrices.inbands_getindex(A, 1,1) == 1
         BandedMatrices.inbands_setindex!(A, 2, 1,1)
         @test A[1,1] == 2
+
+        S = SymTridiagonal(1:∞, 1:∞)
+        @test @inferred(S[Band(0)]) == S[Band(1)] == S[Band(-1)] == 1:∞
 
         B = SymTridiagonal(Fill(1,5), Fill(2,4))
         @test @inferred(B[band(0)]) ≡ Fill(1,5)
@@ -119,6 +126,9 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test B[Band(2)] == B[Band(-2)] == [0,0]
         @test B[Band(5)] == B[Band(-5)] == Int[]
 
+        T = Tridiagonal(1:∞, 1:∞, 1:∞)
+        @test @inferred(T[Band(0)]) == T[Band(1)] == T[Band(-1)] == 1:∞
+
         B = Tridiagonal(Fill(1,4), Fill(2,5), Fill(3,4))
         @test @inferred(B[band(0)]) ≡ Fill(2,5)
         @test B[band(1)] ≡ Fill(3,4)
@@ -131,6 +141,9 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test @inferred(L[Band(0)]) == 1:5
         @test L[Band(-1)] == 1:4
         @test L[Band(1)] == zeros(Int,4)
+
+        L = Bidiagonal(1:∞, 1:∞, :L)
+        @test @inferred(L[Band(0)]) == L[Band(-1)] == 1:∞
 
         L = Bidiagonal(Fill(2,5), Fill(1,4), :L)
         @test @inferred(L[band(0)]) ≡ Fill(2,5)
