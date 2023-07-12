@@ -79,13 +79,22 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test A[band(0)] == [2; ones(4)]
 
         B = Diagonal(Fill(1,5))
-        @test B[band(0)] ≡ Fill(1,5)
+        @test @inferred(B[band(0)]) ≡ Fill(1,5)
         @test B[band(1)] ≡ B[band(-1)] ≡ Fill(0,4)
         @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0,3)
+
+        B = Diagonal(Ones(5))
+        @test @inferred(B[band(0)]) ≡ Fill(1.0,5)
+        @test B[band(1)] ≡ B[band(-1)] ≡ Fill(0.0,4)
+        @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0.0,3)
     end
 
     @testset "SymTridiagonal" begin
         A = SymTridiagonal([1,2,3],[4,5])
+        @test @inferred(A[Band(0)]) == [1,2,3]
+        @test A[Band(1)] == A[Band(-1)] == [4,5]
+        @test A[Band(2)] == A[Band(-2)] == [0]
+        @test A[Band(3)] == A[Band(-3)] == Int[]
         @test isbanded(A)
         @test bandwidths(A) == (1,1)
         @test BandedMatrices.inbands_getindex(A, 1,1) == 1
@@ -93,29 +102,45 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test A[1,1] == 2
 
         B = SymTridiagonal(Fill(1,5), Fill(2,4))
-        @test B[band(0)] ≡ Fill(1,5)
+        @test @inferred(B[band(0)]) ≡ Fill(1,5)
         @test B[band(1)] ≡ B[band(-1)] ≡ Fill(2,4)
         @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0,3)
+
+        B = SymTridiagonal(Ones(5), Ones(4))
+        @test @inferred(B[band(0)]) ≡ Fill(1.0,5)
+        @test B[band(1)] ≡ B[band(-1)] ≡ Fill(1.0,4)
+        @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0.0,3)
     end
 
     @testset "Tridiagonal" begin
+        B = Tridiagonal([1:3;], [1:4;], [1:3;])
+        @test @inferred(B[Band(0)]) == 1:4
+        @test B[Band(1)] == B[Band(-1)] == 1:3
+        @test B[Band(2)] == B[Band(-2)] == [0,0]
+        @test B[Band(5)] == B[Band(-5)] == Int[]
+
         B = Tridiagonal(Fill(1,4), Fill(2,5), Fill(3,4))
-        @test B[band(0)] ≡ Fill(2,5)
+        @test @inferred(B[band(0)]) ≡ Fill(2,5)
         @test B[band(1)] ≡ Fill(3,4)
         @test B[band(-1)] ≡ Fill(1,4)
         @test B[band(2)] ≡ B[band(-2)] ≡ Fill(0,3)
     end
 
     @testset "Bidiagonal" begin
+        L = Bidiagonal([1:5;], [1:4;], :L)
+        @test @inferred(L[Band(0)]) == 1:5
+        @test L[Band(-1)] == 1:4
+        @test L[Band(1)] == zeros(Int,4)
+
         L = Bidiagonal(Fill(2,5), Fill(1,4), :L)
-        @test L[band(0)] ≡ Fill(2,5)
+        @test @inferred(L[band(0)]) ≡ Fill(2,5)
         @test L[band(1)] ≡ Fill(0,4)
         @test L[band(-1)] ≡ Fill(1,4)
         @test L[band(2)] ≡ L[band(-2)] ≡ Fill(0,3)
         @test BandedMatrix(L) == L
 
         U = Bidiagonal(Fill(2,5), Fill(1,4), :U)
-        @test U[band(0)] ≡ Fill(2,5)
+        @test @inferred(U[band(0)]) ≡ Fill(2,5)
         @test U[band(1)] ≡ Fill(1,4)
         @test U[band(-1)] ≡ Fill(0,4)
         @test U[band(2)] ≡ U[band(-2)] ≡ Fill(0,3)
