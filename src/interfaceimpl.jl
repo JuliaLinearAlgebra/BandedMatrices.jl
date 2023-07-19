@@ -67,6 +67,10 @@ function rot180(A::AbstractBandedMatrix)
     _BandedMatrix(bandeddata(A)[end:-1:1,end:-1:1], m, u+sh,l-sh)
 end
 
+for MT in (:Diagonal, :SymTridiagonal, :Tridiagonal, :Bidiagonal)
+    @eval getindex(D::$MT{T,<:AbstractFill{T,1}}, b::Band) where {T<:Number} = diag(D, b.i)
+end
+
 function getindex(D::Diagonal{T,V}, b::Band) where {T,V}
     iszero(b.i) && return copy(D.diag)
     convert(V, Zeros{T}(size(D,1)-abs(b.i)))
