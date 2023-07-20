@@ -148,6 +148,16 @@ convert(::Type{DefaultBandedMatrix}, M::AbstractMatrix{T}) where T = convert(Def
 
 copy(B::BandedMatrix) = _BandedMatrix(copy(B.data), B.raxis, B.l, B.u)
 
+if isdefined(LinearAlgebra, :copymutable_oftype)
+    LinearAlgebra.copymutable_oftype(B::BandedMatrix, ::Type{S}) where S =
+        _BandedMatrix(LinearAlgebra.copymutable_oftype(B.data, S), B.raxis, B.l, B.u)
+
+    LinearAlgebra.copymutable_oftype(B::Adjoint{<:Any,<:BandedMatrix}, ::Type{S}) where S =
+        LinearAlgebra.copymutable_oftype(parent(B), S)'
+    LinearAlgebra.copymutable_oftype(B::Transpose{<:Any,<:BandedMatrix}, ::Type{S}) where S =
+        transpose(LinearAlgebra.copymutable_oftype(parent(B), S))
+end
+
 promote_rule(::Type{BandedMatrix{T1, C1}}, ::Type{BandedMatrix{T2, C2}}) where {T1,C1, T2,C2} =
     BandedMatrix{promote_type(T1,T2), promote_type(C1, C2)}
 
@@ -340,6 +350,9 @@ similar(bm::AbstractBandedMatrix, n::Integer, m::Integer) = similar(bm, eltype(b
 similar(bm::AbstractBandedMatrix, n::Integer, m::Integer, l::Integer, u::Integer) =
     similar(bm, eltype(bm), m, n, l, u)
 similar(bm::AbstractBandedMatrix, nm::Tuple{<:Integer,<:Integer}) = similar(bm, nm...)
+
+
+
 
 ## Abstract Array Interface
 
@@ -803,6 +816,11 @@ svdvals(A::BandedMatrix) = svdvals!(copy(A))
 function fill!(A::BandedMatrix, x)
     iszero(x) || throw(BandError(A))
     fill!(A.data, x)
+    A
+end
+
+function LinearAlgebra.fillband!(A::BandedMatrix{T}, x, l, u) where T
+    fill!(view(A.data, max(A.u+1-u,1):min(A.u+1-l,size(A.data,1)), :), x)
     A
 end
 

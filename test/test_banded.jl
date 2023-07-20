@@ -505,4 +505,16 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test @view(p[2:3]) == 2:3
         end
     end
+
+    if isdefined(LinearAlgebra, :copymutable_oftype)
+        @testset "copymutable_oftype" begin
+            B = _BandedMatrix((2:3)', 4, -2, 2)
+            @test LinearAlgebra.copymutable_oftype(B, Float64) == B
+            @test LinearAlgebra.copymutable_oftype(B, Float64) isa BandedMatrix{Float64}
+            @test LinearAlgebra.copymutable_oftype(B', Float64) == B'
+            @test LinearAlgebra.copymutable_oftype(B', Float64) isa Adjoint{Float64,<:BandedMatrix{Float64}}
+            @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) == transpose(B)
+            @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) isa Transpose{Float64,<:BandedMatrix{Float64}}
+        end
+    end
 end
