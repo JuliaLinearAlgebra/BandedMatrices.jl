@@ -34,7 +34,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     sublayout, sub_materialize, _fill_lmul!, _copy_oftype,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
-                    BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata
+                    BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata, copymutable_oftype_layout
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement
 

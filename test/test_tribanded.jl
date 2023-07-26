@@ -73,7 +73,15 @@ import BandedMatrices: BandedColumns, BandedRows
         A = brand(5,5,2,1)
         b = randn(5)
         U = UpperTriangular(A')
+        L = LowerTriangular(A')
+        Ũ = LowerTriangular(A)'
+        L̃ = UpperTriangular(A)'
         @test MemoryLayout(U) isa TriangularLayout{'U','N',BandedRows{DenseColumnMajor}}
         @test ArrayLayouts.lmul!(U,copy(b)) ≈ U*b
+        @test ArrayLayouts.lmul!(L,copy(b)) ≈ L*b
+        @test ldiv!(U,copy(b)) ≈ ArrayLayouts.ldiv!(U,copy(b)) ≈ U\b ≈ Matrix(U)\b
+        @test ldiv!(L,copy(b)) ≈ ArrayLayouts.ldiv!(L,copy(b)) ≈ L\b ≈ Matrix(L)\b
+        @test ldiv!(Ũ,copy(b)) ≈ ArrayLayouts.ldiv!(Ũ,copy(b)) ≈ Ũ\b ≈ Matrix(Ũ)\b
+        @test ldiv!(L̃,copy(b)) ≈ ArrayLayouts.ldiv!(L̃,copy(b)) ≈ L̃\b ≈ Matrix(L̃)\b
     end
 end
