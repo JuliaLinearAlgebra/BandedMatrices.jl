@@ -36,8 +36,8 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement
 
-const libblas = Base.libblas_name
-const liblapack = Base.liblapack_name
+const libblas = LinearAlgebra.BLAS.libblas
+const liblapack = LinearAlgebra.BLAS.liblapack
 const AdjointFact = isdefined(LinearAlgebra, :AdjointFactorization) ?
     LinearAlgebra.AdjointFactorization :
     Adjoint
