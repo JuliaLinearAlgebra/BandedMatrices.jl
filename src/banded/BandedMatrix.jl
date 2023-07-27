@@ -782,9 +782,6 @@ function _banded_nzval(B::AbstractMatrix)
 end
 
 
-sparse(B::BandedMatrix) = sparse(_banded_rowval(B), _banded_colval(B), _banded_nzval(B), size(B)...)
-
-
 
 
 function _bidiagonalize!(A::AbstractMatrix{T}, M::BandedColumnMajor) where T

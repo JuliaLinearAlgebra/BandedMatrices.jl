@@ -1,5 +1,5 @@
 module BandedMatrices
-using Base, FillArrays, ArrayLayouts, LinearAlgebra, SparseArrays
+using Base, FillArrays, ArrayLayouts, LinearAlgebra
 
 using Base: require_one_based_indexing, reindex, checkbounds, @propagate_inbounds,
             oneto, promote_op, MultiplicativeInverses, OneTo, ReshapedArray, Slice
@@ -23,8 +23,6 @@ import LinearAlgebra: axpy!, _chol!, rot180, dot, cholcopy, _apply_ipiv_rows!,
 
 using LinearAlgebra.LAPACK
 using LinearAlgebra.LAPACK: chkuplo, chktrans
-
-import SparseArrays: sparse
 
 import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
@@ -94,6 +92,11 @@ include("tribanded.jl")
 
 include("interfaceimpl.jl")
 
+if !isdefined(Base, :get_extension)
+    include("../ext/BandedMatricesSparseArraysExt.jl")
+end
+
 include("precompile.jl")
+
 
 end #module
