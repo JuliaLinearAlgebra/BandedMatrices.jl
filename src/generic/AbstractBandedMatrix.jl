@@ -22,32 +22,6 @@ Returns a tuple containing the lower and upper bandwidth of `A`, in order.
 bandwidths(A::AbstractVecOrMat) = bandwidths(MemoryLayout(A), A)
 bandwidths(_, A) = (size(A,1)-1 , size(A,2)-1)
 
-function BandedMatrices.bandwidths(A::SparseMatrixCSC)
-    l,u = -size(A,1),-size(A,2)
-
-    m,n = size(A)
-    rows = rowvals(A)
-    vals = nonzeros(A)
-    for j = 1:n
-        for ind in nzrange(A, j)
-            i = rows[ind]
-            # We skip non-structural zeros when computing the
-            # bandwidths.
-            iszero(vals[ind]) && continue
-            ij = abs(i-j)
-            if i ≥ j
-                l = max(l, ij)
-                u = max(u, -ij)
-            elseif i < j
-                l = max(l, -ij)
-                u = max(u, ij)
-            end
-        end
-    end
-
-    l,u
-end
-
 """
     bandwidth(A,i)
 
