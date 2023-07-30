@@ -77,11 +77,27 @@ import BandedMatrices: BandedColumns, BandedRows
         Ũ = LowerTriangular(A)'
         L̃ = UpperTriangular(A)'
         @test MemoryLayout(U) isa TriangularLayout{'U','N',BandedRows{DenseColumnMajor}}
-        @test ArrayLayouts.lmul!(U,copy(b)) ≈ U*b
-        @test ArrayLayouts.lmul!(L,copy(b)) ≈ L*b
+        @test U*b ≈ ArrayLayouts.lmul!(U,copy(b)) ≈ Matrix(U)*b
+        @test L*b ≈ ArrayLayouts.lmul!(L,copy(b)) ≈ Matrix(L)*b
         @test ldiv!(U,copy(b)) ≈ ArrayLayouts.ldiv!(U,copy(b)) ≈ U\b ≈ Matrix(U)\b
         @test ldiv!(L,copy(b)) ≈ ArrayLayouts.ldiv!(L,copy(b)) ≈ L\b ≈ Matrix(L)\b
         @test ldiv!(Ũ,copy(b)) ≈ ArrayLayouts.ldiv!(Ũ,copy(b)) ≈ Ũ\b ≈ Matrix(Ũ)\b
         @test ldiv!(L̃,copy(b)) ≈ ArrayLayouts.ldiv!(L̃,copy(b)) ≈ L̃\b ≈ Matrix(L̃)\b
+
+        B = randn(5,5)
+
+        @test U*B ≈ ArrayLayouts.lmul!(U,copy(B)) ≈ Matrix(U)*B
+        @test L*B ≈ ArrayLayouts.lmul!(L,copy(B)) ≈ Matrix(L)*B
+        @test B*U ≈ ArrayLayouts.rmul!(copy(B),U) ≈ B*Matrix(U)
+        @test B*L ≈ ArrayLayouts.rmul!(copy(B),L) ≈ B*Matrix(L)
+
+        @test U \ B ≈ Matrix(U) \ B
+        @test B / U ≈ B / Matrix(U)
+        @test L \ B ≈ Matrix(L) \ B
+        @test B / L ≈ B / Matrix(L)
+        @test Ũ \ B ≈ Matrix(Ũ) \ B
+        @test B / Ũ ≈ B / Matrix(Ũ)
+        @test L̃ \ B ≈ Matrix(L̃) \ B
+        @test B / L̃ ≈ B / Matrix(L̃)
     end
 end
