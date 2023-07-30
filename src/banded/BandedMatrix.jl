@@ -153,7 +153,7 @@ copymutable_oftype_layout(::BandedColumns, B, ::Type{S}) where S =
     _BandedMatrix(LinearAlgebra.copymutable_oftype(bandeddata(B), S), axes(B,1), bandwidths(B)...)
 
 copymutable_oftype_layout(::BandedRows, B, ::Type{S}) where S =
-    LinearAlgebra.copymutable_oftype(parent(B), S)'
+    dualadjoint(B)(LinearAlgebra.copymutable_oftype(parent(B), S))
 
 copymutable_oftype_layout(::AbstractBandedLayout, B, ::Type{S}) where S =
     copyto!(BandedMatrix{S}(undef, axes(B), bandwidths(B)), B)

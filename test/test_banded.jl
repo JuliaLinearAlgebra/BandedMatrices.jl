@@ -508,7 +508,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
 
     if isdefined(LinearAlgebra, :copymutable_oftype)
         @testset "copymutable_oftype" begin
-            B = _BandedMatrix((2:3)', 4, -2, 2)
+            B = _BandedMatrix((2:5)', 4, -2, 2)
             @test LinearAlgebra.copymutable_oftype(B, Float64) == B
             @test LinearAlgebra.copymutable_oftype(B, Float64) isa BandedMatrix{Float64}
             @test LinearAlgebra.copymutable_oftype(B', Float64) == B'
