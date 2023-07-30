@@ -239,7 +239,7 @@ end
 
 ### BandedMatrix * dense matrix
 
-function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, <:AbstractColumnMajor, <:AbstractColumnMajor,
+function materialize!(M::MulAdd{<:BandedColumns, <:AbstractColumnMajor, <:AbstractColumnMajor,
         T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
@@ -253,6 +253,25 @@ function materialize!(M::MulAdd{BandedColumns{DenseColumnMajor}, <:AbstractColum
     else
         for (colC, colB) in zip(eachcol(C), eachcol(B))
             mul!(colC, A, colB, α, β)
+        end
+    end
+
+    return C
+end
+
+function materialize!(M::MulAdd{<:AbstractColumnMajor, <:BandedColumns, <:AbstractColumnMajor,
+    T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
+    α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
+    mA, nA = size(A)
+    mB, nB = size(B)
+    mC, nC = size(C)
+    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("A has size ($mA, $nA), B has size ($mB, $nB), C has size ($mC, $nC)"))
+
+    if iszero(α)
+        lmul!(β, C)
+    else
+        for (rowC, rowA) in zip(eachrow(C), eachrow(A))
+            mul!(rowC, transpose(B), rowA, α, β)
         end
     end
 

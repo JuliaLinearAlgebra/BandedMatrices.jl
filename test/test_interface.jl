@@ -205,6 +205,12 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
             bandwidths(convert(BandedMatrix{Float64}, A)) ==
             bandwidths(convert(BandedMatrix{Float64,Matrix{Float64}},A)) ==
             bandwidths(A)
+
+    @testset "copymutable_oftype" begin
+        A = PseudoBandedMatrix(rand(5, 4), 1, 2)
+        @test ArrayLayouts.copymutable_oftype_layout(MemoryLayout(A), A, BigFloat) == A
+        @test ArrayLayouts.copymutable_oftype_layout(MemoryLayout(A), A, BigFloat) isa BandedMatrix
+    end
 end
 
 @testset "Bi/Tri/Diagonal" begin

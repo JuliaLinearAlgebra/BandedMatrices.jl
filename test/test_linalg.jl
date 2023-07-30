@@ -426,5 +426,12 @@ import BandedMatrices: BandedColumns, _BandedMatrix
             end
         end
     end
+
+    @testset "mul with α = 0" begin
+        A = randn(5,5)
+        B = brand(5,5,1,2)
+        @test muladd!(0.0, A, B, 2.0, copy(A)) == 2A
+        @test muladd!(0.0, B, A, 2.0, copy(A)) == 2A
+    end
 end
 

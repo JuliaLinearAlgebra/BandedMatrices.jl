@@ -79,16 +79,26 @@ end
 # Ldiv
 for UNIT in ('N', 'U')
     @eval begin
-        @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:BandedColumnMajor},
-                                        <:AbstractStridedLayout})
+        @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:BandedColumnMajor}, <:AbstractStridedLayout})
             A,x = M.A,M.B
             tbsv!('U', 'N', $UNIT, size(A,1), bandwidth(A,2), bandeddata(A), x)
         end
 
-        @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:BandedColumnMajor},
-                                                        <:AbstractStridedLayout})
+        @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:BandedColumnMajor}, <:AbstractStridedLayout})
             A,x = M.A,M.B
             tbsv!('L', 'N', $UNIT, size(A,1), bandwidth(A,1), bandeddata(A), x)
+        end
+
+        @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:BandedRowMajor}, <:AbstractStridedLayout})
+            U,x = M.A,M.B
+            A = triangulardata(U)
+            tbsv!('L', 'T', $UNIT, size(A,1), bandwidth(A,2), bandeddata(LowerTriangular(A')), x)
+        end
+
+        @inline function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:BandedRowMajor}, <:AbstractStridedLayout})
+            L,x = M.A,M.B
+            A = triangulardata(L)
+            tbsv!('U', 'T', $UNIT, size(A,1), bandwidth(A,1), bandeddata(UpperTriangular(A')), x)
         end
     end
     # for UPLO in ('U', 'L')
