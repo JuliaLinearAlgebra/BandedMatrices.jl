@@ -515,6 +515,8 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test LinearAlgebra.copymutable_oftype(B', Float64) isa Adjoint{Float64,<:BandedMatrix{Float64}}
             @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) == transpose(B)
             @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) isa Transpose{Float64,<:BandedMatrix{Float64}}
+
+            @test LinearAlgebra.copymutable_oftype(UpperTriangular(B), Float64) == B
         end
     end
 end
