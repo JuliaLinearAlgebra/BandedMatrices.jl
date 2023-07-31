@@ -517,4 +517,15 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) isa Transpose{Float64,<:BandedMatrix{Float64}}
         end
     end
+
+    @testset "sparse" begin
+        B = BandedMatrix([1:4;])
+        B2 = copy(B)
+        S = sparse(B) .* 2
+        copyto!(B, S)
+        @test B == 2B2
+        B .= 0
+        copyto!(view(B, :, :), S)
+        @test B == 2B2
+    end
 end
