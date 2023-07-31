@@ -519,7 +519,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "sparse" begin
-        B = BandedMatrix([1:4;])
+        B = BandedMatrix(1 => [1:4;])
         B2 = copy(B)
         S = sparse(B) .* 2
         copyto!(B, S)
