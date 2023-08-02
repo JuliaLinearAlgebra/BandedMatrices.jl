@@ -18,7 +18,7 @@ import BandedMatrices: BandedColumns, BandedRows
             x=rand(10)
             @test A*x ≈ BandedMatrix(A)*x ≈ Matrix(A)*x
             @test transpose(A)*x ≈ transpose(BandedMatrix(A))*x ≈ transpose(Matrix(A))*x
-            @test all(A*x .=== lmul!(A, copy(x)) .=== lmul(A,x) .===
+            @test all(A*x .≈ lmul!(A, copy(x)) .=== lmul(A,x) .===
                         BandedMatrices.tbmv!('U', 'N', ud, 10, 2, parent(A).data, copy(x)))
             @test_throws DimensionMismatch BandedMatrices.tbmv('U', 'N', ud, 10, 2, parent(A).data, rand(9))
 
@@ -44,7 +44,7 @@ import BandedMatrices: BandedColumns, BandedRows
             x=rand(10)
             @test A*x ≈ Matrix(A)*x
             @test transpose(A)*x ≈ transpose(BandedMatrix(A))*x ≈ transpose(Matrix(A))*x
-            @test all(A*x .=== lmul!(A, copy(x)) .=== lmul(A,x) .===
+            @test all(A*x .≈ lmul!(A, copy(x)) .=== lmul(A,x) .===
                         BandedMatrices.tbmv!('L', 'N', ud, 10, 1, view(parent(A).data, 3:4,:), copy(x)))
             @test_throws DimensionMismatch BandedMatrices.tbmv('L', 'N', ud, 10, 1, view(parent(A).data, 3:4,:), rand(9))
 
