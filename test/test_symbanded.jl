@@ -8,6 +8,20 @@ using Random
 using Test
 
 @testset "Symmetric" begin
+    @testset "UnitRange" begin
+        A = brand(100,100,3,2)
+        S = Symmetric(A)
+        @test S[3:10,4:11] == Symmetric(Matrix(A))[3:10,4:11]
+    end
+
+    @testset "Sym of degenerate bands" begin
+        A = SymTridiagonal(zeros(8), fill(0.5,7))
+        B = Symmetric(BandedMatrix(1 => fill(0.5,7)))
+        @test A ≈ B
+        @test BandedMatrices.inbands_getindex(B, 1, 1) == 0
+        @test BandedMatrices.inbands_getindex(B, 1, 2) == BandedMatrices.inbands_getindex(B, 2, 1) == 0.5
+    end
+
     A = Symmetric(brand(10,10,1,2))
     @test isbanded(A)
     @test BandedMatrix(A) == A
@@ -382,17 +396,8 @@ end
         VERSION >= v"1.9-" && @test Ac\b ≈ A\b
     end
 
-    @testset "UnitRange" begin
-        A = brand(100,100,3,2)
-        S = Symmetric(A)
-        @test S[3:10,4:11] == Symmetric(Matrix(A))[3:10,4:11]
-    end
-
-    @testset "Sym of degenerate bands" begin
-        A = SymTridiagonal(zeros(8), fill(0.5,7))
-        B = Symmetric(BandedMatrix(1 => fill(0.5,7)))
-        @test A ≈ B
-        @test BandedMatrices.inbands_getindex(B, 1, 1) == 0
-        @test BandedMatrices.inbands_getindex(B, 1, 2) == BandedMatrices.inbands_getindex(B, 2, 1) == 0.5
-    end
+    B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[1:5;], -1=>Float64[1:4;])
+    @test isposdef(B) == isposdef(Matrix(B)) == false
+    B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[2:2:10;], -1=>Float64[1:4;])
+    @test isposdef(B) == isposdef(Matrix(B)) == true
 end

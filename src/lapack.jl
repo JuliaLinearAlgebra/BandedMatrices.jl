@@ -263,7 +263,7 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
                  Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
                  uplo, n, kd,
                  A, max(1,stride(A,2)), info)
-            LAPACK.chklapackerror(info[])
+            LAPACK.chkargsok(info[])
             A, info[]
         end
     end
