@@ -1,6 +1,24 @@
-using BandedMatrices, ArrayLayouts, LinearAlgebra, FillArrays, Test
+using ArrayLayouts
+using BandedMatrices
+using FillArrays
+using LinearAlgebra
+using Test
+
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns, _BandedMatrix
+
+# wrap a OneElement to dispatch without type-piracy
+
+struct MyOneElement{T,N,A<:OneElement{T,N}} <: AbstractArray{T,N}
+    arr :: A
+end
+Base.size(M::MyOneElement) = size(M.arr)
+Base.axes(M::MyOneElement) = axes(M.arr)
+Base.getindex(M::MyOneElement{<:Any,N}, inds::Vararg{Int,N}) where {N} =
+    getindex(M.arr, inds...)
+
+ArrayLayouts.colsupport(::UnknownLayout, A::MyOneElement{<:Any,1}, _) =
+    intersect(axes(A,1), A.arr.ind[1]:A.arr.ind[1])
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -88,6 +106,17 @@ import BandedMatrices: BandedColumns, _BandedMatrix
                 @test cmp(Y, BX + ones(T, size(Y)))
             end
         end
+    end
+
+    @testset "BandedMatrix * sparse" begin
+        B = brand(6,6,2,2)
+        x = MyOneElement(OneElement(2, 4, 6))
+        y = Array(x)
+        @test B * x ≈ B * y
+        @test B' * x ≈ B' * y
+
+        B = brand(Complex{Int8}, 6,6,2,2)
+        @test B' * x ≈ B' * y
     end
 
     @testset "gbmm!" begin
