@@ -19,7 +19,7 @@ BandedMatrix(Zeros(m,n), (l,u))    # creates a banded matrix of zeros, with l su
 brand(m,n,l,u)     # creates a random banded matrix, with l sub-diagonals and u super-diagonals
 BandedMatrix(Ones(m,n), (l,u))     # creates a banded matrix of ones, with l sub-diagonals and u super-diagonals
 BandedMatrix(Eye(n), (l,u))        # creates a banded  n x n identity matrix, with l sub-diagonals and u super-diagonals
-BandedMatrix(-1=> 1:5, 2=>1:3)     # creates a 5 x 5 banded matrix version of diagm(-1=> 1:5, 2=>1:3)
+BandedMatrix(-1=> 1:5, 2=>1:3)     # creates a 6 x 6 banded matrix version of diagm(-1=> 1:5, 2=>1:3)
 BandedMatrix((-1=> 1:5, 2=>1:3), (n,m))     # creates an n x m banded matrix with 1 sub-diagonals and u super-diagonals with the specified diagonals
 BandedMatrix((-1=> 1:5, 2=>1:3), (n,m), (l,u))     # creates an n x m banded matrix with l sub-diagonals and u super-diagonals with the specified diagonals
 ```
