@@ -245,8 +245,7 @@ end
 
 ### BandedMatrix * dense matrix
 
-function materialize!(M::MulAdd{<:BandedColumns, <:AbstractColumnMajor, <:AbstractColumnMajor,
-        T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
+function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractColumnMajor, <:AbstractColumnMajor})
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
     mA, nA = size(A)
@@ -265,8 +264,7 @@ function materialize!(M::MulAdd{<:BandedColumns, <:AbstractColumnMajor, <:Abstra
     return C
 end
 
-function materialize!(M::MulAdd{<:AbstractColumnMajor, <:BandedColumns, <:AbstractColumnMajor,
-    T, <:AbstractMatrix, <:AbstractMatrix, <:AbstractMatrix}) where {T}
+function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor, <:BandedColumns, <:AbstractColumnMajor})
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
     mA, nA = size(A)
     mB, nB = size(B)
