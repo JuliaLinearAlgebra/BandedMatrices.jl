@@ -1,6 +1,10 @@
-using BandedMatrices, FillArrays, Test, LinearAlgebra, SparseArrays
+using ArrayLayouts
+using BandedMatrices
 import BandedMatrices: _BandedMatrix
-
+using FillArrays
+using LinearAlgebra
+using SparseArrays
+using Test
 
 # used to test general matrix backends
 struct MyMatrix{T} <: AbstractMatrix{T}
