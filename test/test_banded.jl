@@ -107,22 +107,31 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     @testset "BandedMatrix * Vector" begin
         let A=brand(10,12,2,3), v=rand(12), w=rand(10)
             @test A*v ≈ Matrix(A)*v
+            # the left-side uses BLAS, while the right doesn't
+            @test mul!(ones(size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(size(A,2)), A', w, 1, 2)
         end
 
         let A=brand(Float64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
             @test A*v ≈ Matrix(A)*v
+            @test mul!(ones(ComplexF64,size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(ComplexF64,size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,2)), A', w, 1, 2)
         end
 
         let A=brand(ComplexF64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
             @test A*v ≈ Matrix(A)*v
+            @test mul!(ones(ComplexF64,size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(ComplexF64,size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,2)), A', w, 1, 2)
         end
 
         let A=brand(ComplexF64,5,3,2,2), v=rand(Float64,3), w=rand(Float64,5)
             @test A*v ≈ Matrix(A)*v
+            @test mul!(ones(ComplexF64,size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(ComplexF64,size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,2)), A', w, 1, 2)
         end
 
         @testset "empty" begin
