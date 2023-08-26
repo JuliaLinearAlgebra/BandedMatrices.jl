@@ -40,7 +40,6 @@ end
 
 function _banded_muladd!(α, A, x::AbstractVector, β, y)
     m, n = size(A)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     l, u = bandwidths(A)
     if -l > u # no bands
         _fill_lmul!(β, y)
@@ -51,7 +50,7 @@ function _banded_muladd!(α, A, x::AbstractVector, β, y)
     elseif u < 0 # with -l <= u < 0, that is, all bands lie below the diagnoal.
         # E.g. (l,u) = (2,-1)
         # set lview = l + u >= 0 and uview = 0
-        y[1:-u] .= zero(eltype(y))
+        _fill_lmul!(β, @view(y[1:-u]))
         _banded_gbmv!('N', α, view(A, 1-u:m, :), x, β, view(y, 1-u:m))
         y
     else
@@ -59,19 +58,20 @@ function _banded_muladd!(α, A, x::AbstractVector, β, y)
     end
 end
 
-materialize!(M::BlasMatMulVecAdd{<:BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat =
+function materialize!(M::BlasMatMulVecAdd{<:BandedColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+    checkdimensions(M)
     _banded_muladd!(M.α, M.A, M.B, M.β, M.C)
+end
 
 function _banded_muladd_row!(tA, α, At, x, β, y)
     n, m = size(At)
-    (length(y) ≠ m || length(x) ≠ n) && throw(DimensionMismatch("*"))
     u, l = bandwidths(At)
     if -l > u # no bands
         _fill_lmul!(β, y)
     elseif l < 0
         _banded_gbmv!(tA, α, view(At, 1-l:n, :,), view(x, 1-l:n), β, y)
     elseif u < 0
-        y[1:-u] .= zero(eltype(y))
+        _fill_lmul!(β, @view(y[1:-u]))
         _banded_gbmv!(tA, α, view(At, :, 1-u:m), x, β, view(y, 1-u:m))
         y
     else
@@ -79,12 +79,14 @@ function _banded_muladd_row!(tA, α, At, x, β, y)
     end
 end
 
-function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasFloat
+function materialize!(M::BlasMatMulVecAdd{<:BandedRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasFloat})
+    checkdimensions(M)
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     _banded_muladd_row!('T', α, transpose(A), x, β, y)
 end
 
-function materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:BandedRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,T}) where T<:BlasComplex
+function materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:BandedRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasComplex})
+    checkdimensions(M)
     α, A, x, β, y = M.α, M.A, M.B, M.β, M.C
     _banded_muladd_row!('C', α, A', x, β, y)
 end
@@ -173,25 +175,17 @@ const ConjOrBandedLayout = Union{AbstractBandedLayout,ConjLayout{<:AbstractBande
 const ConjOrBandedColumnMajor = Union{<:BandedColumnMajor,ConjLayout{<:BandedColumnMajor}}
 
 function _banded_muladd!(α::T, A, B::AbstractMatrix, β, C) where T
-    Am, An = size(A)
-    Bm, Bn = size(B)
-    if An != Bm || size(C, 1) != Am || size(C, 2) != Bn
-        throw(DimensionMismatch("*"))
-    end
-
-    Al, Au = bandwidths(A)
-    Bl, Bu = bandwidths(B)
-
     gbmm!('N', 'N', α, A, B, β, C)
-
     C
 end
 
 materialize!(M::BlasMatMulMatAdd{<:AbstractBandedLayout,<:AbstractBandedLayout,<:BandedColumnMajor}) =
     materialize!(MulAdd(M.α, convert(DefaultBandedMatrix,M.A), convert(DefaultBandedMatrix,M.B), M.β, M.C))
 
-materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor}) =
+function materialize!(M::BlasMatMulMatAdd{<:BandedColumnMajor,<:BandedColumnMajor,<:BandedColumnMajor})
+    checkdimensions(M)
     _banded_muladd!(M.α, M.A, M.B, M.β, M.C)
+end
 
 
 # function generally_banded_matmatmul!(C::AbstractMatrix{T}, tA::Val, tB::Val, A::AbstractMatrix{U}, B::AbstractMatrix{V}) where {T, U, V}
@@ -246,12 +240,8 @@ end
 ### BandedMatrix * dense matrix
 
 function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractColumnMajor, <:AbstractColumnMajor})
+    checkdimensions(M)
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
-
-    mA, nA = size(A)
-    mB, nB = size(B)
-    mC, nC = size(C)
-    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("A has size ($mA, $nA), B has size ($mB, $nB), C has size ($mC, $nC)"))
 
     if iszero(α)
         lmul!(β, C)
@@ -265,11 +255,8 @@ function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractColumnMajor, <:
 end
 
 function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor, <:BandedColumns, <:AbstractColumnMajor})
+    checkdimensions(M)
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
-    mA, nA = size(A)
-    mB, nB = size(B)
-    mC, nC = size(C)
-    (nA == mB && mC == mA && nC == nB) || throw(DimensionMismatch("A has size ($mA, $nA), B has size ($mB, $nB), C has size ($mC, $nC)"))
 
     if iszero(α)
         lmul!(β, C)
