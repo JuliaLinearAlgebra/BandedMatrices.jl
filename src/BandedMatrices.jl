@@ -10,7 +10,7 @@ import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, 
                copyto!, Array
 
 using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
-import Base.Broadcast: BroadcastStyle, broadcasted, materialize, materialize!
+import Base.Broadcast: BroadcastStyle, broadcasted
 
 using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasInt, BlasReal, BlasFloat, BlasComplex,
             checksquare, HermOrSym, RealHermSymComplexHerm, chkstride1, QRPackedQ,
@@ -27,7 +27,7 @@ using LinearAlgebra.LAPACK: chkuplo, chktrans
 import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
-                    materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
+                    materialize, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     sublayout, sub_materialize, _fill_lmul!, _copy_oftype,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
