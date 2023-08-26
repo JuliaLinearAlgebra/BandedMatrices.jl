@@ -357,7 +357,7 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
             @test Matrix(A)*x ≈ y
             if l >= 0 && u >= 0
                 @test all(BLAS.gbmv!('N', n, l, u, 1.0, A.data, x, 0.0, copy(y)) .===
-                        Broadcast.materialize!(MulAdd(1.0,A,x,0.0,similar(y))) .=== y)
+                        ArrayLayouts.materialize!(MulAdd(1.0,A,x,0.0,similar(y))) .=== y)
             end
 
             z .= MulAdd(2.0,A,x,3.0,y)
