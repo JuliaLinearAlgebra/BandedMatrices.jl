@@ -4,7 +4,16 @@ on:
     branches:
       - master
     tags: '*'
+    paths-ignore:
+      - 'LICENSE.md'
+      - 'README.md'
+      - '.github/workflows/TagBot.yml'
   pull_request:
+    paths-ignore:
+      - 'LICENSE.md'
+      - 'README.md'
+      - '.github/workflows/TagBot.yml'
+
 jobs:
   docs:
     name: Documentation
