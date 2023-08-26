@@ -2,11 +2,13 @@
 A Julia package for representing banded matrices
 
 [![Build Status](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl/workflows/CI/badge.svg)](https://github.com/JuliaLinearAlgebra/BandedMatrices.jl/actions)
-
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/BandedMatrices.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaLinearAlgebra.github.io/BandedMatrices.jl/dev)
 [![codecov](https://codecov.io/gh/JuliaLinearAlgebra/BandedMatrices.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaLinearAlgebra/BandedMatrices.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+[![deps](https://juliahub.com/docs/General/BandedMatrices/stable/deps.svg)](https://juliahub.com/ui/Packages/General/BandedMatrices?t=2)
+[![version](https://juliahub.com/docs/General/BandedMatrices/stable/version.svg)](https://juliahub.com/ui/Packages/General/BandedMatrices)
+[![pkgeval](https://juliahub.com/docs/General/BandedMatrices/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/BandedMatrices)
 
 
 This package supports representing banded matrices by only the entries on the
