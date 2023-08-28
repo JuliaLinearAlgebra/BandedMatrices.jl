@@ -451,10 +451,12 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "induced norm" begin
-        A = brand(Float64, 12, 10, 2, 3)
-        B = Matrix(A)
-	    @test opnorm(A) ≈ opnorm(B)
-	    @test cond(A) ≈ cond(B)
+        for T in (Float32, Float64, Complex{Float32}, Complex{Float64})
+            A = brand(T, 12, 10, 2, 3)
+            B = Matrix(A)
+    	    @test opnorm(A) ≈ opnorm(B)
+    	    @test cond(A) ≈ cond(B)
+        end
     end
 
     @testset "triu/tril" begin

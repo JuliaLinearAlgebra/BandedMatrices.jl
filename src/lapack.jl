@@ -190,6 +190,31 @@ for (fname, elty) in ((:dgbbrd_,:Float64),
     end
 end
 
+for (fname, elty) in ((:zgbbrd_,:ComplexF64),
+                      (:cgbbrd_,:ComplexF32))
+    @eval begin
+        local Relty = real($elty)
+        function gbbrd!(vect::Char, m::Int, n::Int, ncc::Int,
+                        kl::Int, ku::Int, ab::AbstractMatrix{$elty},
+                        d::AbstractVector{Relty}, e::AbstractVector{Relty}, Q::AbstractMatrix{$elty},
+                        Pt::AbstractMatrix{$elty}, C::AbstractMatrix{$elty}, work::AbstractVector{$elty},
+                        rwork::AbstractVector{Relty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{Relty}, Ptr{Relty}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{Relty}, Ptr{BlasInt}),
+                 vect, m, n, ncc,
+                 kl, ku, ab, max(1,stride(ab,2)),
+                 d, e, Q, max(1,stride(Q,2)),
+                 Pt, max(1,stride(Pt,2)), C, max(1,stride(C,2)), work, rwork, info)
+            LAPACK.chklapackerror(info[])
+            d, e, Q, Pt, C
+        end
+    end
+end
+
 # All the eigenvalues and, optionally, eigenvectors of a real symmetric band matrix A.
 for (fname, elty) in ((:dsbev_,:Float64),
                       (:ssbev_,:Float32))
