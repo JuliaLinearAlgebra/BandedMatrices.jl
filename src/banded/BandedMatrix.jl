@@ -798,6 +798,20 @@ function _bidiagonalize!(A::AbstractMatrix{T}, M::BandedColumnMajor) where T
     Bidiagonal(d, e, :U)
 end
 
+function _bidiagonalize!(A::AbstractMatrix{T}, M::BandedColumnMajor) where T <: Complex
+    m, n = size(A)
+    mn = min(m, n)
+    d = Vector{real(T)}(undef, mn)
+    e = Vector{real(T)}(undef, mn-1)
+    Q = Matrix{T}(undef, 0, 0)
+    Pt = Matrix{T}(undef, 0, 0)
+    C = Matrix{T}(undef, 0, 0)
+    work = Vector{T}(undef, 2*max(m, n))
+    rwork = Vector{real(T)}(undef, 2*max(m, n))
+    gbbrd!('N', m, n, 0, bandwidth(A, 1), bandwidth(A, 2), bandeddata(A), d, e, Q, Pt, C, work, rwork)
+    Bidiagonal(d, e, :U)
+end
+
 bidiagonalize!(A::AbstractMatrix) = _bidiagonalize!(A, MemoryLayout(typeof(A)))
 bidiagonalize(A::AbstractMatrix) = bidiagonalize!(copy(A))
 
