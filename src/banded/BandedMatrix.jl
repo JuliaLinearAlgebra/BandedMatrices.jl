@@ -13,7 +13,7 @@
 
 function _BandedMatrix end
 
-mutable struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
+struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     data::CONTAINER  # l+u+1 x n (# of columns)
     raxis::RAXIS # axis for rows (col axis comes from data)
     l::Int # lower bandwidth ≥0
