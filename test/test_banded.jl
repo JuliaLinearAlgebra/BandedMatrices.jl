@@ -1,6 +1,10 @@
-using BandedMatrices, FillArrays, Test, LinearAlgebra, SparseArrays
+using ArrayLayouts
+using BandedMatrices
 import BandedMatrices: _BandedMatrix
-
+using FillArrays
+using LinearAlgebra
+using SparseArrays
+using Test
 
 # used to test general matrix backends
 struct MyMatrix{T} <: AbstractMatrix{T}
@@ -30,13 +34,13 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     @testset "Undef BandedMatrix" begin
         @test typeof(BandedMatrix{Float64}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Float64,Matrix{Float64}}(undef,(10,10),(1,1))) ==
-            typeof(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}(undef,(10,10),(1,1))) 
+            typeof(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}(undef,(10,10),(1,1)))
         @test typeof(BandedMatrix{Int}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Int,Matrix{Int}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}(undef,(10,10),(1,1)))
         @test typeof(BandedMatrix{Vector{Int}}(undef,(10,10),(1,1))) ==
             typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}}}(undef,(10,10),(1,1))) ==
-            typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}},Base.OneTo{Int}}(undef,(10,10),(1,1)))                
+            typeof(BandedMatrix{Vector{Int},Matrix{Vector{Int}},Base.OneTo{Int}}(undef,(10,10),(1,1)))
     end
 
     @testset "Creating BandedMatrix" begin
@@ -61,6 +65,19 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)) isa BandedMatrix{Int64, typeof(matrix)}
         @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)).data isa typeof(matrix)
         @test_throws UndefRefError BandedMatrix{Vector{Float64}}(undef, (5,5), (1,1))[1,1]
+
+        @testset "Construction from Diagonal" begin
+            D = Diagonal(1:4)
+            B1 = BandedMatrix(D)
+            @test B1 isa BandedMatrix{Int}
+            @test B1 == D
+            B2 = BandedMatrix{Float64}(D)
+            @test B2 isa BandedMatrix{Float64}
+            @test B2 == D
+            B3 = BandedMatrix{Float32,Matrix{Float32}}(D)
+            @test B3 isa BandedMatrix{Float32,Matrix{Float32}}
+            @test B3 == D
+        end
     end
 
     @testset "BandedMatrix arithmetic" begin
@@ -92,24 +109,47 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "BandedMatrix * Vector" begin
-        let A=brand(10,12,2,3), v=rand(12), w=rand(10)
-            @test A*v ≈ Matrix(A)*v
-            @test A'*w ≈ Matrix(A)'*w
+        let v=rand(12), w=rand(10)
+            for (l,u) in ((2,3), (-2,2), (2,-2), (2,-3))
+                A=brand(length(w),length(v),l,u)
+                @test A*v ≈ Matrix(A)*v
+                # the left-side uses BLAS, while the right doesn't
+                @test mul!(ones(size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(size(A,1)), A, v, 1, 2)
+                @test A'*w ≈ Matrix(A)'*w
+                @test mul!(ones(size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(size(A,2)), A', w, 1, 2)
+                # explicitly test materialize!
+                @test materialize!(MulAdd(1.0, A', w, 2.0, ones(size(A,2)))) ≈ materialize!(MulAdd(1, A', w, 2, ones(size(A,2))))
+            end
         end
 
         let A=brand(Float64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
             @test A*v ≈ Matrix(A)*v
+            @test mul!(ones(ComplexF64,size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(ComplexF64,size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,2)), A', w, 1, 2)
         end
 
         let A=brand(ComplexF64,5,3,2,2), v=rand(ComplexF64,3), w=rand(ComplexF64,5)
             @test A*v ≈ Matrix(A)*v
+            @test mul!(ones(ComplexF64,size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(ComplexF64,size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,2)), A', w, 1, 2)
         end
 
         let A=brand(ComplexF64,5,3,2,2), v=rand(Float64,3), w=rand(Float64,5)
             @test A*v ≈ Matrix(A)*v
+            @test mul!(ones(ComplexF64,size(A,1)), A, v, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,1)), A, v, 1, 2)
             @test A'*w ≈ Matrix(A)'*w
+            @test mul!(ones(ComplexF64,size(A,2)), A', w, 1.0, 2.0) ≈ mul!(ones(ComplexF64,size(A,2)), A', w, 1, 2)
+        end
+
+        @testset "empty" begin
+            let B=BandedMatrix((0=>ones(0),), (10,0)), v = ones(size(B,2))
+                @test B * v == zeros(size(B,1))
+            end
+            let B=BandedMatrix((0=>ones(0),), (0,10)), v = ones(size(B,2))
+                @test B * v == zeros(size(B,1))
+            end
         end
     end
 
@@ -125,7 +165,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         # @test A*B' ≈ Matrix(A)*B'
         # @test A'*B' ≈ Matrix(A)'*B'
 
-        let 
+        let
             A=brand(1200,1000,200,300); B=rand(1000,1000); C=rand(1200,1200)
             @test A*B ≈ Matrix(A)*B
             @test C*A ≈ C*Matrix(A)
@@ -293,7 +333,7 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
                 @test @inferred(convert(BandedMatrix, banded)) === banded
             end
 
-            # Note: @inferred convert(MyMatrix, matrix) throws
+            # Note: @inferred convert(MyMatrix, matrix) throws
             banded = convert(BandedMatrix{Int64, MyMatrix}, matrix)
             @test banded isa BandedMatrix{Int64, MyMatrix{Int64}}
             @test banded == matrix
@@ -343,11 +383,11 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
             end
 
             @testset "banded to banded" begin
-                A = BandedMatrix{Int}(undef, (5,5), (1,1)); A.data[:] .= 1:length(A.data)           
-                @test convert(BandedMatrix, A) === convert(BandedMatrix{Int}, A) === 
+                A = BandedMatrix{Int}(undef, (5,5), (1,1)); A.data[:] .= 1:length(A.data)
+                @test convert(BandedMatrix, A) === convert(BandedMatrix{Int}, A) ===
                     convert(BandedMatrix{Int,Matrix{Int}}, A) === convert(BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}, A) === A
                 @test convert(BandedMatrix{Float64}, A) ==
-                    convert(BandedMatrix{Float64,Matrix{Float64}}, A) == convert(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}, A) == A                    
+                    convert(BandedMatrix{Float64,Matrix{Float64}}, A) == convert(BandedMatrix{Float64,Matrix{Float64},Base.OneTo{Int}}, A) == A
             end
         end
 
@@ -411,10 +451,12 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
     end
 
     @testset "induced norm" begin
-        A = brand(Float64, 12, 10, 2, 3)
-        B = Matrix(A)
-	    @test opnorm(A) ≈ opnorm(B)
-	    @test cond(A) ≈ cond(B)
+        for T in (Float32, Float64, Complex{Float32}, Complex{Float64})
+            A = brand(T, 12, 10, 2, 3)
+            B = Matrix(A)
+    	    @test opnorm(A) ≈ opnorm(B)
+    	    @test cond(A) ≈ cond(B)
+        end
     end
 
     @testset "triu/tril" begin
@@ -447,5 +489,65 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         A = _BandedMatrix(Fill(1,1,5), Base.Slice(1:4), 1, -1)
         @test summary(A) == "4×5 BandedMatrix{$Int} with bandwidths (1, -1) with data 1×5 Fill{$Int} with indices 1:4×Base.OneTo(5)"
     end
-end
 
+    @testset "setindex" begin
+        @testset "setindex! with ranges (#348)" begin
+            n = 10;
+            X1 = brand(n,n,1,1)
+            B = BandedMatrix(Zeros(2n,2n), (3,3))
+            B[1:2:end,1:2:end] = X1
+            A = zeros(2n,2n)
+            A[1:2:end,1:2:end] = X1
+            @test A == B
+        end
+        @testset "vector - integer - colon" begin
+            B = BandedMatrix(0=>1:4, 1=>5:7)
+            B[1, :] = [10, 20, 0, 0]
+            @test B[1, 1:2] == [10,20]
+            B[3, :] = [0, 0, -10, -20]
+            @test B[3, 3:4] == [-10, -20]
+        end
+    end
+
+
+    @testset "copy band to offset vector" begin
+        B = BandedMatrix(2=>2:3)
+        # test that a BandedMatrix and a Matrix behave identically
+        p = zeros(3)
+        v = view(p, Base.IdentityUnitRange(2:3))
+        for M in (B, Matrix(B))
+            p .= 0
+            copyto!(v, diag(M, 2))
+            @test p[1] == 0
+            @test @view(p[2:3]) == 2:3
+            copyto!(v, diag(M, 10))
+            @test p[1] == 0
+            @test @view(p[2:3]) == 2:3
+        end
+    end
+
+    if isdefined(LinearAlgebra, :copymutable_oftype)
+        @testset "copymutable_oftype" begin
+            B = _BandedMatrix((2:5)', 4, -2, 2)
+            @test LinearAlgebra.copymutable_oftype(B, Float64) == B
+            @test LinearAlgebra.copymutable_oftype(B, Float64) isa BandedMatrix{Float64}
+            @test LinearAlgebra.copymutable_oftype(B', Float64) == B'
+            @test LinearAlgebra.copymutable_oftype(B', Float64) isa Adjoint{Float64,<:BandedMatrix{Float64}}
+            @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) == transpose(B)
+            @test LinearAlgebra.copymutable_oftype(transpose(B), Float64) isa Transpose{Float64,<:BandedMatrix{Float64}}
+
+            @test LinearAlgebra.copymutable_oftype(UpperTriangular(B), Float64) == B
+        end
+    end
+
+    @testset "sparse" begin
+        B = BandedMatrix(1 => [1:4;])
+        B2 = copy(B)
+        S = sparse(B) .* 2
+        copyto!(B, S)
+        @test B == 2B2
+        B .= 0
+        copyto!(view(B, :, :), S)
+        @test B == 2B2
+    end
+end

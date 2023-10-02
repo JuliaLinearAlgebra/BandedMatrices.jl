@@ -1,6 +1,24 @@
-using BandedMatrices, ArrayLayouts, LinearAlgebra, FillArrays, Test
+using ArrayLayouts
+using BandedMatrices
+using FillArrays
+using LinearAlgebra
+using Test
+
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns, _BandedMatrix
+
+# wrap a OneElement to dispatch without type-piracy
+
+struct MyOneElement{T,N,A<:OneElement{T,N}} <: AbstractArray{T,N}
+    arr :: A
+end
+Base.size(M::MyOneElement) = size(M.arr)
+Base.axes(M::MyOneElement) = axes(M.arr)
+Base.getindex(M::MyOneElement{<:Any,N}, inds::Vararg{Int,N}) where {N} =
+    getindex(M.arr, inds...)
+
+ArrayLayouts.colsupport(::UnknownLayout, A::MyOneElement{<:Any,1}, _) =
+    intersect(axes(A,1), A.arr.ind[1]:A.arr.ind[1])
 
 @testset "Linear Algebra" begin
     @testset "Matrix types" begin
@@ -41,8 +59,68 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         @test bandwidths(UpperTriangular(A)*A) == (1,4)
     end
 
+    @testset "BandedMatrix * dense" begin
+        @testset for T in [Float64, Int]
+            cmp = T <: Integer ? (==) : (≈)
+            B = BandedMatrix(Symmetric(BandedMatrix{T}(0=>1:10, 1=>11:19, 2=>21:28)))
+            M = Matrix(B)
+
+            _v = T[1:10;]
+            _v2 = T[1:20;]
+            for v in Any[_v, view(_v, :), view(_v, axes(_v)...), view(_v2, axes(_v)...)]
+                Bv = M * _v
+                @test cmp(B * v, Bv)
+                w = similar(Bv)
+                @test cmp(mul!(w, B, v), Bv)
+                @test cmp(mul!(w, B, v, true, false), Bv)
+                w .= 1
+                mul!(w, B, v, true, true)
+                @test cmp(w, Bv + ones(T, size(w)))
+                w .= 2
+                mul!(w, B, v, false, true)
+                @test cmp(w, fill(T(2), size(w)))
+                w .= 1
+                mul!(w, B, v, oneunit(T), oneunit(T))
+                @test cmp(w, Bv + ones(T, size(w)))
+            end
+
+            _X = reshape(T[1:100;], 10, 10)
+            _X2 = reshape(T[1:15^2;], 15, 15)
+            for X in Any[_X, view(_X, :, :), view(_X, axes(_X)...), view(_X, :, axes(_X,2)), view(_X, axes(_X,1), :),
+                        view(_X2, axes(_X)...),
+                        _X', view(_X', :, :), view(_X', axes(_X')...),
+                        view(_X2', axes(_X)...)]
+                BX = M * X
+                @test cmp(B * X, BX)
+                Y = similar(BX)
+                @test cmp(mul!(Y, B, X), BX)
+                @test cmp(mul!(Y, B, X, true, false), BX)
+                Y .= 1
+                mul!(Y, B, X, true, true)
+                @test cmp(Y, BX + ones(T, size(Y)))
+                Y .= 2
+                mul!(Y, B, X, false, true)
+                @test cmp(Y, fill(T(2), size(Y)))
+                Y .= 1
+                mul!(Y, B, X, oneunit(T), oneunit(T))
+                @test cmp(Y, BX + ones(T, size(Y)))
+            end
+        end
+    end
+
+    @testset "BandedMatrix * sparse" begin
+        B = brand(6,6,2,2)
+        x = MyOneElement(OneElement(2, 4, 6))
+        y = Array(x)
+        @test B * x ≈ B * y
+        @test B' * x ≈ B' * y
+
+        B = brand(Complex{Int8}, 6,6,2,2)
+        @test B' * x ≈ B' * y
+    end
+
     @testset "gbmm!" begin
-        @testset "gbmm! subpieces step by step and column by column" begin 
+        @testset "gbmm! subpieces step by step and column by column" begin
             for n in (1,5,50), ν in (1,5,50), m in (1,5,50),
                             Al in (0,1,2,30), Au in (0,1,2,30),
                             Bl in (0,1,2,30), Bu in (0,1,2,30)
@@ -133,7 +211,10 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         B = brand(10,10,-2,2)
         C = BandedMatrix(Fill(NaN,10,10),(0,4))
         mul!(C,A,B)
-        @test C ≈ Matrix(A)*Matrix(B)
+        AB = Matrix(A)*Matrix(B)
+        @test C ≈ AB
+        mul!(C,A,B,true,false)
+        @test C ≈ AB
 
         A = brand(10,10,-2,2)
         B = brand(10,10,-2,2)
@@ -180,7 +261,11 @@ import BandedMatrices: BandedColumns, _BandedMatrix
 
         mul!(C,A,B)
 
-        @test all(C .=== A*B)
+        AB = A*B
+        @test C == AB
+
+        mul!(C,A,B,true,false)
+        @test C == AB
 
         A[band(1)] .= randn(9)
         @test_throws BandError mul!(C,A,B)
@@ -236,15 +321,36 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         @test_throws DimensionMismatch m \ [1, 2]
     end
 
-    @testset "Banded*Diagonal*Banded" begin
-        A = brand(4,4,1,1)
-        D= Diagonal(randn(4))
-        @test A*D*A isa BandedMatrix
-        @test Matrix(A)*D*Matrix(A) ≈ A*D*A
-        @test D*A' isa BandedMatrix
-        @test A'D isa BandedMatrix
-        @test A'*D*A isa BandedMatrix
-        @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
+    @testset "Banded * Diagonal" begin
+        for (l,u) in ((1,1), (0,0), (-2,1), (-1,1), (1,-1))
+            A = brand(4,4,l,u)
+            D = Diagonal(rand(size(A,2)))
+            AD = A * D
+            @test AD isa BandedMatrix
+            @test AD ≈ Matrix(A) * D
+            DA = D * A
+            @test DA isa BandedMatrix
+            @test DA ≈ D * Matrix(A)
+
+            DAadj = D*A'
+            @test DAadj isa BandedMatrix
+            @test DAadj ≈ D * Matrix(A')
+            AadjD = A'D
+            @test AadjD isa BandedMatrix
+            @test AadjD ≈ Matrix(A') * D
+        end
+    end
+
+    @testset "Banded * Diagonal * Banded" begin
+        for (l,u) in ((1,1), (0,0), (-2,1), (-1,1), (1,-1))
+            A = brand(4,4,l,u)
+            D = Diagonal(rand(size(A,2)))
+            ADA = A * D * A
+            @test ADA isa BandedMatrix
+            @test ADA ≈ Matrix(A)*D*Matrix(A)
+            @test A'*D*A isa BandedMatrix
+            @test  A'*D*A ≈ Matrix(A)'*D*Matrix(A)
+        end
     end
 
     @testset "muladd! throws error" begin
@@ -263,6 +369,98 @@ import BandedMatrices: BandedColumns, _BandedMatrix
         b = randn(6)
         @test factorize(A) isa QR
         @test A \ b ≈ Matrix(A) \ b
+    end
+
+    @testset "diag" begin
+        for B in [BandedMatrix(1=>ones(5), 2=>ones(4)),
+                    BandedMatrix(-1=>ones(5), -2=>ones(4))]
+            @test all(iszero, diag(B))
+        end
+        for B in [BandedMatrix(0=>[1:6;], 2=>fill(2,4)),
+                    BandedMatrix(0=>[1:6;], -2=>fill(2,4))]
+            @test diag(B) == 1:6
+        end
+        @testset "kth diagonal" begin
+            n = 6
+            B = BandedMatrix([k=>rand(n-abs(k)) for k in -2:2]...)
+            M = Matrix(B)
+            @testset for k in -n:n
+                @test diag(B, k) == diag(M, k)
+            end
+        end
+    end
+
+    @testset "isdiag/istril/istriu" begin
+        @testset "no bands" begin
+            B = brand(3,2,-2,1)
+            for k in -5:5
+                @test istriu(B, k)
+                @test istril(B, k)
+                @test isdiag(B)
+            end
+        end
+
+        @testset "one band" begin
+            B = brand(3,3,-1,1)
+            A = Array(B)
+            @test !isdiag(B)
+            @test all(k -> istril(B,k), 1:5)
+            @test all(k -> !istril(B,k), -5:0)
+            @test all(k -> istriu(B,k), -5:1)
+            @test all(k -> !istriu(B,k), 2:5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+
+            B = brand(3,3,1,-1)
+            A = Array(B)
+            @test !isdiag(B)
+            @test all(k -> istril(B,k), -1:5)
+            @test all(k -> !istril(B,k), -5:-2)
+            @test all(k -> istriu(B,k), -5:-1)
+            @test all(k -> !istriu(B,k), 0:5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+
+            B = brand(3,3,0,0)
+            A = Array(B)
+            @test isdiag(B)
+            @test all(k -> istril(B,k), 0:5)
+            @test all(k -> !istril(B,k), -5:-1)
+            @test all(k -> istriu(B,k), -5:0)
+            @test all(k -> !istriu(B,k), 1:5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+        end
+
+        @testset "multiple bands" begin
+            B = brand(3,6,1,2)
+            A = Array(B)
+            @test !isdiag(B)
+            @test all(k -> istril(B,k), 2:5)
+            @test all(k -> !istril(B,k), -5:1)
+            @test all(k -> istriu(B,k), -5:-1)
+            @test all(k -> !istriu(B,k), 0:-5)
+            @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+            @test all(k -> istril(A,k) == istril(B,k), -5:5)
+
+            for B in (brand(3,3,3,3), brand(3,3,2,2), brand(3,3,4,4))
+                A = Array(B)
+                @test !isdiag(B)
+                @test all(k -> istril(B,k), 2:5)
+                @test all(k -> !istril(B,k), -5:1)
+                @test all(k -> istriu(B,k), -5:-2)
+                @test all(k -> !istriu(B,k), -1:-5)
+                @test all(k -> istriu(A,k) == istriu(B,k), -5:5)
+                @test all(k -> istril(A,k) == istril(B,k), -5:5)
+            end
+        end
+    end
+
+    @testset "mul with α = 0" begin
+        A = randn(5,5)
+        B = brand(5,5,1,2)
+        @test muladd!(0.0, A, B, 2.0, copy(A)) == 2A
+        @test muladd!(0.0, B, A, 2.0, copy(A)) == 2A
     end
 end
 

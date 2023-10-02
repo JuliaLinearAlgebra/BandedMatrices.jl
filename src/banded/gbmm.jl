@@ -247,7 +247,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
         return C
     elseif C̃u < Cu
         Au_r, Bu_r = _num_zeroband_u(A), _num_zeroband_u(B)
-        C̃u ≥  Cu - Au_r - Bu_r || throw(BandError(C, Cu - Au_r - Bu_r))
+        C̃u ≥  Cu - Au_r - Bu_r || throw(BandError(C, Cu - Au_r - Bu_r))
         A_data = bandeddata(A)
         B_data = bandeddata(B)
 
@@ -262,7 +262,7 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
         return C
     elseif C̃l < Cl
         Al_r, Bl_r = _num_zeroband_l(A), _num_zeroband_l(B)
-        C̃l ≥  Cl - Al_r - Bl_r || throw(BandError(C, Cl - Al_r - Bl_r))
+        C̃l ≥  Cl - Al_r - Bl_r || throw(BandError(C, Cl - Al_r - Bl_r))
         A_data = bandeddata(A)
         B_data = bandeddata(B)
 

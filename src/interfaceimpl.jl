@@ -26,7 +26,9 @@ isbanded(::Diagonal) = true
 bandwidths(::Diagonal) = (0,0)
 inbands_getindex(D::Diagonal, k::Integer, j::Integer) = D.diag[k]
 inbands_setindex!(D::Diagonal, v, k::Integer, j::Integer) = (D.diag[k] = v)
-bandeddata(D::Diagonal) = permutedims(D.diag)
+function bandeddata(D::Union{Diagonal, Transpose{<:Any, <:Diagonal}, Adjoint{<:Any,<:Diagonal}})
+    permutedims(diagonaldata(D))
+end
 
 # treat subinds as banded
 sublayout(::DiagonalLayout{L}, inds::Type) where L = sublayout(bandedcolumns(L()), inds)
@@ -65,6 +67,10 @@ function rot180(A::AbstractBandedMatrix)
     _BandedMatrix(bandeddata(A)[end:-1:1,end:-1:1], m, u+sh,l-sh)
 end
 
+for MT in (:Diagonal, :SymTridiagonal, :Tridiagonal, :Bidiagonal)
+    @eval getindex(D::$MT{T,<:AbstractFill{T,1}}, b::Band) where {T<:Number} = diag(D, b.i)
+end
+
 function getindex(D::Diagonal{T,V}, b::Band) where {T,V}
     iszero(b.i) && return copy(D.diag)
     convert(V, Zeros{T}(size(D,1)-abs(b.i)))
@@ -89,11 +95,3 @@ function getindex(D::Bidiagonal{T,V}, b::Band) where {T,V}
     D.uplo == 'U' && b.i == 1 && return copy(D.ev)
     convert(V, Zeros{T}(size(D,1)-abs(b.i)))
 end
-
-
-###
-# adjtrans copy
-###
-
-copy(A::Adjoint{T, <:AbstractBandedMatrix}) where T = adjoint!(banded_similar(T, size(A), bandwidths(A)), A.parent)
-copy(A::Transpose{T, <:AbstractBandedMatrix}) where T = transpose!(banded_similar(T, size(A), bandwidths(A)), A.parent)

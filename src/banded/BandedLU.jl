@@ -5,7 +5,7 @@
 ####################
 # Banded LU Factorization #
 # This is like LU but factors does not actually
-# permute the rows.  
+# permute the rows.
 ####################
 struct BandedLU{T,S<:AbstractMatrix{T}} <: Factorization{T}
     factors::S
@@ -32,8 +32,10 @@ Base.iterate(S::BandedLU, ::Val{:U}) = (S.U, Val(:p))
 Base.iterate(S::BandedLU, ::Val{:p}) = (S.p, Val(:done))
 Base.iterate(S::BandedLU, ::Val{:done}) = nothing
 
-adjoint(F::BandedLU) = Adjoint(F)
-transpose(F::BandedLU) = Transpose(F)
+if !(isdefined(LinearAlgebra, :AdjointFactorization)) # VERSION < v"1.10-"
+    adjoint(F::BandedLU) = Adjoint(F)
+end
+transpose(F::BandedLU) = TransposeFact(F)
 
 lu(S::BandedLU) = S
 
@@ -84,14 +86,18 @@ function lu!(A::BandedMatrix{T}, pivot::Union{Val{false}, Val{true}} = Val(true)
     end
     m= size(A,1)
     l,u = bandwidths(A) # l of the bands are ignored and overwritten
-    _, ipiv = LAPACK.gbtrf!(l, u-l, m, bandeddata(A))
+    if !iszero(m)
+        _, ipiv = LAPACK.gbtrf!(l, u-l, m, bandeddata(A))
+    else
+        ipiv = Int[]
+    end
     return BandedLU{T,typeof(A)}(A, ipiv, zero(BlasInt))
 end
 
 _lu!(::AbstractBandedLayout, axes, A, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true) =
     banded_lufact!(A, pivot; check = check)
 
-function _lu(::AbstractBandedLayout, axes, A, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true) where {T<:Real}
+function _lu(::AbstractBandedLayout, axes, A, pivot::Union{Val{false}, Val{true}} = Val(true); check::Bool = true)
     l,u = bandwidths(A)
     lu!(BandedMatrix{float(eltype(A))}(A,(l,l+u)), pivot; check = check)
 end
@@ -100,7 +106,7 @@ end
 function getproperty(F::BandedLU{T}, d::Symbol) where T
     m, n = size(F)
     if d == :L
-        # not clear how to get it from F.factors so we 
+        # not clear how to get it from F.factors so we
         # form it in the most insane way possible
         Ai = F\Matrix(I,n,m)
         tril!((F.P/Ai)/F.U)

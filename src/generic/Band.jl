@@ -13,25 +13,37 @@ Represents the `i`-th band of a banded matrix.
 ```jldoctest
 julia> using BandedMatrices
 
-julia> A = BandedMatrix(Ones(5,5),(1,1))
-5×5 BandedMatrix{Float64} with bandwidths (1, 1):
- 1.0  1.0   ⋅    ⋅    ⋅
- 1.0  1.0  1.0   ⋅    ⋅
-  ⋅   1.0  1.0  1.0   ⋅
-  ⋅    ⋅   1.0  1.0  1.0
-  ⋅    ⋅    ⋅   1.0  1.0
+julia> A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
+4×4 BandedMatrix{Int64} with bandwidths (1, 1):
+ 1  5   ⋅  ⋅
+ 8  2   6  ⋅
+ ⋅  9   3  7
+ ⋅  ⋅  10  4
 
 julia> A[band(1)]
-4-element Vector{Float64}:
- 1.0
- 1.0
- 1.0
- 1.0
+3-element Vector{Int64}:
+ 5
+ 6
+ 7
+
+julia> A[band(0)]
+4-element Vector{Int64}:
+ 1
+ 2
+ 3
+ 4
+
+julia> A[band(-1)]
+3-element Vector{Int64}:
+  8
+  9
+ 10
 ```
 """
 band(i::Int) = Band(i)
 
 
+struct BandRangeType end
 """
     BandRange
 
@@ -40,22 +52,20 @@ Represents the entries in a row/column inside the bands.
 ```jldoctest
 julia> using BandedMatrices
 
-julia> A = BandedMatrix(Ones(5,5),(1,1))
-5×5 BandedMatrix{Float64} with bandwidths (1, 1):
- 1.0  1.0   ⋅    ⋅    ⋅
- 1.0  1.0  1.0   ⋅    ⋅
-  ⋅   1.0  1.0  1.0   ⋅
-  ⋅    ⋅   1.0  1.0  1.0
-  ⋅    ⋅    ⋅   1.0  1.0
+julia> A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
+4×4 BandedMatrix{Int64} with bandwidths (1, 1):
+ 1  5   ⋅  ⋅
+ 8  2   6  ⋅
+ ⋅  9   3  7
+ ⋅  ⋅  10  4
 
-julia> A[2,BandRange]
-3-element Vector{Float64}:
- 1.0
- 1.0
- 1.0
+julia> A[2, BandRange]
+3-element Vector{Int64}:
+ 8
+ 2
+ 6
 ```
 """
-struct BandRangeType end
 const BandRange = BandRangeType()
 
 to_indices(A::AbstractArray, (_, j)::Tuple{BandRangeType,Integer}) = (colrange(A, j), j)
@@ -73,7 +83,7 @@ BandError(A::AbstractMatrix) = BandError(A, max(size(A)...)-1)
 
 function showerror(io::IO, e::BandError)
     A, i = e.A, e.i
-    print(io, "attempt to access $(typeof(A)) with bandwidths " *
+    print(io, "BandError: attempt to access $(typeof(A)) with bandwidths " *
               "($(bandwidth(A, 1)), $(bandwidth(A, 2))) at band $i")
 end
 
@@ -135,7 +145,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, ::C
             throw(BandError(A, (k,j)))
         end
     end
-    for j = rowstop(A,j)+1:size(A,2)
+    for j = rowstop(A,k)+1:size(A,2)
         if V[j] ≠ zero(T)
             throw(BandError(A, (k,j)))
         end
@@ -160,7 +170,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::AbstractRan
     for j in jr
         kk = 1
         for k in kr
-            if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
+            if !(-l ≤ j - k ≤ u) && V[kk, jj] ≠ zero(T)
                 # we index V manually in column-major order
                 throw(BandError(A, (k,j)))
             end
@@ -174,14 +184,22 @@ checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
 
 """
-    BandSlice(band, indices)
+    BandSlice(band::Band, indices::StepRange{Int,Int}) <: OrdinalRange{Int,Int}
 
-Represent an AbstractUnitRange of indices corresponding to a band.
+Represent a `StepRange` of indices corresponding to a band.
 
-Upon calling `to_indices()`, Bands are converted to BandSlice objects to represent
-the indices over which the Band spans.
+Upon calling `to_indices()`, `Band`s are converted to `BandSlice` objects to represent
+the indices over which the `Band` spans.
 
 This mimics the relationship between `Colon` and `Base.Slice`.
+
+# Example
+```jldoctest
+julia> B = BandedMatrix(0 => 1:4, 1=>1:3);
+
+julia> to_indices(B, (Band(1),))[1]
+BandSlice(Band(1), 5:5:15)
+```
 """
 struct BandSlice <: OrdinalRange{Int,Int}
     band::Band
@@ -193,8 +211,8 @@ for f in (:indices, :unsafe_indices, :axes1, :first, :last, :size, :length,
     @eval $f(S::BandSlice) = $f(S.indices)
 end
 
-getindex(S::BandSlice, i::Int) = getindex(S.indices, i)
-show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ",", r.indices, ")")
+@propagate_inbounds getindex(S::BandSlice, i::Union{Int, AbstractRange}) = getindex(S.indices, i)
+show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ", ", r.indices, ")")
 
 to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
 

@@ -1,11 +1,11 @@
 
-function banded_chol!(::BandedColumns{DenseColumnMajor}, 
+function banded_chol!(::BandedColumns{DenseColumnMajor},
                        A::AbstractMatrix{T}, ::Type{UpperTriangular}) where T<:BlasFloat
     _, info = pbtrf!('U', size(A, 1), bandwidth(A,2), bandeddata(A))
     UpperTriangular(A), info
 end
 
-function banded_chol!(::BandedColumns{DenseColumnMajor}, 
+function banded_chol!(::BandedColumns{DenseColumnMajor},
                       A::AbstractMatrix{T}, ::Type{LowerTriangular}) where T<:BlasFloat
     _, info = pbtrf!('L', size(A, 1), bandwidth(A,1), bandeddata(A))
     LowerTriangular(A), info
@@ -85,16 +85,18 @@ function _ldiv!(::AbstractBandedLayout, _, C::Cholesky, B::AbstractMatrix)
     else
         return ldiv!(UpperTriangular(C.factors), ldiv!(adjoint(UpperTriangular(C.factors)), B))
     end
-end    
+end
 
-ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:BlasFloat = 
+ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:BlasFloat =
     _ldiv!(MemoryLayout(typeof(A.factors)), MemoryLayout(typeof(B)), A, B)
 
 
 
 # For some bizarre reason this isnt in LinearAlgebra
-ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) = cholesky!(cholcopy(A); check = check)
+ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) =
+    cholesky!(cholcopy(A); check = check)
 
-
+cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) =
+    copyto!(similar(A, LinearAlgebra.choltype(A)), A)
 # cholesky(A::Hermitian{T,<:BandedMatrix{T}},
 #     ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)

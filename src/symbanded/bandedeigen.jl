@@ -1,21 +1,118 @@
+## eigvals routine
+
+# the symmetric case uses lapack throughout
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}) where T<:BlasReal =
+    eigvals!(copy(A))
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:BlasReal =
+    eigvals!(copy(A), irange)
+eigvals(A::Symmetric{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:BlasReal =
+    eigvals!(copy(A), vl, vu)
+
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) =
+    eigvals!(tridiagonalize(A))
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) =
+    eigvals!(tridiagonalize(A), irange)
+eigvals(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) =
+    eigvals!(tridiagonalize(A), vl, vu)
+
+# This isn't eigvals!(A, args...) to avoid incorrect dispatches
+# This is a cautious approach at the moment
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = _eigvals!(A)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = _eigvals!(A, irange)
+eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = _eigvals!(A, vl, vu)
+
+_eigvals!(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, args...) =
+    eigvals!(tridiagonalize!(A), args...)
+
+function _copy_bandedsym(A, B)
+    if bandwidth(A) >= bandwidth(B)
+        copy(A)
+    else
+        copyto!(similar(B), A)
+    end
+end
+
+function eigvals(A::HermOrSym{<:Any,<:BandedMatrix}, B::HermOrSym{<:Any,<:BandedMatrix})
+    AA = _copy_bandedsym(A, B)
+    eigvals!(AA, copy(B))
+end
+
+function eigvals!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T<:BlasReal
+    n = size(A, 1)
+    @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
+    # compute split-Cholesky factorization of B.
+    kb = bandwidth(B)
+    B_data = symbandeddata(B)
+    pbstf!(B.uplo, n, kb, B_data)
+    # convert to a regular symmetric eigenvalue problem.
+    ka = bandwidth(A)
+    A_data = symbandeddata(A)
+    X = Array{T}(undef,0,0)
+    work = Vector{T}(undef,2n)
+    sbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work)
+    # compute eigenvalues of symmetric eigenvalue problem.
+    eigvals!(A)
+end
+
+function eigvals!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T<:BlasComplex
+    n = size(A, 1)
+    @assert n == size(B, 1)
+    @assert A.uplo == B.uplo
+    # compute split-Cholesky factorization of B.
+    kb = bandwidth(B)
+    B_data = hermbandeddata(B)
+    pbstf!(B.uplo, n, kb, B_data)
+    # convert to a regular symmetric eigenvalue problem.
+    ka = bandwidth(A)
+    A_data = hermbandeddata(A)
+    X = Array{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    rwork = Vector{real(T)}(undef,n)
+    hbgst!('N', A.uplo, n, ka, kb, A_data, B_data, X, work, rwork)
+    # compute eigenvalues of symmetric eigenvalue problem.
+    eigvals!(A)
+end
+
+abstract type AbstractBandedEigenvectors{T} <: AbstractMatrix{T} end
+
+getindex(B::AbstractBandedEigenvectors, i, j) = Matrix(B)[i,j]
+function _getindex_vec(B, j)
+    z1 = _get_scratch(B)
+    z2 = OneElement(one(eltype(B)), j, size(B,2))
+    mul!(z1, B, z2)
+end
+function getindex(B::AbstractBandedEigenvectors, i::Union{Int, Colon, AbstractVector{Int}}, j::Int)
+    z = _getindex_vec(B, j)
+    z[i]
+end
+function getindex(B::AbstractBandedEigenvectors, ::Colon, jr::AbstractVector{Int})
+    M = similar(B, size(B,1), length(jr))
+    for (ind, j) in enumerate(jr)
+        M[:, ind] = _getindex_vec(B, j)
+    end
+    return M
+end
+
 # V = G Q
-struct BandedEigenvectors{T} <: AbstractMatrix{T}
+struct BandedEigenvectors{T} <: AbstractBandedEigenvectors{T}
     G::Vector{Givens{T}}
     Q::Matrix{T}
+    z1::Vector{T} # scratch space, used in indexing
 end
 
 size(B::BandedEigenvectors) = size(B.Q)
-getindex(B::BandedEigenvectors, i, j) = Matrix(B)[i, j]
+_get_scratch(B::BandedEigenvectors) = B.z1
 
 # V = S⁻¹ Q W
-struct BandedGeneralizedEigenvectors{T,M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+struct BandedGeneralizedEigenvectors{T,M<:AbstractMatrix{T}} <: AbstractBandedEigenvectors{T}
     S::SplitCholesky{T,M}
     Q::Vector{Givens{T}}
     W::BandedEigenvectors{T}
 end
 
 size(B::BandedGeneralizedEigenvectors) = size(B.W)
-getindex(B::BandedGeneralizedEigenvectors, i, j) = Matrix(B)[i, j]
+_get_scratch(B::BandedGeneralizedEigenvectors) = _get_scratch(B.W)
 
 convert(::Type{Eigen{T, T, Matrix{T}, Vector{T}}}, F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = Eigen(F.values, Matrix(F.vectors))
 convert(::Type{GeneralizedEigen{T, T, Matrix{T}, Vector{T}}}, F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = GeneralizedEigen(F.values, Matrix(F.vectors))
@@ -23,10 +120,20 @@ convert(::Type{GeneralizedEigen{T, T, Matrix{T}, Vector{T}}}, F::GeneralizedEige
 compress(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T = convert(Eigen{T, T, Matrix{T}, Vector{T}}, F)
 compress(F::GeneralizedEigen{T, T, BandedGeneralizedEigenvectors{T}, Vector{T}}) where T = convert(GeneralizedEigen{T, T, Matrix{T}, Vector{T}}, F)
 
-eigen(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A))
-eigen(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real = eigen!(copy(A), copy(B))
+eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}) = eigen!(copy(A))
+eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, irange::UnitRange) = eigen!(copy(A), irange)
+eigen(A::RealHermSymComplexHerm{<:Real,<:BandedMatrix}, vl::Real, vu::Real) = eigen!(copy(A), vl, vu)
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function eigen(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T
+    AA = _copy_bandedsym(A, B)
+    eigen!(AA, copy(B))
+end
+
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}) where T<:BlasFloat = _eigen!(A)
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, irange::UnitRange) where T<:BlasFloat = _eigen!(A, irange)
+eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, vl::Real, vu::Real) where T<:BlasFloat = _eigen!(A, vl, vu)
+
+function _eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, args...) where T<:BlasReal
     N = size(A, 1)
     KD = bandwidth(A)
     D = Vector{T}(undef, N)
@@ -35,11 +142,25 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
     WORK = Vector{T}(undef, N)
     AB = symbandeddata(A)
     sbtrd!('V', A.uplo, N, KD, AB, D, E, G, WORK)
-    Λ, Q = eigen(SymTridiagonal(D, E))
-    Eigen(Λ, BandedEigenvectors(G, Q))
+    Λ, Q = eigen!(SymTridiagonal(D, E), args...)
+    Eigen(Λ, BandedEigenvectors(G, Q, similar(Q, size(Q,1))))
 end
 
-function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix{T}}) where T <: Real
+function _eigen!(A::Hermitian{T,<:BandedMatrix{T}}, args...) where T <: BlasComplex
+    N = size(A, 1)
+    KD = bandwidth(A)
+    D = Vector{real(T)}(undef, N)
+    E = Vector{real(T)}(undef, N-1)
+    Q = Matrix{T}(undef, N, N)
+    WORK = Vector{T}(undef, N)
+    AB = hermbandeddata(A)
+    hbtrd!('V', A.uplo, N, KD, AB, D, E, Q, WORK)
+    Λ, W = eigen!(SymTridiagonal(D, E), args...)
+    Eigen(Λ, Q * W)
+end
+
+function eigen!(A::HermOrSym{T,<:BandedMatrix{T}}, B::HermOrSym{T,<:BandedMatrix{T}}) where T <: BlasReal
+    isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
     S = splitcholesky!(B)
     N = size(A, 1)
     KA = bandwidth(A)
@@ -49,8 +170,26 @@ function eigen!(A::Symmetric{T,<:BandedMatrix{T}}, B::Symmetric{T,<:BandedMatrix
     AB = symbandeddata(A)
     BB = symbandeddata(B)
     sbgst!('V', A.uplo, N, KA, KB, AB, BB, Q, WORK)
+    any(isnan, A) && throw(ArgumentError("NaN found in the standard form of A"))
     Λ, W = eigen!(A)
     GeneralizedEigen(Λ, BandedGeneralizedEigenvectors(S, Q, W))
+end
+
+function eigen!(A::Hermitian{T,<:BandedMatrix{T}}, B::Hermitian{T,<:BandedMatrix{T}}) where T <: BlasComplex
+    isdiag(A) || isdiag(B) || symmetricuplo(A) == symmetricuplo(B) || throw(ArgumentError("uplo of matrices do not match"))
+    splitcholesky!(B)
+    N = size(A, 1)
+    KA = bandwidth(A)
+    KB = bandwidth(B)
+    X = Matrix{T}(undef, N, N)
+    WORK = Vector{T}(undef, N)
+    RWORK = Vector{real(T)}(undef, N)
+    AB = hermbandeddata(A)
+    BB = hermbandeddata(B)
+    hbgst!('V', A.uplo, N, KA, KB, AB, BB, X, WORK, RWORK)
+    any(isnan, A) && throw(ArgumentError("NaN found in the standard form of A"))
+    Λ, W = eigen!(A)
+    GeneralizedEigen(Λ, X * W)
 end
 
 function Matrix(B::BandedEigenvectors)
@@ -83,7 +222,21 @@ function compress!(F::Eigen{T, T, BandedEigenvectors{T}, Vector{T}}) where T
     F
 end
 
-function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Array{T,N}) where {T,N}
+const AdjTrans{T,M} = Union{Adjoint{T,M}, Transpose{T,M}}
+const AdjTransStridedArray{T,N} = Union{StridedArray{T,N}, AdjTrans{T, <:StridedArray{T,N}}}
+
+const AdjTransStridedVec{T} = AdjTransStridedArray{T,1}
+const AdjTransStridedMat{T} = AdjTransStridedArray{T,2}
+const AdjTransStridedVecOrMat{T} = Union{AdjTransStridedVec{T}, AdjTransStridedMat{T}}
+
+const OneElementVecOrMat{T} = Union{OneElement{T,1}, OneElement{T,2}}
+
+const AdjTransStridedOrOneElVecOrMat{T} = Union{AdjTransStridedVecOrMat{T}, OneElementVecOrMat{T}}
+
+_adjtransfn(::Transpose) = transpose
+_adjtransfn(::Adjoint) = adjoint
+
+function mul!(y::AdjTransStridedVecOrMat{T}, B::BandedEigenvectors{T}, x::AdjTransStridedOrOneElVecOrMat{T}) where {T}
     mul!(y, B.Q, x)
     G = B.G
     for k in length(G):-1:1
@@ -92,7 +245,7 @@ function mul!(y::Array{T,N}, B::BandedEigenvectors{T}, x::Array{T,N}) where {T,N
     y
 end
 
-function mul!(y::Array{T,N}, B::Adjoint{T,BandedEigenvectors{T}}, x::Array{T,N}) where {T,N}
+function mul!(y::AdjTransStridedVecOrMat{T}, B::AdjTrans{T,BandedEigenvectors{T}}, x::AdjTransStridedVecOrMat{T}) where {T}
     Q = B.parent.Q
     G = B.parent.G
     if length(G) > 0
@@ -100,29 +253,14 @@ function mul!(y::Array{T,N}, B::Adjoint{T,BandedEigenvectors{T}}, x::Array{T,N})
         for k in 1:length(G)
             lmul!(G[k]', z)
         end
-        mul!(y, Q', z)
+        mul!(y, _adjtransfn(B)(Q), z)
     else
-        mul!(y, Q', x)
+        mul!(y, _adjtransfn(B)(Q), x)
     end
     y
 end
 
-function mul!(y::Array{T,N}, B::Transpose{T,BandedEigenvectors{T}}, x::Array{T,N}) where {T,N}
-    Q = B.parent.Q
-    G = B.parent.G
-    if length(G) > 0
-        z = copy(x)
-        for k in 1:length(G)
-            lmul!(G[k]', z)
-        end
-        mul!(y, transpose(Q), z)
-    else
-        mul!(y, transpose(Q), x)
-    end
-    y
-end
-
-function mul!(y::Array{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Array{T,N}) where {T,N}
+function mul!(y::AdjTransStridedVecOrMat{T}, B::BandedGeneralizedEigenvectors{T}, x::AdjTransStridedOrOneElVecOrMat{T}) where {T}
     mul!(y, B.W, x)
     Q = B.Q
     for k in length(Q):-1:1
@@ -131,7 +269,7 @@ function mul!(y::Array{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Array{T,N})
     ldiv!(B.S, y)
 end
 
-function mul!(y::Array{T,N}, B::Adjoint{T,BandedGeneralizedEigenvectors{T,M}}, x::Array{T,N}) where {T,M,N}
+function mul!(y::AdjTransStridedVecOrMat{T}, B::Adjoint{T,<:BandedGeneralizedEigenvectors{T}}, x::AdjTransStridedVecOrMat{T}) where {T}
     z = copy(x)
     ldiv!(B.parent.S', z)
     Q = B.parent.Q
@@ -141,7 +279,7 @@ function mul!(y::Array{T,N}, B::Adjoint{T,BandedGeneralizedEigenvectors{T,M}}, x
     mul!(y, B.parent.W', z)
 end
 
-function ldiv!(y::Array{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Array{T,N}) where {T,N}
+function ldiv!(y::AdjTransStridedVecOrMat{T}, B::BandedGeneralizedEigenvectors{T}, x::AdjTransStridedVecOrMat{T}) where {T}
     z = copy(x)
     lmul!(B.S, z)
     Q = B.Q
@@ -151,18 +289,14 @@ function ldiv!(y::Array{T,N}, B::BandedGeneralizedEigenvectors{T}, x::Array{T,N}
     mul!(y, B.W', z)
 end
 
-function mul!(y::Array{T,N}, x::Array{T,N}, B::BandedEigenvectors{T}) where {T,N}
-    x .= x'
-    mul!(y, B', x)
-    x .= x'
-    y .= y'
+function mul!(y::AdjTransStridedVecOrMat{T}, x::AdjTransStridedVecOrMat{T}, B::BandedEigenvectors{T}) where {T}
+    mul!(y', B', x')
+    y
 end
 
-function mul!(y::Array{T,N}, x::Array{T,N}, B::BandedGeneralizedEigenvectors{T}) where {T,N}
-    x .= x'
-    mul!(y, B', x)
-    x .= x'
-    y .= y'
+function mul!(y::AdjTransStridedVecOrMat{T}, x::AdjTransStridedVecOrMat{T}, B::BandedGeneralizedEigenvectors{T}) where {T}
+    mul!(y', B', x')
+    y
 end
 
 
@@ -194,7 +328,7 @@ function sbtrd!(VECT::Char, UPLO::Char,
     chkuplo(UPLO)
     chkvect(VECT)
     M    = size(AB,2)
-    M ≠ N && throw(ArgumentError("Matrix must be square"))
+    M ≠ N && throw(ArgumentError("Matrix must be square"))
     size(AB,1) < KD+1 && throw(ArgumentError("Not enough bands"))
 
     # In Julia, pointers to entries of a SubArray ignore stride.
@@ -484,7 +618,7 @@ function sbgst!(VECT::Char, UPLO::Char,
     chkstride1(BB)
     chkuplo(UPLO)
     chkvect(VECT)
-    size(AB,2) == size(BB,2) == N || throw(ArgumentError("Matrices must be square"))
+    size(AB,2) == size(BB,2) == N || throw(ArgumentError("Matrices must be square"))
     size(AB,1) < KA+1 && throw(ArgumentError("Not enough bands in AB"))
     size(BB,1) < KB+1 && throw(ArgumentError("Not enough bands in BB"))
 

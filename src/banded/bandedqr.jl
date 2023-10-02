@@ -1,3 +1,5 @@
+AdjointQType = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ : Adjoint
+
 _qr(::AbstractBandedLayout, ax, A) = _banded_qr(ax, A)
 _banded_qr(_, A) = qr!(BandedMatrix{float(eltype(A))}(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
 
@@ -24,10 +26,10 @@ function _banded_qr!(R::AbstractMatrix, τ, ncols)
             reflectorApply!(x, τk, view(D, u+1-j:min(ν-j,m-k-j+u+1), k+j:k+j))
         end
     end
-    R, τ 
+    R, τ
 end
 
-function banded_qr!(R::AbstractMatrix{T}, τ) where T 
+function banded_qr!(R::AbstractMatrix{T}, τ) where T
    _banded_qr!(R, τ)
    QR(R, convert(Vector{T},τ)) # TODO: remove convert
 end
@@ -63,9 +65,9 @@ function banded_qr_lmul!(A, B)
     B
 end
 
-function banded_qr_lmul!(adjA::Adjoint, B)
+function banded_qr_lmul!(adjA::AdjointQType, B)
     require_one_based_indexing(B)
-    A = adjA.parent
+    A = parent(adjA)
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
     if mA != mB
@@ -119,8 +121,8 @@ function banded_qr_rmul!(A, Q)
     end
     A
 end
-function banded_qr_rmul!(A, adjQ::Adjoint)
-    Q = adjQ.parent
+function banded_qr_rmul!(A, adjQ::AdjointQType)
+    Q = parent(adjQ)
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
     if nA != mQ
@@ -128,7 +130,7 @@ function banded_qr_rmul!(A, adjQ::Adjoint)
     end
     Qfactors = Q.factors
     l,u = bandwidths(Qfactors)
-    D = bandeddata(Qfactors)    
+    D = bandeddata(Qfactors)
     @inbounds begin
         for k = min(mQ,nQ):-1:1
             for i = 1:mA
@@ -148,21 +150,27 @@ function banded_qr_rmul!(A, adjQ::Adjoint)
 end
 
 banded_lmul!(A::QRPackedQ, B::AbstractVecOrMat) = banded_qr_lmul!(A, B)
-banded_lmul!(adjA::Adjoint{<:Any,<:QRPackedQ}, B::AbstractVecOrMat) = banded_qr_lmul!(adjA, B)
+banded_lmul!(adjA::AdjointQType{<:Any,<:QRPackedQ}, B::AbstractVecOrMat) = banded_qr_lmul!(adjA, B)
 banded_rmul!(A::AbstractMatrix, Q::QRPackedQ) = banded_qr_rmul!(A, Q)
-banded_rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ}) = banded_qr_rmul!(A, adjQ)
+banded_rmul!(A::AbstractMatrix, adjQ::AdjointQType{<:Any,<:QRPackedQ}) = banded_qr_rmul!(A, adjQ)
 
-lmul!(A::QRPackedQ{<:Any,<:AbstractBandedMatrix}, B::AbstractVecOrMat) = banded_lmul!(A,B)
-lmul!(adjA::Adjoint{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::AbstractVecOrMat) = banded_lmul!(adjA,B)
-lmul!(A::QRPackedQ{<:Any,BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractVecOrMat) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} = 
+lmul!(A::QRPackedQ{<:Any,<:AbstractBandedMatrix}, B::AbstractVector) = banded_lmul!(A,B)
+lmul!(A::QRPackedQ{<:Any,<:AbstractBandedMatrix}, B::AbstractMatrix) = banded_lmul!(A,B)
+lmul!(adjA::AdjointQType{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::AbstractVector) = banded_lmul!(adjA,B)
+lmul!(adjA::AdjointQType{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::AbstractMatrix) = banded_lmul!(adjA,B)
+lmul!(A::QRPackedQ{<:Any,BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractVector) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} =
     banded_lmul!(A,B)
-lmul!(adjA::Adjoint{T,<:QRPackedQ{T,<:BandedSubBandedMatrix{T,C,R,I1,I2,t}}}, B::AbstractVecOrMat) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange,t} = 
+lmul!(A::QRPackedQ{<:Any,BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractMatrix) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} =
+    banded_lmul!(A,B)
+lmul!(adjA::AdjointQType{T,<:QRPackedQ{T,<:BandedSubBandedMatrix{T,C,R,I1,I2,t}}}, B::AbstractVector) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange,t} =
     banded_lmul!(adjA,B)
-# rmul!(A::AbstractMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}) = banded_rmul!(A, adjA)
-# rmul!(A::StridedMatrix, adjQ::Adjoint{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}) = banded_rmul!(A, adjA)
+lmul!(adjA::AdjointQType{T,<:QRPackedQ{T,<:BandedSubBandedMatrix{T,C,R,I1,I2,t}}}, B::AbstractMatrix) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange,t} =
+    banded_lmul!(adjA,B)
+# rmul!(A::AbstractMatrix, adjQ::AdjointQType{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}) = banded_rmul!(A, adjA)
+# rmul!(A::StridedMatrix, adjQ::AdjointQType{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}) = banded_rmul!(A, adjA)
 rmul!(A::StridedVecOrMat{T}, Q::QRPackedQ{T,B}) where {T<:BlasFloat,B<:AbstractBandedMatrix{T}} = banded_rmul!(A, Q)
-rmul!(A::StridedVecOrMat{T}, adjQ::Adjoint{<:Any,<:QRPackedQ{T,B}}) where {T<:BlasComplex,B<:AbstractBandedMatrix{T}} = banded_rmul!(A, adjQ)
-rmul!(A::StridedVecOrMat{T}, adjQ::Adjoint{<:Any,<:QRPackedQ{T,B}}) where {T<:BlasReal,B<:AbstractBandedMatrix{T}} = banded_rmul!(A, adjQ)
+rmul!(A::StridedVecOrMat{T}, adjQ::AdjointQType{<:Any,<:QRPackedQ{T,B}}) where {T<:BlasComplex,B<:AbstractBandedMatrix{T}} = banded_rmul!(A, adjQ)
+rmul!(A::StridedVecOrMat{T}, adjQ::AdjointQType{<:Any,<:QRPackedQ{T,B}}) where {T<:BlasReal,B<:AbstractBandedMatrix{T}} = banded_rmul!(A, adjQ)
 
 
 function _banded_widerect_ldiv!(A::QR{T}, B) where T

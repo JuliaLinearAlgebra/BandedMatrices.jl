@@ -31,7 +31,7 @@ struct _foo <: Number end
         bf = copy(b)
         L,U,p = lu(A)
         Lf,Uf,pf = lu(Af)
-        @test L ≈ Lf # storage format is different
+        @test L ≈ Lf # storage format is different
         @test U ≈ Uf
         @test p ≈ pf
         lua = lu(A)
@@ -150,5 +150,14 @@ struct _foo <: Number end
         @test size(BLU, 3) == 1
         @test_throws BoundsError size(BLU, -1)
         @test_throws BoundsError size(BLU,  0)
+    end
+
+    @testset "zero matrix" begin
+        for A in (BandedMatrix{Float64}(undef, (0,0), (1,1)),
+                  BandedMatrix{Float64}(undef, (0,3), (1,1)),
+                  BandedMatrix{Float64}(undef, (0,0), (-1,-2)))
+            @test lu(A).factors == zeros(size(A)...)
+            @test lu(A) \ zeros(0) == zeros(0)
+        end
     end
 end

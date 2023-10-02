@@ -25,7 +25,8 @@ function ldiv!(A::BandedLU{T,<:BandedMatrix}, B::StridedVecOrMat{T}) where {T<:B
     m = size(A.factors,1)
     l,u = bandwidths(A.factors)
     data = bandeddata(A.factors)
-    LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
+    iszero(m) || LAPACK.gbtrs!('N', l, u-l, m, data, A.ipiv, B)
+    B
 end
 
 function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real
@@ -37,7 +38,7 @@ function ldiv!(A::BandedLU{T}, B::AbstractVecOrMat{Complex{T}}) where T<:Real
     B .= a .+ im.*b
 end
 
-function ldiv!(transA::Transpose{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasFloat}
+function ldiv!(transA::TransposeFact{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasFloat}
     A = transA.parent
     m = size(A.factors,1)
     l,u = bandwidths(A.factors)
@@ -45,15 +46,15 @@ function ldiv!(transA::Transpose{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecO
     LAPACK.gbtrs!('T', l, u-l, m, data, A.ipiv, B)
 end
 
-function ldiv!(transA::Transpose{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
+function ldiv!(transA::TransposeFact{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
     A = transA.parent
     ldiv!(transpose(UnitLowerTriangular(A.factors)), ldiv!(transpose(UpperTriangular(A.factors)), B))
     _apply_inverse_ipiv_rows!(A, B)
 end
 
-ldiv!(adjF::Adjoint{T,<:BandedLU{T,<:BandedMatrix}}, B::AbstractVecOrMat{T}) where {T<:Real} =
+ldiv!(adjF::AdjointFact{T,<:BandedLU{T,<:BandedMatrix}}, B::AbstractVecOrMat{T}) where {T<:Real} =
     (F = adjF.parent; ldiv!(transpose(F), B))
-function ldiv!(adjA::Adjoint{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasComplex}
+function ldiv!(adjA::AdjointFact{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat{T}) where {T<:BlasComplex}
     A = adjA.parent
     m = size(A.factors,1)
     l,u = bandwidths(A.factors)
@@ -61,14 +62,14 @@ function ldiv!(adjA::Adjoint{T,<:BandedLU{T,<:BandedMatrix}}, B::StridedVecOrMat
     LAPACK.gbtrs!('C', l, u-l, m, data, A.ipiv, B)
 end
 
-function ldiv!(adjA::Adjoint{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
+function ldiv!(adjA::AdjointFact{<:Any,<:BandedLU{<:Any,<:BandedMatrix}}, B::AbstractVecOrMat)
     error("Implement")
     A = adjA.parent
     ldiv!(adjoint(UnitLowerTriangular(A.factors)), ldiv!(adjoint(UpperTriangular(A.factors)), B))
     _apply_inverse_ipiv!(A, B)
 end
 
-\(A::Adjoint{<:Any,<:BandedLU}, B::Adjoint{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
-\(A::Transpose{<:Any,<:BandedLU}, B::Transpose{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
+\(A::AdjointFact{<:Any,<:BandedLU}, B::Adjoint{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
+\(A::TransposeFact{<:Any,<:BandedLU}, B::Transpose{<:Any,<:AbstractVecOrMat}) = A \ copy(B)
 
 _factorize(::AbstractBandedLayout, _, A) = size(A,1) == size(A,2) ? lu(A) : qr(A)

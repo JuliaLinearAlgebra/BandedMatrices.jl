@@ -32,8 +32,8 @@ function _tridiag_algorithm!(B)
 
     @inbounds for bm = d-1:-1:2
         for k = 1:n-bm
-            kp = k 
-            apiv = B[bm+1,bm+kp] 
+            kp = k
+            apiv = B[bm+1,bm+kp]
             iszero(apiv) && continue
             for i = bm+k-1:bm:n-1
                 b = B[ i-kp+1,i]
@@ -84,3 +84,24 @@ function copybands(A::AbstractMatrix{T}, d::Integer) where T
     B
 end
 
+function _tridiagonalize!(A::AbstractMatrix{T}, ::SymmetricLayout{<:BandedColumnMajor}) where T<:BlasReal
+    n=size(A, 1)
+    d = Vector{T}(undef,n)
+    e = Vector{T}(undef,n-1)
+    Q = Matrix{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    sbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), symbandeddata(A), d, e, Q, work)
+    SymTridiagonal(d,e)
+end
+
+function _tridiagonalize!(A::AbstractMatrix{T}, ::HermitianLayout{<:BandedColumnMajor}) where T<:BlasComplex
+    n=size(A, 1)
+    d = Vector{real(T)}(undef,n)
+    e = Vector{real(T)}(undef,n-1)
+    Q = Matrix{T}(undef,0,0)
+    work = Vector{T}(undef,n)
+    hbtrd!('N', symmetricuplo(A), size(A,1), bandwidth(A), hermbandeddata(A), d, e, Q, work)
+    SymTridiagonal(d,e)
+end
+
+tridiagonalize!(A::AbstractMatrix{<:BlasFloat}) = _tridiagonalize!(A, MemoryLayout(typeof(A)))

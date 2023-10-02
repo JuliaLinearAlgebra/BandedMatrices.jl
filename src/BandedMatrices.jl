@@ -1,45 +1,49 @@
 module BandedMatrices
-using Base, FillArrays, ArrayLayouts, LinearAlgebra, SparseArrays, Random
+using Base, FillArrays, ArrayLayouts, LinearAlgebra
+
+using Base: require_one_based_indexing, reindex, checkbounds, @propagate_inbounds,
+            oneto, promote_op, MultiplicativeInverses, OneTo, ReshapedArray, Slice
+import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, >,
+               >=, /, ^, \, adjoint, transpose, showerror, convert, size, view,
+               unsafe_indices, first, last, size, length, unsafe_length, step, to_indices,
+               to_index, show, fill!, similar, copy, promote_rule, IndexStyle, real, imag,
+               copyto!, Array
+
+using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
+import Base.Broadcast: BroadcastStyle, broadcasted
+
+using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasInt, BlasReal, BlasFloat, BlasComplex,
+            checksquare, HermOrSym, RealHermSymComplexHerm, chkstride1, QRPackedQ,
+            StructuredMatrixStyle, checknonsingular, ipiv2perm, Givens
+import LinearAlgebra: axpy!, _chol!, rot180, dot, cholcopy, _apply_ipiv_rows!,
+            _apply_inverse_ipiv_rows!, diag, eigvals!, eigvals, eigen!, eigen,
+            qr, qr!, ldiv!, mul!, lu, lu!, ldlt, ldlt!,
+            kron, lmul!, rmul!, factorize, logabsdet,
+            svdvals, svdvals!, tril!, triu!, diagzero, istriu, istril, isdiag
+
 using LinearAlgebra.LAPACK
-import Base: axes, axes1, getproperty, iterate, tail
-import LinearAlgebra: BlasInt, BlasReal, BlasFloat, BlasComplex, axpy!,
-                        checksquare, adjoint, transpose, AdjOrTrans, HermOrSym,
-                        _chol!, rot180, dot
-import LinearAlgebra.BLAS: libblas
-import LinearAlgebra.LAPACK: liblapack, chkuplo, chktrans
-import LinearAlgebra: cholesky, cholesky!, cholcopy, norm, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, qr!, axpy!, ldiv!, mul!, lu, lu!, ldlt, ldlt!, AbstractTriangular,
-            chkstride1, kron, lmul!, rmul!, factorize, StructuredMatrixStyle, logabsdet,
-            svdvals, svdvals!, QRPackedQ, checknonsingular, ipiv2perm, tril!,
-            triu!, Givens, diagzero
-import SparseArrays: sparse
-
-import Base: getindex, setindex!, *, +, -, ==, <, <=, >, isassigned,
-                >=, /, ^, \, transpose, showerror, reindex, checkbounds, @propagate_inbounds
-
-import Base: convert, size, view, unsafe_indices,
-                first, last, size, length, unsafe_length, step,
-                to_indices, to_index, show, fill!, promote_op,
-                MultiplicativeInverses, OneTo, ReshapedArray,
-                               similar, copy, convert, promote_rule, rand,
-                            IndexStyle, real, imag, Slice, pointer, unsafe_convert, copyto!,
-                            hcat, vcat, hvcat
-
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, DefaultArrayStyle, Broadcasted, broadcasted,
-                        materialize, materialize!
+using LinearAlgebra.LAPACK: chkuplo, chktrans
 
 import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
-                    materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
+                    materialize, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
                     sublayout, sub_materialize, _fill_lmul!, _copy_oftype,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
-                    BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata
+                    BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata, copymutable_oftype_layout, dualadjoint
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement
 
+const libblas = LinearAlgebra.BLAS.libblas
+const liblapack = LinearAlgebra.BLAS.liblapack
+const AdjointFact = isdefined(LinearAlgebra, :AdjointFactorization) ?
+    LinearAlgebra.AdjointFactorization :
+    Adjoint
+const TransposeFact = isdefined(LinearAlgebra, :TransposeFactorization) ?
+    LinearAlgebra.TransposeFactorization :
+    Transpose
 
 export BandedMatrix,
        bandrange,
@@ -58,15 +62,6 @@ export BandedMatrix,
        Ones,
        Eye
 
-
-import Base: require_one_based_indexing
-import LinearAlgebra: _apply_ipiv_rows!
-
-if VERSION < v"1.6-"
-	oneto(n) = OneTo(n)
-else
-	import Base: oneto
-end
 
 include("blas.jl")
 include("lapack.jl")
@@ -97,11 +92,11 @@ include("tribanded.jl")
 
 include("interfaceimpl.jl")
 
+if !isdefined(Base, :get_extension)
+    include("../ext/BandedMatricesSparseArraysExt.jl")
+end
 
-# function _precompile_()
-#     precompile(Tuple{typeof(gbmm!), Char, Char, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}, Float64, BandedMatrix{Float64,Array{Float64,2},Base.OneTo{Int64}}})
-# end
+include("precompile.jl")
 
-# _precompile_()
 
 end #module

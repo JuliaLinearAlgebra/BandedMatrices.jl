@@ -228,12 +228,21 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
                          0  7  10  13  15   0   0;
                          0  0  11  14  16  17   0]
 
-            @test a[BandRange, 1] == [1,   2,  3]
-            @test a[BandRange, 2] == [4,   5,  6,  7]
-            @test a[BandRange, 3] == [8,   9, 10, 11]
-            @test a[BandRange, 4] == [12, 13, 14]
-            @test a[BandRange, 5] == [15, 16]
-            @test a[BandRange, 6] == [17]
+            @test a[BandRange, 1] == @view(a[BandRange, 1]) == [1,   2,  3]
+            @test a[BandRange, 2] == @view(a[BandRange, 2]) == [4,   5,  6,  7]
+            @test a[BandRange, 3] == @view(a[BandRange, 3]) == [8,   9, 10, 11]
+            @test a[BandRange, 4] == @view(a[BandRange, 4]) == [12, 13, 14]
+            @test a[BandRange, 5] == @view(a[BandRange, 5]) == [15, 16]
+            @test a[BandRange, 6] == @view(a[BandRange, 6]) == [17]
+            @test a[BandRange, 7] == @view(a[BandRange, 7]) == Int[]
+
+            @test a[:, 1] == view(a, :, 1) == [1,2,3,0,0]
+            @test a[:, 2] == view(a, :, 2) == [4,5,6,7,0]
+            @test a[:, 3] == view(a, :, 3) == [0,8,9,10,11]
+            @test a[:, 4] == view(a, :, 4) == [0,0,12,13,14]
+            @test a[:, 5] == view(a, :, 5) == [0,0,0,15,16]
+            @test a[:, 6] == view(a, :, 6) == [0,0,0,0,17]
+            @test a[:, 7] == view(a, :, 7) == [0,0,0,0,0]
 
             @test_throws BoundsError a[:, 0] = [1, 2, 3]
             @test_throws DimensionMismatch a[:, 1] = [1, 2, 3]
@@ -310,19 +319,28 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
                          0  7  10  13  15   0   0;
                          0  0  11  14  16  17   0]'
 
-            @test a[1, BandRange] == [1,   2,  3]
-            @test a[2, BandRange] == [4,   5,  6,  7]
-            @test a[3, BandRange] == [8,   9, 10, 11]
-            @test a[4, BandRange] == [12, 13, 14]
-            @test a[5, BandRange] == [15, 16]
-            @test a[6, BandRange] == [17]
+            @test a[1, BandRange] == @view(a[1, BandRange]) == [1,   2,  3]
+            @test a[2, BandRange] == @view(a[2, BandRange]) == [4,   5,  6,  7]
+            @test a[3, BandRange] == @view(a[3, BandRange]) == [8,   9, 10, 11]
+            @test a[4, BandRange] == @view(a[4, BandRange]) == [12, 13, 14]
+            @test a[5, BandRange] == @view(a[5, BandRange]) == [15, 16]
+            @test a[6, BandRange] == @view(a[6, BandRange]) == [17]
+            @test a[7, BandRange] == @view(a[7, BandRange]) == Int[]
+
+            @test a[1, :] == @view(a[1, :]) == [1,2,3,0,0]
+            @test a[2, :] == @view(a[2, :]) == [4,5,6,7,0]
+            @test a[3, :] == @view(a[3, :]) == [0,8,9,10,11]
+            @test a[4, :] == @view(a[4, :]) == [0,0,12,13,14]
+            @test a[5, :] == @view(a[5, :]) == [0,0,0,15,16]
+            @test a[6, :] == @view(a[6, :]) == [0,0,0,0,17]
+            @test a[7, :] == @view(a[7, :]) == [0,0,0,0,0]
 
             @test_throws BoundsError a[0, :] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, :] = [1, 2, 3]
             @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
             @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
-        end        
+        end
 
 
         # scalar - range - integer
@@ -668,6 +686,14 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
 
             @test_throws BandError a[band(-3)] = [1, 2, 3]
         end
+    end
+
+    @testset "views of band views" begin
+        A = BandedMatrix(0=>1:4, 1=>(1:3) .+ 5, -1=>(1:3) .+ 10)
+        v = @view A[band(1)]
+        w = view(v, 2:3)
+        @test w == [7,8]
+        @test parentindices(w) isa Tuple{AbstractRange}
     end
 
     @testset "other special indexing" begin

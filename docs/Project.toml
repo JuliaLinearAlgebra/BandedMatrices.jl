@@ -1,4 +1,8 @@
 [deps]
-Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 LazyArrays = "5078a376-72f3-5289-bfd5-ec5146d43c02"
+
+[compat]
+Documenter = "0.27"
+LazyArrays = "1"

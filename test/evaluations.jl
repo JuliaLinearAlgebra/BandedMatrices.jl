@@ -27,17 +27,17 @@ function evaluate(n::Integer, T=Float64)
 
     println("generic $T")
     Mt = @btime tridiagonalize(Hermitian($M));
-    
+
     println("generic with LinearAlgebra.givensAlgorithm $T")
     MtGA = @btime BandedMatrices.tridiagonalizeGA(Hermitian($M));
-    
+
     println("generic Complex{$T}")
     Mtc = @btime tridiagonalize(Hermitian($MC));
 
     println("generic with LinearAlgebra.givensAlgorithm Complex{$T}")
     MtcGA = @btime BandedMatrices.tridiagonalizeGA(Hermitian($MC));
-    
-    
+
+
     println("generic BigFloat($(precision(BigFloat)))")
     Mbig = @time tridiagonalize(Hermitian(big.(M)));
     println("generic complex BigFloat($(precision(BigFloat)))")

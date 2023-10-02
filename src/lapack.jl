@@ -99,7 +99,7 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
             chkvect(vect)
             info = Ref{BlasInt}()
             n    = size(A,2)
-            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
             size(A,1) < k+1 && throw(ArgumentError("Not enough bands"))
             info  = Ref{BlasInt}()
             ccall((@blasfunc($fname), liblapack), Nothing,
@@ -109,6 +109,57 @@ for (fname, elty) in ((:dsbtrd_,:Float64),
                  vect, uplo,
                  n, k, A, max(1,stride(A,2)),
                  d, e, Q, max(1,stride(Q,2)), work, info)
+            LAPACK.chklapackerror(info[])
+            d, e, Q
+        end
+    end
+end
+
+for (fname, elty) in ((:zhbtrd_,:ComplexF64),
+                      (:chbtrd_,:ComplexF32))
+    @eval begin
+        local Relty = real($elty)
+        function hbtrd!(vect::Char, uplo::Char,
+                        m::Int, k::Int, A::AbstractMatrix{$elty},
+                        d::AbstractVector{Relty}, e::AbstractVector{Relty}, Q::AbstractMatrix{$elty},
+                        work::AbstractVector{$elty})
+            require_one_based_indexing(A)
+            chkstride1(A)
+            chkuplo(uplo)
+            chkvect(vect)
+            info = Ref{BlasInt}()
+            n    = size(A,2)
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            size(A,1) < k+1 && throw(ArgumentError("Not enough bands"))
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (
+                    Ref{UInt8},
+                    Ref{UInt8},
+                    Ref{BlasInt},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{Relty},
+                    Ptr{Relty},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ptr{BlasInt},
+                ),
+                 vect,
+                 uplo,
+                 n,
+                 k,
+                 A,
+                 max(1,stride(A,2)),
+                 d,
+                 e,
+                 Q,
+                 max(1,stride(Q,2)),
+                 work,
+                 info
+            )
             LAPACK.chklapackerror(info[])
             d, e, Q
         end
@@ -133,6 +184,31 @@ for (fname, elty) in ((:dgbbrd_,:Float64),
                  kl, ku, ab, max(1,stride(ab,2)),
                  d, e, Q, max(1,stride(Q,2)),
                  Pt, max(1,stride(Pt,2)), C, max(1,stride(C,2)), work, info)
+            LAPACK.chklapackerror(info[])
+            d, e, Q, Pt, C
+        end
+    end
+end
+
+for (fname, elty) in ((:zgbbrd_,:ComplexF64),
+                      (:cgbbrd_,:ComplexF32))
+    @eval begin
+        local Relty = real($elty)
+        function gbbrd!(vect::Char, m::Int, n::Int, ncc::Int,
+                        kl::Int, ku::Int, ab::AbstractMatrix{$elty},
+                        d::AbstractVector{Relty}, e::AbstractVector{Relty}, Q::AbstractMatrix{$elty},
+                        Pt::AbstractMatrix{$elty}, C::AbstractMatrix{$elty}, work::AbstractVector{$elty},
+                        rwork::AbstractVector{Relty})
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt}, Ref{BlasInt},
+                 Ref{BlasInt}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{Relty}, Ptr{Relty}, Ptr{$elty}, Ref{BlasInt},
+                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ptr{Relty}, Ptr{BlasInt}),
+                 vect, m, n, ncc,
+                 kl, ku, ab, max(1,stride(ab,2)),
+                 d, e, Q, max(1,stride(Q,2)),
+                 Pt, max(1,stride(Pt,2)), C, max(1,stride(C,2)), work, rwork, info)
             LAPACK.chklapackerror(info[])
             d, e, Q, Pt, C
         end
@@ -205,14 +281,14 @@ for (fname, elty) in ((:dpbtrf_,:Float64),
             chkuplo(uplo)
             info = Ref{BlasInt}()
             n    = size(A,2)
-            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
             size(A,1) < kd+1 && throw(ArgumentError("Not enough bands"))
             ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
                  Ptr{$elty}, Ref{BlasInt}, Ptr{BlasInt}),
                  uplo, n, kd,
                  A, max(1,stride(A,2)), info)
-            LAPACK.chklapackerror(info[])
+            LAPACK.chkargsok(info[])
             A, info[]
         end
     end
@@ -272,7 +348,7 @@ for (fname, elty) in ((:dpbstf_,:Float64),
             chkuplo(uplo)
             info = Ref{BlasInt}()
             n    = size(A,2)
-            n ≠ m && throw(ArgumentError("Matrix must be square"))
+            n ≠ m && throw(ArgumentError("Matrix must be square"))
             size(A,1) < kd+1 && throw(ArgumentError("Not enough bands"))
             ccall((@blasfunc($fname), liblapack), Nothing,
                 (Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
@@ -315,6 +391,79 @@ for (fname, elty) in ((:dsbgst_,:Float64),
                  kb, AB, max(stride(AB,2),1), BB,
                  max(stride(BB,2),1), X, max(1,stride(X,2)), work,
                  info)
+            LAPACK.chklapackerror(info[])
+            AB
+        end
+    end
+end
+
+# Convert a complex Hermitian Positive Definite generalized eigenvalue problem
+# to a symmetric eigenvalue problem assuming B has been processed by
+# a split-Cholesky factorization.
+for (fname, elty) in ((:zhbgst_, :ComplexF64),
+                      (:chbgst_, :ComplexF32))
+    @eval begin
+        #=
+        subroutine zhbgst   (
+        character   VECT,
+        character   UPLO,
+        integer     N,
+        integer     KA,
+        integer     KB,
+        complex*16, dimension( ldab, * )    AB,
+        integer     LDAB,
+        complex*16, dimension( ldbb, * )    BB,
+        integer     LDBB,
+        complex*16, dimension( ldx, * )     X,
+        integer     LDX,
+        complex*16, dimension( * )      WORK,
+        double precision, dimension( * )    RWORK,
+        integer     INFO
+        )
+        =#
+        local Relty = real($elty)
+        function hbgst!(vect::Char, uplo::Char, n::Int, ka::Int, kb::Int,
+                         AB::StridedMatrix{$elty}, BB::StridedMatrix{$elty},
+                         X::StridedMatrix{$elty}, work::StridedVector{$elty},
+                         rwork::StridedVector{Relty})
+            require_one_based_indexing(AB, BB, X, work)
+            chkstride1(AB, BB)
+            chkuplo(uplo)
+            chkvect(vect)
+            info  = Ref{BlasInt}()
+            ccall((@blasfunc($fname), liblapack), Nothing,
+                (
+                    Ref{UInt8},
+                    Ref{UInt8},
+                    Ref{BlasInt},
+                    Ref{BlasInt},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ref{BlasInt},
+                    Ptr{$elty},
+                    Ptr{Relty},
+                    Ref{BlasInt},
+                ),
+                vect,
+                uplo,
+                n,
+                ka,
+                kb,
+                AB,
+                max(stride(AB,2),1),
+                BB,
+                max(stride(BB,2),1),
+                X,
+                max(stride(X,2),1),
+                work,
+                rwork,
+                info,
+                )
+
             LAPACK.chklapackerror(info[])
             AB
         end
