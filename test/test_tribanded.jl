@@ -1,5 +1,5 @@
 using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
-import BandedMatrices: BandedColumns, BandedRows
+import BandedMatrices: BandedColumns, BandedRows, isbanded
 
 
 @testset "Triangular" begin
