@@ -13,7 +13,7 @@
 
 function _BandedMatrix end
 
-mutable struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
+struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     data::CONTAINER  # l+u+1 x n (# of columns)
     raxis::RAXIS # axis for rows (col axis comes from data)
     l::Int # lower bandwidth ≥0
@@ -163,7 +163,7 @@ promote_rule(::Type{BandedMatrix{T1, C1}}, ::Type{BandedMatrix{T2, C2}}) where {
     BandedMatrix{promote_type(T1,T2), promote_type(C1, C2)}
 
 
-for (op,bop) in ((:(rand),:brand),)
+for (op,bop) in ((:rand,:brand), (:randn,:brandn))
     @eval begin
         $bop(::Type{T},n::Integer,m::Integer,a::Integer,b::Integer) where {T} =
             _BandedMatrix($op(T,max(0,b+a+1),m),n,a,b)
@@ -190,6 +190,13 @@ end
     brand(T,n,m,l,u)
 
 Creates an `n×m` banded matrix  with random numbers in the bandwidth of type `T` with bandwidths `(l,u)`
+"""
+brand
+
+"""
+    brandn(T,n,m,l,u)
+
+Creates an `n×m` banded matrix  with random normals in the bandwidth of type `T` with bandwidths `(l,u)`
 """
 brand
 

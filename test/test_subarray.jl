@@ -1,6 +1,6 @@
 using BandedMatrices, FillArrays, ArrayLayouts, Test
 import LinearAlgebra: axpy!
-import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedMatrix, _BandedMatrix, sub_materialize
+import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedMatrix, _BandedMatrix, sub_materialize, isbanded
 
 
 @testset "BandedMatrix SubArray" begin

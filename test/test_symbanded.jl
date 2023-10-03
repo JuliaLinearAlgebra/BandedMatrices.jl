@@ -1,6 +1,6 @@
 using ArrayLayouts
 using BandedMatrices
-import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns
+import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns, isbanded
 using FillArrays
 using GenericLinearAlgebra
 using LinearAlgebra
