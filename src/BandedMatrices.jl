@@ -48,6 +48,7 @@ const TransposeFact = isdefined(LinearAlgebra, :TransposeFactorization) ?
 export BandedMatrix,
        bandrange,
        brand,
+       brandn,
        bandwidth,
        BandError,
        band,
