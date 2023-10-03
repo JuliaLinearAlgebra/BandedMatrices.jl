@@ -100,4 +100,16 @@ import BandedMatrices: BandedColumns, BandedRows
         @test L̃ \ B ≈ Matrix(L̃) \ B
         @test B / L̃ ≈ B / Matrix(L̃)
     end
+
+    @testset "rot180" begin
+        B = brand(5,5,2,1)
+        @test rot180(UpperTriangular(B)) isa LowerTriangular{<:Any,<:BandedMatrix}
+        @test rot180(UnitUpperTriangular(B)) isa UnitLowerTriangular{<:Any,<:BandedMatrix}
+        @test rot180(LowerTriangular(B)) isa UpperTriangular{<:Any,<:BandedMatrix}
+        @test rot180(UnitLowerTriangular(B)) isa UnitUpperTriangular{<:Any,<:BandedMatrix}
+        @test rot180(UpperTriangular(B)) == rot180(Matrix(UpperTriangular(B)))
+        @test rot180(UnitUpperTriangular(B)) == rot180(Matrix(UnitUpperTriangular(B)))
+        @test rot180(LowerTriangular(B)) == rot180(Matrix(LowerTriangular(B)))
+        @test rot180(UnitLowerTriangular(B)) == rot180(Matrix(UnitLowerTriangular(B)))
+    end
 end
