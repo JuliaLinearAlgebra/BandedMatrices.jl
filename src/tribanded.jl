@@ -94,3 +94,9 @@ end
     LUT = uplo == 'U' ? LowerTriangular : UpperTriangular
     tbsv!(uploT, 'T', unit, size(A,1), bandwidth(A,bwdim), bandeddata(LUT(A')), x)
 end
+
+
+rot180(A::UpperTriangular{<:Any,<:AbstractBandedMatrix}) = LowerTriangular(rot180(parent(A)))
+rot180(A::UnitUpperTriangular{<:Any,<:AbstractBandedMatrix}) = UnitLowerTriangular(rot180(parent(A)))
+rot180(A::LowerTriangular{<:Any,<:AbstractBandedMatrix}) = UpperTriangular(rot180(parent(A)))
+rot180(A::UnitLowerTriangular{<:Any,<:AbstractBandedMatrix}) = UnitUpperTriangular(rot180(parent(A)))
