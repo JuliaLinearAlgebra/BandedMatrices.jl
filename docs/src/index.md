@@ -11,6 +11,10 @@ BandedMatrix
 brand
 ```
 
+```@docs
+brandn
+```
+
 ```@meta
 DocTestSetup = quote
     using BandedMatrices
@@ -98,6 +102,10 @@ band
 BandRange
 ```
 
+```@docs
+BandedMatrices.isbanded
+```
+
 To loop over the nonzero elements of a BandedMatrix, you can use `colrange(A, c)` and `rowrange(A, r)`.
 
 
@@ -116,7 +124,7 @@ interface consists of the following:
 | Required methods | Brief description |
 | :--------------- | :--------------- |
 | `bandwidths(A)` | Returns a tuple containing the sub-diagonal and super-diagonal bandwidth |
-| `isbanded(A)`    | Override to return `true` |
+| `BandedMatrices.isbanded(A)`    | Override to return `true` |
 
 | Optional methods | Brief description |
 | :--------------- | :--------------- |
