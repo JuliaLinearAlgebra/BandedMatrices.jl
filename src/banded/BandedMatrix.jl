@@ -198,7 +198,7 @@ brand
 
 Creates an `n×m` banded matrix  with random normals in the bandwidth of type `T` with bandwidths `(l,u)`
 """
-brand
+brandn
 
 ## Conversions from AbstractArrays, we include FillArrays in case `zeros` is ever faster
 BandedMatrix{T}(A::AbstractMatrix, bnds::NTuple{2,Integer}) where T =
