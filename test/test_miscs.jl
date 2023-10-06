@@ -89,9 +89,9 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
         @test occursin(needle, sprint() do io
              show(io, MIME"text/plain"(), BandedMatrix(Eye(3),(1,1)))
           end)
-        B = BandedMatrix(-1=>[1:10;], 0=>[1:11;], 1=>[1:10;])
+        B = BandedMatrix(-1=>1:4, 0=>1:5, 1=>1:4)
         Bshowstr = sprint(show, B)
-        @test Bshowstr == "BandedMatrix($(-1=>[1:10;]), $(0=>[1:11;]), $(1=>[1:10;]))"
+        @test Bshowstr == "BandedMatrix($(-1=>[1:4;]), $(0=>[1:5;]), $(1=>[1:4;]))"
     end
     @time @testset "Issue #27" begin
         A=brand(1,10,0,9)
