@@ -956,3 +956,15 @@ function banded_axpy!(a::Number, X::BandedMatrix, Y::BandedMatrix)
     end
     return Y
 end
+
+# show
+function show(io::IO, B::BandedMatrix)
+    print(io, "BandedMatrix(")
+    l, u = bandwidths(B)
+    for (ind, b) in enumerate(-l:u)
+        r = @view B[band(b)]
+        show(io, b => r)
+        b == u || print(io, ", ")
+    end
+    print(io, ")")
+end
