@@ -456,7 +456,9 @@ julia> view(B, band(0)) isa BandedMatrices.BandedMatrixBand
 true
 ```
 """
-const BandedMatrixBand{T} = SubArray{T, 1, <:ReshapedArray{T,1,<:BandedMatrix{T}}, Tuple{BandSlice}}
+const BandedMatrixBand{T} = SubArray{T, 1, <:ReshapedArray{T,1,
+                                <:Union{BandedMatrix{T}, SubArray{T,2,<:BandedMatrix{T},
+                                <:NTuple{2, AbstractUnitRange{Int}}}}}, Tuple{BandSlice}}
 
 
 band(V::BandedMatrixBand) = first(parentindices(V)).band.i
@@ -497,15 +499,18 @@ function dataview(V::BandedMatrixBand)
     A = parent(parent(V))
     b = band(V)
     m,n = size(A)
-    view(A.data, A.u - b + 1, max(b,0)+1:min(n,m+b))
+    u = bandwidth(A,2)
+    view(bandeddata(A), u - b + 1, max(b,0)+1:min(n,m+b))
 end
 
 @propagate_inbounds function getindex(B::BandedMatrixBand, i::Int)
     A = parent(parent(B))
     b = band(B)
-    if -A.l ≤ band(B) ≤ A.u
+    l, u = bandwidths(A)
+    if -l ≤ band(B) ≤ u
         dataview(B)[i]
     else
+        @boundscheck checkbounds(B, i)
         zero(eltype(B))
     end
 end
@@ -513,7 +518,8 @@ end
 # B[band(i)]
 @inline function copyto!(v::AbstractVector, B::BandedMatrixBand)
     A = parent(parent(B))
-    if -A.l ≤ band(B) ≤ A.u
+    l, u = bandwidths(A)
+    if -l ≤ band(B) ≤ u
         copyto!(v, dataview(B))
     else
         Binds = axes(B,1)
