@@ -765,19 +765,24 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
         end
 
         @testset "band views" begin
-            for A in (rand(11,10), brand(11,10,2,3), brand(Float32, 11,10,2,3),
+            for AA in (rand(11,10), brand(11,10,2,3), brand(Float32, 11,10,2,3),
                          brand(ComplexF64, 11,10,2,3))
-                for k = -5:5
-                    V = view(A, band(k))
-                    bs = BandedMatrices.parentindices(V)[1] # a bandslice
-                    @test bs.indices == diagind(A, k)
-                    @test bs.band == Band(k)
-                    @test collect(bs) == collect(diagind(A, k))
-                    @test Vector{eltype(A)}(V) == collect(V) == A[diagind(A,k)] == A[band(k)]
-                    @test Vector{ComplexF64}(V) == Vector{ComplexF64}(A[diagind(A,k)]) ==
-                            convert(AbstractVector{ComplexF64}, V) == convert(AbstractArray{ComplexF64}, V)
-                    @test V ≡ convert(AbstractArray, V) ≡ convert(AbstractArray{eltype(A)}, V) ≡
-                            convert(AbstractArray, V) ≡ convert(AbstractVector, V)
+                for A in (AA, view(AA, 1:size(AA,1)-1, 1:size(AA,2)-2))
+                    for k = -5:5
+                        V = view(A, band(k))
+                        bs = BandedMatrices.parentindices(V)[1] # a bandslice
+                        @test bs.indices == diagind(A, k)
+                        @test bs.band == Band(k)
+                        @test collect(bs) == collect(diagind(A, k))
+                        @test Vector{eltype(A)}(V) == collect(V) == A[diagind(A,k)] == A[band(k)]
+                        @test Vector{ComplexF64}(V) == Vector{ComplexF64}(A[diagind(A,k)]) ==
+                                convert(AbstractVector{ComplexF64}, V) == convert(AbstractArray{ComplexF64}, V)
+                        @test V ≡ convert(AbstractArray, V) ≡ convert(AbstractArray{eltype(A)}, V) ≡
+                                convert(AbstractArray, V) ≡ convert(AbstractVector, V)
+
+                        V .= 0
+                        @test all(iszero, A[band(k)])
+                    end
                 end
             end
         end
