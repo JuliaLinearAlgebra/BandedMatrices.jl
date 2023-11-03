@@ -785,6 +785,11 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
                     end
                 end
             end
+            A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
+            B = view(A, 2:4, 1:3)
+            @test B[band(0)] == A[band(-1)]
+            @test B[band(1)] == A[band(0)][2:3]
+            @test_throws BoundsError view(B, band(-1))[3]
         end
     end
 

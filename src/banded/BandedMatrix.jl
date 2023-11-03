@@ -510,6 +510,7 @@ end
     if -l ≤ band(B) ≤ u
         dataview(B)[i]
     else
+        @boundscheck checkbounds(B, i)
         zero(eltype(B))
     end
 end
