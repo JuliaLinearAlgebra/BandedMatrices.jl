@@ -165,7 +165,7 @@ function checkbandmatch(A::AbstractMatrix{T}, V::AbstractVector, k::Integer, jr:
 end
 
 function checkbandmatch(A::AbstractMatrix{T}, V::AbstractMatrix, kr::AbstractRange, jr::AbstractRange) where {T}
-    u, l = A.u, A.l
+    u, l = bandwidths(A)
     jj = 1
     for j in jr
         kk = 1
