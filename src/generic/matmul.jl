@@ -239,7 +239,7 @@ end
 
 ### BandedMatrix * dense matrix
 
-function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractColumnMajor, <:AbstractColumnMajor})
+function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractStridedLayout, <:AbstractStridedLayout})
     checkdimensions(M)
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
@@ -254,7 +254,7 @@ function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractColumnMajor, <:
     return C
 end
 
-function materialize!(M::MatMulMatAdd{<:AbstractColumnMajor, <:BandedColumns, <:AbstractColumnMajor})
+function materialize!(M::MatMulMatAdd{<:AbstractStridedLayout, <:BandedColumns, <:AbstractStridedLayout})
     checkdimensions(M)
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 

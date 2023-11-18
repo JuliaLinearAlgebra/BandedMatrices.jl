@@ -1,8 +1,4 @@
-using ArrayLayouts
-using BandedMatrices
-using FillArrays
-using LinearAlgebra
-using Test
+using ArrayLayouts, BandedMatrices, FillArrays, LinearAlgebra, Test
 
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns, _BandedMatrix
@@ -105,6 +101,13 @@ ArrayLayouts.colsupport(::UnknownLayout, A::MyOneElement{<:Any,1}, _) =
                 mul!(Y, B, X, oneunit(T), oneunit(T))
                 @test cmp(Y, BX + ones(T, size(Y)))
             end
+        end
+        @testset "Banded * strided" begin
+            n = 100
+            B = BandedMatrix{Float64}(-1=>1:n, 1=>11:n+10, 2=>21:n+19)
+            M = view(randn(2n+1,2n+1),1:2:2n+1,1:2:2n+1)
+            @test B*M ≈ Matrix(B)*M
+            @test M*B ≈ M*Matrix(B)
         end
     end
 
