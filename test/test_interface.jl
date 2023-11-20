@@ -1,4 +1,4 @@
-using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Base64
+using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test
 import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
                         rowsupport, colsupport, _BandedMatrix, BandedColumns, bandeddata
 import ArrayLayouts: OnesLayout, UnknownLayout
