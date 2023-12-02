@@ -18,9 +18,9 @@ isbanded(::Zeros) = true
 bandwidths(::Zeros) = (-40320,-40320) # 40320 == prod(1:8), used for special cases involving gcd
 inbands_getindex(::Zeros{T}, k::Integer, j::Integer) where T = zero(T)
 
-isbanded(::Eye) = true
-bandwidths(::Eye) = (0,0)
-inbands_getindex(::Eye{T}, k::Integer, j::Integer) where T = one(T)
+isbanded(::RectDiagonal) = true
+bandwidths(::RectDiagonal) = (0,0)
+inbands_getindex(E::RectDiagonal, k::Integer, j::Integer) = E.diag[k]
 
 isbanded(::Diagonal) = true
 bandwidths(::Diagonal) = (0,0)
