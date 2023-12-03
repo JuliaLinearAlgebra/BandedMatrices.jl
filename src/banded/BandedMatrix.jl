@@ -226,10 +226,10 @@ BandedMatrix{V,C,Base.OneTo{Int}}(Z::Zeros{T,2}, bnds::NTuple{2,Integer}) where 
 BandedMatrix{V}(Z::Zeros{T,2}, bnds::NTuple{2,Integer}) where {T,V} =
     _BandedMatrix(zeros(V,max(0,sum(bnds)+1),size(Z,2)),size(Z,1),bnds...)
 
-BandedMatrix(E::Eye{T}, bnds::NTuple{2,Integer}) where T = BandedMatrix{T}(E, bnds)
-function BandedMatrix{T}(E::Eye, bnds::NTuple{2,Integer}) where T
-    ret=BandedMatrix(Zeros{T}(E), bnds)
-    ret[band(0)] .= one(T)
+BandedMatrix(E::RectDiagonal{T}, bnds::NTuple{2,Integer}) where T = BandedMatrix{T}(E, bnds)
+function BandedMatrix{T}(E::RectDiagonal, bnds::NTuple{2,Integer}) where T
+    ret = BandedMatrix(Zeros{T}(E), bnds)
+    ret[band(0)] .= E.diag
     ret
 end
 

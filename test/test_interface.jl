@@ -59,6 +59,10 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test B * Eye(5) == B
         @test muladd!(2.0, Eye(5), B, 0.0, zeros(5,5)) == 2B
         @test muladd!(2.0, B, Eye(5), 0.0, zeros(5,5)) == 2B
+
+        @test isbanded(2Eye(5,6))
+        @test bandwidths(2Eye(5,6)) == (0,0)
+        @test BandedMatrices.inbands_getindex(2Eye(5,6), 1,1) == 2
     end
 
     @testset "Diagonal" begin

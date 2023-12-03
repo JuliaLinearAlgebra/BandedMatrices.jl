@@ -34,7 +34,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
                     BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata, copymutable_oftype_layout, dualadjoint
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal
 
 const libblas = LinearAlgebra.BLAS.libblas
 const liblapack = LinearAlgebra.BLAS.liblapack
