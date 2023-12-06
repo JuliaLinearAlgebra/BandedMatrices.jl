@@ -8,6 +8,7 @@ makedocs(;
     ],
     sitename = "BandedMatrices.jl",
     authors = "Sheehan Olver, Mikael Slevinsky, and contributors.",
+    warnonly = :missing_docs,
 )
 
 

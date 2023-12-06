@@ -188,7 +188,7 @@ checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
 
 Represent a `StepRange` of indices corresponding to a band.
 
-Upon calling `to_indices()`, `Band`s are converted to `BandSlice` objects to represent
+Upon calling `to_indices`, `Band`s are converted to `BandSlice` objects to represent
 the indices over which the `Band` spans.
 
 This mimics the relationship between `Colon` and `Base.Slice`.

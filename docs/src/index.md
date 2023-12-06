@@ -106,6 +106,54 @@ BandRange
 BandedMatrices.isbanded
 ```
 
+```@docs
+BandedMatrices.BandSlice
+```
+
+```@docs
+BandedMatrices.colstart
+```
+
+```@docs
+BandedMatrices.colstop
+```
+
+```@docs
+BandedMatrices.colrange
+```
+
+```@docs
+BandedMatrices.collength
+```
+
+```@docs
+BandedMatrices.rowstart
+```
+
+```@docs
+BandedMatrices.rowstop
+```
+
+```@docs
+BandedMatrices.rowrange
+```
+
+```@docs
+BandedMatrices.rowlength
+```
+
+```@docs
+BandedMatrices.bandeddata
+```
+
+```@docs
+BandedMatrices.BandedMatrixBand
+```
+
+```@docs
+BandedMatrices.dataview
+```
+
 To loop over the nonzero elements of a BandedMatrix, you can use `colrange(A, c)` and `rowrange(A, r)`.
 
 
