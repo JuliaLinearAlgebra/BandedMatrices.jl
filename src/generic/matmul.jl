@@ -233,7 +233,7 @@ end
 
 function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:AbstractFillLayout}})
     checkdimensions(M)
-    M.C .= getindex_value(M.B.diag) .* M.A .* M.α .+ M.C .* M.β
+    M.C .= M.A .* getindex_value(M.B.diag) .* M.α .+ M.C .* M.β
     M.C
 end
 
