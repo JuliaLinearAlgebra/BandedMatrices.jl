@@ -120,7 +120,7 @@ ArrayLayouts.colsupport(::UnknownLayout, A::MyOneElement{<:Any,1}, _) =
             α, β = quat(0,1,1,0), quat(1,0,0,1)
             @test mul!(zero(v), B1, v, α, β) ≈ mul!(zero(v), Array(B1), v, α, β)
 
-            D = Diagonal(Fill(quat(rand(4)...)))
+            D = Diagonal(Fill(quat(rand(4)...), size(B1,2)))
             @test mul!(D * B1, D, B1, α, β) ≈ mul!(D * Array(B1), D, Array(B1), α, β)
             @test mul!(B1 * D, B1, D, α, β) ≈ mul!(Array(B1) * D, Array(B1), D, α, β)
         end
