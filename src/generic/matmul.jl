@@ -100,10 +100,10 @@ end
 @inline function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout})
     checkdimensions(M)
     α,A,B,β,C = M.α,M.A,M.B,M.β,M.C
-    _fill_lmul!(β, C)
+    _fill_rmul!(C, β)
     @inbounds for j = intersect(rowsupport(A), colsupport(B))
         for k = colrange(A,j)
-            C[k] += α*inbands_getindex(A,k,j)*B[j]
+            C[k] += inbands_getindex(A,k,j) * B[j] * α
         end
     end
     C
@@ -113,11 +113,11 @@ end
     checkdimensions(M)
     α,At,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = transpose(At)
-    _fill_lmul!(β, C)
+    _fill_rmul!(C, β)
 
     @inbounds for j = rowsupport(A)
         for k = intersect(colrange(A,j), colsupport(B))
-            C[j] +=  α*transpose(inbands_getindex(A,k,j))*B[k]
+            C[j] +=  transpose(inbands_getindex(A,k,j)) * B[k] * α
         end
     end
     C
@@ -127,10 +127,10 @@ end
     checkdimensions(M)
     α,Ac,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = Ac'
-    _fill_lmul!(β, C)
+    _fill_rmul!(C, β)
     @inbounds for j = rowsupport(A)
         for k = intersect(colrange(A,j), colsupport(B))
-            C[j] += α*inbands_getindex(A,k,j)'*B[k]
+            C[j] += inbands_getindex(A,k,j)' * B[k] * α
         end
     end
     C
@@ -227,13 +227,13 @@ end
 
 function materialize!(M::MatMulMatAdd{<:DiagonalLayout{<:AbstractFillLayout},<:AbstractBandedLayout})
     checkdimensions(M)
-    M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
+    M.C .= getindex_value(M.A.diag) .* M.B .* M.α .+ M.C .* M.β
     M.C
 end
 
 function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:AbstractFillLayout}})
     checkdimensions(M)
-    M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
+    M.C .= getindex_value(M.B.diag) .* M.A .* M.α .+ M.C .* M.β
     M.C
 end
 

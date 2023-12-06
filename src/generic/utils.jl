@@ -24,3 +24,7 @@ prodbandwidths(A...) = broadcast(+, bandwidths.(A)...)
 function sumbandwidths(A::AbstractMatrix, B::AbstractMatrix)
     max(bandwidth(A, 1), bandwidth(B, 1)), max(bandwidth(A, 2), bandwidth(B, 2))
 end
+
+
+_fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
+_fill_rmul!(A::AbstractArray{T}, β) where T = iszero(β) ? zero!(A) : rmul!(A, β)

@@ -1,4 +1,9 @@
-using ArrayLayouts, BandedMatrices, FillArrays, LinearAlgebra, Test
+using ArrayLayouts
+using BandedMatrices
+using FillArrays
+using LinearAlgebra
+using Quaternions
+using Test
 
 import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns, _BandedMatrix
@@ -108,6 +113,12 @@ ArrayLayouts.colsupport(::UnknownLayout, A::MyOneElement{<:Any,1}, _) =
             M = view(randn(2n+1,2n+1),1:2:2n+1,1:2:2n+1)
             @test B*M ≈ Matrix(B)*M
             @test M*B ≈ M*Matrix(B)
+        end
+        @testset "non-commutative" begin
+            B1 = BandedMatrix(0 => [quat(rand(4)...) for i in 1:3])
+            v = [quat(rand(4)...) for i in 1:3]
+            α, β = quat(0,1,1,0), quat(1,0,0,1)
+            @test mul!(zero(v), B1, v, α, β) ≈ mul!(zero(v), Array(B1), v, α, β)
         end
     end
 
