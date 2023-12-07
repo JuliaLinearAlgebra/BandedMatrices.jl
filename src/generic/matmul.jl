@@ -30,7 +30,7 @@ banded_gbmv!(tA, α, A, x, β, y) =
     =#
     length(y) == 0 && return y
     if length(x) == 0
-        _fill_lmul!(β, y)
+        _fill_rmul!(y, β)
     else
         xc = Base.unalias(y, x)
         banded_gbmv!(tA, α, A, xc, β, y)
@@ -42,7 +42,7 @@ function _banded_muladd!(α, A, x::AbstractVector, β, y)
     m, n = size(A)
     l, u = bandwidths(A)
     if -l > u # no bands
-        _fill_lmul!(β, y)
+        _fill_rmul!(y, β)
     elseif l < 0 # with u >= -l > 0, that is, all bands lie above the diagonal
         # E.g. (l,u) = (-1,2)
         # set lview = 0 and uview = u + l >= 0
@@ -50,7 +50,7 @@ function _banded_muladd!(α, A, x::AbstractVector, β, y)
     elseif u < 0 # with -l <= u < 0, that is, all bands lie below the diagnoal.
         # E.g. (l,u) = (2,-1)
         # set lview = l + u >= 0 and uview = 0
-        _fill_lmul!(β, @view(y[1:-u]))
+        _fill_rmul!(@view(y[1:-u]), β)
         _banded_gbmv!('N', α, view(A, 1-u:m, :), x, β, view(y, 1-u:m))
         y
     else
@@ -67,11 +67,11 @@ function _banded_muladd_row!(tA, α, At, x, β, y)
     n, m = size(At)
     u, l = bandwidths(At)
     if -l > u # no bands
-        _fill_lmul!(β, y)
+        _fill_rmul!(y, β)
     elseif l < 0
         _banded_gbmv!(tA, α, view(At, 1-l:n, :,), view(x, 1-l:n), β, y)
     elseif u < 0
-        _fill_lmul!(β, @view(y[1:-u]))
+        _fill_rmul!(@view(y[1:-u]), β)
         _banded_gbmv!(tA, α, view(At, :, 1-u:m), x, β, view(y, 1-u:m))
         y
     else
@@ -100,10 +100,10 @@ end
 @inline function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout})
     checkdimensions(M)
     α,A,B,β,C = M.α,M.A,M.B,M.β,M.C
-    _fill_lmul!(β, C)
+    _fill_rmul!(C, β)
     @inbounds for j = intersect(rowsupport(A), colsupport(B))
         for k = colrange(A,j)
-            C[k] += α*inbands_getindex(A,k,j)*B[j]
+            C[k] += inbands_getindex(A,k,j) * B[j] * α
         end
     end
     C
@@ -113,11 +113,11 @@ end
     checkdimensions(M)
     α,At,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = transpose(At)
-    _fill_lmul!(β, C)
+    _fill_rmul!(C, β)
 
     @inbounds for j = rowsupport(A)
         for k = intersect(colrange(A,j), colsupport(B))
-            C[j] +=  α*transpose(inbands_getindex(A,k,j))*B[k]
+            C[j] +=  transpose(inbands_getindex(A,k,j)) * B[k] * α
         end
     end
     C
@@ -127,10 +127,10 @@ end
     checkdimensions(M)
     α,Ac,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = Ac'
-    _fill_lmul!(β, C)
+    _fill_rmul!(C, β)
     @inbounds for j = rowsupport(A)
         for k = intersect(colrange(A,j), colsupport(B))
-            C[j] += α*inbands_getindex(A,k,j)'*B[k]
+            C[j] += inbands_getindex(A,k,j)' * B[k] * α
         end
     end
     C
@@ -227,13 +227,13 @@ end
 
 function materialize!(M::MatMulMatAdd{<:DiagonalLayout{<:AbstractFillLayout},<:AbstractBandedLayout})
     checkdimensions(M)
-    M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
+    M.C .= getindex_value(M.A.diag) .* M.B .* M.α .+ M.C .* M.β
     M.C
 end
 
 function materialize!(M::MatMulMatAdd{<:AbstractBandedLayout,<:DiagonalLayout{<:AbstractFillLayout}})
     checkdimensions(M)
-    M.C .= (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
+    M.C .= M.A .* getindex_value(M.B.diag) .* M.α .+ M.C .* M.β
     M.C
 end
 
@@ -244,7 +244,7 @@ function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractStridedLayout, 
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
     if iszero(α)
-        lmul!(β, C)
+        rmul!(C, β)
     else
         for (colC, colB) in zip(eachcol(C), eachcol(B))
             mul!(colC, A, colB, α, β)
@@ -259,7 +259,7 @@ function materialize!(M::MatMulMatAdd{<:AbstractStridedLayout, <:BandedColumns, 
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
     if iszero(α)
-        lmul!(β, C)
+        rmul!(C, β)
     else
         for (rowC, rowA) in zip(eachrow(C), eachrow(A))
             mul!(rowC, transpose(B), rowA, α, β)

@@ -29,7 +29,7 @@ import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
                     materialize, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
                     colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
-                    sublayout, sub_materialize, _fill_lmul!, _copy_oftype,
+                    sublayout, sub_materialize, _copy_oftype, zero!,
                     reflector!, reflectorApply!, _copyto!, checkdimensions,
                     _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
                     BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata, copymutable_oftype_layout, dualadjoint
