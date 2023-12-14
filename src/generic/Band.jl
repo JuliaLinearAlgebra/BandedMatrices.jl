@@ -184,9 +184,9 @@ checkbandmatch(A::AbstractMatrix, V::AbstractMatrix, ::Colon, ::Colon) =
     checkbandmatch(A, V, 1:size(A,1), 1:size(A,2))
 
 """
-    BandSlice(band::Band, indices::StepRange{Int,Int}) <: OrdinalRange{Int,Int}
+    BandSlice(band::Band, indices)
 
-Represent a `StepRange` of indices corresponding to a band.
+Represent a range of indices corresponding to a band.
 
 Upon calling `to_indices`, `Band`s are converted to `BandSlice` objects to represent
 the indices over which the `Band` spans.
@@ -197,13 +197,20 @@ This mimics the relationship between `Colon` and `Base.Slice`.
 ```jldoctest
 julia> B = BandedMatrix(0 => 1:4, 1=>1:3);
 
-julia> to_indices(B, (Band(1),))[1]
-BandSlice(Band(1), 5:5:15)
+julia> bs = to_indices(B, (Band(1),))[1];
+
+julia> bs isa BandedMatrices.BandSlice
+true
+
+julia> using LinearAlgebra
+
+julia> bs == diagind(B, 1)
+true
 ```
 """
-struct BandSlice <: OrdinalRange{Int,Int}
+struct BandSlice{T, R<:AbstractRange{T}} <: AbstractRange{T}
     band::Band
-    indices::StepRange{Int,Int}
+    indices::R
 end
 
 for f in (:indices, :unsafe_indices, :axes1, :first, :last, :size, :length,
@@ -212,7 +219,7 @@ for f in (:indices, :unsafe_indices, :axes1, :first, :last, :size, :length,
 end
 
 @propagate_inbounds getindex(S::BandSlice, i::Union{Int, AbstractRange}) = getindex(S.indices, i)
-show(io::IO, r::BandSlice) = print(io, "BandSlice(", r.band, ", ", r.indices, ")")
+show(io::IO, r::BandSlice) = print(io, BandSlice, "(", r.band, ", ", r.indices, ")")
 
 to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
 
