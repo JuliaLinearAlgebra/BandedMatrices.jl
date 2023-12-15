@@ -92,6 +92,11 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
         B = BandedMatrix(-1=>1:4, 0=>1:5, 1=>1:4)
         Bshowstr = sprint(show, B)
         @test Bshowstr == "BandedMatrix($(-1=>[1:4;]), $(0=>[1:5;]), $(1=>[1:4;]))"
+
+        B = BandedMatrix(0=>1:3)
+        sout = sprint(show, to_indices(B, (band(0),))[1])
+        @test occursin(repr(diagind(B)), sout)
+        @test occursin(repr(Band(0)), sout)
     end
     @time @testset "Issue #27" begin
         A=brand(1,10,0,9)

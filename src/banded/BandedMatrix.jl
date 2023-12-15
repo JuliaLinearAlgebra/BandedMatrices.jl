@@ -456,9 +456,11 @@ julia> view(B, band(0)) isa BandedMatrices.BandedMatrixBand
 true
 ```
 """
-const BandedMatrixBand{T} = SubArray{T, 1, <:ReshapedArray{T,1,
-                                <:Union{BandedMatrix{T}, SubArray{T,2,<:BandedMatrix{T},
-                                <:NTuple{2, AbstractUnitRange{Int}}}}}, Tuple{BandSlice}}
+const BandedMatrixBand{T} = Union{
+                                SubArray{T, 1, <:ReshapedArray{T,1,
+                                    <:Union{BandedMatrix{T}, SubArray{T,2,<:BandedMatrix{T},
+                                    <:NTuple{2, AbstractUnitRange{Int}}}}}, <:Tuple{BandSlice{<:Integer}}},
+                                SubArray{T, 1, <:BandedMatrix{T}, <:Tuple{BandSlice{<:CartesianIndex{2}}}}}
 
 
 band(V::BandedMatrixBand) = first(parentindices(V)).band.i
@@ -482,11 +484,7 @@ julia> A = BandedMatrix(0=>1:4, 1=>5:7, -1=>8:10)
  ⋅  9   3  7
  ⋅  ⋅  10  4
 
-julia> v = view(A, band(1))
-3-element view(reshape(::BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}, 16), BandSlice(Band(1), 5:5:15)) with eltype Int64:
- 5
- 6
- 7
+julia> v = view(A, band(1));
 
 julia> BandedMatrices.dataview(v)
 3-element view(::Matrix{Int64}, 1, 2:4) with eltype Int64:
