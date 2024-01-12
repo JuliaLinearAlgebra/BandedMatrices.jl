@@ -40,6 +40,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {repo: BlockBandedMatrices.jl, group: JuliaLinearAlgebra}
+          - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
           # - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
 
     steps:
