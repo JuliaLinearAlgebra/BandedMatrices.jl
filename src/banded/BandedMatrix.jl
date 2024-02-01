@@ -418,7 +418,10 @@ end
     @boundscheck checkbounds(A, axes(A,1), j)
     r = similar(A, axes(A,1))
     r[firstindex(r):colstart(A,j)-1] .= zero(eltype(r))
-    r[colrange(A,j)] = @view A.data[data_colrange(A,j)]
+    # broadcasted assignment is currently faster than setindex
+    # see https://github.com/JuliaLang/julia/issues/40962#issuecomment-1921340377
+    # may need revisiting in the future
+    r[colrange(A,j)] .= @view A.data[data_colrange(A,j)]
     r[colstop(A,j)+1:end] .= zero(eltype(r))
     return r
 end
