@@ -100,7 +100,7 @@ end
 @inline function materialize!(M::MatMulVecAdd{<:AbstractBandedLayout})
     checkdimensions(M)
     α,A,B,β,C = M.α,M.A,M.B,M.β,M.C
-    _fill_rmul!(C, β)
+    _fill_rmul!(M, β)
     @inbounds for j = intersect(rowsupport(A), colsupport(B))
         for k = colrange(A,j)
             C[k] += inbands_getindex(A,k,j) * B[j] * α
@@ -113,7 +113,7 @@ end
     checkdimensions(M)
     α,At,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = transpose(At)
-    _fill_rmul!(C, β)
+    _fill_rmul!(M, β)
 
     @inbounds for j = rowsupport(A)
         for k = intersect(colrange(A,j), colsupport(B))
@@ -127,7 +127,7 @@ end
     checkdimensions(M)
     α,Ac,B,β,C = M.α,M.A,M.B,M.β,M.C
     A = Ac'
-    _fill_rmul!(C, β)
+    _fill_rmul!(M, β)
     @inbounds for j = rowsupport(A)
         for k = intersect(colrange(A,j), colsupport(B))
             C[j] += inbands_getindex(A,k,j)' * B[k] * α
@@ -244,7 +244,7 @@ function materialize!(M::MatMulMatAdd{<:BandedColumns, <:AbstractStridedLayout, 
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
     if iszero(α)
-        rmul!(C, β)
+        _fill_rmul!(M, β)
     else
         for (colC, colB) in zip(eachcol(C), eachcol(B))
             mul!(colC, A, colB, α, β)
@@ -259,7 +259,7 @@ function materialize!(M::MatMulMatAdd{<:AbstractStridedLayout, <:BandedColumns, 
     α, β, A, B, C = M.α, M.β, M.A, M.B, M.C
 
     if iszero(α)
-        rmul!(C, β)
+        _fill_rmul!(M, β)
     else
         for (rowC, rowA) in zip(eachrow(C), eachrow(A))
             mul!(rowC, transpose(B), rowA, α, β)

@@ -28,3 +28,4 @@ end
 
 _fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
 _fill_rmul!(A::AbstractArray{T}, β) where T = iszero(β) ? zero!(A) : rmul!(A, β)
+_fill_rmul!(M::MulAdd, β) = iszero(β) ? (M.Czero ? M.C : zero!(M.C)) : rmul!(M.C, β)
