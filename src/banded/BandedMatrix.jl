@@ -968,10 +968,25 @@ end
 function show(io::IO, B::BandedMatrix)
     print(io, "BandedMatrix(")
     l, u = bandwidths(B)
-    for (ind, b) in enumerate(-l:u)
+    limit = get(io, :limit, true)
+    br = limit ? intersect(-l:u, range(-l,length=4)) : -l:u
+    for (ind, b) in enumerate(br)
         r = @view B[band(b)]
         show(io, b => r)
-        b == u || print(io, ", ")
+        b == last(br) || print(io, ", ")
+    end
+    if limit && br != -l:u
+        br2 = max(maximum(br)+1, u-3):u
+        if minimum(br2) == maximum(br)+1
+            print(io, ", ")
+        else
+            print(io, "  …  ")
+        end
+        for (ind, b) in enumerate(br2)
+            r = @view B[band(b)]
+            show(io, b => r)
+            b == u || print(io, ", ")
+        end
     end
     print(io, ")")
 end
