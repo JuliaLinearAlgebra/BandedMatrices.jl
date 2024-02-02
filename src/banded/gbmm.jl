@@ -204,7 +204,9 @@ function _num_zeroband_l(A)
     return Al+Au+1
 end
 
-function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatrix{T}, β::T, C::AbstractMatrix{T}) where {T<:BlasFloat}
+function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T},
+                B::AbstractMatrix{T}, β::T, C::AbstractMatrix{T},
+                Czero=false) where {T<:BlasFloat}
     if tA ≠ 'N' || tB ≠ 'N'
         error("Only 'N' flag is supported.")
     end
@@ -227,23 +229,23 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
 
     # prune zero bands
     if (-Al > Au) || (-Bl > Bu)   # A or B has empty bands
-        fill!(C, zero(T))
+        Czero || fill!(C, zero(T))
         return C
     elseif Al < 0
-        _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]))
-        gbmm!('N', 'N', α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C)
+        _fill_lmul!(β, @views(C[max(1,Bn+Al-1):Am, :]), Czero)
+        gbmm!('N', 'N', α, view(A, :, 1-Al:An), view(B, 1-Al:An, :), β, C, Czero)
         return C
     elseif Au < 0
-        _fill_lmul!(β, @views(C[1:-Au,:]))
-        gbmm!('N', 'N', α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:))
+        _fill_lmul!(β, @views(C[1:-Au,:]), Czero)
+        gbmm!('N', 'N', α, view(A, 1-Au:Am,:), B, β, view(C, 1-Au:Am,:), Czero)
         return C
     elseif Bl < 0
-        _fill_lmul!(β, @views(C[:, 1:-Bl]))
-        gbmm!('N', 'N', α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn))
+        _fill_lmul!(β, @views(C[:, 1:-Bl]), Czero)
+        gbmm!('N', 'N', α, A, view(B, :, 1-Bl:Bn), β, view(C, :, 1-Bl:Bn), Czero)
         return C
     elseif Bu < 0
-        _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]))
-        gbmm!('N', 'N', α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C)
+        _fill_lmul!(β, @views(C[:, max(1,Am+Bu-1):Bn]), Czero)
+        gbmm!('N', 'N', α, view(A, :, 1-Bu:Bm), view(B, 1-Bu:Bm, :), β, C, Czero)
         return C
     elseif C̃u < Cu
         Au_r, Bu_r = _num_zeroband_u(A), _num_zeroband_u(B)
@@ -252,13 +254,13 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
         B_data = bandeddata(B)
 
         if Au-Au_r < -Al || Bu - Bu_r < -Bl
-            _fill_lmul!(β, C)
+            _fill_lmul!(β, C, Czero)
             return C
         end
 
         Ã = _BandedMatrix(@views(A_data[Au_r+1:end,:]), n, Al, Au-Au_r)
         B̃ = _BandedMatrix(@views(B_data[Bu_r+1:end,:]), ν, Bl, Bu-Bu_r)
-        gbmm!('N', 'N', α, Ã, B̃, β, C)
+        gbmm!('N', 'N', α, Ã, B̃, β, C, Czero)
         return C
     elseif C̃l < Cl
         Al_r, Bl_r = _num_zeroband_l(A), _num_zeroband_l(B)
@@ -267,13 +269,13 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
         B_data = bandeddata(B)
 
         if Al-Al_r < -Au || Bl - Bl_r < -Bu
-            _fill_lmul!(β, C)
+            _fill_lmul!(β, C, Czero)
             return C
         end
 
         Ã = _BandedMatrix(@views(A_data[1:end-Al_r,:]), n, Al-Al_r, Au)
         B̃ = _BandedMatrix(@views(B_data[1:end-Bl_r,:]), ν, Bl-Bl_r, Bu)
-        gbmm!('N', 'N', α, Ã, B̃, β, C)
+        gbmm!('N', 'N', α, Ã, B̃, β, C, Czero)
         return C
     end
 
@@ -282,16 +284,16 @@ function gbmm!(tA::Char, tB::Char, α::T, A::AbstractMatrix{T}, B::AbstractMatri
     C̃_data = bandeddata(C)
 
     # scale extra bands
-    _fill_lmul!(β, view(C̃_data, 1:min(C̃u-Cu,size(C̃_data,1)),:))
-    _fill_lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:))
+    _fill_lmul!(β, view(C̃_data, 1:min(C̃u-Cu,size(C̃_data,1)),:), Czero)
+    _fill_lmul!(β, view(C̃_data, (C̃u+Cl+1)+1:size(C̃_data,1),:), Czero)
     C_data = view(C̃_data, (C̃u-Cu+1):(C̃u+Cl+1), :) # shift to bands we will write to
-    _gbmm!(α, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu))
+    _gbmm!(α, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu), Czero)
 
     C
 end
 
 
-function _gbmm!(α::T, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu)) where T
+function _gbmm!(α::T, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu), (Cl, Cu), Czero) where T
     a = pointer(A_data)
     b = pointer(B_data)
     c = pointer(C_data)
@@ -334,5 +336,5 @@ function _gbmm!(α::T, A_data, B_data, β, C_data, (n,ν,m), (Al, Au), (Bl, Bu),
     end
 
     # scale columns of C by β that aren't impacted by α*A*B
-    _fill_lmul!(β, view(C_data, :, ν+Bu+1:min(m,n+Cu)))
+    _fill_lmul!(β, view(C_data, :, ν+Bu+1:min(m,n+Cu)), Czero)
 end
