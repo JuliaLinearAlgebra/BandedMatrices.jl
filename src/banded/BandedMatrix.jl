@@ -29,6 +29,8 @@ end
 
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, oneto(m), l, u)
 
+Base.parent(B::BandedMatrix) = B.data
+
 const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
 
 bandedcolumns(_) = BandedColumns{UnknownLayout}()
@@ -968,25 +970,10 @@ end
 function show(io::IO, B::BandedMatrix)
     print(io, "BandedMatrix(")
     l, u = bandwidths(B)
-    limit = get(io, :limit, true)
-    br = limit ? intersect(-l:u, range(-l,length=4)) : -l:u
-    for (ind, b) in enumerate(br)
+    for (ind, b) in enumerate(-l:u)
         r = @view B[band(b)]
         show(io, b => r)
-        b == last(br) || print(io, ", ")
-    end
-    if limit && br != -l:u
-        br2 = max(maximum(br)+1, u-3):u
-        if minimum(br2) == maximum(br)+1
-            print(io, ", ")
-        else
-            print(io, "  …  ")
-        end
-        for (ind, b) in enumerate(br2)
-            r = @view B[band(b)]
-            show(io, b => r)
-            b == u || print(io, ", ")
-        end
+        b == u || print(io, ", ")
     end
     print(io, ")")
 end
