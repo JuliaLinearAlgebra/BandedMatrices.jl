@@ -66,6 +66,12 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         @test BandedMatrix{Int64, typeof(matrix)}(matrix, (1, 1)).data isa typeof(matrix)
         @test_throws UndefRefError BandedMatrix{Vector{Float64}}(undef, (5,5), (1,1))[1,1]
 
+        @testset "parent" begin
+            A = zeros(3,5)
+            B = _BandedMatrix(A, 5, 1, 1)
+            @test parent(B) === A
+        end
+
         @testset "Construction from Diagonal" begin
             D = Diagonal(1:4)
             B1 = BandedMatrix(D)
