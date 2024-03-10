@@ -218,7 +218,8 @@ for f in (:indices, :unsafe_indices, :axes1, :first, :last, :size, :length,
     @eval $f(S::BandSlice) = $f(S.indices)
 end
 
-@propagate_inbounds getindex(S::BandSlice, i::Union{Int, AbstractRange}) = getindex(S.indices, i)
+@propagate_inbounds getindex(S::BandSlice, i::Union{Int, AbstractRange{<:Integer}}) = getindex(S.indices, i)
+@propagate_inbounds view(S::BandSlice, i::AbstractRange{<:Integer}) = view(S.indices, i)
 show(io::IO, r::BandSlice) = print(io, BandSlice, "(", r.band, ", ", r.indices, ")")
 
 to_index(::Band) = throw(ArgumentError("Block must be converted by to_indices(...)"))
