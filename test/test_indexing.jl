@@ -774,6 +774,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
                         @test bs.indices == diagind(A, k)
                         @test bs.band == Band(k)
                         @test collect(bs) == collect(diagind(A, k))
+                        @test view(bs, 1:length(bs)) === view(diagind(A, k), 1:length(bs))
                         @test Vector{eltype(A)}(V) == collect(V) == A[diagind(A,k)] == A[band(k)]
                         @test Vector{ComplexF64}(V) == Vector{ComplexF64}(A[diagind(A,k)]) ==
                                 convert(AbstractVector{ComplexF64}, V) == convert(AbstractArray{ComplexF64}, V)
