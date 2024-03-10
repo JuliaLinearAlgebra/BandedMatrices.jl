@@ -9,3 +9,4 @@ deps/deps.jl
 *~
 .DS_Store
 Manifest.toml
+Manifest-v*.*.toml
