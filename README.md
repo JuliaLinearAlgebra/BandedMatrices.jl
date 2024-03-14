@@ -8,7 +8,7 @@ A Julia package for representing banded matrices
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 [![deps](https://juliahub.com/docs/General/BandedMatrices/stable/deps.svg)](https://juliahub.com/ui/Packages/General/BandedMatrices?t=2)
 [![version](https://juliahub.com/docs/General/BandedMatrices/stable/version.svg)](https://juliahub.com/ui/Packages/General/BandedMatrices)
-[![pkgeval](https://juliahub.com/docs/General/BandedMatrices/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/BandedMatrices)
+[![pkgeval](https://juliahub.com/docs/General/BandedMatrices/stable/pkgeval.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
 
 
 This package supports representing banded matrices by only the entries on the
