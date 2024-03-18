@@ -60,7 +60,7 @@ julia> BandedMatrices.colstart(A, 4)
 3
 ```
 """
-@inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 0) + firstindex(A,1)-1
+@inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1) + firstindex(A,1)-1
 
 """
     colstop(A, i::Integer)
