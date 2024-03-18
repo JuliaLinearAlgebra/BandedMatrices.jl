@@ -41,7 +41,7 @@ bandrange(A) = -bandwidth(A,1):bandwidth(A,2)
 """
     colstart(A, i::Integer)
 
-Return the starting row index of the filled bands in the i-th column,
+Return the starting row index of the filled bands in the `i`-th column,
 bounded by the actual matrix size.
 
 # Examples
@@ -65,7 +65,7 @@ julia> BandedMatrices.colstart(A, 4)
 """
     colstop(A, i::Integer)
 
-Return the stopping row index of the filled bands in the i-th column,
+Return the stopping row index of the filled bands in the `i`-th column,
 bounded by the actual matrix size.
 
 # Examples
@@ -89,7 +89,7 @@ julia> BandedMatrices.colstop(A, 4)
 """
     rowstart(A, i::Integer)
 
-Return the starting column index of the filled bands in the i-th row,
+Return the starting column index of the filled bands in the `i`-th row,
 bounded by the actual matrix size.
 
 # Examples
@@ -113,7 +113,7 @@ julia> BandedMatrices.rowstart(A, 3)
 """
     rowstop(A, i::Integer)
 
-Return the stopping column index of the filled bands in the i-th row,
+Return the stopping column index of the filled bands in the `i`-th row,
 bounded by the actual matrix size.
 
 # Examples
