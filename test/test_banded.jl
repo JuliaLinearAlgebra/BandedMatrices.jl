@@ -556,4 +556,13 @@ Base.similar(::MyMatrix, ::Type{T}, m::Int, n::Int) where T = MyMatrix{T}(undef,
         copyto!(view(B, :, :), S)
         @test B == 2B2
     end
+
+    @testset "offset views" begin
+        B = BandedMatrix(0=>1:4)
+        A = view(B, Base.IdentityUnitRange(2:4), 1:4)
+        @test !any(in(axes(A,1)), BandedMatrices.colrange(A, 1))
+        @test BandedMatrices.colrange(A, 2) == 2:2
+        @test BandedMatrices.colrange(A, 3) == 3:3
+        @test BandedMatrices.colrange(A, 4) == 4:4
+    end
 end
