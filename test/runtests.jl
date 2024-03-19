@@ -9,9 +9,11 @@ using Aqua
 end
 
 using Documenter
-DocMeta.setdocmeta!(BandedMatrices, :DocTestSetup, :(using BandedMatrices))
-@testset "doctests" begin
-    doctest(BandedMatrices)
+if v"1.10" <= VERSION < v"1.11.0-"
+    DocMeta.setdocmeta!(BandedMatrices, :DocTestSetup, :(using BandedMatrices))
+    @testset "doctests" begin
+        doctest(BandedMatrices)
+    end
 end
 
 include("test_banded.jl")
