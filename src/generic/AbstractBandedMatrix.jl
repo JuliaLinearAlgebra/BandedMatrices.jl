@@ -202,7 +202,7 @@ julia> BandedMatrices.collength(A, 2)
 2
 ```
 """
-@inline collength(A, i::Integer) = max(colstop(A, i) - colstart(A, i) + 1, 0)
+@inline collength(A, i::Integer) = length(colrange(A, i))
 
 """
     rowlength(A, i::Integer)
@@ -225,7 +225,7 @@ julia> BandedMatrices.rowlength(A, 4)
 1
 ```
 """
-@inline rowlength(A, i::Integer) = max(rowstop(A, i) - rowstart(A, i) + 1, 0)
+@inline rowlength(A, i::Integer) = length(rowrange(A, i))
 
 @inline banded_colsupport(A, j::Integer) = colrange(A, j)
 @inline banded_rowsupport(A, j::Integer) = rowrange(A, j)
