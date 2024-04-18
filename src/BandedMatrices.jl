@@ -2,15 +2,14 @@ module BandedMatrices
 using Base, FillArrays, ArrayLayouts, LinearAlgebra
 
 using Base: require_one_based_indexing, reindex, checkbounds, @propagate_inbounds,
-            oneto, promote_op, MultiplicativeInverses, OneTo, ReshapedArray, Slice
+            oneto, promote_op, OneTo, ReshapedArray, Slice
 import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, >,
-               >=, /, ^, \, adjoint, transpose, showerror, convert, size, view,
+               >=, /, \, adjoint, transpose, showerror, convert, size, view,
                unsafe_indices, first, last, size, length, unsafe_length, step, to_indices,
-               to_index, show, fill!, similar, copy, promote_rule, IndexStyle, real, imag,
+               to_index, show, fill!, similar, copy, promote_rule, real, imag,
                copyto!, Array
 
-using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
-import Base.Broadcast: BroadcastStyle, broadcasted
+using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted, BroadcastStyle, broadcasted
 
 import Base: kron, rot180
 
@@ -19,8 +18,7 @@ import LinearAlgebra: _apply_inverse_ipiv_rows!, _apply_ipiv_rows!, _chol!, axpy
                       logabsdet, lu, lu!, mul!, qr, qr!, rmul!, svdvals, svdvals!, tril!, triu!
 
 using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasComplex, BlasFloat, BlasInt, BlasReal, Givens, HermOrSym,
-                     QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checknonsingular, checksquare,
-                     chkstride1, ipiv2perm
+                     QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checksquare, chkstride1, ipiv2perm
 
 using LinearAlgebra.BLAS: chkuplo
 
@@ -28,15 +26,13 @@ using LinearAlgebra.LAPACK
 
 using LinearAlgebra.LAPACK: chktrans
 
-import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
-                    conjlayout, symmetriclayout, symmetricdata,
-                    triangularlayout, MatLdivVec, hermitianlayout, hermitiandata,
-                    materialize, materialize!, BlasMatMulMatAdd, BlasMatMulVecAdd, BlasMatLmulVec, BlasMatLdivVec,
-                    colsupport, rowsupport, symmetricuplo, MatMulMatAdd, MatMulVecAdd,
-                    sublayout, sub_materialize, _copy_oftype, zero!,
-                    reflector!, reflectorApply!, _copyto!, checkdimensions,
-                    _qr!, _qr, _lu!, _lu, _factorize, AbstractTridiagonalLayout, TridiagonalLayout,
-                    BidiagonalLayout, bidiagonaluplo, diagonaldata, supdiagonaldata, subdiagonaldata, copymutable_oftype_layout, dualadjoint
+import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec, BlasMatLmulVec,
+                     BlasMatMulMatAdd, BlasMatMulVecAdd, MatMulMatAdd, MatMulVecAdd, MemoryLayout,
+                     _copy_oftype, _copyto!, _factorize, _lu, _lu!, _qr, _qr!, bidiagonaluplo, checkdimensions,
+                     colsupport, conjlayout, copymutable_oftype_layout, diagonaldata, dualadjoint, hermitiandata,
+                     hermitianlayout, materialize, materialize!, reflector!, reflectorApply!, rowsupport,
+                     sub_materialize, subdiagonaldata, sublayout, supdiagonaldata, symmetricdata, symmetriclayout,
+                     symmetricuplo, transposelayout, triangulardata, triangularlayout, zero!
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal
 
