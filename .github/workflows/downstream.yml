@@ -43,7 +43,7 @@ jobs:
           - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: ApproxFunBase.jl, group: JuliaApproximation}
           - {repo: ApproxFun.jl, group: JuliaApproximation}
-          # - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
+          - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
 
     steps:
       - uses: actions/checkout@v4
