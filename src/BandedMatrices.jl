@@ -12,17 +12,21 @@ import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, 
 using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
 import Base.Broadcast: BroadcastStyle, broadcasted
 
-using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasInt, BlasReal, BlasFloat, BlasComplex,
-            checksquare, HermOrSym, RealHermSymComplexHerm, chkstride1, QRPackedQ,
-            StructuredMatrixStyle, checknonsingular, ipiv2perm, Givens
-import LinearAlgebra: axpy!, _chol!, rot180, dot, cholcopy, _apply_ipiv_rows!,
-            _apply_inverse_ipiv_rows!, diag, eigvals!, eigvals, eigen!, eigen,
-            qr, qr!, ldiv!, mul!, lu, lu!, ldlt, ldlt!,
-            kron, lmul!, rmul!, factorize, logabsdet,
-            svdvals, svdvals!, tril!, triu!, diagzero, istriu, istril, isdiag
+import Base: kron, rot180
+
+import LinearAlgebra: _apply_inverse_ipiv_rows!, _apply_ipiv_rows!, _chol!, axpy!, cholcopy, diag, diagzero, dot, eigen,
+                      eigen!, eigvals, eigvals!, factorize, isdiag, istril, istriu, ldiv!, ldlt, ldlt!, lmul!,
+                      logabsdet, lu, lu!, mul!, qr, qr!, rmul!, svdvals, svdvals!, tril!, triu!
+
+using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasComplex, BlasFloat, BlasInt, BlasReal, Givens, HermOrSym,
+                     QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checknonsingular, checksquare,
+                     chkstride1, ipiv2perm
+
+using LinearAlgebra.BLAS: chkuplo
 
 using LinearAlgebra.LAPACK
-using LinearAlgebra.LAPACK: chkuplo, chktrans
+
+using LinearAlgebra.LAPACK: chktrans
 
 import ArrayLayouts: MemoryLayout, transposelayout, triangulardata,
                     conjlayout, symmetriclayout, symmetricdata,
