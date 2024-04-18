@@ -21,11 +21,9 @@ import LinearAlgebra: _apply_inverse_ipiv_rows!, _apply_ipiv_rows!, _chol!, axpy
 using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasComplex, BlasFloat, BlasInt, BlasReal, Givens, HermOrSym,
                      QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checksquare, chkstride1, ipiv2perm
 
-using LinearAlgebra.BLAS: chkuplo
-
 using LinearAlgebra.LAPACK
 
-using LinearAlgebra.LAPACK: chktrans
+using LinearAlgebra.LAPACK: chktrans, chkuplo
 
 import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec, BlasMatLmulVec,
                      BlasMatMulMatAdd, BlasMatMulVecAdd, MatMulMatAdd, MatMulVecAdd, MemoryLayout,
