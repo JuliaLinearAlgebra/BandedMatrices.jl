@@ -9,7 +9,8 @@ import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, 
                to_index, show, fill!, similar, copy, promote_rule, real, imag,
                copyto!, Array
 
-using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted, BroadcastStyle, broadcasted
+using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
+import Base.Broadcast: BroadcastStyle, broadcasted
 
 import Base: kron, rot180
 
