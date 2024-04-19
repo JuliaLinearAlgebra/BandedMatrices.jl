@@ -12,7 +12,7 @@ import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, 
 using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
 import Base.Broadcast: BroadcastStyle, broadcasted
 
-import Base: kron, rot180
+import Base: rot180
 
 import LinearAlgebra: _apply_inverse_ipiv_rows!, _apply_ipiv_rows!, _chol!, axpy!, cholcopy, diag, diagzero, dot, eigen,
                       eigen!, eigvals, eigvals!, factorize, isdiag, istril, istriu, ldiv!, ldlt, ldlt!, lmul!,
@@ -23,7 +23,7 @@ using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasComplex, BlasFloat, Bla
 
 using LinearAlgebra.LAPACK
 
-using LinearAlgebra.LAPACK: chktrans, chkuplo
+using LinearAlgebra.LAPACK: chkuplo
 
 import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec, BlasMatLmulVec,
                      BlasMatMulMatAdd, BlasMatMulVecAdd, MatMulMatAdd, MatMulVecAdd, MemoryLayout,
