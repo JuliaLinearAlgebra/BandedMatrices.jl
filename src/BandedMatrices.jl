@@ -31,7 +31,8 @@ import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec
                      colsupport, conjlayout, copymutable_oftype_layout, diagonaldata, dualadjoint, hermitiandata,
                      hermitianlayout, materialize, materialize!, reflector!, reflectorApply!, rowsupport,
                      sub_materialize, subdiagonaldata, sublayout, supdiagonaldata, symmetricdata, symmetriclayout,
-                     symmetricuplo, transposelayout, triangulardata, triangularlayout, zero!
+                     symmetricuplo, transposelayout, triangulardata, triangularlayout, zero!,
+                     QRPackedQLayout, AdjQRPackedQLayout
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal
 
