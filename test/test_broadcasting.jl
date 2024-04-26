@@ -1,3 +1,5 @@
+module TestBroadcasting
+
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test
 import Base: BroadcastStyle
 import Base.Broadcast: broadcasted
@@ -683,8 +685,8 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
         A = brand(5,4,2,1)
         x = randn(5)
         B = Base.Broadcast.broadcasted(*, Base.Broadcast.broadcasted(+, 2, x), A)
-        @test bandwidths(B) == bandwidths(A) == bandwidths(materialize(B)) == (2,1)
-        @test materialize(B) == (2 .+ x) .* Matrix(A)
+        @test bandwidths(B) == bandwidths(A) == bandwidths(Broadcast.materialize(B)) == (2,1)
+        @test Broadcast.materialize(B) == (2 .+ x) .* Matrix(A)
 
         B = Base.Broadcast.broadcasted(+, Base.Broadcast.broadcasted(+, A, A), A)
         @test bandwidths(B) == bandwidths(A)
@@ -764,3 +766,5 @@ import BandedMatrices: BandedStyle, BandedRows, BandError
         @test_throws BandError B[band(-100)] .= 10
     end
 end
+
+end # module

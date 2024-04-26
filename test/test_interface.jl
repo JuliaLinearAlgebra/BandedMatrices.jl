@@ -1,6 +1,8 @@
+module TestInterface
+
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test
-import BandedMatrices: banded_mul!, isbanded, AbstractBandedLayout, BandedStyle,
-                        rowsupport, colsupport, _BandedMatrix, BandedColumns, bandeddata
+import BandedMatrices: isbanded, AbstractBandedLayout, BandedStyle,
+                        BandedColumns, bandeddata
 import ArrayLayouts: OnesLayout, UnknownLayout
 using InfiniteArrays
 
@@ -352,3 +354,5 @@ end
     S = Symmetric(brand(10,10,1,2))
     @test permutedims(S) ≡ S
 end
+
+end # module

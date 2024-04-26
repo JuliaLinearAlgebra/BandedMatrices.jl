@@ -1,3 +1,5 @@
+module TestDot
+
 using BandedMatrices, LinearAlgebra, FillArrays, Test
 import BandedMatrices: _BandedMatrix
 using Random
@@ -36,3 +38,5 @@ using Random
         end
     end
 end
+
+end # module

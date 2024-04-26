@@ -1,3 +1,5 @@
+module TestBandedLU
+
 using BandedMatrices, LinearAlgebra, Test, Random
 import BandedMatrices: _BandedMatrix
 
@@ -161,3 +163,5 @@ struct _foo <: Number end
         end
     end
 end
+
+end # module
