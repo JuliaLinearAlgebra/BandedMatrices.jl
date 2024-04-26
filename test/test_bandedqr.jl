@@ -1,3 +1,5 @@
+module TestBandedQR
+
 using BandedMatrices, LinearAlgebra, Test, Random
 import BandedMatrices: banded_qr!
 Random.seed!(0)
@@ -131,3 +133,5 @@ Random.seed!(0)
         end
     end
 end
+
+end # module

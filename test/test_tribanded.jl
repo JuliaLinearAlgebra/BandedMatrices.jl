@@ -1,3 +1,5 @@
+module TestTriBanded
+
 using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
 import BandedMatrices: BandedColumns, BandedRows, isbanded
 
@@ -113,3 +115,5 @@ import BandedMatrices: BandedColumns, BandedRows, isbanded
         @test rot180(UnitLowerTriangular(B)) == rot180(Matrix(UnitLowerTriangular(B)))
     end
 end
+
+end # module

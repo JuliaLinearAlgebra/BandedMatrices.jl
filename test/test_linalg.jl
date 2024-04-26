@@ -1,3 +1,5 @@
+module TestLinalg
+
 using ArrayLayouts
 using BandedMatrices
 using FillArrays
@@ -5,7 +7,6 @@ using LinearAlgebra
 using Quaternions
 using Test
 
-import Base.Broadcast: materialize, broadcasted
 import BandedMatrices: BandedColumns, _BandedMatrix
 
 @testset "Linear Algebra" begin
@@ -479,3 +480,4 @@ import BandedMatrices: BandedColumns, _BandedMatrix
     end
 end
 
+end # module

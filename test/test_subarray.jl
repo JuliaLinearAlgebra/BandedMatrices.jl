@@ -1,7 +1,10 @@
-using BandedMatrices, FillArrays, ArrayLayouts, Test
+module TestSubArray
+
+using BandedMatrices, FillArrays, ArrayLayouts, Test, LinearAlgebra
 import LinearAlgebra: axpy!
 import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedMatrix, _BandedMatrix, sub_materialize, isbanded
 
+include("mymatrix.jl")
 
 @testset "BandedMatrix SubArray" begin
     @testset "BandedMatrix SubArray interface" begin
@@ -123,3 +126,5 @@ import BandedMatrices: BandedColumns, bandeddata, MemoryLayout, BandedSubBandedM
         end
     end
 end
+
+end # module

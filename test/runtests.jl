@@ -1,9 +1,7 @@
 using BandedMatrices
-using LinearAlgebra
-using SparseArrays
 using Test
 
-using Aqua
+import Aqua
 @testset "Project quality" begin
     Aqua.test_all(BandedMatrices, ambiguities=false, piracies=false)
 end
