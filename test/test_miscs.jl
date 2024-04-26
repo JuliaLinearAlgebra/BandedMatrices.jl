@@ -1,4 +1,6 @@
-using BandedMatrices, LinearAlgebra, FillArrays, Test
+module TestMisc
+
+using BandedMatrices, LinearAlgebra, FillArrays, Test, SparseArrays
 import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
 
 @testset "misc tests" begin
@@ -125,3 +127,5 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
         @test_throws BoundsError A[-5,-5+3]
     end
 end
+
+end # module

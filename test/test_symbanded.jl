@@ -1,3 +1,5 @@
+module TestSymBanded
+
 using ArrayLayouts
 using BandedMatrices
 import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns, isbanded
@@ -401,3 +403,5 @@ end
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[2:2:10;], -1=>Float64[1:4;])
     @test isposdef(B) == isposdef(Matrix(B)) == true
 end
+
+end # module

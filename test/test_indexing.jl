@@ -1,3 +1,5 @@
+module TestIndexing
+
 using BandedMatrices, LinearAlgebra, ArrayLayouts, Test
 
 import BandedMatrices: rowstart, rowstop, colstart, colstop,
@@ -811,3 +813,5 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
         @test A[2:2:5,Base.OneTo(6)] isa Matrix
     end
 end
+
+end # module
