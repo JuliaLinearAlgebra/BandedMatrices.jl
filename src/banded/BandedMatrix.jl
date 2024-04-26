@@ -992,3 +992,17 @@ function show(io::IO, B::BandedMatrix)
     end
     print(io, ")")
 end
+
+
+###
+# resize
+###
+
+function resize(A::BandedMatrix, n::Integer, m::Integer)
+    l,u = bandwidths(A)
+    _BandedMatrix(reshape(resize!(vec(bandeddata(A)), (l+u+1)*m), l+u+1, m), n, l,u)
+end
+function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
+    l,u = bandwidths(A)
+    _BandedMatrix(reshape(resize!(vec(copy(bandeddata(A))), (l+u+1)*m), l+u+1, m), n, l,u)
+end
