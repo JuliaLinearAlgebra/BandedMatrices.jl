@@ -557,6 +557,11 @@ include("mymatrix.jl")
         @test size(C) == (10,7)
         @test bandwidths(C) == (2,1)
         @test C[1:4,1:5] == B[1:4,1:5]
+
+        A = brand(4,5,1,1)
+        @test resize(A,6,5)[1:4,1:5] == A
+        @test resize(view(A,2:3,2:5),5,5) isa BandedMatrix
+        @test resize(view(A,2:3,2:5),5,5)[1:2,1:4] == A[2:3,2:5]
     end
 end
 
