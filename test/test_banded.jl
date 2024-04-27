@@ -2,7 +2,7 @@ module TestBanded
 
 using ArrayLayouts
 using BandedMatrices
-import BandedMatrices: _BandedMatrix
+using BandedMatrices: _BandedMatrix, resize
 using FillArrays
 using LinearAlgebra
 using SparseArrays
@@ -544,6 +544,19 @@ include("mymatrix.jl")
         @test BandedMatrices.colrange(A, 2) == 2:2
         @test BandedMatrices.colrange(A, 3) == 3:3
         @test BandedMatrices.colrange(A, 4) == 4:4
+    end
+
+    @testset "resize" begin
+        B = brand(5,6,2,1)
+        B̃ = resize(B, 10,7)
+        @test size(B̃) == (10,7)
+        @test bandwidths(B̃) == (2,1)
+        @test B̃[1:5,1:6] == B
+
+        C = resize(view(B,1:4,1:5), 10, 7)
+        @test size(C) == (10,7)
+        @test bandwidths(C) == (2,1)
+        @test C[1:4,1:5] == B[1:4,1:5]
     end
 end
 

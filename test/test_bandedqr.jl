@@ -1,6 +1,6 @@
 module TestBandedQR
 
-using BandedMatrices, LinearAlgebra, Test, Random
+using BandedMatrices, ArrayLayouts, LinearAlgebra, Test, Random
 import BandedMatrices: banded_qr!
 Random.seed!(0)
 
@@ -123,13 +123,23 @@ Random.seed!(0)
         @test lmul!(Q', view(BandedMatrix(B,(size(B,1),2)),:,4:10)) ≈ Q'*B[:,4:10]
     end
 
+    @testset "lmul!" begin
+        for T in (Float64,ComplexF64,Float32,ComplexF32)
+            A = brand(T,10,10,3,2)
+            Q,R = qr(A)
+            B = randn(T, 10, 2)
+            @test  ArrayLayouts.lmul!(Q', copy(B)) == lmul!(Q', copy(B)) ≈ Q'B
+            @test ArrayLayouts.lmul!(Q, copy(B)) == lmul!(Q, copy(B)) ≈ Q*B
+        end
+    end
+
     @testset "rmul!" begin
         for T in (Float64,ComplexF64,Float32,ComplexF32)
             A = brand(T,10,10,3,2)
             Q,R = qr(A)
             B = randn(T, 2, 10)
-            @test rmul!(copy(B), Q') ≈ B*Q'
-            @test rmul!(copy(B), Q) ≈ B*Q
+            @test  ArrayLayouts.rmul!(copy(B), Q') == rmul!(copy(B), Q') ≈ B*Q'
+            @test ArrayLayouts.rmul!(copy(B), Q) == rmul!(copy(B), Q) ≈ B*Q
         end
     end
 end
