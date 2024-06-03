@@ -1,9 +1,11 @@
 module TestBroadcasting
 
-using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test
+using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Random, Test
 import Base: BroadcastStyle
 import Base.Broadcast: broadcasted
 import BandedMatrices: BandedStyle, BandedRows, BandError
+
+Random.seed!(0)
 
 @testset "broadcasting" begin
     @testset "general" begin
