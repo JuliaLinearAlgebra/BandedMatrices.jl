@@ -130,11 +130,13 @@ for (fname, elty) in ((:dtbsv_,:Float64),
                 throw(DimensionMismatch("size of A is $n != length(x) = $(length(x))"))
             end
             chkstride1(A)
-            ccall((@blasfunc($fname), libblas), Cvoid,
-                (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
-                 Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}),
-                 uplo, trans, diag, m, k,
-                 A, max(1,stride(A,2)), x, stride(x, 1))
+            if n ≠ 0 # avoid empty warning message
+                ccall((@blasfunc($fname), libblas), Cvoid,
+                    (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{BlasInt}, Ref{BlasInt},
+                    Ptr{$elty}, Ref{BlasInt}, Ptr{$elty}, Ref{BlasInt}),
+                    uplo, trans, diag, m, k,
+                    A, max(1,stride(A,2)), x, stride(x, 1))
+            end
             x
         end
         function tbsv(uplo::AbstractChar, trans::AbstractChar, diag::AbstractChar,

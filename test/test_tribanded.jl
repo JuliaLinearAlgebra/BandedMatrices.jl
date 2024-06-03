@@ -114,6 +114,11 @@ import BandedMatrices: BandedColumns, BandedRows, isbanded
         @test rot180(LowerTriangular(B)) == rot180(Matrix(LowerTriangular(B)))
         @test rot180(UnitLowerTriangular(B)) == rot180(Matrix(UnitLowerTriangular(B)))
     end
+
+    @testset "empty uppertriangular" begin
+        B = brand(0,0,2,1)
+        @test UpperTriangular(B) \ Float64[] == Float64[]
+    end
 end
 
 end # module
