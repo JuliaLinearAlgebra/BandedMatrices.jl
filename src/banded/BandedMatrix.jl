@@ -99,6 +99,7 @@ convert(BM::Type{BandedMatrix{T, C, OneTo{Int}}}, M::BandedMatrix) where {T, C <
 for MAT in (:AbstractBandedMatrix, :AbstractMatrix, :AbstractArray)
     @eval begin
         convert(::Type{$MAT{T}}, M::BandedMatrix) where {T} = convert(BandedMatrix{T}, M)
+        convert(::Type{$MAT{T}}, M::BandedMatrix{T}) where {T} = convert(BandedMatrix{T}, M)
         convert(::Type{$MAT}, M::BandedMatrix) = M
         $MAT{T}(M::BandedMatrix) where {T} = BandedMatrix{T}(M)
         $MAT(M::BandedMatrix{T}) where {T} = BandedMatrix{T}(M)
