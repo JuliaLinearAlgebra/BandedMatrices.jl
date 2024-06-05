@@ -426,6 +426,11 @@ include("mymatrix.jl")
             B = brand(5,5,1,1)
             @test Matrix(sparse(B)) == Matrix(B)
         end
+
+        @testset "abstract ambiguity" begin
+            B = brand(5,5,1,1)
+            @test convert(AbstractArray{Float64}, B) ≡ B
+        end
     end
 
     @testset "real-imag" begin
