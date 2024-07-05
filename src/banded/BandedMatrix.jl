@@ -16,8 +16,8 @@ function _BandedMatrix end
 struct BandedMatrix{T, CONTAINER, RAXIS} <: AbstractBandedMatrix{T}
     data::CONTAINER  # l+u+1 x n (# of columns)
     raxis::RAXIS # axis for rows (col axis comes from data)
-    l::Int # lower bandwidth ≥0
-    u::Int # upper bandwidth ≥0
+    l::Int # lower bandwidth (possibly negative)
+    u::Int # upper bandwidth (possibly negative)
     global function _BandedMatrix(data::AbstractMatrix{T}, raxis::AbstractUnitRange, l, u) where {T}
         if size(data,1) ≠ l+u+1  && !(size(data,1) == 0 && -l > u)
            error("Data matrix must have number rows equal to number of bands")
