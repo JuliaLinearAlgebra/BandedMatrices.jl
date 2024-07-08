@@ -1007,3 +1007,24 @@ function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
     l,u = bandwidths(A)
     _BandedMatrix(reshape(resize!(vec(copy(bandeddata(A))), (l+u+1)*m), l+u+1, m), n, l,u)
 end
+
+function Base.sum(A::BandedMatrix)
+    l,u = bandwidths(A)
+    height,width = size(A)
+    lower, upper = min(height-1,l), min(width-1,u)
+    data = zeros(1+lower+upper,min(height,width))
+    for i=-lower:upper
+        b = A[band(i)]
+        data[i+lower+1,1:length(b)] = b
+    end
+    sum(data)
+end
+
+function Base.sum(A::BandedMatrix; dims)
+    if(dims > 2)
+        A
+    elseif(dims == 2)
+        A
+    end
+end
+
