@@ -1029,33 +1029,33 @@ function Base.sum(A::BandedMatrix; dims)
     if(dims > 2)
         A
     elseif(dims == 2)
-        l,u = bandwidths(A)
-        height,width = size(A)
+        l, u = bandwidths(A)
+        height, width = size(A)
         if(l + u < 0)
-            return zeros(eltype(A),(height,1))
+            return zeros(eltype(A), (height, 1))
         end
-        lower, upper = min(height-1,l), min(width-1,u)
+        lower, upper = min(height-1, l), min(width-1, u)
         #dimension of interest preserved
-        data = zeros(height,1+lower+upper)
+        data = zeros(height, 1+lower+upper)
         for i=-lower:upper
             b = A[band(i)]
             #populates data array in such a way that everything along the same axis of interest is aligned
-            data[(i > 0 ? (1:length(b)) : (1-i:length(b)-i)),i+lower+1] = b
+            data[(i > 0 ? (1:length(b)) : (1-i:length(b)-i)), i+lower+1] = b
         end
         sum(data; dims=2)
     elseif(dims == 1)
-        l,u = bandwidths(A)
-        height,width = size(A)
+        l, u = bandwidths(A)
+        height, width = size(A)
         if(l + u < 0)
-            return zeros(eltype(A),(1,width))
+            return zeros(eltype(A), (1,width))
         end
-        lower, upper = min(height-1,l), min(width-1,u)
-        data = zeros(1+lower+upper,width)
+        lower, upper = min(height-1, l), min(width-1, u)
+        data = zeros(1+lower+upper, width)
         for i=-lower:upper
             b = A[band(i)]
-            data[i+lower+1,(i <= 0 ? (1:length(b)) : (i+1:i+length(b)))] = b
+            data[i+lower+1, (i <= 0 ? (1:length(b)) : (i+1:i+length(b)))] = b
         end
-        sum(data;dims=1)
+        sum(data; dims=1)
     else
         throw(ArgumentError("dimension must be ≥ 1, got $dims"))
     end
