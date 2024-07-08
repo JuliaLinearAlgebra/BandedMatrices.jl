@@ -1011,6 +1011,7 @@ end
 function Base.sum(A::BandedMatrix)
     l,u = bandwidths(A)
     height,width = size(A)
+    #Only get nonempty bands
     lower, upper = min(height-1,l), min(width-1,u)
     data = zeros(1+lower+upper,min(height,width))
     for i=-lower:upper
@@ -1025,6 +1026,17 @@ function Base.sum(A::BandedMatrix; dims)
         A
     elseif(dims == 2)
         A
+    elseif(dims == 1)
+        l,u = bandwidths(A)
+        height,width = size(A)
+        #Only get nonempty bands
+        lower, upper = min(height-1,l), min(width-1,u)
+        data = zeros(1+lower+upper,min(height,width))
+        for i=-lower:upper
+            b = A[band(i)]
+            data[i+lower+1,(i <= 0 ? (1:length(b)) : (end-length(b)+1:end))] = b
+        end
+        sum(data; dims=1)
     end
 end
 
