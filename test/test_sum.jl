@@ -1,3 +1,5 @@
+module TestSum
+
 using Test, BandedMatrices, Random
 
 r = brand(Float64,rand(1:10_000),rand(1:10_000),rand(-20:100),rand(-20:100))
@@ -8,4 +10,6 @@ matr = Matrix(r)
     @test sum(r; dims=1) ≈ sum(matr; dims=1) atol = 1e-10
     @test sum(r; dims=3) == r
     @test_throws ArgumentError sum(r; dims=0)
+end
+
 end
