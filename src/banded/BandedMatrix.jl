@@ -1008,23 +1008,21 @@ function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
     _BandedMatrix(reshape(resize!(vec(copy(bandeddata(A))), (l+u+1)*m), l+u+1, m), n, l,u)
 end
 
-function sum(A::BandedMatrix)
-    l, u = bandwidths(A)
-    ret = zero(eltype(A))
-    if(l + u < 0)
-        return ret
-    end
-    n, m = size(A)
-    #Only get nonempty bands
-    lower, upper = min(n-1, l), min(m-1, u)
-    for i = -lower:upper
-        ret += sum(A[band(i)])
-    end
-    ret
-end
-
-function sum(A::BandedMatrix; dims)
-    if(dims > 2)
+function sum(A::BandedMatrix; dims=:)
+    if(dims == :)
+        l, u = bandwidths(A)
+        ret = zero(eltype(A))
+        if(l + u < 0)
+            return ret
+        end
+        n, m = size(A)
+        #Only get nonempty bands
+        lower, upper = min(n-1, l), min(m-1, u)
+        for i = -lower:upper
+            ret += sum(A[band(i)])
+        end
+        ret
+    elseif(dims > 2)
         A
     elseif(dims == 2)
         l, u = bandwidths(A)
