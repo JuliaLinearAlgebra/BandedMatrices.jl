@@ -1008,54 +1008,58 @@ function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
     _BandedMatrix(reshape(resize!(vec(copy(bandeddata(A))), (l+u+1)*m), l+u+1, m), n, l,u)
 end
 
-function Base.sum(A::BandedMatrix)
-    l,u = bandwidths(A)
-    #For empty matrices
+function sum(A::BandedMatrix)
+    l, u = bandwidths(A)
+    ret = zero(eltype(A))
     if(l + u < 0)
-        return convert(eltype(A),0)
+        return ret
     end
-    height,width = size(A)
+    n, m = size(A)
     #Only get nonempty bands
-    lower, upper = min(height-1,l), min(width-1,u)
-    data = zeros(1+lower+upper,min(height,width))
-    for i=-lower:upper
-        b = A[band(i)]
-        data[i+lower+1,1:length(b)] = b
+    lower, upper = min(n-1, l), min(m-1, u)
+    for i = -lower:upper
+        ret += sum(A[band(i)])
     end
-    sum(data)
+    ret
 end
 
-function Base.sum(A::BandedMatrix; dims)
+function sum(A::BandedMatrix; dims)
     if(dims > 2)
         A
     elseif(dims == 2)
         l, u = bandwidths(A)
-        height, width = size(A)
+        n, m = size(A)
+        ret = zeros(eltype(A), (n, 1))
         if(l + u < 0)
-            return zeros(eltype(A), (height, 1))
+            return ret
         end
-        lower, upper = min(height-1, l), min(width-1, u)
-        #dimension of interest preserved
-        data = zeros(height, 1+lower+upper)
-        for i=-lower:upper
+        lower, upper = min(n-1, l), min(m-1, u)
+        for i = -lower:upper
             b = A[band(i)]
-            #populates data array in such a way that everything along the same axis of interest is aligned
-            data[(i > 0 ? (1:length(b)) : (1-i:length(b)-i)), i+lower+1] = b
+            if(i <= 0)
+                ret[1-i:length(b)-i, 1] += b
+            else
+                ret[1:length(b), 1] += b
+            end
         end
-        sum(data; dims=2)
+        ret
     elseif(dims == 1)
         l, u = bandwidths(A)
-        height, width = size(A)
+        n, m = size(A)
+        ret = zeros(eltype(A), (1, m))
         if(l + u < 0)
-            return zeros(eltype(A), (1,width))
+            return ret
         end
-        lower, upper = min(height-1, l), min(width-1, u)
-        data = zeros(1+lower+upper, width)
+        lower, upper = min(n-1, l), min(m-1, u)
         for i=-lower:upper
             b = A[band(i)]
-            data[i+lower+1, (i <= 0 ? (1:length(b)) : (i+1:i+length(b)))] = b
+            if(i <= 0)
+                ret[1, 1:length(b)] += b
+            else
+                ret[1, i+1:i+length(b)] += b
+            end
         end
-        sum(data; dims=1)
+        ret
     else
         throw(ArgumentError("dimension must be ≥ 1, got $dims"))
     end
