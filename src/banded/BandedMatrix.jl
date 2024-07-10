@@ -1009,53 +1009,39 @@ function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
 end
 
 function sum(A::BandedMatrix; dims=:)
-    if(dims == :)
+    if dims isa Colon
         l, u = bandwidths(A)
         ret = zero(eltype(A))
-        if(l + u < 0)
+        if l + u < 0
             return ret
         end
         n, m = size(A)
-        #Only get nonempty bands
-        lower, upper = min(n-1, l), min(m-1, u)
-        for i = -lower:upper
-            ret += sum(A[band(i)])
+        for i = 1:n, j = rowrange(A, i)
+            ret += A[i, j]
         end
         ret
-    elseif(dims > 2)
+    elseif dims > 2
         A
-    elseif(dims == 2)
+    elseif dims == 2
         l, u = bandwidths(A)
         n, m = size(A)
-        ret = zeros(eltype(A), (n, 1))
-        if(l + u < 0)
+        ret = zeros(eltype(A), n, 1)
+        if l + u < 0
             return ret
         end
-        lower, upper = min(n-1, l), min(m-1, u)
-        for i = -lower:upper
-            b = A[band(i)]
-            if(i <= 0)
-                ret[1-i:length(b)-i, 1] += b
-            else
-                ret[1:length(b), 1] += b
-            end
+        for i = 1:n, j = rowrange(A, i)
+            ret[i, 1] += A[i, j]
         end
         ret
-    elseif(dims == 1)
+    elseif dims == 1
         l, u = bandwidths(A)
         n, m = size(A)
-        ret = zeros(eltype(A), (1, m))
-        if(l + u < 0)
+        ret = zeros(eltype(A), 1, m)
+        if l + u < 0
             return ret
         end
-        lower, upper = min(n-1, l), min(m-1, u)
-        for i=-lower:upper
-            b = A[band(i)]
-            if(i <= 0)
-                ret[1, 1:length(b)] += b
-            else
-                ret[1, i+1:i+length(b)] += b
-            end
+        for i = 1:m, j = colrange(A, i)
+            ret[1, i] += A[j, i]
         end
         ret
     else
