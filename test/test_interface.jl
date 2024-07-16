@@ -4,7 +4,7 @@ using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Test, Random
 import BandedMatrices: isbanded, AbstractBandedLayout, BandedStyle,
                         BandedColumns, bandeddata
 import ArrayLayouts: OnesLayout, UnknownLayout
-using InfiniteArrays
+using InfiniteArrays, SparseArrays
 
 struct PseudoBandedMatrix{T} <: AbstractMatrix{T}
     data::Array{T}
@@ -315,11 +315,11 @@ end
     @test bandwidths(o) == (2,-2)
     n,m = rand(1:10,2)
     o = OneElement(1, (rand(1:n),rand(1:m)), (n, m))
-    @test bandwidths(o) == bandwidths(BandedMatrix(o))
+    @test bandwidths(o) == bandwidths(sparse(o))
     o = OneElement(1, (n+1,m+1), (n, m))
-    @test bandwidths(o) == (-1, 0)
+    @test bandwidths(o) == bandwidths(Zeros(o))
     o = OneElement(1, 6, 5)
-    @test bandwidths(o) == (-1, 0)
+    @test bandwidths(o) == bandwidths(Zeros(o))
 end
 
 @testset "rot180" begin
