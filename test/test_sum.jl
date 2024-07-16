@@ -3,8 +3,8 @@ module TestSum
 using Test, BandedMatrices, Random
 
 Random.seed!(0)
-r = brand(Float64,rand(1:10_000),rand(1:10_000),rand(-20:100),rand(-20:100))
-empty_r = brand(Float64,rand(1:1_000),rand(1:1_000),rand(1:100),rand(-200:-101))
+r = brand(rand(1:10_000),rand(1:10_000),rand(-20:100),rand(-20:100))
+empty_r = brand(rand(1:1_000),rand(1:1_000),rand(1:100),rand(-200:-101))
 n,m = size(empty_r)
 matr = Matrix(r)
 @testset "sum" begin
@@ -22,8 +22,12 @@ matr = Matrix(r)
     sum!(v, r)
     @test v == sum!(v, Matrix(r))
     n2, m2 = size(r)
-    v = ones(Float64, n2)
+    v = ones(n2)
     @test sum!(v, r) == sum!(v, Matrix(r))
+    V = zeros(1,m2)
+    @test sum!(V, r) === V ≈ sum!(zeros(1,m2), Matrix(r))
+    V = zeros(n2,m2)
+    @test sum!(V, r) === V == r
     @test_throws DimensionMismatch sum!(zeros(Float64, n2 + 1, m2 + 1), r)
 end
 
