@@ -339,7 +339,7 @@ end
 
 function sum!(ret::AbstractArray, A::AbstractBandedMatrix)
     #Behaves similarly to Base.sum!
-    ret .= 0
+    fill!(ret, zero(eltype(ret)))
     n,m = size(A)
     s = size(ret)
     l = length(s)
@@ -357,7 +357,7 @@ function sum!(ret::AbstractArray, A::AbstractBandedMatrix)
             ret[1, j] += A[i, j]
         end
     elseif s[1] == n && s[2] == m
-        ret = A
+        copyto!(ret,A)
     else
         throw(DimensionMismatch("reduction on matrix of size ($n, $m) with output size $s"))
     end
