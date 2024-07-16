@@ -7,7 +7,7 @@ import Base: axes, axes1, getproperty, getindex, setindex!, *, +, -, ==, <, <=, 
                >=, /, \, adjoint, transpose, showerror, convert, size, view,
                unsafe_indices, first, last, size, length, unsafe_length, step, to_indices,
                to_index, show, fill!, similar, copy, promote_rule, real, imag,
-               copyto!, Array
+               copyto!, Array, sum, sum!
 
 using Base.Broadcast: AbstractArrayStyle, DefaultArrayStyle, Broadcasted
 import Base.Broadcast: BroadcastStyle, broadcasted
@@ -97,6 +97,7 @@ if !isdefined(Base, :get_extension)
 end
 
 include("precompile.jl")
+
 
 
 end #module
