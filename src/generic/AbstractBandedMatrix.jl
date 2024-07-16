@@ -336,3 +336,68 @@ if VERSION >= v"1.9"
     copy(A::Adjoint{T,<:AbstractBandedMatrix}) where T = copy(parent(A))'
     copy(A::Transpose{T,<:AbstractBandedMatrix}) where T = transpose(copy(parent(A)))
 end
+
+function sum!(ret::AbstractArray, A::AbstractBandedMatrix)
+    #Behaves similarly to Base.sum!
+    fill!(ret, zero(eltype(ret)))
+    n,m = size(A)
+    s = size(ret)
+    l = length(s)
+    #Check for singleton dimension and perform respective sum
+    if s[1] == 1 && (l == 1 || s[2]==1)
+        for j = 1:m, i = colrange(A, j)
+            ret .+= A[i, j]
+        end
+    elseif s[1] == n && (l == 1 || s[2]==1)
+        for i = 1:n, j = rowrange(A, i)
+            ret[i, 1] += A[i, j]
+        end
+    elseif s[1] == 1 && s[2] == m
+        for j = 1:m, i = colrange(A, j)
+            ret[1, j] += A[i, j]
+        end
+    elseif s[1] == n && s[2] == m
+        copyto!(ret,A)
+    else
+        throw(DimensionMismatch("reduction on matrix of size ($n, $m) with output size $s"))
+    end
+    #return the value to mimic Base.sum!
+    ret
+end
+
+function sum(A::AbstractBandedMatrix; dims=:)
+    if dims isa Colon
+        l, u = bandwidths(A)
+        ret = zero(eltype(A))
+        if l + u < 0
+            return ret
+        end
+        n, m = size(A)
+        for j = 1:m, i = colrange(A, j)
+            ret += A[i, j]
+        end
+        ret
+    elseif dims > 2
+        A
+    elseif dims == 2
+        l, u = bandwidths(A)
+        n, m = size(A)
+        ret = zeros(eltype(A), n, 1)
+        if l + u < 0
+            return ret
+        end
+        sum!(ret, A)
+        ret
+    elseif dims == 1
+        l, u = bandwidths(A)
+        n, m = size(A)
+        ret = zeros(eltype(A), 1, m)
+        if l + u < 0
+            return ret
+        end
+        sum!(ret, A)
+        ret
+    else
+        throw(ArgumentError("dimension must be ≥ 1, got $dims"))
+    end
+end

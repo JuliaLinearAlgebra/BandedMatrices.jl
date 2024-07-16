@@ -1007,3 +1007,4 @@ function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
     l,u = bandwidths(A)
     _BandedMatrix(reshape(resize!(vec(copy(bandeddata(A))), (l+u+1)*m), l+u+1, m), n, l,u)
 end
+
