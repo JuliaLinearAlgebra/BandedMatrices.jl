@@ -361,6 +361,8 @@ function sum!(ret::AbstractArray, A::AbstractBandedMatrix)
     else
         throw(DimensionMismatch("reduction on matrix of size ($n, $m) with output size $s"))
     end
+    #return the value to mimic Base.sum!
+    ret
 end
 
 function sum(A::AbstractBandedMatrix; dims=:)
