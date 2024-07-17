@@ -21,14 +21,8 @@ function BandedMatrices.bandwidths(A::SparseMatrixCSC)
             # We skip non-structural zeros when computing the
             # bandwidths.
             iszero(vals[ind]) && continue
-            ij = abs(i-j)
-            if i ≥ j
-                l = max(l, ij)
-                u = max(u, -ij)
-            elseif i < j
-                l = max(l, -ij)
-                u = max(u, ij)
-            end
+            u = max(u, j-i)
+            l = max(l, i-j)
         end
     end
 
