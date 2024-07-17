@@ -10,9 +10,9 @@ function sparse(B::BandedMatrix)
 end
 
 function BandedMatrices.bandwidths(A::SparseMatrixCSC)
-    l,u = -size(A,1),-size(A,2)
+    l = u = -max(size(A,1),size(A,2))
 
-    m,n = size(A)
+    n = size(A)[2]
     rows = rowvals(A)
     vals = nonzeros(A)
     for j = 1:n
@@ -26,6 +26,20 @@ function BandedMatrices.bandwidths(A::SparseMatrixCSC)
         end
     end
 
+    l,u
+end
+
+function BandedMatrices.bandwidths(A::SparseVector)
+    l = u = -size(A,1)
+
+    rows = rowvals(A)
+    for i in rows
+        # We skip non-structural zeros when computing the
+        # bandwidths.
+        iszero(i) && continue
+        u = max(u, 1-i)
+        l = max(l, i-1)
+    end
     l,u
 end
 
