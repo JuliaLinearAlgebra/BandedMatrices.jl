@@ -2,7 +2,7 @@ module BandedMatricesSparseArraysExt
 
 using BandedMatrices
 using BandedMatrices: _banded_rowval, _banded_colval, _banded_nzval
-using SparseArrays
+using SparseArrays, FillArrays
 import SparseArrays: sparse
 
 function sparse(B::BandedMatrix)
@@ -15,6 +15,9 @@ function BandedMatrices.bandwidths(A::SparseMatrixCSC)
     n = size(A)[2]
     rows = rowvals(A)
     vals = nonzeros(A)
+    if isempty(vals)
+        return bandwidths(Zeros(1))
+    end
     for j = 1:n
         for ind in nzrange(A, j)
             i = rows[ind]
@@ -33,6 +36,9 @@ function BandedMatrices.bandwidths(A::SparseVector)
     l = u = -size(A,1)
 
     rows = rowvals(A)
+    if isempty(rows)
+        return bandwidths(Zeros(1))
+    end
     for i in rows
         # We skip non-structural zeros when computing the
         # bandwidths.
