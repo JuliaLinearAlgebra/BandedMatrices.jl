@@ -418,7 +418,7 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
 
     for A in x
         if size(A, 2) != m
-            sizes = Tuple(size(b,2) for b in x)
+            sizes = Tuple(size(b, 2) for b in x)
             throw(DimensionMismatch("number of columns of each matrix must match (got $sizes)"))
         end
 
@@ -433,10 +433,10 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
     #Populate the banded matrix
     row_offset = 0
     for A in x
-        n_A = size(A,1)
+        n_A = size(A, 1)
 
         for i = 1:n_A, j = rowrange(A, i)
-            ret[row_offset + i,j] = A[i,j]
+            ret[row_offset + i, j] = A[i, j]
         end
 
         row_offset += n_A
