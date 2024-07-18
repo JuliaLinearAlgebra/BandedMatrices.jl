@@ -401,3 +401,46 @@ function sum(A::AbstractBandedMatrix; dims=:)
         throw(ArgumentError("dimension must be ≥ 1, got $dims"))
     end
 end
+
+###
+# vcat
+###
+
+function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
+    #avoid unnecessary steps for singleton
+    if length(x) == 1
+        return x[1]
+    end
+
+    #instantiate the returned banded matrix with zeros and required bandwidths/dimensions
+    m = size(x[1], 2)
+    n = 0
+
+    for A in x
+        if size(A, 2) != m
+            sizes = Tuple(size(b,2) for b in x)
+            throw(DimensionMismatch("number of columns of each matrix must match (got $sizes)"))
+        end
+
+        n += size(A, 1)
+    end
+
+    l = n - size(x[end], 1) + x[end].l
+    u = x[1].u
+    type = promote_type(eltype.(x)...)
+    ret = BandedMatrix{type}(Zeros(n, m), (l, u))
+
+    #Populate the banded matrix
+    row_offset = 0
+    for A in x
+        n_A = size(A,1)
+
+        for i = 1:n_A, j = rowrange(A, i)
+            ret[row_offset + i,j] = A[i,j]
+        end
+
+        row_offset += n_A
+    end
+
+    ret
+end
