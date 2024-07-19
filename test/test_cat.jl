@@ -10,14 +10,16 @@ using BandedMatrices, LinearAlgebra, Test, Random
     @test_throws DimensionMismatch vcat(a,b)
 
     c = BandedMatrix(0 => [1.0, 2.0, 3.0], 1 => [1.0, 2.0], 2 => [1.0])
-    @test eltype(vcat(b,c)) == Float64
-    @test vcat(b,c) == vcat(Matrix(b),Matrix(c))
+    @test eltype(vcat(b, c)) == Float64
+    @test vcat(b, c) == vcat(Matrix(b), Matrix(c))
 
     for i = 1:3
         a = brand(Float64, rand(1:10), 5, rand(1:10),rand(-4:4))
         b = brand(Float64, rand(1:10), 5, rand(1:10),rand(-4:4))
         c = brand(Float64, rand(1:10), 5, rand(1:10),rand(-4:4))
-        @test vcat(a,b,c) == vcat(Matrix(a),Matrix(b),Matrix(c))
+        d = vcat(a, b, c)
+        @test d == vcat(Matrix(a), Matrix(b), Matrix(c))
+        @test bandwidths(d) == (bandwidth(c, 1) + size(a, 1) + size(b, 1), bandwidth(a, 2))
     end
 end
 

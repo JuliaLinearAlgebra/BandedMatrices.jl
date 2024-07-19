@@ -428,7 +428,7 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
     l = n - size(x[end], 1) + bandwidth(x[end], 1)
     u = bandwidth(x[1], 2)
     type = promote_type(eltype.(x)...)
-    ret = BandedMatrix{type}(Zeros(n, m), (l, u))
+    ret = BandedMatrix(Zeros{type}(n, m), (l, u))
 
     #Populate the banded matrix
     row_offset = 0
