@@ -414,6 +414,7 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
 
     #instantiate the returned banded matrix with zeros and required bandwidths/dimensions
     m = size(x[1], 2)
+    l, u = bandwidths(x[1])
     n = 0
 
     for A in x
@@ -422,11 +423,11 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
             throw(DimensionMismatch("number of columns of each matrix must match (got $sizes)"))
         end
 
+        u = max(u, bandwidth(A, 2) - n)
+        l = max(l, n + bandwidth(A, 1))
         n += size(A, 1)
     end
 
-    l = n - size(x[end], 1) + bandwidth(x[end], 1)
-    u = bandwidth(x[1], 2)
     type = promote_type(eltype.(x)...)
     ret = BandedMatrix(Zeros{type}(n, m), (l, u))
 
