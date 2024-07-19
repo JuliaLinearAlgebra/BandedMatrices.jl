@@ -76,6 +76,8 @@ function bandwidths(o::OneElement)
     end
 end
 
+LinearAlgebra.vcat(x::Union{OneElement, AbstractBandedMatrix}...) = vcat(BandedMatrix.(x)...)
+
 ###
 # rot180
 ###
