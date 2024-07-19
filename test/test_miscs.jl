@@ -50,7 +50,16 @@ import BandedMatrices: _BandedMatrix, DefaultBandedMatrix
             @test bA isa BandedMatrix
             @test bA == A
             @test bandwidths(bA) == min.((l,u),9)
+            v = sparsevec(brand(10, 1, l, u))
+            @test bandwidths(v) == (l, min(0, u))
         end
+
+        l, u = -1, 0
+        A = brand(10, 10, l, u)
+        sA = sparse(A)
+        @test bandwidths(sA) == bandwidths(Zeros(1))
+        v = sparsevec(brand(10, 1, l, u))
+        @test bandwidths(v) == bandwidths(Zeros(1))
 
         for diags = [(-1 => ones(Int, 5),),
                      (-2 => ones(Int, 5),),
