@@ -414,21 +414,31 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
 
     #instantiate the returned banded matrix with zeros and required bandwidths/dimensions
     m = size(x[1], 2)
-    l, u = bandwidths(x[1])
+    l,u = -m, typemin(Int64)
     n = 0
+    isempty = true
 
+    #Check for dimension error and calculate bandwidths
     for A in x
         if size(A, 2) != m
             sizes = Tuple(size(b, 2) for b in x)
             throw(DimensionMismatch("number of columns of each matrix must match (got $sizes)"))
         end
 
-        u = max(u, bandwidth(A, 2) - n)
-        l = max(l, n + bandwidth(A, 1))
+        l_A, u_A = bandwidths(A)
+        if l_A + u_A >= 0
+            isempty = false
+            u = max(u, min(m - 1, u_A) - n)
+            l = max(l, min(size(A, 1) - 1, l_A) + n)
+        end
+
         n += size(A, 1)
     end
 
     type = promote_type(eltype.(x)...)
+    if isempty
+        return BandedMatrix{type}(undef, (n, m), bandwidths(Zeros(1)))
+    end
     ret = BandedMatrix(Zeros{type}(n, m), (l, u))
 
     #Populate the banded matrix

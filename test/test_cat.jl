@@ -1,6 +1,6 @@
 module TestCat
 
-using BandedMatrices, LinearAlgebra, Test, Random, FillArrays
+using BandedMatrices, LinearAlgebra, Test, Random, FillArrays, SparseArrays
 
 @testset "vcat" begin
     @testset "banded matrices" begin
@@ -14,13 +14,15 @@ using BandedMatrices, LinearAlgebra, Test, Random, FillArrays
         @test eltype(vcat(b, c)) == Float64
         @test vcat(b, c) == vcat(Matrix(b), Matrix(c))
 
-        for i = 1:3
-            a = brand(Float64, rand(1:10), 5, rand(1:10),rand(-4:4))
-            b = brand(Float64, rand(1:10), 5, rand(1:10),rand(-4:4))
-            c = brand(Float64, rand(1:10), 5, rand(1:10),rand(-4:4))
+        for i in ((1,2), (-3,4), (0,-1))
+            a = BandedMatrix(ones(Float64, rand(1:10), 5), i)
+            b = BandedMatrix(ones(Int64, rand(1:10), 5), i)
+            c = BandedMatrix(ones(Int32, rand(1:10), 5), i)
             d = vcat(a, b, c)
-            @test d == vcat(Matrix(a), Matrix(b), Matrix(c))
-            @test bandwidths(d) == (bandwidth(c, 1) + size(a, 1) + size(b, 1), bandwidth(a, 2))
+            sd = vcat(sparse(a), sparse(b), sparse(c))
+            @test eltype(d) == Float64
+            @test d == sd
+            @test bandwidths(d) == bandwidths(sd)
         end
     end
 
