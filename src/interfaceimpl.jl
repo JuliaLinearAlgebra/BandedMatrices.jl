@@ -58,7 +58,7 @@ sublayout(::AbstractTridiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},Abs
 
 #Implement bandwidths for OneElement structure
 function bandwidths(o::OneElementVector)
-    k, = FillArrays.nzind(o) # index of non-zero
+    k = FillArrays.nzind(o)[1] # index of non-zero
     n = length(o)
     if k > n || k < 1
         bandwidths(Zeros(o))
@@ -69,7 +69,7 @@ end
 
 function bandwidths(o::OneElementMatrix)
     n,m = size(o)
-    k,j = FillArrays.nzind(o)  # indices of non-zero entries
+    k,j = Tuple(FillArrays.nzind(o))  # indices of non-zero entries
     if k > n || j > m || k < 1 || j < 1
         bandwidths(Zeros(o))
     else
