@@ -56,6 +56,27 @@ bandwidths(::Tridiagonal) = (1,1)
 sublayout(::AbstractTridiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},AbstractUnitRange{Int}}}) =
     BandedLayout()
 
+#Implement bandwidths for OneElement structure
+function bandwidths(o::OneElementVector)
+    k = FillArrays.nzind(o)[1] # index of non-zero
+    n = length(o)
+    if k > n || k < 1
+        bandwidths(Zeros(o))
+    else
+        (k-1, 1-k)
+    end
+end
+
+function bandwidths(o::OneElementMatrix)
+    n,m = size(o)
+    k,j = Tuple(FillArrays.nzind(o))  # indices of non-zero entries
+    if k > n || j > m || k < 1 || j < 1
+        bandwidths(Zeros(o))
+    else
+        (k-j,j-k)
+    end
+end
+
 ###
 # rot180
 ###
