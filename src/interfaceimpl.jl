@@ -57,26 +57,25 @@ sublayout(::AbstractTridiagonalLayout, ::Type{<:Tuple{AbstractUnitRange{Int},Abs
     BandedLayout()
 
 #Implement bandwidths for OneElement structure
-function bandwidths(o::OneElement)
-    pos = FillArrays.nzind(o)
-    if length(pos) == 1
-        n = length(o)
-        if pos[1] > n
-            bandwidths(Zeros(o))
-        else
-            (pos[1] - 1, -pos[1] + 1)
-        end
-    elseif length(pos) == 2
-        n,m = size(o)
-        if pos[1] > n || pos[2] > m
-            bandwidths(Zeros(o))
-        else
-            (pos[1]-pos[2],pos[2]-pos[1])
-        end
+function bandwidths(o::OneElementVector)
+    k = FillArrays.nzind(o)[1] # index of non-zero
+    n = length(o)
+    if k > n || k < 1
+        bandwidths(Zeros(o))
+    else
+        (k-1, 1-k)
     end
 end
 
-LinearAlgebra.vcat(x::Union{OneElement, AbstractBandedMatrix}...) = vcat(BandedMatrix.(x)...)
+function bandwidths(o::OneElementMatrix)
+    n,m = size(o)
+    k,j = Tuple(FillArrays.nzind(o))  # indices of non-zero entries
+    if k > n || j > m || k < 1 || j < 1
+        bandwidths(Zeros(o))
+    else
+        (k-j,j-k)
+    end
+end
 
 ###
 # rot180
