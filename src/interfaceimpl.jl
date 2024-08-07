@@ -116,3 +116,6 @@ function getindex(D::Bidiagonal{T,V}, b::Band) where {T,V}
     D.uplo == 'U' && b.i == 1 && return copy(D.ev)
     convert(V, Zeros{T}(size(D,1)-abs(b.i)))
 end
+
+
+Base.vcat(x::Union{OneElement, ZerosMatrix, AdjOrTrans{<:Any,<:ZerosVector}, AbstractBandedMatrix}...) = vcat(BandedMatrix.(x)...)
