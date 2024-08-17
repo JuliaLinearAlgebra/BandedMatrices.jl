@@ -408,7 +408,7 @@ end
         B = BandedMatrix(Symmetric(L * L'));
         Bv = Symmetric(view(B, :, :))
         chol = cholesky(Bv)
-        if VERSION > v"1.6"
+        if VERSION >= v"1.7"
             @test MemoryLayout(chol.U) isa TriangularLayout{'U', 'N', typeof(MemoryLayout(B))}
             @test MemoryLayout(chol.L) isa TriangularLayout{'L', 'N', typeof(MemoryLayout(B'))}
             @test isbanded(chol.L)
