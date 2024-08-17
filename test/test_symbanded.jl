@@ -412,10 +412,8 @@ end
             @test MemoryLayout(chol.U) isa TriangularLayout{'U', 'N', typeof(MemoryLayout(B))}
             @test MemoryLayout(chol.L) isa TriangularLayout{'L', 'N', typeof(MemoryLayout(B'))}
             @test isbanded(chol.L)
-            @test isbanded(chol.U)
-        else 
-            @test isbanded(chol.U)
         end
+        @test isbanded(chol.U)
         cc = LinearAlgebra.cholcopy(Bv)
         @test cc isa Symmetric{Float64, typeof(B)}
     end
