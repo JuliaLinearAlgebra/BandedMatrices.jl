@@ -402,6 +402,17 @@ end
     @test isposdef(B) == isposdef(Matrix(B)) == false
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[2:2:10;], -1=>Float64[1:4;])
     @test isposdef(B) == isposdef(Matrix(B)) == true
+
+    @testset "Issue #450: Cholesky of a BandedMatrix's view" begin
+        L = brand(10, 10, 2, 0) 
+        B = BandedMatrix(Symmetric(L * L'));
+        Bv = Symmetric(view(B, :, :))
+        chol = cholesky(Bv)
+        @test MemoryLayout(chol.U) isa TriangularLayout{'U', 'N', typeof(MemoryLayout(B))}
+        @test MemoryLayout(chol.L) isa TriangularLayout{'L', 'N', typeof(MemoryLayout(B'))}
+        @test isbanded(chol.L)
+        @test isbanded(chol.U)
+    end
 end
 
 end # module
