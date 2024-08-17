@@ -416,6 +416,8 @@ end
         @test isbanded(chol.U)
         cc = LinearAlgebra.cholcopy(Bv)
         @test cc isa Symmetric{Float64, typeof(B)}
+        @test chol.U ≈ cholesky(Matrix(B)).U
+        @test cc == B
     end
 end
 
