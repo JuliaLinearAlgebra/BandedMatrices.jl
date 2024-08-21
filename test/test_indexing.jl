@@ -251,7 +251,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test_throws BoundsError a[:, 0] = [1, 2, 3]
             @test_throws DimensionMismatch a[:, 1] = [1, 2, 3]
             @test_throws BoundsError a[BandRange, 0] = [1, 2, 3]
-            @test_throws BoundsError a[BandRange, 8] = [1, 2, 3]
+            @test_throws BoundsError a[BandRange, 9] = [1, 2, 3]
             @test_throws DimensionMismatch a[BandRange, 1] = [1, 2]
         end
 
@@ -344,7 +344,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test_throws BoundsError a[0, :] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, :] = [1, 2, 3]
             @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
-            @test_throws BoundsError a[8, BandRange] = [1, 2, 3]
+            @test_throws BoundsError a[9, BandRange] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
         end
 
