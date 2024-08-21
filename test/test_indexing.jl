@@ -208,7 +208,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
         end
 
         @testset "vector - BandRange/Colon - integer" begin
-            a = BandedMatrix(Ones{Int}(5, 7), (2, 1))
+            a = BandedMatrix(Ones{Int}(5, 8), (2, 1))
             # 5x7 BandedMatrices.BandedMatrix{Float64}:
             #  1.0  1.0    0    0    0    0   0   0
             #  1.0  1.0  1.0    0    0    0   0   0
@@ -224,11 +224,11 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             a[BandRange, 5] = [15, 16]
             a[BandRange, 6] = [17]
 
-            @test a == [ 1  4   0   0   0   0   0;
-                         2  5   8   0   0   0   0;
-                         3  6   9  12   0   0   0;
-                         0  7  10  13  15   0   0;
-                         0  0  11  14  16  17   0]
+            @test a == [ 1  4   0   0   0   0   0   0;
+                         2  5   8   0   0   0   0   0;
+                         3  6   9  12   0   0   0   0;
+                         0  7  10  13  15   0   0   0;
+                         0  0  11  14  16  17   0   0]
 
             @test a[BandRange, 1] == @view(a[BandRange, 1]) == [1,   2,  3]
             @test a[BandRange, 2] == @view(a[BandRange, 2]) == [4,   5,  6,  7]
@@ -237,6 +237,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test a[BandRange, 5] == @view(a[BandRange, 5]) == [15, 16]
             @test a[BandRange, 6] == @view(a[BandRange, 6]) == [17]
             @test a[BandRange, 7] == @view(a[BandRange, 7]) == Int[]
+            @test a[BandRange, 8] == @view(a[BandRange, 8]) == Int[]
 
             @test a[:, 1] == view(a, :, 1) == [1,2,3,0,0]
             @test a[:, 2] == view(a, :, 2) == [4,5,6,7,0]
@@ -245,6 +246,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test a[:, 5] == view(a, :, 5) == [0,0,0,15,16]
             @test a[:, 6] == view(a, :, 6) == [0,0,0,0,17]
             @test a[:, 7] == view(a, :, 7) == [0,0,0,0,0]
+            @test a[:, 8] == view(a, :, 8) == [0,0,0,0,0]
 
             @test_throws BoundsError a[:, 0] = [1, 2, 3]
             @test_throws DimensionMismatch a[:, 1] = [1, 2, 3]
@@ -299,7 +301,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
         end
 
         @testset "vector - integer - BandRange/Colon" begin
-            a = BandedMatrix(Ones{Int}(7, 5), (1, 2))
+            a = BandedMatrix(Ones{Int}(8, 5), (1, 2))
             # 5x7 BandedMatrices.BandedMatrix{Float64}:
             #  1.0  1.0    0    0    0    0   0   0
             #  1.0  1.0  1.0    0    0    0   0   0
@@ -315,11 +317,11 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             a[5, BandRange] = [15, 16]
             a[6, BandRange] = [17]
 
-            @test a == [ 1  4   0   0   0   0   0;
-                         2  5   8   0   0   0   0;
-                         3  6   9  12   0   0   0;
-                         0  7  10  13  15   0   0;
-                         0  0  11  14  16  17   0]'
+            @test a == [ 1  4   0   0   0   0   0   0;
+                         2  5   8   0   0   0   0   0;
+                         3  6   9  12   0   0   0   0;
+                         0  7  10  13  15   0   0   0;
+                         0  0  11  14  16  17   0   0]'
 
             @test a[1, BandRange] == @view(a[1, BandRange]) == [1,   2,  3]
             @test a[2, BandRange] == @view(a[2, BandRange]) == [4,   5,  6,  7]
@@ -328,6 +330,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test a[5, BandRange] == @view(a[5, BandRange]) == [15, 16]
             @test a[6, BandRange] == @view(a[6, BandRange]) == [17]
             @test a[7, BandRange] == @view(a[7, BandRange]) == Int[]
+            @test a[8, BandRange] == @view(a[7, BandRange]) == Int[]
 
             @test a[1, :] == @view(a[1, :]) == [1,2,3,0,0]
             @test a[2, :] == @view(a[2, :]) == [4,5,6,7,0]
@@ -336,6 +339,7 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test a[5, :] == @view(a[5, :]) == [0,0,0,15,16]
             @test a[6, :] == @view(a[6, :]) == [0,0,0,0,17]
             @test a[7, :] == @view(a[7, :]) == [0,0,0,0,0]
+            @test a[8, :] == @view(a[7, :]) == [0,0,0,0,0]
 
             @test_throws BoundsError a[0, :] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, :] = [1, 2, 3]

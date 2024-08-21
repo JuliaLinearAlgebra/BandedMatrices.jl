@@ -420,7 +420,7 @@ end
 @propagate_inbounds function getindex(A::BandedMatrix, ::Colon, j::Int)
     @boundscheck checkbounds(A, axes(A,1), j)
     r = similar(A, axes(A,1))
-    r[firstindex(r):colstart(A,j)-1] .= zero(eltype(r))
+    r[firstindex(r):min(size(A, 1), colstart(A,j)-1)] .= zero(eltype(r))
     # broadcasted assignment is currently faster than setindex
     # see https://github.com/JuliaLang/julia/issues/40962#issuecomment-1921340377
     # may need revisiting in the future
@@ -439,7 +439,7 @@ end
 @propagate_inbounds function getindex(A::BandedMatrix, k::Int, ::Colon)
     @boundscheck checkbounds(A, k, axes(A,2))
     r = similar(A, axes(A,2))
-    r[firstindex(r):rowstart(A,k)-1] .= zero(eltype(r))
+    r[firstindex(r):min(size(A, 2), rowstart(A,k)-1)] .= zero(eltype(r))
     r[rowrange(A,k)] = @view A.data[data_rowrange(A,k)]
     r[rowstop(A,k)+1:end] .= zero(eltype(r))
     return r
