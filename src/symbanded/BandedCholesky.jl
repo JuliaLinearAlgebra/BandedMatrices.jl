@@ -98,5 +98,7 @@ ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},Hermitian
 
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) =
     copyto!(similar(A, LinearAlgebra.choltype(A)), A)
+cholcopy(A::RealHermSymComplexHerm{<:Any,<:SubArray{<:Number, 2, <:BandedMatrix}}) =
+    copyto!(similar(A, LinearAlgebra.choltype(A)), A)
 # cholesky(A::Hermitian{T,<:BandedMatrix{T}},
 #     ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)
