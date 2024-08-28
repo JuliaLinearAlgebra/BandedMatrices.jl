@@ -346,6 +346,12 @@ import BandedMatrices: rowstart, rowstop, colstart, colstop,
             @test_throws BoundsError a[0, BandRange] = [1, 2, 3]
             @test_throws BoundsError a[9, BandRange] = [1, 2, 3]
             @test_throws DimensionMismatch a[1, BandRange] = [1, 2]
+
+            a = BandedMatrix(ones(2, 5), (-2, 2))
+            # 0.0 0.0 1.0 0.0 0.0
+            # 0.0 0.0 0.0 1.0 0.0
+            @test a[1,:] == [0, 0, 1, 0, 0]
+            @test a[2,:] == [0, 0, 0, 1, 0]
         end
 
 
