@@ -406,7 +406,7 @@ end
 # vcat
 ###
 
-function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
+function Base.vcat(x::AbstractBandedMatrix...)
     #avoid unnecessary steps for singleton
     if length(x) == 1
         return x[1]
@@ -414,7 +414,7 @@ function LinearAlgebra.vcat(x::AbstractBandedMatrix...)
 
     #instantiate the returned banded matrix with zeros and required bandwidths/dimensions
     m = size(x[1], 2)
-    l,u = -m, typemin(Int64)
+    l,u = -m, typemin(Int)
     n = 0
     isempty = true
 
