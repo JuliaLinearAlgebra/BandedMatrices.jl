@@ -156,7 +156,8 @@ Random.seed!(0)
             end
 
             B .= 2.0.*A
-            @test B ==  2A == 2.0.*A
+            @test norm(B-2A) == 0
+            @test B == 2A == 2.0.*A
             @test 2A isa BandedMatrix
             @test 2.0.*A isa BandedMatrix
             @test bandwidths(2A) == bandwidths(2.0.*A) == bandwidths(A)
@@ -164,7 +165,7 @@ Random.seed!(0)
             A .= 2.0.*A
             @test A == B
 
-            B .= A.*2.0
+            B .= A .* 2.0
             @test B ==  A*2 == A.*2.0
             @test A*2 isa BandedMatrix
             @test A .* 2.0 isa BandedMatrix
