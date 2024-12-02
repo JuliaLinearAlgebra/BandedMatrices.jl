@@ -92,10 +92,6 @@ include("tribanded.jl")
 
 include("interfaceimpl.jl")
 
-if !isdefined(Base, :get_extension)
-    include("../ext/BandedMatricesSparseArraysExt.jl")
-end
-
 include("precompile.jl")
 
 
