@@ -568,6 +568,24 @@ include("mymatrix.jl")
         @test resize(view(A,2:3,2:5),5,5) isa BandedMatrix
         @test resize(view(A,2:3,2:5),5,5)[1:2,1:4] == A[2:3,2:5]
     end
+
+    @testset "UniformScaling" begin
+        @test BandedMatrix(I, (3,4)) == BandedMatrix{Int}(I, (3,4)) == BandedMatrix{Int,Matrix{Int}}(I, (3,4))  == BandedMatrix{Int,Matrix{Int},Base.OneTo{Int}}(I, (3,4)) == Matrix(I,(3,4))
+        @test eltype(BandedMatrix(I, (3,4))) == Bool
+        @test eltype(BandedMatrix{Int}(I, (3,4))) == Int
+        @test bandwidths(BandedMatrix(I, (3,4))) == (0,0)
+        @test bandwidths(BandedMatrix(I, (3,4), (1,2))) == (1,2)
+        @test_throws BoundsError BandedMatrix(I, (3,4), (-1,2))
+    end
+
+
+    @testset "one" begin
+        @test_throws DimensionMismatch one(brand(4,5,1,1))
+        Q = one(brand(5,5,1,1))
+        @test bandwidths(Q) == (0,0)
+        @test Q == I(5)
+        @test eltype(Q) == Float64
+    end
 end
 
 end # module

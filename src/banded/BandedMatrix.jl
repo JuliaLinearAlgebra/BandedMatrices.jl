@@ -74,6 +74,20 @@ BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,OneTo{Int}}, ab::NTuple{2,Integ
 BandedMatrix{V}(M::BandedMatrix) where {V} = _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
 BandedMatrix(M::BandedMatrix{V}) where {V} = _BandedMatrix(AbstractMatrix{V}(M.data), M.raxis, M.l, M.u)
 
+function BandedMatrix{T, C, Ax}(A::UniformScaling, nm::NTuple{2,Integer}, (l,u)::NTuple{2,Integer}=(0,0)) where {T,C,Ax}
+    ret = BandedMatrix{T, C, Ax}(undef, nm, (l,u))
+    zero!(ret.data)
+    ret.data[u+1,:] .= A.λ
+    ret
+end
+BandedMatrix{T,C}(A::UniformScaling, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}=(0,0)) where {T,C} = 
+    BandedMatrix{T, C, OneTo{Int}}(A, nm, ab)
+BandedMatrix{T}(A::UniformScaling, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}=(0,0)) where T = 
+    BandedMatrix{T, Matrix{T}}(A, nm, ab)
+BandedMatrix(A::UniformScaling, nm::NTuple{2,Integer}, ab::NTuple{2,Integer}=(0,0)) = 
+    BandedMatrix{eltype(A)}(A, nm, ab)
+
+
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix{V}) where {V} = M
 convert(::Type{BandedMatrix{V}}, M::BandedMatrix) where {V} =
         _BandedMatrix(convert(AbstractMatrix{V}, M.data), M.raxis, M.l, M.u)
@@ -1008,3 +1022,12 @@ function resize(A::BandedSubBandedMatrix, n::Integer, m::Integer)
     _BandedMatrix(reshape(resize!(vec(copy(bandeddata(A))), (l+u+1)*m), l+u+1, m), n, l,u)
 end
 
+###
+# one
+###
+
+function one(A::BandedMatrix)
+    m,n = size(A)
+    m==n || throw(DimensionMismatch("multiplicative identity defined only for square matrices"))
+    typeof(A)(I, (m,n))
+end
