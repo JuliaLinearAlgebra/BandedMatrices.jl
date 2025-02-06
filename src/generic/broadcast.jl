@@ -357,6 +357,7 @@ function _banded_broadcast_BandedColumn!(dest, f, src, z)
 end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns, ::BandedColumns) where T
+    isprimitivetype(T) || return _banded_broadcast!(dest, f, (src, x), BandedLayout(), BandedLayout())
     z = f(zero(T),x)
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, src,x)))
 
@@ -367,6 +368,8 @@ function _banded_broadcast!(dest::AbstractMatrix, f, (src,x)::Tuple{AbstractMatr
 end
 
 function _banded_broadcast!(dest::AbstractMatrix, f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::BandedColumns, ::BandedColumns) where T
+    isprimitivetype(T) || return _banded_broadcast!(dest, f, (x, src), BandedLayout(), BandedLayout())
+
     z = f(x, zero(T))
     iszero(z) || checkbroadcastband(dest, size(src), bandwidths(broadcasted(f, x,src)))
 
@@ -824,12 +827,14 @@ function _banded_broadcast(f, A::AbstractMatrix{T}, ::BandedColumns) where T
     _BandedMatrix(Bdata_new, axes(A,1), bandwidths(A)...)
 end
 function _banded_broadcast(f, (src,x)::Tuple{AbstractMatrix{T},Number}, ::BandedColumns) where T
+    isprimitivetype(T) || return _banded_broadcast(f, (src,x), BandedLayout())
     iszero(f(zero(T),x)) || return _default_banded_broadcast(broadcasted(f, src,x))
     Bdata = bandeddata(src)
     Bdata_new = reshape(f.(vec(Bdata), x), size(Bdata))
     _BandedMatrix(Bdata_new, axes(src,1), bandwidths(src)...)
 end
 function _banded_broadcast(f, (x, src)::Tuple{Number,AbstractMatrix{T}}, ::BandedColumns) where T
+    isprimitivetype(T) || return _banded_broadcast(f, (x,src), BandedLayout())
     iszero(f(x, zero(T))) || return _default_banded_broadcast(broadcasted(f, x,src))
     Bdata = bandeddata(src)
     Bdata_new = reshape(f.(x, vec(Bdata)), size(Bdata))
@@ -935,12 +940,20 @@ end
 
 
 function _banded_lmul!(α::Number, A::AbstractMatrix, ::BandedColumns)
-    lmul!(α, bandeddata(A))
+    if !isprimitivetype(eltype(A))
+        _banded_lmul!(α, A, BandedLayout()) # avoid undefined
+    else
+        lmul!(α, bandeddata(A))
+    end
     A
 end
 
 function _banded_rmul!(A::AbstractMatrix, α::Number, ::BandedColumns)
-    rmul!(bandeddata(A), α)
+    if !isprimitivetype(eltype(A))
+        _banded_rmul!(A, α, BandedLayout()) # avoid undefined
+    else
+        rmul!(bandeddata(A), α)
+    end
     A
 end
 
