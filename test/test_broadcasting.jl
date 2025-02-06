@@ -770,6 +770,19 @@ Random.seed!(0)
         @test_throws BandError B[band(100)] .= 10
         @test_throws BandError B[band(-100)] .= 10
     end
+
+    @testset "BigFloat l/rmul!" begin
+        A = BandedMatrices._BandedMatrix(Matrix{BigFloat}(undef, 3, 5), 5, 1, 1)
+        for j = axes(A,2), k = colsupport(A,j)
+            A[k,j] = 1
+        end
+        B = 2A
+        @test B == A*2
+        lmul!(2, A)
+        @test A == B
+        rmul!(A, 2)
+        @test A == 2B
+    end
 end
 
 end # module
