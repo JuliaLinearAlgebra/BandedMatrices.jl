@@ -48,7 +48,7 @@ function banded_qr_lmul!(A, B)
     l,u = bandwidths(Afactors)
     D = bandeddata(Afactors)
     @inbounds begin
-        for k = min(mA,nA,last(colsupport(B))):-1:1
+        for k = min(mA,nA,last(colsupport(B)),length(A.τ)):-1:1
             for j = 1:nB
                 vBj = B[k,j]
                 for i = k+max(1,-u):min(k+l,mB)
