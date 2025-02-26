@@ -142,6 +142,14 @@ Random.seed!(0)
             @test ArrayLayouts.rmul!(copy(B), Q) == rmul!(copy(B), Q) ≈ B*Q
         end
     end
+
+    @testset "lowerbanded B" begin
+        n = 10
+        c = sqrt.(2*(5:2:2n+4) ./ ((3:n+2) .* (4:n+3) ))
+        s = sqrt.(((1:n) .* (2:n+1)) ./ ((3:n+2) .* (4:n+3) ))
+        Q = BandedMatrices.QRPackedQ(BandedMatrix(-2 => -(s ./ (c .+ 1))), c .+ 1)
+        @test Q'Q  ≈ Matrix(Q)'Matrix(Q) ≈ I
+    end
 end
 
 end # module

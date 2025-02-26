@@ -48,15 +48,15 @@ function banded_qr_lmul!(A, B)
     l,u = bandwidths(Afactors)
     D = bandeddata(Afactors)
     @inbounds begin
-        for k = min(mA,nA):-1:1
+        for k = min(mA,nA,last(colsupport(B))):-1:1
             for j = 1:nB
                 vBj = B[k,j]
-                for i = k+1:min(k+l,mB)
+                for i = k+max(1,-u):min(k+l,mB)
                     vBj += conj(D[i-k+u+1,k])*B[i,j]
                 end
                 vBj = A.τ[k]*vBj
                 B[k,j] -= vBj
-                for i = k+1:min(k+l,mB)
+                for i = k+max(1,-u):min(k+l,mB)
                     B[i,j] -= D[i-k+u+1,k]*vBj
                 end
             end
@@ -81,12 +81,12 @@ function banded_qr_lmul!(adjA::AdjointQType, B)
             cs = colsupport(B,j)
             for k = max(1,minimum(cs)):min(mA,nA,maximum(cs)+l,length(A.τ))
                 vBj = B[k,j]
-                for i = k+1:min(k+l,mB)
+                for i = k+max(1,-u):min(k+l,mB)
                     vBj += conj(D[i-k+u+1,k])*B[i,j]
                 end
                 vBj = conj(A.τ[k])*vBj
                 B[k,j] -= vBj
-                for i = k+1:min(k+l,mB)
+                for i = k+max(1,-u):min(k+l,mB)
                     B[i,j] -= D[i-k+u+1,k]*vBj
                 end
             end
