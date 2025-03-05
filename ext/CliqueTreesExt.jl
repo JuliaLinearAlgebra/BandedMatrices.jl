@@ -2,7 +2,7 @@ module CliqueTreesExt
 
 using BandedMatrices
 using Base.Sort: Algorithm
-using CliqueTrees: CliqueTrees, permutation, RCMMD
+using CliqueTrees: CliqueTrees, permutation, RCMGL
 using CliqueTrees.SparseArrays
 using LinearAlgebra
 
@@ -11,7 +11,7 @@ function BandedMatrices.symrcm(matrix::AbstractMatrix, alg::Algorithm)
 end
 
 function BandedMatrices.symrcm(matrix::SparseMatrixCSC{T}, alg::Algorithm) where T
-    order, index = permutation(matrix; alg=RCMMD(alg))
+    order, index = permutation(matrix; alg=RCMGL(alg))
     lower = tril!(permute(matrix, order, order))
     
     bandwidth = maximum(axes(lower, 2)) do j
