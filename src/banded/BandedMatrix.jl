@@ -30,6 +30,7 @@ end
 _BandedMatrix(data::AbstractMatrix, m::Integer, l, u) = _BandedMatrix(data, oneto(m), l, u)
 
 Base.parent(B::BandedMatrix) = B.data
+Base.dataids(B::BandedMatrix) = (Base.dataids(B.data)..., Base.dataids(B.raxis)...)
 
 const DefaultBandedMatrix{T} = BandedMatrix{T,Matrix{T},OneTo{Int}}
 
