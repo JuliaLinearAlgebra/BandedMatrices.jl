@@ -52,6 +52,7 @@ export BandedMatrix,
        bandwidth,
        BandError,
        band,
+       symrcm,
        Band,
        BandRange,
        bandwidths,
@@ -87,6 +88,7 @@ include("symbanded/BandedCholesky.jl")
 include("symbanded/SplitCholesky.jl")
 include("symbanded/bandedeigen.jl")
 include("symbanded/tridiagonalize.jl")
+include("symbanded/symrcm.jl")
 
 include("tribanded.jl")
 
