@@ -162,6 +162,44 @@ To loop over the nonzero elements of a BandedMatrix, you can use `colrange(A, c)
 
 Use `Symmetric(::BandedMatrix)` to work with symmetric banded matrices.
 
+## Bandwidth minimization
+
+The [reverse Cuthill-McKee algorithm](https://en.wikipedia.org/wiki/Cuthill–McKee_algorithm) permutes a symmetric matrix into a band matrix with small bandwidth.
+This algorithm is implemented by the function `symrcm`.
+
+```julia
+julia> using BandedMatrices, CliqueTrees
+
+julia> matrix = [
+           1 0 1 0 0 0 0 1 1
+           0 1 1 0 0 1 1 1 0
+           1 1 1 0 0 0 0 0 0
+           0 0 0 1 0 0 0 1 1
+           0 0 0 0 1 0 1 1 0
+           0 1 0 0 0 1 1 0 0
+           0 1 0 0 1 1 1 0 0
+           1 1 0 1 1 0 0 1 0
+           1 0 0 1 0 0 0 0 1
+       ];
+
+julia> bandedmatrix, perm, invp = symrcm(matrix);
+
+julia> bandedmatrix
+9×9 LinearAlgebra.Symmetric{Int64, BandedMatrix{Int64, Matrix{Int64}, Base.OneTo{Int64}}}:
+ 1  1  1  0  ⋅  ⋅  ⋅  ⋅  ⋅
+ 1  1  1  1  0  ⋅  ⋅  ⋅  ⋅
+ 1  1  1  0  1  1  ⋅  ⋅  ⋅
+ 0  1  0  1  0  1  0  ⋅  ⋅
+ ⋅  0  1  0  1  0  1  0  ⋅
+ ⋅  ⋅  1  1  0  1  1  1  0
+ ⋅  ⋅  ⋅  0  1  1  1  0  1
+ ⋅  ⋅  ⋅  ⋅  0  1  0  1  1
+ ⋅  ⋅  ⋅  ⋅  ⋅  0  1  1  1
+
+julia> bandedmatrix == matrix[perm, perm]
+true
+```
+
 ## Banded matrix interface
 
 Banded matrices go beyond the type `BandedMatrix`: one can also create

@@ -3,6 +3,7 @@ module TestSymBanded
 using ArrayLayouts
 using BandedMatrices
 import BandedMatrices: MemoryLayout, SymmetricLayout, HermitianLayout, BandedColumns, isbanded
+using CliqueTrees: CliqueTrees
 using FillArrays
 using GenericLinearAlgebra
 using LinearAlgebra
@@ -419,6 +420,48 @@ end
         @test chol.U ≈ cholesky(Matrix(B)).U
         @test cc == B
     end
+end
+
+@testset "symrcm" begin
+    matrix = Int16[
+        1 0 1 0 0 0 0 1 1
+        0 1 1 0 0 1 1 1 0
+        1 1 1 0 0 0 0 0 0
+        0 0 0 1 0 0 0 1 1
+        0 0 0 0 1 0 1 1 0
+        0 1 0 0 0 1 1 0 0
+        0 1 0 0 1 1 1 0 0
+        1 1 0 1 1 0 0 1 0
+        1 0 0 1 0 0 0 0 1
+    ]
+
+    bandedmatrix, perm, invp = symrcm(matrix)
+    @test invp == invperm(perm)
+    @test bandedmatrix == matrix[perm, perm]
+    @test eltype(bandedmatrix) == eltype(matrix)
+
+    # LFAT5
+    matrix = Float32[
+        0.608806    0.0          0.0         0.0       0.0        0.0       0.0         0.0        0.0       0.0          0.0      0.0        -0.304403   0.0
+        0.0         1.57088      0.0       -94.2528    0.78544    0.0       0.0         0.0        0.0       0.0          0.0      0.0         0.0        0.0
+        0.0         0.0      15080.4         0.0       0.0      -94.2528    0.0         0.0       94.2528    0.0      -7540.22     0.0         0.0        0.0
+        0.0       -94.2528       0.0     15080.4       0.0       94.2528    0.0         0.0        0.0       0.0      -7540.22     0.0         0.0        0.0
+        0.0         0.78544      0.0         0.0       3.14176    0.78544   0.0         0.0        0.0       0.0        -94.2528   0.0         0.0        0.0
+        0.0         0.0        -94.2528     94.2528    0.78544    3.14176   0.0         0.0        0.0       0.78544      0.0      0.0         0.0        0.0
+        0.0         0.0          0.0         0.0       0.0        0.0       1.25664f7   0.0        0.0       0.0          0.0     -6.2832f6    0.0       -6.2832f6
+        0.0         0.0          0.0         0.0       0.0        0.0       0.0         0.608806   0.0       0.0          0.0      0.0        -0.304403   0.0
+        0.0         0.0         94.2528      0.0       0.0        0.0       0.0         0.0        1.57088   0.78544      0.0      0.0         0.0        0.0
+        0.0         0.0          0.0         0.0       0.0        0.78544   0.0         0.0        0.78544   3.14176     94.2528   0.0         0.0        0.0
+        0.0         0.0      -7540.22    -7540.22    -94.2528     0.0       0.0         0.0        0.0      94.2528   15080.4      0.0         0.0        0.0
+        0.0         0.0          0.0         0.0       0.0        0.0      -6.2832f6    0.0        0.0       0.0          0.0      1.25664f7   0.0        0.0
+        -0.304403    0.0          0.0         0.0       0.0        0.0       0.0        -0.304403   0.0       0.0          0.0      0.0         0.608806   0.0
+        0.0         0.0          0.0         0.0       0.0        0.0      -6.2832f6    0.0        0.0       0.0          0.0      0.0         0.0        1.25664f7
+    ]
+
+    bandedmatrix, perm, invp = symrcm(matrix)
+    @test invp == invperm(perm)
+    @test bandedmatrix == matrix[perm, perm]
+    @test eltype(bandedmatrix) == eltype(matrix)
 end
 
 end # module

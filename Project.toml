@@ -9,14 +9,17 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 
 [weakdeps]
+CliqueTrees = "60701a23-6482-424a-84db-faee86b9b1f8"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [extensions]
 BandedMatricesSparseArraysExt = "SparseArrays"
+CliqueTreesExt = "CliqueTrees"
 
 [compat]
 Aqua = "0.8"
 ArrayLayouts = "1.6.0"
+CliqueTrees = "0.5, 1"
 Documenter = "1"
 FillArrays = "1.3"
 GenericLinearAlgebra = "0.3"
@@ -31,6 +34,7 @@ julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+CliqueTrees = "60701a23-6482-424a-84db-faee86b9b1f8"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 GenericLinearAlgebra = "14197337-ba66-59df-a3e3-ca00e7dcff7a"
 InfiniteArrays = "4858937d-0d70-526a-a4dd-2d5cb5dd786c"
@@ -40,4 +44,4 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Documenter", "GenericLinearAlgebra", "InfiniteArrays", "Random", "SparseArrays", "Test", "Quaternions"]
+test = ["Aqua", "CliqueTrees", "Documenter", "GenericLinearAlgebra", "InfiniteArrays", "Random", "SparseArrays", "Test", "Quaternions"]
