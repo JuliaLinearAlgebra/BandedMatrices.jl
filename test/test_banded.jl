@@ -586,6 +586,13 @@ include("mymatrix.jl")
         @test Q == I(5)
         @test eltype(Q) == Float64
     end
+
+    @testset "unaliascopy" begin
+        B = BandedMatrices._BandedMatrix(view(randn(1, 5),:,:), 5, 0, 0)
+        B2 = Base.unaliascopy(B)
+        @test B2 == B
+        @test typeof(B2) == typeof(B)
+    end
 end
 
 end # module
