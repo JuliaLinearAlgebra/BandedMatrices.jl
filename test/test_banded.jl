@@ -253,23 +253,30 @@ include("mymatrix.jl")
     end
 
     @testset "BandedMatrix interface" begin
-        # check that col/rowstop is ≥ 0
-        let A = brand(3,4,-2,2)
-            @test BandedMatrices.colstop(A, 1) == BandedMatrices.colstop(A, 2) == 0
-            @test BandedMatrices.colstop(A, 3) == 1
+        @testset "check that col/rowstop is ≥ 0" begin
+            let A = brand(3,4,-2,2)
+                @test BandedMatrices.colstop(A, 1) == BandedMatrices.colstop(A, 2) == 0
+                @test BandedMatrices.colstop(A, 3) == 1
+            end
+
+            let A = brand(3,4,2,-2)
+                @test BandedMatrices.rowstop(A, 1) == BandedMatrices.rowstop(A, 2) == 0
+                @test BandedMatrices.rowstop(A, 3) == 1
+            end
         end
 
-        let A = brand(3,4,2,-2)
-            @test BandedMatrices.rowstop(A, 1) == BandedMatrices.rowstop(A, 2) == 0
-            @test BandedMatrices.rowstop(A, 3) == 1
-        end
+        @testset "fill!" begin
+            let B = brand(10,10,1,4)
+                @test_throws BandError fill!(B, 1.0)
+                @test_throws BandError fill!(B, 1)
+                fill!(B, 0)
+                @test Matrix(B) == zeros(10,10)
+            end
 
-        # Test fill!
-        let B = brand(10,10,1,4)
-            @test_throws BandError fill!(B, 1.0)
-            @test_throws BandError fill!(B, 1)
-            fill!(B, 0)
-            @test Matrix(B) == zeros(10,10)
+            let B = brand(2,3,1,4)
+                fill!(B, 1)
+                @test Matrix(B) == ones(2,3)
+            end
         end
     end
 

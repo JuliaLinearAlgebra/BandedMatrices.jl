@@ -857,8 +857,19 @@ svdvals(A::BandedMatrix) = svdvals!(copy(A))
 
 ## ALgebra and other functions
 
+"""
+allinbands(A)
+
+returns true if there are no entries outside the bands.
+"""
+function allinbands(A)
+    m,n = size(A)
+    l,u = bandwidths(A)
+    m ≤ l+1 && n ≤ u+1
+end
+
 function fill!(A::BandedMatrix, x)
-    iszero(x) || throw(BandError(A))
+    iszero(x) || allinbands(A) || throw(BandError(A))
     fill!(A.data, x)
     A
 end
