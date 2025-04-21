@@ -1043,3 +1043,7 @@ function one(A::BandedMatrix)
     m==n || throw(DimensionMismatch("multiplicative identity defined only for square matrices"))
     typeof(A)(I, (m,n))
 end
+
+function Base.unaliascopy(B::BandedMatrix)
+    _BandedMatrix(Base.unaliascopy(B.data), Base.unaliascopy(B.raxis), B.l, B.u)
+end
