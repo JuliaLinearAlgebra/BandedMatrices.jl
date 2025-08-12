@@ -127,4 +127,28 @@ include("mymatrix.jl")
     end
 end
 
+@testset "dataview" begin
+    @testset "(1,1)" begin
+        B = brand(4, 4, 1, 1)
+        Vband = view(B, Band(1))
+        @test BandedMatrices.dataview(Vband) == Vband
+        Vcol = view(B, 2:4, 3)
+        @test BandedMatrices.dataview(Vcol) == Vcol
+        Vcol = view(B, 3:4, 3)
+        @test BandedMatrices.dataview(Vcol) == Vcol
+        Vrow = view(B, 3, 2:4)
+        @test BandedMatrices.dataview(Vrow) == Vrow
+        Vrow = view(B, 3, 3:4)
+        @test BandedMatrices.dataview(Vrow) == Vrow
+    end
+
+    @testset "(-1,2)" begin
+        B = brand(4, 4, -1, 2)
+        Vcol = view(B, 1:2, 3)
+        @test BandedMatrices.dataview(Vcol) == Vcol
+        Vrow = view(B, 2, 4:4)
+        @test BandedMatrices.dataview(Vrow) == Vrow
+    end
+end
+
 end # module
