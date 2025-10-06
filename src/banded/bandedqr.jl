@@ -157,9 +157,9 @@ lmul!(A::QRPackedQ{<:Any,<:AbstractBandedMatrix}, B::AbstractMatrix) = banded_lm
 lmul!(adjA::AdjointQ{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::AbstractVector) = banded_lmul!(adjA,B)
 lmul!(adjA::AdjointQ{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::AbstractMatrix) = banded_lmul!(adjA,B)
 lmul!(adjA::AdjointQ{<:Any,<:QRPackedQ{<:Any,<:AbstractBandedMatrix}}, B::LayoutVecOrMats) = banded_lmul!(adjA,B)
-lmul!(A::QRPackedQ{<:Any,BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractVector) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} =
+lmul!(A::QRPackedQ{<:Any,<:BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractVector) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} =
     banded_lmul!(A,B)
-lmul!(A::QRPackedQ{<:Any,BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractMatrix) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} =
+lmul!(A::QRPackedQ{<:Any,<:BandedSubBandedMatrix{T,C,R,I1,I2}}, B::AbstractMatrix) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange} =
     banded_lmul!(A,B)
 lmul!(adjA::AdjointQ{T,<:QRPackedQ{T,<:BandedSubBandedMatrix{T,C,R,I1,I2,t}}}, B::AbstractVector) where {T,C,R,I1<:AbstractUnitRange,I2<:AbstractUnitRange,t} =
     banded_lmul!(adjA,B)
