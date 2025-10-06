@@ -150,6 +150,17 @@ Random.seed!(0)
         Q = BandedMatrices.QRPackedQ(BandedMatrix(-2 => -(s ./ (c .+ 1))), c .+ 1)
         @test Q'Q  ≈ Matrix(Q)'Matrix(Q) ≈ I
     end
+
+    @testset "bandedsubbanded qr " begin
+        A = brand(100,100,1,1)
+        B = BandedMatrix(A,(1,2)) # pad
+        b = randn(5)
+        c = randn(5,3)
+        @test lmul!(qr!(view(copy(B),1:5,1:6)).Q, copy(b)) ≈ qr(A[1:5,1:6]).Q * b
+        @test lmul!(qr!(view(copy(B),1:5,1:6)).Q, copy(c)) ≈ qr(A[1:5,1:6]).Q * c
+        @test lmul!(qr!(view(copy(B),1:5,1:6)).Q', copy(b)) ≈ qr(A[1:5,1:6]).Q' * b
+        @test lmul!(qr!(view(copy(B),1:5,1:6)).Q', copy(c)) ≈ qr(A[1:5,1:6]).Q' * c
+    end
 end
 
 end # module
