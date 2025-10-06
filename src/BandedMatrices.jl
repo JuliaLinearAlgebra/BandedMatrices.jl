@@ -19,7 +19,7 @@ import LinearAlgebra: _apply_inverse_ipiv_rows!, _apply_ipiv_rows!, _chol!, axpy
                       logabsdet, lu, lu!, mul!, qr, qr!, rmul!, svdvals, svdvals!, tril!, triu!
 
 using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasComplex, BlasFloat, BlasInt, BlasReal, Givens, HermOrSym,
-                     QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checksquare, chkstride1, ipiv2perm
+                     QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checksquare, chkstride1, ipiv2perm, AdjointQ
 
 using LinearAlgebra.LAPACK
 
@@ -32,7 +32,7 @@ import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec
                      hermitianlayout, materialize, materialize!, reflector!, reflectorApply!, rowsupport,
                      sub_materialize, subdiagonaldata, sublayout, supdiagonaldata, symmetricdata, symmetriclayout,
                      symmetricuplo, transposelayout, triangulardata, triangularlayout, zero!,
-                     QRPackedQLayout, AdjQRPackedQLayout
+                     QRPackedQLayout, AdjQRPackedQLayout, LayoutVecOrMats
 
 import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal, OneElementMatrix, OneElementVector, ZerosMatrix, ZerosVector
 
