@@ -265,18 +265,13 @@ BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 # use bandeddata if possible
 _BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), axes(A,1), bandwidths(A)...)
 function _BandedMatrix(::BandedRows, A::AbstractMatrix)
-    bdata = transpose(bandedrowsdata(A))
-    data = copy(bdata)
-    adj = A isa Adjoint ? adjoint : transpose
+    bdata = bandedrowsdata(A)
+    data = similar(bdata, eltype(bdata), reverse(size(bdata)))
     u, ℓ = bandwidths(A)
     n = size(A, 2)
     for j in axes(A, 1) # Construct the data for A by flipping bands
         for i in max(1, j - u):min(n, j + ℓ)
-            arow = u + 1 + i - j
-            acol = j
-            brow = ℓ + 1 + j - i
-            bcol = i
-            data[brow, bcol] = adj(bdata[arow, acol])
+            data[ℓ + 1 + j - i, i] = bdata[j, u+1+i-j]
         end
     end
     return _BandedMatrix(data, axes(A, 1), bandwidths(A)...)
