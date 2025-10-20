@@ -264,6 +264,28 @@ BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 ## specialised
 # use bandeddata if possible
 _BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), axes(A,1), bandwidths(A)...)
+function _BandedMatrix(::BandedRows, A::AbstractMatrix)
+    if A isa Union{<:Adjoint, <:Transpose}
+        B = parent(A)
+        bdata = bandeddata(B)
+        data = copy(bdata)
+        adj = A isa Adjoint ? adjoint : transpose
+        ℓ, u = bandwidths(B)
+        n = size(B, 1)
+        for j in axes(B, 2) # Construct the data for A by flipping bands
+            for i in max(1, j - u):min(n, j + ℓ)
+                arow = u + 1 + i - j
+                acol = j
+                brow = ℓ + 1 + j - i
+                bcol = i
+                data[brow, bcol] = adj(bdata[arow, acol])
+            end
+        end
+        return _BandedMatrix(data, axes(A, 1), bandwidths(A)...)
+    else 
+        return BandedMatrix(A, bandwidths(A))
+    end
+end
 function _BandedMatrix(::DiagonalLayout, A::AbstractMatrix{T}) where T
     m,n = size(A)
     dat = Matrix{T}(undef, 1, n)

@@ -600,6 +600,14 @@ include("mymatrix.jl")
         @test B2 == B
         @test typeof(B2) == typeof(B)
     end
+
+    @testset "_BandedMatrix(::BandedRows)" begin
+        A = brand(5, 5, 2, 1)
+        @test BandedMatrices._BandedMatrix(MemoryLayout(A'), A') == A'
+        @test BandedMatrix(A') == A'
+        @test BandedMatrix(A') !== A'
+        @test BandedMatrices.bandeddata(BandedMatrix(A')) !== BandedMatrices.bandeddata(A)
+    end
 end
 
 end # module
