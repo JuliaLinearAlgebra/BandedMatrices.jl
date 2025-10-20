@@ -269,10 +269,8 @@ function _BandedMatrix(::BandedRows, A::AbstractMatrix)
     data = similar(bdata, eltype(bdata), reverse(size(bdata)))
     u, ℓ = bandwidths(A)
     n = size(A, 2)
-    for j in axes(A, 1) # Construct the data for A by flipping bands
-        for i in max(1, j - u):min(n, j + ℓ)
-            data[ℓ + 1 + j - i, i] = bdata[j, u+1+i-j]
-        end
+    for j in axes(A, 1), i in max(1, j - u):min(n, j + ℓ)
+        data[ℓ + 1 + j - i, i] = bdata[j, u+1+i-j]
     end
     return _BandedMatrix(data, axes(A, 1), bandwidths(A)...)
 end
