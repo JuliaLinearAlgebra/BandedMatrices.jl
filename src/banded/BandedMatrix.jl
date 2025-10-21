@@ -470,6 +470,100 @@ end
     return r
 end
 
+# view along a column
+"""
+    BandedMatrixColView
+
+Type alias to represent a view of a `BandedMatrix` along a column.
+"""
+const BandedMatrixColView{T} = SubArray{T, 1, <:BandedMatrix{T}, <:Tuple{AbstractUnitRange{<:Integer}, Integer}, false}
+
+"""
+    dataview(Vcol::BandedMatrixColView)
+
+Forward a view along a column of a `BandedMatrix` to the underlying data.
+
+!!! warn
+    This will error if the indexing is out-of-bounds for the data matrix, even if it is inbounds
+    for the parent `BandedMatrix`. In other words, the indices of the view must correspond to
+    stored data.
+
+# Examples
+```jldoctest
+julia> B = BandedMatrix(0=>2:4, 1=>1:2)
+3×3 BandedMatrix{$Int} with bandwidths (0, 1):
+ 2  1  ⋅
+ ⋅  3  2
+ ⋅  ⋅  4
+
+julia> v = view(B, 2, 2:3)
+2-element view(::BandedMatrix{$Int, Matrix{$Int}, Base.OneTo{$Int}}, 2, 2:3) with eltype $Int:
+ 3
+ 2
+
+julia> BandedMatrices.dataview(v)
+2-element view(::Vector{$Int}, 4:1:5) with eltype $Int:
+ 3
+ 2
+```
+"""
+function dataview(Vcol::BandedMatrixColView)
+    rowinds, col = parentindices(Vcol)
+    B = parent(Vcol)
+    l, u = bandwidths(B)
+    data_rowinds_col = data_colrange(B, col)
+    rowinds_shifted = rowinds .- (col - u - 1)
+    data_rowinds_col_shifted = data_rowinds_col[rowinds_shifted]
+    view(B.data, data_rowinds_col_shifted)
+end
+
+# view along a row
+"""
+    BandedMatrixColView
+
+Type alias to represent a view of a `BandedMatrix` along a row.
+"""
+const BandedMatrixRowView{T} = SubArray{T, 1, <:BandedMatrix{T}, <:Tuple{Integer, AbstractUnitRange{<:Integer}}, false}
+
+"""
+    dataview(Vrow::BandedMatrixRowView)
+
+Forward a view along a row of a `BandedMatrix` to the underlying data.
+
+!!! warn
+    This will error if the indexing is out-of-bounds for the data matrix, even if it is inbounds
+    for the parent `BandedMatrix`. In other words, the indices of the view must correspond to
+    stored data.
+
+# Examples
+```jldoctest
+julia> B = BandedMatrix(0=>2:4, 1=>1:2)
+3×3 BandedMatrix{$Int} with bandwidths (0, 1):
+ 2  1  ⋅
+ ⋅  3  2
+ ⋅  ⋅  4
+
+julia> v = view(B, 1:2, 2)
+2-element view(::BandedMatrix{$Int, Matrix{$Int}, Base.OneTo{$Int}}, 1:2, 2) with eltype $Int:
+ 1
+ 3
+
+julia> BandedMatrices.dataview(v)
+2-element view(::Vector{$Int}, 3:4) with eltype $Int:
+ 1
+ 3
+```
+"""
+function dataview(Vrow::BandedMatrixRowView)
+    row, colinds = parentindices(Vrow)
+    B = parent(Vrow)
+    l, u = bandwidths(B)
+    data_colinds = data_rowrange(B, row)
+    colinds_shifted = colinds .- (row - l - 1)
+    data_colinds_row_shifted = data_colinds[colinds_shifted]
+    view(B.data, data_colinds_row_shifted)
+end
+
 # ~ indexing along a band
 # we reduce it to converting a View
 
@@ -477,7 +571,7 @@ end
 """
     BandedMatrixBand
 
-Type to represent a view of a band of a `BandedMatrix`
+Type alias to represent a view of a band of a `BandedMatrix`
 
 # Examples
 ```jldoctest
