@@ -603,10 +603,12 @@ include("mymatrix.jl")
 
     @testset "_BandedMatrix(::BandedRows)" begin
         A = brand(5, 5, 2, 1)
-        @test BandedMatrices._BandedMatrix(MemoryLayout(A'), A') == A'
-        @test BandedMatrix(A') == A'
-        @test BandedMatrix(A') !== A'
-        @test BandedMatrices.bandeddata(BandedMatrix(A')) !== BandedMatrices.bandeddata(A)
+        for B in (A', transpose(A))
+            @test BandedMatrices._BandedMatrix(MemoryLayout(B), B) == B
+            @test BandedMatrix(B) == B
+            @test BandedMatrix(B) !== B
+            @test BandedMatrices.bandeddata(BandedMatrix(B)) !== BandedMatrices.bandeddata(A)
+        end
     end
 end
 
