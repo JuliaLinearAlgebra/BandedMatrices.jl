@@ -608,6 +608,8 @@ include("mymatrix.jl")
             @test BandedMatrix(B) == B
             @test BandedMatrix(B) !== B
             @test BandedMatrices.bandeddata(BandedMatrix(B)) !== BandedMatrices.bandeddata(A)
+
+            @test BandedMatrix(view(B,2:4, 3:5)) == B[2:4,3:5] == [B[k,j] for k=2:4,j=3:5]
         end
     end
 end

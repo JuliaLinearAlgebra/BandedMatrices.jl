@@ -32,6 +32,7 @@ end
 
 bandedrowsdata(Ac::Transpose) = permutedims(bandeddata(parent(Ac)))
 bandedrowsdata(Ac::Adjoint{<:Real}) = permutedims(bandeddata(parent(Ac)))
+bandedrowsdata(V::SubArray) = permutedims(bandeddata(view(parent(parent(V)), reverse(parentindices(V))...)))
 
 # treat subinds as banded
 sublayout(::DiagonalLayout{L}, inds::Type) where L = sublayout(bandedcolumns(L()), inds)

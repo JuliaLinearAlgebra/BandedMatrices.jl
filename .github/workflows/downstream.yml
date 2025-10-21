@@ -44,6 +44,7 @@ jobs:
           - {repo: ApproxFunBase.jl, group: JuliaApproximation}
           - {repo: ApproxFun.jl, group: JuliaApproximation}
           - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
+          - {repo: ClassicalOrthogonalPolynomials.jl, group: JuliaApproximation}
 
     steps:
       - uses: actions/checkout@v5
