@@ -30,6 +30,9 @@ function bandeddata(D::Union{Diagonal, Transpose{<:Any, <:Diagonal}, Adjoint{<:A
     permutedims(diagonaldata(D))
 end
 
+bandedrowsdata(Ac::Transpose) = permutedims(bandeddata(parent(Ac)))
+bandedrowsdata(Ac::Adjoint{<:Real}) = permutedims(bandeddata(parent(Ac)))
+
 # treat subinds as banded
 sublayout(::DiagonalLayout{L}, inds::Type) where L = sublayout(bandedcolumns(L()), inds)
 sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,AbstractUnitRange{Int}}}) where L = sublayout(bandedcolumns(L()), inds)
