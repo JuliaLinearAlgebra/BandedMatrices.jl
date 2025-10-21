@@ -608,7 +608,18 @@ include("mymatrix.jl")
             @test BandedMatrix(B) == B
             @test BandedMatrix(B) !== B
             @test BandedMatrices.bandeddata(BandedMatrix(B)) !== BandedMatrices.bandeddata(A)
+
+            @test BandedMatrix(view(B,2:4, 3:5)) == B[2:4,3:5] == [B[k,j] for k=2:4,j=3:5]
         end
+
+        for V in (view(BandedMatrix((1 => ones(4),), (10, 10))', 1:5, 1:4),
+                  view(BandedMatrix((1 => ones(4),), (10, 10))', 1:3, 1:5),
+                  view(BandedMatrix((-1 => ones(4),), (10, 10))', 1:5, 1:4),
+                  view(BandedMatrix((-1 => ones(4),), (10, 10))', 1:3, 1:5),
+                  view(BandedMatrix((-1 => ones(4), 1 => ones(9)), (10, 10))', 1:3, 1:5))
+            @test BandedMatrix(V) == V
+        end
+
     end
 end
 
