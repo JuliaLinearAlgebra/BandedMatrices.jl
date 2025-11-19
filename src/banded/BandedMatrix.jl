@@ -268,7 +268,7 @@ function _BandedMatrix(::BandedRows, A::AbstractMatrix)
     bdata = bandedrowsdata(A)
     u, ℓ = bandwidths(A)
     m, n = size(A)
-    data_new = similar(bdata, eltype(bdata), ℓ + u + 1, n)
+    data_new = similar(bdata, eltype(bdata), size(bdata, 2), n)
     for i in 1:(ℓ+u+1)
         d = u + 1 - i
         row_new = ℓ + 1 + d
