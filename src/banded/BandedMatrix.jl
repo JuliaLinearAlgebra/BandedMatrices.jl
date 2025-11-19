@@ -264,7 +264,7 @@ BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 ## specialised
 # use bandeddata if possible
 _BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), axes(A,1), bandwidths(A)...)
-function _BandedMatrix(::BandedMatrices.BandedRows, A::AbstractMatrix)
+function _BandedMatrix(::BandedRows, A::AbstractMatrix)
     bdata = bandedrowsdata(A)
     u, ℓ = bandwidths(A)
     m, n = size(A)
