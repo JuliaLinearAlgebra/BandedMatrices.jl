@@ -264,23 +264,23 @@ BandedMatrix(A::AbstractMatrix) = _BandedMatrix(MemoryLayout(A), A)
 ## specialised
 # use bandeddata if possible
 _BandedMatrix(::BandedColumns, A::AbstractMatrix) = _BandedMatrix(copy(bandeddata(A)), axes(A,1), bandwidths(A)...)
-function _BandedMatrix(::BandedRows, A::AbstractMatrix)
+function _BandedMatrix(::BandedMatrices.BandedRows, A::AbstractMatrix)
     bdata = bandedrowsdata(A)
     u, ℓ = bandwidths(A)
     m, n = size(A)
-    data_new = similar(bdata, eltype(bdata), size(bdata, 2), size(A, 2))
+    data_new = similar(bdata, eltype(bdata), ℓ + u + 1, n)
     for i in 1:(ℓ+u+1)
-        d = u + 1 - i               
+        d = u + 1 - i
         row_new = ℓ + 1 + d
-        k_start = max(1, 1 - d)  
-        k_end = min(m, n - d)
+        k_start = max(1, 1 - d)
+        k_end = min(n, m - d)
         if k_start ≤ k_end
             col_start_A = k_start + d
             col_end_A = k_end + d
             copyto!(view(data_new, row_new, k_start:k_end), view(bdata, col_start_A:col_end_A, i))
         end
     end
-    return _BandedMatrix(data_new, axes(A, 2), u, ℓ)
+    return _BandedMatrix(data_new, axes(A, 1), u, ℓ)
 end
 function _BandedMatrix(::DiagonalLayout, A::AbstractMatrix{T}) where T
     m,n = size(A)
