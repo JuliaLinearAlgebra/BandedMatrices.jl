@@ -620,9 +620,9 @@ include("mymatrix.jl")
             @test BandedMatrix(V) == V
         end
 
-        @test BandedMatrices.bandedrowsdata(A') isa PermutedDimsArray
-        @test BandedMatrices.bandedrowsdata(transpose(A)) isa PermutedDimsArray
-        @test BandedMatrices.bandedrowsdata(view(A', 1:2, 1:2)) isa PermutedDimsArray
+        @test BandedMatrices.bandedrowsdata(A') isa Transpose
+        @test BandedMatrices.bandedrowsdata(transpose(A)) isa Transpose
+        @test BandedMatrices.bandedrowsdata(view(A', 1:2, 1:2)) isa Transpose
     end
 end
 
