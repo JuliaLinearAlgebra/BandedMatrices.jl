@@ -43,6 +43,7 @@ jobs:
           - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: ApproxFunBase.jl, group: JuliaApproximation}
           - {repo: ApproxFun.jl, group: JuliaApproximation}
+          - {repo: InfiniteArrays.jl, group: JuliaArrays}
           - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
           - {repo: ClassicalOrthogonalPolynomials.jl, group: JuliaApproximation}
 
