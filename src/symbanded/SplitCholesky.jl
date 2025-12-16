@@ -54,7 +54,9 @@ function splitcholesky!(::HermitianLayout{<:BandedColumnMajor},
     SplitCholesky(A, A.uplo)
 end
 
-adjoint(S::SplitCholesky) = Adjoint(S)
+transpose(S::SplitCholesky{<:Real}) = S'
+transpose(::SplitCholesky) =
+    throw(ArgumentError("transpose of SplitCholesky decomposition is not supported, consider using adjoint"))
 
 function lmul!(S::SplitCholesky{T,<:HermOrSym{T,M}}, B::AbstractVecOrMat{T}) where {T<:Real,M<:BandedMatrix{T}}
     require_one_based_indexing(B)
