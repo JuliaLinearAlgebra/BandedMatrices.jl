@@ -32,9 +32,7 @@ Base.iterate(S::BandedLU, ::Val{:U}) = (S.U, Val(:p))
 Base.iterate(S::BandedLU, ::Val{:p}) = (S.p, Val(:done))
 Base.iterate(S::BandedLU, ::Val{:done}) = nothing
 
-if !(isdefined(LinearAlgebra, :AdjointFactorization)) # VERSION < v"1.10-"
-    adjoint(F::BandedLU) = Adjoint(F)
-end
+adjoint(F::BandedLU) = Adjoint(F)
 transpose(F::BandedLU) = TransposeFact(F)
 
 lu(S::BandedLU) = S
