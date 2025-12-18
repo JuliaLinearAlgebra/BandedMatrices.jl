@@ -461,4 +461,16 @@ end
     @test eltype(bandedmatrix) == eltype(matrix)
 end
 
+@testset "splitcholesky!" begin
+    for T in (Float32, Float64, ComplexF32, ComplexF64)
+        A = Hermitian(brand(T, 20, 20, 2, 4) + 10I)
+        S = BandedMatrices.splitcholesky!(A)
+        if T <: Real
+            @test transpose(S) ≡ S'
+        else
+            @test_throws ArgumentError transpose(S)
+        end
+    end
+end
+
 end # module

@@ -71,7 +71,7 @@ include("mymatrix.jl")
             @test Matrix(sparse(A)) ≈ Matrix(A)
 
             @test Matrix(A') ≈ Matrix(A)'
-            @test Matrix(transpose(A)) ≈ transpose(Matrix(A))
+            @test Matrix(transpose(A)) ≈ copy(transpose(A)) ≈ transpose(Matrix(A))
             @test Matrix((A+im*A)') ≈ (Matrix(A)+im*Matrix(A))'
             @test Matrix(transpose(A+im*A)) ≈ transpose(Matrix(A)+im*Matrix(A))
 
