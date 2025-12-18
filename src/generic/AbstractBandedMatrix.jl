@@ -60,7 +60,7 @@ julia> BandedMatrices.colstart(A, 4)
 3
 ```
 """
-@inline colstart(A, i::Integer) = max(i-bandwidth(A,2), 1) + firstindex(A,1)-1
+@inline colstart(A, i::Integer) = clamp(i-bandwidth(A,2),  firstindex(A,1), lastindex(A,1)+1)
 
 """
     colstop(A, i::Integer)
@@ -84,7 +84,7 @@ julia> BandedMatrices.colstop(A, 4)
 4
 ```
 """
-@inline colstop(A, i::Integer) = clamp(i+bandwidth(A,1), 0:size(A, 1)) + firstindex(A,1)-1
+@inline colstop(A, i::Integer) = clamp(i+bandwidth(A,1), firstindex(A,1)-1, lastindex(A,1)) # we clamp the bottom for existing code
 
 """
     rowstart(A, i::Integer)
@@ -108,7 +108,7 @@ julia> BandedMatrices.rowstart(A, 3)
 3
 ```
 """
-@inline rowstart(A, i::Integer) = max(i-bandwidth(A,1), 1) + firstindex(A,2)-1
+@inline rowstart(A, i::Integer) = clamp(i-bandwidth(A,1), firstindex(A,2), lastindex(A,2)+1)
 
 """
     rowstop(A, i::Integer)
@@ -132,7 +132,7 @@ julia> BandedMatrices.rowstop(A, 4)
 4
 ```
 """
-@inline rowstop(A, i::Integer) = clamp(i+bandwidth(A,2), 0:size(A, 2)) + firstindex(A,2)-1
+@inline rowstop(A, i::Integer) = clamp(i+bandwidth(A,2), firstindex(A,2)-1, lastindex(A,2))
 
 """
     colrange(A, i::Integer)

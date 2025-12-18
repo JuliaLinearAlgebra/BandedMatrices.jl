@@ -44,7 +44,7 @@ Random.seed!(0)
             @test 1 .\ A == 1 .\ Matrix(A)
             @test 1 .\ A isa BandedMatrix
             @test bandwidths(1 .\ A) == bandwidths(A)
-
+            
             A = brand(10,1,l,u)
             @test A[:,1] isa Vector
             @test norm(A .- A[:,1]) == 0
