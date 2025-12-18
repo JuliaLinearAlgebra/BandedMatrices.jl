@@ -332,10 +332,9 @@ end
 ####
 
 bandwidths(A::AdjOrTrans{T,S}) where {T,S} = reverse(bandwidths(parent(A)))
-if VERSION >= v"1.9"
-    copy(A::Adjoint{T,<:AbstractBandedMatrix}) where T = copy(parent(A))'
-    copy(A::Transpose{T,<:AbstractBandedMatrix}) where T = transpose(copy(parent(A)))
-end
+copy(A::Adjoint{T,<:AbstractBandedMatrix}) where T = copy(parent(A))'
+copy(A::Transpose{T,<:AbstractBandedMatrix}) where T = transpose(copy(parent(A)))
+
 
 function sum!(ret::AbstractArray, A::AbstractBandedMatrix)
     #Behaves similarly to Base.sum!

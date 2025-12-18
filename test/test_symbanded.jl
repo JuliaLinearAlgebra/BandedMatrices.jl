@@ -348,14 +348,13 @@ end
         B = sbmatrix(W, T, Ub, wb, n)
         AM, BM = Matrix.((A,B))
         @test eigvals(A, B) ≈ eigvals(AM, BM)
-        if VERSION >= v"1.9"
-            Λ, V = eigen(A, B)
-            VM = Matrix(V)
-            Λ2, V2 = eigen(AM, BM)
-            @test Λ ≈ Λ2
-            @test VM' * AM * VM ≈ V2' * AM * V2
-            @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
-        end
+        
+        Λ, V = eigen(A, B)
+        VM = Matrix(V)
+        Λ2, V2 = eigen(AM, BM)
+        @test Λ ≈ Λ2
+        @test VM' * AM * VM ≈ V2' * AM * V2
+        @test VM' * AM * VM ≈ VM' * BM * VM * Diagonal(Λ)
     end
 end
 
@@ -370,7 +369,7 @@ end
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
-        VERSION >= v"1.9-" && @test Ac\b ≈ A\b
+        @test Ac\b ≈ A\b
     end
 
     for T in (Float64, BigFloat)
@@ -383,7 +382,7 @@ end
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
-        VERSION >= v"1.9-" && @test Ac\b ≈ A\b
+        @test Ac\b ≈ A\b
     end
 
     let T = ComplexF64
@@ -396,7 +395,7 @@ end
 
         b = rand(T,size(A,1))
         @test Ac\b ≈ Matrix(A)\b
-        VERSION >= v"1.9-" && @test Ac\b ≈ A\b
+        @test Ac\b ≈ A\b
     end
 
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[1:5;], -1=>Float64[1:4;])
@@ -409,11 +408,9 @@ end
         B = BandedMatrix(Symmetric(L * L'));
         Bv = Symmetric(view(B, :, :))
         chol = cholesky(Bv)
-        if VERSION >= v"1.7"
-            @test MemoryLayout(chol.U) isa TriangularLayout{'U', 'N', typeof(MemoryLayout(B))}
-            @test MemoryLayout(chol.L) isa TriangularLayout{'L', 'N', typeof(MemoryLayout(B'))}
-            @test isbanded(chol.L)
-        end
+        @test MemoryLayout(chol.U) isa TriangularLayout{'U', 'N', typeof(MemoryLayout(B))}
+        @test MemoryLayout(chol.L) isa TriangularLayout{'L', 'N', typeof(MemoryLayout(B'))}
+        @test isbanded(chol.L)
         @test isbanded(chol.U)
         cc = LinearAlgebra.cholcopy(Bv)
         @test cc isa Symmetric{Float64, typeof(B)}
@@ -462,6 +459,18 @@ end
     @test invp == invperm(perm)
     @test bandedmatrix == matrix[perm, perm]
     @test eltype(bandedmatrix) == eltype(matrix)
+end
+
+@testset "splitcholesky!" begin
+    for T in (Float32, Float64, ComplexF32, ComplexF64)
+        A = Hermitian(brand(T, 20, 20, 2, 4) + 10I)
+        S = BandedMatrices.splitcholesky!(A)
+        if T <: Real
+            @test transpose(S) ≡ S'
+        else
+            @test_throws ArgumentError transpose(S)
+        end
+    end
 end
 
 end # module
