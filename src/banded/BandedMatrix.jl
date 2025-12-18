@@ -902,11 +902,14 @@ diag(A::BandedMatrix, k::Integer = 0) = A[band(k)]
 ## BandedSubBandedMatrix routines
 
 # gives the band which is diagonal for the parent
-bandshift(a::AbstractRange, b::AbstractRange) = first(a)-first(b)
-bandshift(::Slice{OneTo{Int}}, b::AbstractRange) = 1-first(b)
-bandshift(a::AbstractRange, ::Slice{OneTo{Int}}) = first(a)-1
-bandshift(::Slice{OneTo{Int}}, b::Slice{OneTo{Int}}) = 0
-bandshift(S) = bandshift(parentindices(S)[1],parentindices(S)[2])
+bandshift(a::Base.IdentityUnitRange, b::AbstractRange, pa, pb) = first(pa)-first(b)
+bandshift(a::AbstractRange, b::Base.IdentityUnitRange, pa, pb) = first(a)-first(pb)
+bandshift(a::Base.IdentityUnitRange, b::Base.IdentityUnitRange, pa, pb) = first(pa)-first(pb)
+bandshift(a::AbstractRange, b::AbstractRange, _...) = first(a)-first(b)
+bandshift(::Slice{OneTo{Int}}, b::AbstractRange, _...) = 1-first(b)
+bandshift(a::AbstractRange, ::Slice{OneTo{Int}}, _...) = first(a)-1
+bandshift(::Slice{OneTo{Int}}, b::Slice{OneTo{Int}}, _...) = 0
+bandshift(S) = bandshift(parentindices(S)[1], parentindices(S)[2], axes(parent(S))...)
 
 
 
