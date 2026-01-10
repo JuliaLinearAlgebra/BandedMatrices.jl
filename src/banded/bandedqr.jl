@@ -2,6 +2,7 @@ _qr(::AbstractBandedLayout, ax, A) = _banded_qr(ax, A)
 _banded_qr(_, A) = qr!(BandedMatrix{float(eltype(A))}(A, (bandwidth(A,1),bandwidth(A,1)+bandwidth(A,2))))
 
 qr(A::Tridiagonal{T}) where T = qr!(BandedMatrix{float(T)}(A, (1,2)))
+qr(args...; kwargs...) = LinearAlgebra.qr(args...; kwargs...)
 _qr!(::AbstractBandedLayout, _, A) = banded_qr!(A)
 
 
