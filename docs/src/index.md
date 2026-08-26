@@ -99,6 +99,14 @@ band
 ```
 
 ```@docs
+Band
+```
+
+```@docs
+BandError
+```
+
+```@docs
 BandRange
 ```
 
