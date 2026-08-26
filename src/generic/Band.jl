@@ -11,7 +11,7 @@ subdiagonals.
 
 # Arguments
 
-- `i::Integer`: Diagonal offset to select.
+- `i::Int`: Diagonal offset to select.
 
 # Examples
 
@@ -99,6 +99,8 @@ to_indices(A::AbstractArray, (k, _)::Tuple{Integer,BandRangeType}) = (k, rowrang
 
 """
     BandError(A, i)
+    BandError(A, (k, j))
+    BandError(A)
 
 Exception thrown when an operation accesses diagonal offset `i` outside the stored lower
 and upper bandwidths of `A`.
@@ -112,7 +114,9 @@ and upper bandwidths of `A`.
 # Arguments
 
 - `A::AbstractMatrix`: Matrix whose band structure is being accessed.
-- `i::Integer`: Requested diagonal offset.
+- `i::Int`: Requested diagonal offset.
+- `(k, j)::Tuple{Int, Int}`: Matrix coordinates from which the diagonal offset `j - k` is
+  computed.
 
 # Examples
 
