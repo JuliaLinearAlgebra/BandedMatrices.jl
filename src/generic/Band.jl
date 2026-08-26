@@ -1,4 +1,30 @@
-# ~~ Type to set\get data along a band
+"""
+    Band(i)
+
+Index selector for the diagonal at offset `i` of a banded matrix. `Band(0)` selects the
+main diagonal, positive offsets select superdiagonals, and negative offsets select
+subdiagonals.
+
+# Fields
+
+- `i::Int`: Diagonal offset from the main diagonal.
+
+# Arguments
+
+- `i::Int`: Diagonal offset to select.
+
+# Examples
+
+```jldoctest
+julia> A = BandedMatrix(0 => 1:3, 1 => 4:5);
+
+julia> A[Band(0)] == [1, 2, 3]
+true
+
+julia> A[Band(1)] == [4, 5]
+true
+```
+"""
 struct Band
     i::Int
 end
@@ -71,7 +97,36 @@ const BandRange = BandRangeType()
 to_indices(A::AbstractArray, (_, j)::Tuple{BandRangeType,Integer}) = (colrange(A, j), j)
 to_indices(A::AbstractArray, (k, _)::Tuple{Integer,BandRangeType}) = (k, rowrange(A, k))
 
-# ~~ Out of band error
+"""
+    BandError(A, i)
+    BandError(A, (k, j))
+    BandError(A)
+
+Exception thrown when an operation accesses diagonal offset `i` outside the stored lower
+and upper bandwidths of `A`.
+
+# Fields
+
+- `A::AbstractMatrix`: Matrix whose band structure rejects the access.
+- `i::Int`: Requested diagonal offset, with positive offsets above and negative offsets
+  below the main diagonal.
+
+# Arguments
+
+- `A::AbstractMatrix`: Matrix whose band structure is being accessed.
+- `i::Int`: Requested diagonal offset.
+- `(k, j)::Tuple{Int, Int}`: Matrix coordinates from which the diagonal offset `j - k` is
+  computed.
+
+# Examples
+
+```jldoctest
+julia> A = BandedMatrix(0 => 1:3);
+
+julia> BandError(A, 1) isa BandError
+true
+```
+"""
 struct BandError <: Exception
     A::AbstractMatrix
     i::Int
