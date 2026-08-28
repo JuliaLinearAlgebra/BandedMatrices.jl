@@ -1065,22 +1065,23 @@ axpy!(α, A::AbstractBandedMatrix, dest::AbstractMatrix) = banded_axpy!(α, A, d
 # Fill
 ###
 
+# which operations a `Zeros` absorbs is FillArrays' business; whatever it can't simplify comes
+# back carrying our style
+broadcasted(S::BandedStyle, op, a::AbstractZeros, b::AbstractArray) = FillArrays.simplify_broadcasted(S, op, a, b)
+broadcasted(S::BandedStyle, op, a::AbstractArray, b::AbstractZeros) = FillArrays.simplify_broadcasted(S, op, a, b)
+broadcasted(S::BandedStyle, op, a::AbstractZeros, b::AbstractZeros) = FillArrays.simplify_broadcasted(S, op, a, b)
+
+# unlike the `Zeros` rules, these preserve bandedness rather than the fill structure
 for op in (:*, :/)
-    @eval begin
-        broadcasted(::BandedStyle, ::typeof($op), a::Zeros, b::AbstractArray) = _broadcasted_zeros($op, a, b)
-        function broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray{T}, b::Ones{V}) where {T,V}
-            Base.Broadcast.combine_axes(a, b) # dimension check
-            _copy_oftype(a, promote_op(*, T, V))
-        end
+    @eval function broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray{T}, b::Ones{V}) where {T,V}
+        Base.Broadcast.combine_axes(a, b) # dimension check
+        _copy_oftype(a, promote_op(*, T, V))
     end
 end
 
 for op in (:*, :\)
-    @eval begin
-        broadcasted(::BandedStyle, ::typeof($op), a::AbstractArray, b::Zeros) = _broadcasted_zeros($op, a, b)
-        function broadcasted(::BandedStyle, ::typeof($op), a::Ones{T}, b::AbstractArray{V}) where {T,V}
-            Base.Broadcast.combine_axes(a, b) # dimension check
-            _copy_oftype(b, promote_op(*, T, V))
-        end
+    @eval function broadcasted(::BandedStyle, ::typeof($op), a::Ones{T}, b::AbstractArray{V}) where {T,V}
+        Base.Broadcast.combine_axes(a, b) # dimension check
+        _copy_oftype(b, promote_op(*, T, V))
     end
 end

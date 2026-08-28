@@ -34,7 +34,7 @@ import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec
                      symmetricuplo, transposelayout, triangulardata, triangularlayout, zero!,
                      QRPackedQLayout, AdjQRPackedQLayout, LayoutVecOrMats
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal, OneElementMatrix, OneElementVector, ZerosMatrix, ZerosVector
+import FillArrays: AbstractFill, AbstractZeros, getindex_value, unique_value, OneElement, RectDiagonal, OneElementMatrix, OneElementVector, ZerosMatrix, ZerosVector
 
 const libblas = LinearAlgebra.BLAS.libblas
 const liblapack = LinearAlgebra.BLAS.liblapack
