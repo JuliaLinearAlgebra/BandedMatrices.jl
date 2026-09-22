@@ -3,9 +3,16 @@ module TestBroadcasting
 using BandedMatrices, LinearAlgebra, ArrayLayouts, FillArrays, Random, Test
 import Base: BroadcastStyle
 import Base.Broadcast: broadcasted
-import BandedMatrices: BandedStyle, BandedRows, BandError
+import BandedMatrices: BandedStyle, BandedRows, BandError, AdjOrTransStyle, AbstractBandedMatrix
+import LinearAlgebra: AdjOrTrans
 
 Random.seed!(0)
+
+# broadcasting adjoints (transposes) of banded matrices alone stays an adjoint
+# (transpose) of a banded matrix, and gives a banded matrix otherwise
+isbandedadjoint(x) = x isa AdjOrTrans && parent(x) isa AbstractBandedMatrix
+isbandedresult(R, args...) = all(isbandedadjoint, args) ?
+    R isa AdjOrTrans && parent(R) isa BandedMatrix : R isa BandedMatrix
 
 @testset "broadcasting" begin
     @testset "general" begin
@@ -493,12 +500,77 @@ Random.seed!(0)
         n = 10
         A = brand(n,n,1,1)
 
-        @test BroadcastStyle(typeof(A')) isa BandedStyle
-        @test BroadcastStyle(typeof(transpose(A))) isa BandedStyle
+        @test BroadcastStyle(typeof(A')) isa AdjOrTransStyle{typeof(adjoint),BandedStyle}
+        @test BroadcastStyle(typeof(transpose(A))) isa AdjOrTransStyle{typeof(transpose),BandedStyle}
 
         @test A' .+ A isa BandedMatrix
         @test transpose(A) .+ A isa BandedMatrix
         @test A' .+ A == transpose(A) .+ A == Matrix(A)' .+ A
+
+        # broadcasts over adjoints (transposes) alone are applied to the parents, so that
+        # the result stays an adjoint (transpose) of a banded matrix
+        C = brand(ComplexF64,n,n,1,1)
+        D = brand(ComplexF64,n,n,1,1)
+        Cm, Dm = Matrix(C), Matrix(D)
+        α = 2+im
+        @testset "$op" for op in (adjoint, transpose)
+            Wrap = op === adjoint ? Adjoint : Transpose
+            W, Wm = op(C), op(Cm)
+            V, Vm = op(D), op(Dm)
+            for (R,Rm) in ((α .* W, α .* Wm), (W .* α, Wm .* α), (W ./ α, Wm ./ α),
+                           (α .\ W, α .\ Wm), ((-).(W), (-).(Wm)),
+                           (W .+ V, Wm .+ Vm), (W .- V, Wm .- Vm), (W .* V, Wm .* Vm),
+                           (α .* W .+ V, α .* Wm .+ Vm))
+                @test R isa Wrap{ComplexF64,<:BandedMatrix}
+                @test R ≈ Rm
+            end
+            # a broadcast that cannot be moved through the wrapper is banded as before
+            @test exp.(W) isa BandedMatrix
+            @test exp.(W) ≈ exp.(Wm)
+            @test W .+ C isa BandedMatrix
+            @test W .+ C ≈ Wm .+ Cm
+            @test W .* ones(n,n) isa BandedMatrix
+            @test W .* ones(n,n) ≈ Wm
+        end
+        @test C' .+ transpose(C) isa BandedMatrix
+        @test C' .+ transpose(C) ≈ Cm' .+ transpose(Cm)
+    end
+
+    @testset "data" begin
+        n = 10
+        # the data outside the bands is junk that must not leak into the result
+        A = BandedMatrix{Float64}(undef, (n,n), (1,1)); A.data .= NaN
+        B = BandedMatrix{Float64}(undef, (n,n), (1,1)); B.data .= NaN
+        for M in (A,B), b = -1:1
+            M[band(b)] .= randn.()
+        end
+        Am, Bm = Matrix(A), Matrix(B)
+        @test !any(isnan, Am)
+
+        for (R,Rm) in ((A .+ B, Am .+ Bm), (A .- B, Am .- Bm), (A .* B, Am .* Bm),
+                       (2 .* A .+ B, 2 .* Am .+ Bm))
+            @test R isa BandedMatrix
+            @test bandwidths(R) == (1,1)
+            @test Matrix(R) == Rm
+        end
+
+        # the data is only used when the bands line up
+        C = brand(n,n,2,0); Cm = Matrix(C)
+        @test A .+ C ≈ Am .+ Cm
+        @test bandwidths(A .+ C) == (2,1)
+        @test A .* C ≈ Am .* Cm
+        @test bandwidths(A .* C) == (1,0)
+        @test 2 .* A .+ C ≈ 2 .* Am .+ Cm
+        @test 2 .* C .+ A ≈ 2 .* Cm .+ Am
+
+        # in place, including when the destination is one of the arguments
+        D = BandedMatrix{Float64}(undef, (n,n), (1,1))
+        D .= 2 .* A .+ B
+        @test D ≈ 2 .* Am .+ Bm
+        E = copy(B); E .= 2 .* A .+ E
+        @test E ≈ 2 .* Am .+ Bm
+        F = copy(A); F .= 2 .* F .+ B
+        @test F ≈ 2 .* Am .+ Bm
     end
 
     @testset "vector and matrix broadcastring" begin
@@ -511,27 +583,27 @@ Random.seed!(0)
         @testset "implicit dest" begin
             for A_ in (A, A'), b_ in (b, Bb, Bb2)
                 @test b_ .* A_ == b_ .* Matrix(A_)
-                @test b_ .* A_ isa BandedMatrix
+                @test isbandedresult(b_ .* A_, b_, A_)
                 @test bandwidths(b_ .* A_) == bandwidths(A_)
 
                 @test b_' .* A_ == b_' .* Matrix(A_)
-                @test b_' .* A_ isa BandedMatrix
+                @test isbandedresult(b_' .* A_, b_', A_)
                 @test bandwidths(b_' .* A_) == bandwidths(A_)
 
                 @test permutedims(b_) .* A_ == permutedims(b_) .* Matrix(A_)
-                @test permutedims(b_) .* A_ isa BandedMatrix
+                @test isbandedresult(permutedims(b_) .* A_, permutedims(b_), A_)
                 @test bandwidths(permutedims(b_) .* A_) == bandwidths(A_)
 
                 @test A_ .* b_ == Matrix(A_) .* b_
-                @test A_ .* b_ isa BandedMatrix
+                @test isbandedresult(A_ .* b_, A_, b_)
                 @test bandwidths(A_ .* b_) == bandwidths(A_)
 
                 @test A_ .* b_' == Matrix(A_) .* b_'
-                @test A_ .* b_' isa BandedMatrix
+                @test isbandedresult(A_ .* b_', A_, b_')
                 @test bandwidths(A_ .* b_') == bandwidths(A_)
 
                 @test A_ .* permutedims(b_) == Matrix(A_) .* permutedims(b_)
-                @test A_ .* permutedims(b_) isa BandedMatrix
+                @test isbandedresult(A_ .* permutedims(b_), A_, permutedims(b_))
                 @test bandwidths(A_ .* permutedims(b_)) == bandwidths(A_)
             end
 
@@ -539,10 +611,10 @@ Random.seed!(0)
             # so we don't divide by zero
             for A_ in (A, A'), b_ in (b, Bb)
                 @test b_ .\ A_ == b_ .\ Matrix(A_)
-                @test b_ .\ A_ isa BandedMatrix
+                @test isbandedresult(b_ .\ A_, b_, A_)
                 @test bandwidths(b_ .\ A_) == bandwidths(A_)
                 @test A_ ./ b_ == Matrix(A_) ./ b_
-                @test A_ ./ b_ isa BandedMatrix
+                @test isbandedresult(A_ ./ b_, A_, b_)
                 @test bandwidths(A_ ./ b_) == bandwidths(A_)
             end
 

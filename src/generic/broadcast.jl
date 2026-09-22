@@ -35,11 +35,91 @@ conjlayout(::Type{<:Complex}, ::M) where M<:AbstractBandedLayout = ConjLayout{M}
 struct BandedStyle <: AbstractArrayStyle{2} end
 BandedStyle(::Val{2}) = BandedStyle()
 BroadcastStyle(::Type{<:AbstractBandedMatrix}) = BandedStyle()
-BroadcastStyle(::Type{<:Adjoint{<:Any,Mat}}) where Mat<:AbstractBandedMatrix = BroadcastStyle(Mat)
-BroadcastStyle(::Type{<:Transpose{<:Any,Mat}}) where Mat<:AbstractBandedMatrix = BroadcastStyle(Mat)
+BroadcastStyle(::Type{<:Adjoint{<:Any,Mat}}) where Mat<:AbstractBandedMatrix = adjortransstyle(adjoint, BroadcastStyle(Mat))
+BroadcastStyle(::Type{<:Transpose{<:Any,Mat}}) where Mat<:AbstractBandedMatrix = adjortransstyle(transpose, BroadcastStyle(Mat))
 BroadcastStyle(::Type{<:SubArray{<:Any,2,<:AbstractBandedMatrix,<:NTuple{2,AbstractUnitRange{Int}}}}) = BandedStyle()
 BroadcastStyle(::DefaultArrayStyle{2}, ::BandedStyle) = BandedStyle()
 BroadcastStyle(::BandedStyle, ::DefaultArrayStyle{2}) = BandedStyle()
+
+###
+# Adjoints and transposes
+#
+# The adjoint (transpose) of a banded matrix is not itself stored as a banded matrix, so
+# a broadcast that commutes with conjugation is applied to the parents and the result
+# re-wrapped: `α .* A'` is `(conj(α) .* A)'`, which avoids transposing the data. A
+# broadcast that cannot be moved through the wrapper is materialised using the style of
+# the parents, as it was before.
+###
+
+"""
+    AdjOrTransStyle{Op,Sty}
+
+is a `BroadcastStyle` for an `Adjoint` (`Op == typeof(adjoint)`) or `Transpose`
+(`Op == typeof(transpose)`) of a matrix whose parent has `BroadcastStyle` `Sty`.
+"""
+struct AdjOrTransStyle{Op,Sty} <: AbstractArrayStyle{2} end
+
+AdjOrTransStyle{Op,Sty}(::Val{2}) where {Op,Sty} = AdjOrTransStyle{Op,Sty}()
+AdjOrTransStyle{Op,Sty}(::Val{N}) where {Op,Sty,N} = DefaultArrayStyle{N}()
+
+_adjortransop(::AdjOrTransStyle{Op}) where Op = Op.instance
+_parentstyle(::AdjOrTransStyle{<:Any,Sty}) where Sty = Sty()
+_parentstyle(bc::Broadcasted) = _parentstyle(BroadcastStyle(typeof(bc)))
+
+"""
+    adjortransstyle(op, sty)
+
+returns the `BroadcastStyle` of `op(A)`, where `op` is `adjoint` or `transpose` and the
+parent `A` has `BroadcastStyle` `sty`. Array types whose adjoint is worth preserving in a
+broadcast opt in by overloading this for their own style.
+"""
+adjortransstyle(_, sty) = sty
+adjortransstyle(op, sty::BandedStyle) = AdjOrTransStyle{typeof(op),typeof(sty)}()
+
+# combining with any other style drops down to the style of the parents, that is, the
+# result is materialised instead of staying an adjoint. Only one order needs to be
+# declared as broadcasting tests both.
+BroadcastStyle(S::AdjOrTransStyle, T::AbstractArrayStyle{2}) = Base.Broadcast.result_style(_parentstyle(S), T)
+BroadcastStyle(S::AdjOrTransStyle, T::DefaultArrayStyle{2}) = Base.Broadcast.result_style(_parentstyle(S), T)
+BroadcastStyle(S::AdjOrTransStyle, T::AdjOrTransStyle) = Base.Broadcast.result_style(_parentstyle(S), _parentstyle(T))
+BroadcastStyle(S::AdjOrTransStyle{Op}, T::AdjOrTransStyle{Op}) where Op =
+    AdjOrTransStyle{Op,typeof(Base.Broadcast.result_style(_parentstyle(S), _parentstyle(T)))}()
+
+# The arithmetic operations whose broadcasts can be rewritten in terms of the parents or
+# the underlying data: they commute with conjugation, so that an adjoint can be moved
+# outside of the broadcast, and they map zeros to zeros and the junk stored outside the
+# bands to junk, so that they can be applied to the data directly.
+_isbroadcastarith(_) = false
+_isbroadcastarith(::Union{typeof(+),typeof(-),typeof(*),typeof(/),typeof(\)}) = true
+
+# an argument can be moved through the adjoint/transpose if it is a scalar or has a
+# matching wrapper, where a nested broadcast must itself commute with conjugation
+_adjortransable(_, _) = false
+_adjortransable(_, ::Number) = true
+_adjortransable(::typeof(adjoint), ::Adjoint) = true
+_adjortransable(::typeof(transpose), ::Transpose) = true
+_adjortransable(op, bc::Broadcasted) = _isbroadcastarith(bc.f) && all(map(x -> _adjortransable(op, x), bc.args))
+
+_adjortransarg(::typeof(adjoint), α::Number) = conj(α)
+_adjortransarg(::typeof(transpose), α::Number) = α
+_adjortransarg(::typeof(adjoint), A::Adjoint) = parent(A)
+_adjortransarg(::typeof(transpose), A::Transpose) = parent(A)
+_adjortransarg(op, bc::Broadcasted) = broadcasted(bc.f, map(x -> _adjortransarg(op, x), bc.args)...)
+
+_parentbroadcasted(bc::Broadcasted) = Broadcasted{typeof(_parentstyle(bc))}(bc.f, bc.args, bc.axes)
+
+function copy(bc::Broadcasted{<:AdjOrTransStyle})
+    op = _adjortransop(BroadcastStyle(typeof(bc)))
+    if _adjortransable(op, bc)
+        op(materialize(_adjortransarg(op, bc)))
+    else # e.g. exp.(A') is not the adjoint of a banded matrix, so materialise as usual,
+         # which `similar` and `copyto!` below do using the style of the parents
+        Base.invoke(copy, Tuple{Broadcasted}, bc)
+    end
+end
+
+copyto!(dest::AbstractArray, bc::Broadcasted{<:AdjOrTransStyle}) = copyto!(dest, _parentbroadcasted(bc))
+similar(bc::Broadcasted{<:AdjOrTransStyle}, ::Type{T}) where T = similar(_parentbroadcasted(bc), T)
 
 
 size(bc::Broadcasted{BandedStyle}) = length.(axes(bc))
@@ -858,6 +938,17 @@ function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:Tuple{Number,Abstract
 end
 
 
+function _banded_broadcast(f, (A,B)::NTuple{2,AbstractMatrix}, ::NTuple{2,BandedColumns})
+    T, V = eltype(A), eltype(B)
+    # the data outside the bands is junk, so we need `f` to map junk to junk and zeros to
+    # zeros, and the data must be safe to read, which it need not be for `undef` entries
+    (isbitstype(T) && isbitstype(V) && _isbroadcastarith(f) && _isweakzero(f, A, B) &&
+        size(A) == size(B) && bandwidths(A) == bandwidths(B)) ||
+        return _default_banded_broadcast(broadcasted(f, A, B))
+    dataA, dataB = bandeddata(A), bandeddata(B)
+    _BandedMatrix(reshape(f.(vec(dataA), vec(dataB)), size(dataA)), axes(A,1), bandwidths(A)...)
+end
+
 function copy(bc::Broadcasted{BandedStyle, <:Any, <:Any, <:NTuple{2,AbstractMatrix}})
     _banded_broadcast(bc.f, bc.args, MemoryLayout.(typeof.(bc.args)))
 end
@@ -1041,8 +1132,22 @@ function copyto!(dest::AbstractArray{T}, bc::Broadcasted{BandedStyle, <:Any, typ
                 AbstractMatrix}}) where T
     αA,B = bc.args
     α,A = αA.args
+    _banded_muladd_data!(α, A, B, dest) && return dest
     dest ≡ B || (dest .= B)
     banded_axpy!(α, A, dest)
+end
+
+# α .* A .+ B is a single pass over the data whenever the bands line up, where the junk
+# outside the bands stays junk. The data must be safe to read, which it need not be for
+# `undef` entries of a non-isbits eltype.
+_banded_muladd_data!(α, A, B, dest) =
+    _banded_muladd_data!(α, A, B, dest, MemoryLayout(A), MemoryLayout(B), MemoryLayout(dest))
+_banded_muladd_data!(α, A, B, dest, _, _, _) = false
+function _banded_muladd_data!(α, A, B, dest, ::BandedColumns, ::BandedColumns, ::BandedColumns)
+    (isbitstype(eltype(A)) && isbitstype(eltype(B)) && isbitstype(eltype(dest)) &&
+        size(A) == size(B) == size(dest) && bandwidths(A) == bandwidths(B) == bandwidths(dest)) || return false
+    vec(bandeddata(dest)) .= α .* vec(bandeddata(A)) .+ vec(bandeddata(B))
+    true
 end
 
 function similar(bc::Broadcasted{BandedStyle, <:Any, typeof(+),
