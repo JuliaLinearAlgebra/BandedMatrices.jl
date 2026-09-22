@@ -573,6 +573,58 @@ isbandedresult(R, args...) = all(isbandedadjoint, args) ?
         @test F ≈ 2 .* Am .+ Bm
     end
 
+    @testset "filling the destination bands" begin
+        n = 10
+        b = rand(n) .+ 0.1
+        Vcol = BandedMatrix(b', (0,3))'  # n×1 with bandwidths (3,0)
+
+        @testset "column vector" begin
+            B = brand(n,n,5,n-1)
+            # the destination either matches the bands of the result or is wider
+            for D in (BandedMatrix{Float64}(undef, (n,n), (5,n-1)),
+                      BandedMatrix{Float64}(undef, (n,n), (6,n-1)))
+                D .= Vcol .+ B
+                @test D == Matrix(Vcol) .+ Matrix(B)
+                D .= B .+ Vcol
+                @test D == Matrix(B) .+ Matrix(Vcol)
+            end
+        end
+
+        @testset "row vector" begin
+            # a banded row vector, so that the data is not broadcast directly
+            for (V,B) in ((BandedMatrix(b', (0,1)), brand(n,n,n-1,3)),
+                          (BandedMatrix(b', (0,3)), brand(n,n,n-1,5)))
+                for D in (BandedMatrix{Float64}(undef, (n,n), bandwidths(B)),
+                          BandedMatrix{Float64}(undef, (n,n), (n-1,bandwidth(B,2)+1)))
+                    D .= V .+ B
+                    @test D == Matrix(V) .+ Matrix(B)
+                    D .= B .+ V
+                    @test D == Matrix(B) .+ Matrix(V)
+                end
+            end
+        end
+
+        @testset "matrices" begin
+            A = brand(n,n,1,1); B = brand(n,n,1,1)
+            C = BandedMatrix{Float64}(undef, (n,n), (1,1))
+            C .= A .+ B
+            @test C == Matrix(A) .+ Matrix(B)
+
+            # an adjoint is not stored by columns, so the generic filling is used
+            A2 = brand(n,n,-2,2); B2 = brand(n,n,0,0)
+            C2 = BandedMatrix{Float64}(undef, (n,n), (3,3))
+            C2 .= A2' .+ B2
+            @test C2 == Matrix(A2)' .+ Matrix(B2)
+            C2 .= A2 .+ B2'
+            @test C2 == Matrix(A2) .+ Matrix(B2)'
+        end
+
+        @testset "axpy! outside the destination bands" begin
+            @test_throws BandError axpy!(1.0, brand(n,n,1,2), brand(n,n,1,0))
+            @test_throws BandError axpy!(1.0, brand(n,n,2,1), brand(n,n,0,1))
+        end
+    end
+
     @testset "vector and matrix broadcastring" begin
         n = 10
         A = brand(n,n,1,2)
