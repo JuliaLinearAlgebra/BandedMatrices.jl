@@ -1,17 +1,24 @@
 bandwidths(M::Union{MulAdd, Lmul, Rmul, ArrayLayouts.Mul}) = min.(_bnds(M), prodbandwidths(M.A,M.B))
 
-similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
-    BandedMatrix{T}(undef, axes, bandwidths(M))
-similar(M::MulAdd{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
-    BandedMatrix{T}(undef, axes, bandwidths(M))
-similar(M::MulAdd{<:AbstractBandedLayout,<:DiagonalLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
-    BandedMatrix{T}(undef, axes, bandwidths(M))
-similar(M::MulAdd{<:SymmetricLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
-    BandedMatrix{T}(undef, axes, bandwidths(M))
-similar(M::MulAdd{<:HermitianLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T =
-    BandedMatrix{T}(undef, axes, bandwidths(M))
-similar(M::MulAdd{<:TriangularLayout{uplo,trans,<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where {uplo,trans,T} =
-    BandedMatrix{T}(undef, axes, bandwidths(M))
+# finite axes (e.g. blocked axes) give a BandedMatrix, other axes (e.g. infinite) use the default
+_banded_similar(M, ::Type{T}, axes) where T = _banded_similar(M, T, axes, map(length, axes))
+_banded_similar(M, ::Type{T}, axes, ::NTuple{2,Int}) where T = BandedMatrix{T}(undef, axes, bandwidths(M))
+_banded_similar(M, ::Type{T}, axes, _) where T = similar(Array{T}, axes)
+
+# ambiguity
+similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T = similar(M.B, T, axes)
+similar(M::MulAdd{<:DiagonalLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
+    _banded_similar(M, T, axes)
+similar(M::MulAdd{<:AbstractBandedLayout,<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
+    _banded_similar(M, T, axes)
+similar(M::MulAdd{<:AbstractBandedLayout,<:DiagonalLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
+    _banded_similar(M, T, axes)
+similar(M::MulAdd{<:SymmetricLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
+    _banded_similar(M, T, axes)
+similar(M::MulAdd{<:HermitianLayout{<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where T =
+    _banded_similar(M, T, axes)
+similar(M::MulAdd{<:TriangularLayout{uplo,trans,<:AbstractBandedLayout},<:AbstractBandedLayout}, ::Type{T}, axes::NTuple{2,AbstractUnitRange{Int}}) where {uplo,trans,T} =
+    _banded_similar(M, T, axes)
 ##
 # BLAS routines
 ##

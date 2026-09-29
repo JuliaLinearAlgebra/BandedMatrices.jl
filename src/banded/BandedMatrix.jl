@@ -67,6 +67,13 @@ BandedMatrix{T, Matrix{T}}(undef,nm,ab)
 BandedMatrix{T}(::UndefInitializer, nm::NTuple{2,OneTo{Int}}, ab::NTuple{2,Integer}) where T =
     BandedMatrix{T}(undef, length.(nm), ab)
 
+# general axes (e.g. blocked axes): the columns of the data have the same axis as the columns of the matrix
+_undef_bandeddata(::Type{T}, ax) where T<:BlasFloat = similar(Array{T}, ax)
+_undef_bandeddata(::Type{T}, ax) where T<:Number = fill!(similar(Array{T}, ax), zero(T))
+_undef_bandeddata(::Type{T}, ax) where T = similar(Array{T}, ax)
+BandedMatrix{T}(::UndefInitializer, (m,n)::NTuple{2,AbstractUnitRange{<:Integer}}, (a,b)::NTuple{2,Integer}) where T =
+    _BandedMatrix(_undef_bandeddata(T, (oneto(max(0,a+b+1)), n)), m, a, b)
+
 @deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, ::Colon, a::Integer, b::Integer)  where {T, C<:AbstractMatrix{T}} BandedMatrix{T,C}(undef,n,n+b,a,b)
 @deprecate BandedMatrix{T, C}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer) where {T, C<:AbstractMatrix{T}} BandedMatrix{T, C}(undef, (n,m), (a,b))
 @deprecate BandedMatrix{T}(::UndefInitializer, n::Integer, m::Integer, a::Integer, b::Integer)  where {T} BandedMatrix{T}(undef,(n,m),(a,b))
