@@ -58,14 +58,14 @@ Random.seed!(0)
         @test_broken qr(A)\b ≈ Matrix(A)\b
 
         A = Tridiagonal(randn(T,99), randn(T,100), randn(T,99))
-        @test qr(A).factors ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).factors
-        @test qr(A).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
+        @test BandedMatrices.qr(A).factors ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).factors
+        @test BandedMatrices.qr(A).τ ≈ LinearAlgebra.qrfactUnblocked!(Matrix(A)).τ
         b=rand(T,100)
-        @test qr(A)\b ≈ Matrix(A)\b
+        @test BandedMatrices.qr(A)\b ≈ Matrix(A)\b
         b=rand(T,100,2)
-        @test qr(A)\b ≈ Matrix(A)\b
-        @test_throws DimensionMismatch qr(A) \ randn(3)
-        @test_throws DimensionMismatch qr(A).Q'randn(3)
+        @test BandedMatrices.qr(A)\b ≈ Matrix(A)\b
+        @test_throws DimensionMismatch BandedMatrices.qr(A) \ randn(3)
+        @test_throws DimensionMismatch BandedMatrices.qr(A).Q'randn(3)
     end
 
     @testset "Mixed types" begin

@@ -16,7 +16,7 @@ import Base: rot180
 
 import LinearAlgebra: _apply_inverse_ipiv_rows!, _apply_ipiv_rows!, _chol!, axpy!, cholcopy, diag, diagzero, dot, eigen,
                       eigen!, eigvals, eigvals!, factorize, isdiag, istril, istriu, ldiv!, ldlt, ldlt!, lmul!,
-                      logabsdet, lu, lu!, mul!, qr, qr!, rmul!, svdvals, svdvals!, tril!, triu!
+                      logabsdet, lu, lu!, mul!, rmul!, svdvals, svdvals!, tril!, triu!
 
 using LinearAlgebra: AbstractTriangular, AdjOrTrans, BlasComplex, BlasFloat, BlasInt, BlasReal, Givens, HermOrSym,
                      QRPackedQ, RealHermSymComplexHerm, StructuredMatrixStyle, checksquare, chkstride1, ipiv2perm, AdjointQ
