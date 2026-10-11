@@ -295,6 +295,15 @@ function _BandedMatrix(::DiagonalLayout, A::AbstractMatrix{T}) where T
     copyto!(vec(dat), diagonaldata(A))
     _BandedMatrix(dat, m, 0, 0)
 end
+function _BandedMatrix(::OffDiagonalLayout, A::AbstractMatrix{T}) where T
+    m,n = size(A)
+    k = offdiagonalindex(A)
+    dat = zeros(T, 1, n)
+    # the entry in column j lies in row j-k
+    band = offdiagonaldata(A)
+    copyto!(view(dat, 1, max(0,k) .+ axes(band,1)), band)
+    _BandedMatrix(dat, m, -k, k)
+end
 function _BandedMatrix(::BidiagonalLayout, A::AbstractMatrix{T}) where T
     m,n = size(A)
     dat = Matrix{T}(undef, 2, n)

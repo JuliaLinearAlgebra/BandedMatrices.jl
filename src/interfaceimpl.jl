@@ -35,11 +35,10 @@ bandedrowsdata(Ac::Transpose{<:Number}) = Transpose(bandeddata(parent(Ac)))
 bandedrowsdata(Ac::Adjoint{<:Real}) = Transpose(bandeddata(parent(Ac)))
 bandedrowsdata(V::SubArray{<:Number}) = Transpose(bandeddata(view(parent(parent(V)), reverse(parentindices(V))...)))
 
-# treat subinds as banded
-sublayout(::DiagonalLayout{L}, inds::Type) where L = sublayout(bandedcolumns(L()), inds)
-sublayout(::DiagonalLayout{L}, inds::Type{<:NTuple{2,AbstractUnitRange{Int}}}) where L = sublayout(bandedcolumns(L()), inds)
-
-# bandeddata(V::SubArray{<:Any,2,<:Diagonal}) = view(bandeddata(parent(V)), :, parentindices(V)[2])
+# OffDiagonal, and views of Diagonal/OffDiagonal by unit ranges, are supported on a single band
+bandwidths(::OffDiagonalLayout, A) = (-offdiagonalindex(A), offdiagonalindex(A))
+inbands_getindex(A::OffDiagonal, k::Integer, j::Integer) = A.band[min(k,j)]
+inbands_setindex!(A::OffDiagonal, v, k::Integer, j::Integer) = (A.band[min(k,j)] = v)
 
 isbanded(::Bidiagonal) = true
 bandwidths(A::Bidiagonal) = A.uplo == 'U' ? (0,1) : (1,0)
