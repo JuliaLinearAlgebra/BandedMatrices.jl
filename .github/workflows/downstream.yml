@@ -40,6 +40,7 @@ jobs:
         os: [ubuntu-latest]
         package:
           - {repo: BlockBandedMatrices.jl, group: JuliaLinearAlgebra}
+          - {repo: LazyArrays.jl, group: JuliaArrays}
           - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: ApproxFunBase.jl, group: JuliaApproximation}
           - {repo: ApproxFun.jl, group: JuliaApproximation}
