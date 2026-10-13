@@ -125,6 +125,18 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
         @test A[band(0)] == zeros(4)
         @test MemoryLayout(view(A, 1:3, 2:4)) isa OffDiagonalLayout{DenseColumnMajor}
         @test bandwidths(view(A, 1:3, 2:4)) == (0,0)
+
+        @testset "broadcast with BandedMatrix" begin
+            A = FillArrays.OffDiagonal([1.,2,3], 1)
+            B = brand(4, 4, 1, 1)
+            for C in (A .+ B, B .+ A, A .* B, sin.(A) .+ 2 .* B)
+                @test C isa BandedMatrix
+            end
+            @test A .+ B == Matrix(A) .+ Matrix(B)
+            @test bandwidths(A .+ B) == (1,1)
+            @test A .* B == Matrix(A) .* Matrix(B)
+            @test sin.(A) .+ 2 .* B ≈ sin.(Matrix(A)) .+ 2 .* Matrix(B)
+        end
     end
 
     @testset "SymTridiagonal" begin

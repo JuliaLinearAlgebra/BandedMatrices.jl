@@ -4,7 +4,7 @@
 # Sparse BroadcastStyle
 ##
 
-for Typ in (:Diagonal, :SymTridiagonal, :Tridiagonal, :Bidiagonal)
+for Typ in (:Diagonal, :SymTridiagonal, :Tridiagonal, :Bidiagonal, :OffDiagonal)
     @eval begin
         BroadcastStyle(::StructuredMatrixStyle{<:$Typ}, ::BandedStyle) =
             BandedStyle()
