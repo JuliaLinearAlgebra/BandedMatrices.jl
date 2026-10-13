@@ -36,7 +36,15 @@ bandedrowsdata(Ac::Adjoint{<:Real}) = Transpose(bandeddata(parent(Ac)))
 bandedrowsdata(V::SubArray{<:Number}) = Transpose(bandeddata(view(parent(parent(V)), reverse(parentindices(V))...)))
 
 # OffDiagonal, and views of Diagonal/OffDiagonal by unit ranges, are supported on a single band
-bandwidths(::OffDiagonalLayout, A) = (-offdiagonalindex(A), offdiagonalindex(A))
+function bandwidths(::OffDiagonalLayout, A)
+    b = offdiagonalindex(A)
+    m,n = size(A)
+    if -b ≥ m || b ≥ n
+        (-720, -720) # empty
+    else
+        (-b, b)
+    end
+end
 inbands_getindex(A::OffDiagonal, k::Integer, j::Integer) = A.band[min(k,j)]
 inbands_setindex!(A::OffDiagonal, v, k::Integer, j::Integer) = (A.band[min(k,j)] = v)
 
