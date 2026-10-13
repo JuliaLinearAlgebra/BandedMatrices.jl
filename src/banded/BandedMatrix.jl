@@ -290,37 +290,38 @@ function _BandedMatrix(::BandedRows, A::AbstractMatrix)
     return _BandedMatrix(data_new, axes(A, 1), u, ℓ)
 end
 function _BandedMatrix(::DiagonalLayout, A::AbstractMatrix{T}) where T
-    m,n = size(A)
-    dat = Matrix{T}(undef, 1, n)
-    copyto!(vec(dat), diagonaldata(A))
-    _BandedMatrix(dat, m, 0, 0)
+    ret = BandedMatrix{T}(undef, axes(A), (0,0))
+    copyto!(ret.data, diagonaldata(A))
+    ret
 end
 function _BandedMatrix(::OffDiagonalLayout, A::AbstractMatrix{T}) where T
     k = offdiagonalindex(A)
-    _BandedMatrix(copy(permutedims(offdiagonaldata(A))), axes(A,1), -k, k)
+    band = offdiagonaldata(A)
+    ret = BandedMatrix{T}(undef, axes(A), (-k,k))
+    copyto!(view(ret.data, range(max(1,k+1); length=length(band))), band)
+    ret
 end
 function _BandedMatrix(::BidiagonalLayout, A::AbstractMatrix{T}) where T
     m,n = size(A)
-    dat = Matrix{T}(undef, 2, n)
     if bidiagonaluplo(A) == 'L'
-        copyto!(view(dat, 1, :), diagonaldata(A))
-        copyto!(view(dat, 2, 1:n-1), subdiagonaldata(A))
-        _BandedMatrix(dat, m, 1, 0)
+        ret = BandedMatrix{T}(undef, axes(A), (1,0))
+        copyto!(view(ret.data, 1, :), diagonaldata(A))
+        copyto!(view(ret.data, 2, 1:n-1), subdiagonaldata(A))
+        ret
     else # u
-        copyto!(view(dat, 1, 2:n), supdiagonaldata(A))
-        copyto!(view(dat, 2, :), diagonaldata(A))
-        _BandedMatrix(dat, m, 0, 1)
+        ret = BandedMatrix{T}(undef, axes(A), (0,1))
+        copyto!(view(ret.data, 1, 2:n), supdiagonaldata(A))
+        copyto!(view(ret.data, 2, :), diagonaldata(A))
+        ret
     end
 end
 
 function _BandedMatrix(::AbstractTridiagonalLayout, A::AbstractMatrix{T}) where T
-    m,n = size(A)
-    dat = Matrix{T}(undef, 3, n)
-
-    copyto!(view(dat, 1, 2:n), supdiagonaldata(A))
-    copyto!(view(dat, 2, :), diagonaldata(A))
-    copyto!(view(dat, 3, 1:n-1), subdiagonaldata(A))
-    _BandedMatrix(dat, m, 1, 1)
+    ret = BandedMatrix{T}(undef, axes(A), (1,1))
+    copyto!(view(ret.data, 1, 2:n), supdiagonaldata(A))
+    copyto!(view(ret.data, 2, :), diagonaldata(A))
+    copyto!(view(ret.data, 3, 1:n-1), subdiagonaldata(A))
+    ret
 end
 
 
