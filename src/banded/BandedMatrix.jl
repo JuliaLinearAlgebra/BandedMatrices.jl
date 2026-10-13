@@ -318,8 +318,10 @@ end
 
 function _BandedMatrix(::AbstractTridiagonalLayout, A::AbstractMatrix{T}) where T
     ret = BandedMatrix{T}(undef, axes(A), (1,1))
+    d = diagonaldata(A)
+    n = length(d)
     copyto!(view(ret.data, 1, 2:n), supdiagonaldata(A))
-    copyto!(view(ret.data, 2, :), diagonaldata(A))
+    copyto!(view(ret.data, 2, :), d)
     copyto!(view(ret.data, 3, 1:n-1), subdiagonaldata(A))
     ret
 end
