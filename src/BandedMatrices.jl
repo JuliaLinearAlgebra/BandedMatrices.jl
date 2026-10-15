@@ -32,9 +32,10 @@ import ArrayLayouts: AbstractTridiagonalLayout, BidiagonalLayout, BlasMatLdivVec
                      hermitianlayout, materialize, materialize!, reflector!, reflectorApply!, rowsupport,
                      sub_materialize, subdiagonaldata, sublayout, supdiagonaldata, symmetricdata, symmetriclayout,
                      symmetricuplo, transposelayout, triangulardata, triangularlayout, zero!,
-                     QRPackedQLayout, AdjQRPackedQLayout, LayoutVecOrMats
+                     QRPackedQLayout, AdjQRPackedQLayout, LayoutVecOrMats, OffDiagonalLayout, offdiagonaldata,
+                     offdiagonalindex
 
-import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal, OneElementMatrix, OneElementVector, ZerosMatrix, ZerosVector
+import FillArrays: AbstractFill, getindex_value, _broadcasted_zeros, unique_value, OneElement, RectDiagonal, OffDiagonal, OneElementMatrix, OneElementVector, ZerosMatrix, ZerosVector
 
 const libblas = LinearAlgebra.BLAS.libblas
 const liblapack = LinearAlgebra.BLAS.liblapack

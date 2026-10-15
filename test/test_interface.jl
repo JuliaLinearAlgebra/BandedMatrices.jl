@@ -53,7 +53,7 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
         V = view(Eye(5),2:3,:)
         @test bandwidths(V) == (-1,1)
-        @test MemoryLayout(typeof(V)) isa BandedColumns{OnesLayout}
+        @test MemoryLayout(typeof(V)) isa OffDiagonalLayout{OnesLayout}
         @test BandedMatrix(V) == [0 1 0 0 0; 0 0 1 0 0]
 
         B = brand(5,5,1,2)
@@ -79,7 +79,9 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
         @test bandeddata(A) == bandeddata(Adjoint(A)) == bandeddata(Transpose(A)) == diag(A)'
 
-        @test MemoryLayout(view(A, 1:3,2:4)) isa BandedColumns{DenseColumnMajor}
+        @test MemoryLayout(view(A, 1:3,2:4)) isa OffDiagonalLayout{DenseColumnMajor}
+        @test bandwidths(view(A, 1:3,2:4)) == (1,-1)
+        @test BandedMatrix(view(A, 1:3,2:4)) == A[1:3,2:4]
         @test MemoryLayout(view(A, [1,2,3],2:4)) isa UnknownLayout
 
         A[band(0)][1] = 3
@@ -97,6 +99,44 @@ LinearAlgebra.fill!(A::PseudoBandedMatrix, v) = fill!(A.data,v)
 
         B = Diagonal(1:∞)
         @test @inferred(B[Band(0)]) == 1:∞
+    end
+
+    @testset "OffDiagonal" begin
+        for A in (FillArrays.OffDiagonal([1.,2,3], 1), FillArrays.OffDiagonal([1.,2,3], -2), FillArrays.OffDiagonal(Fill(2.0,3), 1, 3, 5),
+                  FillArrays.OffDiagonal([1.,2,3], 1)', view(Diagonal([1.,2,3,4,5]), 2:5, 1:3))
+            k = ArrayLayouts.offdiagonalindex(A)
+            @test isbanded(A)
+            @test bandwidths(A) == (-k,k)
+            @test BandedMatrix(A) isa BandedMatrix
+            @test BandedMatrix(A) == A
+            @test bandwidths(BandedMatrix(A)) == (-k,k)
+            B = brand(size(A,2), 4, 1, 1)
+            C = brand(4, size(A,1), 1, 1)
+            @test A*B ≈ Matrix(A)*B
+            @test C*A ≈ C*Matrix(A)
+        end
+
+        A = FillArrays.OffDiagonal([1.,2,3], 1)
+        @test MemoryLayout(A) isa OffDiagonalLayout{DenseColumnMajor}
+        @test BandedMatrices.inbands_getindex(A, 2, 3) == 2
+        BandedMatrices.inbands_setindex!(A, 4, 2, 3)
+        @test A[2,3] == 4
+        @test A[band(1)] == [1,4,3]
+        @test A[band(0)] == zeros(4)
+        @test MemoryLayout(view(A, 1:3, 2:4)) isa OffDiagonalLayout{DenseColumnMajor}
+        @test bandwidths(view(A, 1:3, 2:4)) == (0,0)
+
+        @testset "broadcast with BandedMatrix" begin
+            A = FillArrays.OffDiagonal([1.,2,3], 1)
+            B = brand(4, 4, 1, 1)
+            for C in (A .+ B, B .+ A, A .* B, sin.(A) .+ 2 .* B)
+                @test C isa BandedMatrix
+            end
+            @test A .+ B == Matrix(A) .+ Matrix(B)
+            @test bandwidths(A .+ B) == (1,1)
+            @test A .* B == Matrix(A) .* Matrix(B)
+            @test sin.(A) .+ 2 .* B ≈ sin.(Matrix(A)) .+ 2 .* Matrix(B)
+        end
     end
 
     @testset "SymTridiagonal" begin
@@ -303,7 +343,8 @@ end
     @test bandwidths(A) == bandwidths(Ã) == (0,2)
     @test Ã == A == Matrix(B) + Matrix(Bu)
 
-    @test layout_getindex(D,1:10,1:10) isa BandedMatrix
+    @test layout_getindex(D,1:10,1:10) isa FillArrays.OffDiagonal
+    @test layout_getindex(D,1:10,1:10) == D
     @test layout_getindex(B,1:10,1:10) isa BandedMatrix
     @test layout_getindex(Bu,1:10,1:10) isa BandedMatrix
     @test layout_getindex(J,1:10,1:10) isa BandedMatrix
