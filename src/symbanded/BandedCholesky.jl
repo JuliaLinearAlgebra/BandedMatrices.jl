@@ -108,8 +108,12 @@ ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},Hermitian
 # uninitialized entries (`#undef` for non-isbits element types such as `BigFloat`).
 function _banded_cholcopy(A)
     B = similar(A, LinearAlgebra.choltype(A))
-    fill!(parent(B), zero(eltype(B)))
+    P = parent(B)
+    u = bandwidth(B, 2)
+
+    fill!(view(P, 1:u, :), zero(eltype(B)))
     copyto!(B, A)
+    B
 end
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) = _banded_cholcopy(A)
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:SubArray{<:Number, 2, <:BandedMatrix}}) =
