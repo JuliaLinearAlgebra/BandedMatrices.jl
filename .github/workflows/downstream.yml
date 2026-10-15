@@ -39,6 +39,7 @@ jobs:
         julia-version: ['1']
         os: [ubuntu-latest]
         package:
+          - {repo: BlockArrays.jl, group: JuliaArrays}
           - {repo: BlockBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: LazyArrays.jl, group: JuliaArrays}
           - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
