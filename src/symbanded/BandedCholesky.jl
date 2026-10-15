@@ -107,17 +107,6 @@ function _banded_cholcopy(A)
     zero!(view(parent(B), 1:bandwidth(B, 2), :))
     copyto!(similar(A, LinearAlgebra.choltype(A)), A)
 end
-    B = similar(A, LinearAlgebra.choltype(A))
-
-    # Copying the wrapper may leave some parent storage untouched. Initialize it
-    # for non-isbits types so full-parent copies do not read undefined references.
-    if !isbitstype(eltype(B))
-        fill!(parent(B), zero(eltype(B)))
-    end
-
-    copyto!(B, A)
-    B
-end
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) = _banded_cholcopy(A)
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:SubArray{<:Number, 2, <:BandedMatrix}}) =
     _banded_cholcopy(A)
