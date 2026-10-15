@@ -104,6 +104,9 @@ ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},Hermitian
     cholesky!(cholcopy(A); check = check)
 
 function _banded_cholcopy(A)
+    zero!(view(parent(B), 1:bandwidth(B, 2), :))
+    copyto!(similar(A, LinearAlgebra.choltype(A)), A)
+end
     B = similar(A, LinearAlgebra.choltype(A))
 
     # Copying the wrapper may leave some parent storage untouched. Initialize it
