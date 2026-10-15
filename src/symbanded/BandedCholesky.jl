@@ -103,15 +103,15 @@ ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:Bla
 ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) =
     cholesky!(cholcopy(A); check = check)
 
-# `copyto!` into a `Symmetric`/`Hermitian` need not write every entry of the
-# parent's band storage, so the parent is zeroed first: otherwise the factor holds
-# uninitialized entries (`#undef` for non-isbits element types such as `BigFloat`).
 function _banded_cholcopy(A)
     B = similar(A, LinearAlgebra.choltype(A))
-    P = parent(B)
-    u = bandwidth(B, 2)
 
-    fill!(view(P, 1:u, :), zero(eltype(B)))
+    # Copying the wrapper may leave some parent storage untouched. Initialize it
+    # for non-isbits types so full-parent copies do not read undefined references.
+    if !isbitstype(eltype(B))
+        fill!(parent(B), zero(eltype(B)))
+    end
+
     copyto!(B, A)
     B
 end
