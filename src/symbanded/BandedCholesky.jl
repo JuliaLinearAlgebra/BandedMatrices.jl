@@ -1,4 +1,11 @@
 
+# LAPACK's lower band storage starts at the diagonal, which `bandeddata(A)` stores
+# in row `bandwidth(A, 2) + 1`, below the superdiagonals.
+function _lower_bandeddata(A)
+    data = bandeddata(A)
+    view(data, bandwidth(A, 2) + 1:size(data, 1), :)
+end
+
 function banded_chol!(::BandedColumns{DenseColumnMajor},
                        A::AbstractMatrix{T}, ::Type{UpperTriangular}) where T<:BlasFloat
     _, info = pbtrf!('U', size(A, 1), bandwidth(A,2), bandeddata(A))
@@ -7,7 +14,7 @@ end
 
 function banded_chol!(::BandedColumns{DenseColumnMajor},
                       A::AbstractMatrix{T}, ::Type{LowerTriangular}) where T<:BlasFloat
-    _, info = pbtrf!('L', size(A, 1), bandwidth(A,1), bandeddata(A))
+    _, info = pbtrf!('L', size(A, 1), bandwidth(A,1), _lower_bandeddata(A))
     LowerTriangular(A), info
 end
 
@@ -74,7 +81,7 @@ function _ldiv!(::BandedColumns{DenseColumnMajor}, ::AbstractStridedLayout,
     if A.uplo == 'U'
         pbtrs!('U', size(A, 1), bandwidth(A.factors,2), bandeddata(A.factors), B)
     else
-        pbtrs!('L', size(A, 1), bandwidth(A.factors,1), bandeddata(A.factors), B)
+        pbtrs!('L', size(A, 1), bandwidth(A.factors,1), _lower_bandeddata(A.factors), B)
     end
     B
 end
