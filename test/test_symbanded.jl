@@ -413,6 +413,21 @@ end
         end
     end
 
+    @testset "upper Cholesky of a matrix that also stores lower bands" begin
+        for T in (Float64, ComplexF64, BigFloat), l in (1, 2, 3)
+            M = brand(T, 8, 8, 2, 2)
+            A = BandedMatrix(Matrix(M + M') + 10I, (l, 2))
+            S = T <: Complex ? Hermitian(A, :U) : Symmetric(A, :U)
+            Ac = cholesky(S)
+
+            @test Ac isa Cholesky{T,<:BandedMatrix{T}}
+            @test Matrix(Ac.U) ≈ cholesky(Matrix(S)).U
+
+            b = rand(T, size(A, 1))
+            @test Ac\b ≈ Matrix(S)\b
+        end
+    end
+
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[1:5;], -1=>Float64[1:4;])
     @test isposdef(B) == isposdef(Matrix(B)) == false
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[2:2:10;], -1=>Float64[1:4;])

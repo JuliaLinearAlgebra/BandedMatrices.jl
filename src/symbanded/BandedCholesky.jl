@@ -103,9 +103,16 @@ ldiv!(A::Cholesky{T,<:AbstractBandedMatrix}, B::StridedVecOrMat{T}) where T<:Bla
 ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},HermitianLayout{<:AbstractBandedLayout}}, ax, A, ::Val{false}=Val(false); check::Bool = true) =
     cholesky!(cholcopy(A); check = check)
 
-cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) =
-    copyto!(similar(A, LinearAlgebra.choltype(A)), A)
+# `copyto!` into a `Symmetric`/`Hermitian` need not write every entry of the
+# parent's band storage, so the parent is zeroed first: otherwise the factor holds
+# uninitialized entries (`#undef` for non-isbits element types such as `BigFloat`).
+function _banded_cholcopy(A)
+    B = similar(A, LinearAlgebra.choltype(A))
+    fill!(parent(B), zero(eltype(B)))
+    copyto!(B, A)
+end
+cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) = _banded_cholcopy(A)
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:SubArray{<:Number, 2, <:BandedMatrix}}) =
-    copyto!(similar(A, LinearAlgebra.choltype(A)), A)
+    _banded_cholcopy(A)
 # cholesky(A::Hermitian{T,<:BandedMatrix{T}},
 #     ::Val{false}=Val(false); check::Bool = true) where T = cholesky!(cholcopy(A); check = check)
