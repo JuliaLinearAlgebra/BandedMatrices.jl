@@ -104,7 +104,7 @@ ArrayLayouts._cholesky(::Union{SymmetricLayout{<:AbstractBandedLayout},Hermitian
     cholesky!(cholcopy(A); check = check)
 
 function _banded_cholcopy(A)
-    zero!(view(parent(B), 1:bandwidth(B, 2), :))
+    zero!(view(parent(A), 1:bandwidth(A, 2), :))
     copyto!(similar(A, LinearAlgebra.choltype(A)), A)
 end
 cholcopy(A::RealHermSymComplexHerm{<:Any,<:BandedMatrix}) = _banded_cholcopy(A)
