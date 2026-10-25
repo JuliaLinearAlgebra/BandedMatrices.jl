@@ -398,6 +398,57 @@ end
         @test Ac\b ≈ A\b
     end
 
+    @testset "lower Cholesky of a matrix that also stores upper bands" begin
+        for T in (Float64, ComplexF64, BigFloat), u in (1, 2, 3)
+            M = brand(T, 8, 8, 2, 2)
+            A = BandedMatrix(Matrix(M + M') + 10I, (2, u))
+            S = T <: Complex ? Hermitian(A, :L) : Symmetric(A, :L)
+            Ac = cholesky(S)
+
+            @test Ac isa Cholesky{T,<:BandedMatrix{T}}
+            @test Matrix(Ac.L) ≈ cholesky(Matrix(S)).L
+
+            b = rand(T, size(A, 1))
+            @test Ac\b ≈ Matrix(S)\b
+        end
+    end
+
+    @testset "upper Cholesky of a matrix that also stores lower bands" begin
+        for T in (Float64, ComplexF64, BigFloat), l in (1, 2, 3)
+            M = brand(T, 8, 8, 2, 2)
+            A = BandedMatrix(Matrix(M + M') + 10I, (l, 2))
+            S = T <: Complex ? Hermitian(A, :U) : Symmetric(A, :U)
+            Ac = cholesky(S)
+
+            @test Ac isa Cholesky{T,<:BandedMatrix{T}}
+            @test Matrix(Ac.U) ≈ cholesky(Matrix(S)).U
+
+            b = rand(T, size(A, 1))
+            @test Ac\b ≈ Matrix(S)\b
+        end
+    end
+
+    @testset "Cholesky copy initializes non-isbits storage" begin
+        for wrapper in (Symmetric, Hermitian),
+            bw in ((2, 1), (2, 3), (1, 2), (3, 2)),
+            uplo in (:L, :U), useview in (false, true)
+
+            A = BandedMatrix{BigFloat}(I, (8, 8), bw)
+            P = useview ? view(A, :, :) : A
+            S = wrapper(P, uplo)
+
+            C = LinearAlgebra.cholcopy(S)
+            data = BandedMatrices.bandeddata(parent(C))
+            # Inspect references without reading any undefined entries.
+            @test all(i -> isassigned(data, i), eachindex(data))
+
+            F = cholesky(S)
+            identity = Matrix{BigFloat}(I, 8, 8)
+            @test Matrix(F.L) ≈ identity
+            @test Matrix(F.U) ≈ identity
+        end
+    end
+
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[1:5;], -1=>Float64[1:4;])
     @test isposdef(B) == isposdef(Matrix(B)) == false
     B = BandedMatrix(1=>Float64[1:4;], 0=>Float64[2:2:10;], -1=>Float64[1:4;])
